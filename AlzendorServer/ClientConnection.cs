@@ -27,22 +27,19 @@ namespace Alzendor.Server
             byte[] bytesFrom;
             int requestCounter = 0;
             bool connected = true;
-
+            NetworkStream stream = new NetworkStream(clientSocket);
             while (connected)
             {
                 try
                 {
                     requestCounter++;
                     bytesFrom = new byte[1024];
-                    int bytesRec = clientSocket.Receive(bytesFrom);
+                    stream.Read(bytesFrom);
                     string dataFromClient = Encoding.ASCII.GetString(bytesFrom);
                     myLogger.Log(LogLevel.Info, $">> From client {clientNumber}: {dataFromClient}");
-
-
-                    // string myRequestCount = Convert.ToString(requestCounter);
-                    string serverResponse = "Server Recieved:\n" + dataFromClient + "\nfrom client: " + clientNumber;
+                    string serverResponse = dataFromClient;
                     byte[] sendBytes = Encoding.ASCII.GetBytes(serverResponse);
-                    clientSocket.Send(sendBytes);
+                    stream.Write(sendBytes, 0, sendBytes.Length);
                 }
                 catch (SocketException)
                 {

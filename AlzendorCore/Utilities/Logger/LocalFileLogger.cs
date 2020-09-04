@@ -33,7 +33,7 @@ namespace AlzendorCore.Utilities.Logger
         {
             try
             {
-                Console.WriteLine($"LogLevel:{level} -> {message.Trim()}");
+                Console.WriteLine($"Logger {level}: {message.Trim()}");
             }
             catch (Exception exception)
             {
@@ -41,7 +41,7 @@ namespace AlzendorCore.Utilities.Logger
             }
             if (output != null)
             {
-                output.WriteLine($"{level}: {message}");
+                output.WriteLine($"Logger {level}: {message}");
                 output.Flush();
             }
 

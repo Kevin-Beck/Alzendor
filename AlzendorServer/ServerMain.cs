@@ -9,7 +9,6 @@ namespace Alzendor.Server
     {
         public static int Main(String[] args)
         {
-            // Injection of Logger
             ILogger logger = new LocalFileLogger();
             StartServer(logger);
             return 0;
@@ -17,11 +16,16 @@ namespace Alzendor.Server
 
         public static void StartServer(ILogger logger)
         {
-            // Get Host IP Address that is used to establish a connection  
-            // In this case, we get one IP address of localhost that is IP : 127.0.0.1  
-            // If a host has multiple addresses, you will get a list of addresses  
-
-            IPHostEntry host = Dns.GetHostEntry("ec2-3-133-100-129.us-east-2.compute.amazonaws.com");
+            bool localBuild = true;
+            IPHostEntry host;
+            if (localBuild)
+            {
+                host = Dns.GetHostEntry("localhost");
+            }
+            else
+            {
+                host = Dns.GetHostEntry("ec2-3-133-100-129.us-east-2.compute.amazonaws.com");
+            }
             IPAddress ipAddress = host.AddressList[0];
             IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 11000);
 

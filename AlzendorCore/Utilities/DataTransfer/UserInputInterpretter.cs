@@ -4,22 +4,22 @@ using System.Text.RegularExpressions;
 
 namespace AlzendorCore.Utilities.DataTransfer
 {
-    public class InputManager
+    public class UserInputInterpretter
     {
         private Dictionary<string, ActionType> actionMap;
 
         // This should probably use reflection and go through all the types of of actions and get the trigger words
 
-        public InputManager()
+        public UserInputInterpretter()
         {
             actionMap = new Dictionary<string, ActionType>();
             actionMap.Add("say", ActionType.MESSAGE);
             actionMap.Add("tell", ActionType.MESSAGE);
         }
-        public Action ParseActionFromText(string characterName, string input)
+        public UserAction ParseActionFromText(string characterName, string input)
         {
             input = input.ToLower().Trim();
-            Action result = null;
+            UserAction result = null;
             // Check for whitespace first character
             if (input.Length < 1)
             {
@@ -38,9 +38,9 @@ namespace AlzendorCore.Utilities.DataTransfer
             }
             return result;
         }
-        private Action ProcessMultiWordAction(string characterName, string input)
+        private UserAction ProcessMultiWordAction(string characterName, string input)
         {
-            Action multiWordActionResult = null;
+            UserAction multiWordActionResult = null;
             string command = input.Substring(0, input.IndexOf(" "));
             ActionType actionType = actionMap[command];
 
@@ -83,9 +83,9 @@ namespace AlzendorCore.Utilities.DataTransfer
 
             return multiWordActionResult;
         }
-        private Action ProcessSingleWordAction(string characterName, string input)
+        private UserAction ProcessSingleWordAction(string characterName, string input)
         {
-            Action singleWordActionResult = null;
+            UserAction singleWordActionResult = null;
             return singleWordActionResult;
         }
     }
