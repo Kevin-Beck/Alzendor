@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Alzendor.Core.Utilities.Logger;
+using System;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using AlzendorCore.Utilities.Logger;
 
 namespace Alzendor.Server
 {
@@ -11,10 +11,14 @@ namespace Alzendor.Server
         Socket clientSocket;
         string clientNumber;
         ILogger myLogger;
-        public ClientConnection(ILogger logger)
+        GameState gameState;
+        public ClientConnection(ILogger logger, GameState initialState)
         {
+            gameState = initialState;
             myLogger = logger;
         }
+        // ADD RETURN DATA
+        // If returnedata != null, send it back to the client
         public void StartClient(Socket inClientSocket, string inClientNumber)
         {
             clientSocket = inClientSocket;
@@ -28,6 +32,10 @@ namespace Alzendor.Server
             int requestCounter = 0;
             bool connected = true;
             NetworkStream stream = new NetworkStream(clientSocket);
+            foreach(ServerObject serverObject in gameState.GetServerObjectList())
+            {
+                // TODO: send each object down stream to the client
+            }
             while (connected)
             {
                 try

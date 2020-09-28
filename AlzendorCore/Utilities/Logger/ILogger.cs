@@ -1,4 +1,4 @@
-﻿namespace AlzendorCore.Utilities.Logger
+﻿namespace Alzendor.Core.Utilities.Logger
 {
     public interface ILogger
     {

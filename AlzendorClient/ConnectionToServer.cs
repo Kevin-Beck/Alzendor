@@ -1,6 +1,6 @@
-﻿using AlzendorCore.Utilities.Actions;
-using AlzendorCore.Utilities.DataTransfer;
-using AlzendorCore.Utilities.Logger;
+﻿using Alzendor.Core.Utilities.Actions;
+using Alzendor.Core.Utilities.DataTransfer;
+using Alzendor.Core.Utilities.Logger;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -10,7 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-namespace AlzendorClient
+namespace Alzendor.Client
 {
     public class ConnectionToServer
     {
@@ -19,40 +19,49 @@ namespace AlzendorClient
         UserAction userAction = null;
         Socket server;
         int sleepDelay;
-        byte[] fromServer;
+        int buffersize;
+        string characterName; // should be replaced with a more robust class containing character
 
-        public ConnectionToServer(ILogger logger, string hostIP, int buffersize, int sleepDelay)
+        public ConnectionToServer(ILogger logger, string charName, string hostIP, int hostPort, int buffersize, int pollingRateInMS)
+        {
+            // Initialize required elements
+            this.sleepDelay = pollingRateInMS;
+            this.buffersize = buffersize;
+
+            CreateConnection(logger, hostIP, hostPort);
+            Thread ioLoop = new Thread(InputOutputLoop);
+            ioLoop.Start();
+        }
+
+        public void SendAction(UserAction inputAction)
+        {
+            userAction = inputAction;
+        }
+
+        private void CreateConnection(ILogger logger, string hostIP, int hostPort)
         {
             IPAddress ipAddress;
             IPEndPoint remoteEP;
             IPHostEntry host;
-            this.sleepDelay = sleepDelay;
             this.logger = logger;
-            fromServer = new byte[buffersize];
 
             try
             {
                 host = Dns.GetHostEntry(hostIP);
                 ipAddress = host.AddressList[0];
-                remoteEP = new IPEndPoint(ipAddress, 11000);
+                remoteEP = new IPEndPoint(ipAddress, hostPort);
                 server = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 logger.Log(LogLevel.Info, $"Trying to connect to : {ipAddress.ToString()}");
                 server.Connect(remoteEP);
                 logger.Log(LogLevel.Info, $"Socket connected to {server.RemoteEndPoint.ToString()}");
-                
+
             }
             catch (Exception exception)
             {
                 logger.Log(LogLevel.Error, exception.Message);
             }
-            Thread ioLoop = new Thread(IOLoop);
-            ioLoop.Start();
         }
-        public void SendAction(UserAction inputAction)
-        {
-            userAction = inputAction;
-        }
-        public void IOLoop()
+        public void InputOutputLoop()
         {
             try
             {
@@ -61,6 +70,7 @@ namespace AlzendorClient
                 while (true)
                 {
                     Thread.Sleep(sleepDelay);
+                    byte[] fromServer = new byte[buffersize];
                     networkStream.ReadAsync(fromServer, 0, fromServer.Length);
                     byte[] incomingBytes = new byte[fromServer.Length];
                     Array.Copy(fromServer, 0, incomingBytes, 0, fromServer.Length);
@@ -73,8 +83,9 @@ namespace AlzendorClient
 
                             if (inObject == null) {
                                 //Console.WriteLine("IncomingObject is null");
-                            }else if(inObject.Sender == "Morek"){
-                                Console.WriteLine("Client Recieved|" + inObject.Message + "|From Server");
+                            }else
+                            {
+                                Console.WriteLine("Client Recieved object with message|" + inObject.Message + "|From Server");
                             }
                         } catch (Exception e) {
                             Console.WriteLine(e.StackTrace);

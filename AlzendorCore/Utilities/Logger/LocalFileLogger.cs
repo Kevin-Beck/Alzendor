@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace AlzendorCore.Utilities.Logger
+namespace Alzendor.Core.Utilities.Logger
 {
     public class LocalFileLogger : ILogger
     {

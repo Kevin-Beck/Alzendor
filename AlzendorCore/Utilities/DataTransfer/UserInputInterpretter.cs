@@ -1,8 +1,8 @@
-﻿using AlzendorCore.Utilities.Actions;
+﻿using Alzendor.Core.Utilities.Actions;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace AlzendorCore.Utilities.DataTransfer
+namespace Alzendor.Core.Utilities.DataTransfer
 {
     public class UserInputInterpretter
     {
@@ -42,6 +42,10 @@ namespace AlzendorCore.Utilities.DataTransfer
         {
             UserAction multiWordActionResult = null;
             string command = input.Substring(0, input.IndexOf(" "));
+            if (!actionMap.ContainsKey(command))
+            {
+                return null;
+            }
             ActionType actionType = actionMap[command];
 
             switch (actionType)

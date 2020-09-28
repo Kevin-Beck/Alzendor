@@ -1,20 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using AlzendorCore.Utilities.Logger;
+using Alzendor.Core.Utilities.Logger;
+using Alzendor.Server.DataSources;
 
 namespace Alzendor.Server
 {
     public class ServerMain
-    {
+    {        
         public static int Main(String[] args)
         {
             ILogger logger = new LocalFileLogger();
-            StartServer(logger);
+            IServerData serverData = new LocalFileServerData();
+            GameState currentGameState = serverData.LoadGameState();
+            StartServer(logger, currentGameState);
             return 0;
         }
 
-        public static void StartServer(ILogger logger)
+        public static void StartServer(ILogger logger, GameState gameState)
         {
             bool localBuild = true;
             IPHostEntry host;
@@ -31,6 +35,8 @@ namespace Alzendor.Server
 
             try
             {
+                List<KeyValuePair<string, ClientConnection>> myConnections;
+
                 // Create a Socket that will use Tcp protocol      
                 Socket listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 // A Socket must be associated with an endpoint using the Bind method  
@@ -48,7 +54,9 @@ namespace Alzendor.Server
                     incomingClient = listener.Accept();
                     clientCounter++;
 
-                    ClientConnection client = new ClientConnection(logger);
+                    ClientConnection client = new ClientConnection(logger, gameState);
+                    // build out list of connections to keep track, set subscribers
+                    
                     client.StartClient(incomingClient, clientCounter.ToString());
                 }
             }

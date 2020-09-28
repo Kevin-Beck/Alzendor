@@ -1,6 +1,6 @@
 ﻿
 
-namespace AlzendorCore.Utilities.DataTransfer
+namespace Alzendor.Core.Utilities.DataTransfer
 {
     public interface IInputStream
     {

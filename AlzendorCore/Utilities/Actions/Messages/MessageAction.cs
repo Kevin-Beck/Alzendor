@@ -1,4 +1,4 @@
-﻿namespace AlzendorCore.Utilities.Actions
+﻿namespace Alzendor.Core.Utilities.Actions
 {
     public class MessageAction : UserAction
     {
