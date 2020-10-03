@@ -8,56 +8,42 @@ using Alzendor.Server.DataSources;
 namespace Alzendor.Server
 {
     public class ServerMain
-    {        
+    {
+
         public static int Main(String[] args)
         {
             ILogger logger = new LocalFileLogger();
             IServerData serverData = new LocalFileServerData();
-            GameState currentGameState = serverData.LoadGameState();
-            StartServer(logger, currentGameState);
+            StartServer(logger, "localhost");
             return 0;
         }
 
-        public static void StartServer(ILogger logger, GameState gameState)
-        {
-            bool localBuild = true;
-            IPHostEntry host;
-            if (localBuild)
-            {
-                host = Dns.GetHostEntry("localhost");
-            }
-            else
-            {
-                host = Dns.GetHostEntry("ec2-3-133-100-129.us-east-2.compute.amazonaws.com");
-            }
-            IPAddress ipAddress = host.AddressList[0];
-            IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 11000);
 
+        static Dictionary<string, ConnectionToClient> myConnections = new Dictionary<string, ConnectionToClient>();
+        public static void StartServer(ILogger logger, string hostURL)
+        {
             try
             {
-                List<KeyValuePair<string, ClientConnection>> myConnections;
+                // todo unhardcode the ports 11000
+                IPHostEntry host = Dns.GetHostEntry(hostURL);
+                IPAddress ipAddress = host.AddressList[0];
+                IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 11000);
 
-                // Create a Socket that will use Tcp protocol      
                 Socket listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                // A Socket must be associated with an endpoint using the Bind method  
-                listener.Bind(localEndPoint);
-                // Specify how many requests a Socket can listen before it gives Server busy response.  
-                // We will listen 10 requests at a time  
+                listener.Bind(localEndPoint); 
                 listener.Listen(10);
 
                 Socket incomingClient;
-                int clientCounter = 0;
 
                 while (true)
                 {
                     logger.Log(LogLevel.Info, "Waiting for a connection...");
                     incomingClient = listener.Accept();
-                    clientCounter++;
-
-                    ClientConnection client = new ClientConnection(logger, gameState);
-                    // build out list of connections to keep track, set subscribers
                     
-                    client.StartClient(incomingClient, clientCounter.ToString());
+                    ConnectionToClient client = new ConnectionToClient(logger);
+                    client.StartClient(incomingClient);
+
+                    myConnections.Add(client.receiveFromClientSocket.RemoteEndPoint.ToString(), client);
                 }
             }
             catch (Exception e)

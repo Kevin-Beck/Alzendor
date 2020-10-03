@@ -8,10 +8,10 @@ namespace Alzendor.Server.DataSources
 {
     class LocalFileServerData : IServerData
     {
-        public GameState LoadGameState()
+        public string LoadGameState()
         {
             string path = Directory.GetCurrentDirectory() + "\\ServerData";
-            GameState gameState = new GameState();
+            string gameState = "";
             try
             {
                 using (StreamReader streamReader = File.OpenText(path))
@@ -20,28 +20,29 @@ namespace Alzendor.Server.DataSources
 
                     while ((serializedObject = streamReader.ReadLine()) != null)
                     {
-                        gameState.AddObjectToGameState(JsonConvert.DeserializeObject<ServerObject>(serializedObject));
+                        gameState += (JsonConvert.DeserializeObject<ServerObject>(serializedObject));
                     }
                 }
-            }catch(Exception e)
+            }catch(FileNotFoundException e)
             {
-                Console.WriteLine(e.StackTrace);
+                Console.WriteLine("No local saved gamestate found, starting from scratch");
+            }catch(Exception other)
+            {
+                Console.WriteLine("ServerError: " + other.Message);
             }
 
             return gameState;
         }
 
-        public void SaveGameState(GameState state)
+        public void SaveGameState(string state)
         {
             string path = Directory.GetCurrentDirectory() + "\\ServerData";
-            GameState gameState = new GameState();
+            string gameState = "";
 
             using (StreamWriter streamWriter = new StreamWriter(path))
-            {                
-                foreach(ServerObject serverObject in gameState.GetServerObjectList())
-                {
-                    streamWriter.WriteLine(JsonConvert.SerializeObject(serverObject));
-                }
+            {    
+                streamWriter.WriteLine(gameState);
+            
             }
         }
     }

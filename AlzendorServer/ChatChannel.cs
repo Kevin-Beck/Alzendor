@@ -10,13 +10,13 @@ namespace Alzendor.Server
 
         public void AddMessage(MessageAction message)
         {
-            ChatData newChatLine = new ChatData(message.Name, message.Sender, message.Reciever, message.Message);
+            ChatData newChatLine = new ChatData(message.Name, message.Sender, message.receiver, message.Message);
             feed.Enqueue(newChatLine);
-            foreach(string sub in this.subscribers)
-            {
-                // for each of my subscribers (these will be clientConnections i think
-                // add this piece of data to their return data value
-            }
+       //     foreach(string sub in this.subscribers)
+       //     {
+       //         // for each of my subscribers (these will be clientConnections i think
+       //         // add this piece of data to their return data value
+       //     }
         }
     }
 }

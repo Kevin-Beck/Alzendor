@@ -1,123 +1,131 @@
-﻿using Alzendor.Core.Utilities.Actions;
-using Alzendor.Core.Utilities.DataTransfer;
-using Alzendor.Core.Utilities.Logger;
+﻿using Alzendor.Core.Utilities.Logger;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Alzendor.Client
 {
     public class ConnectionToServer
     {
-        ILogger logger;
-        NetworkStream networkStream;
-        UserAction userAction = null;
-        Socket server;
-        int sleepDelay;
-        int buffersize;
-        string characterName; // should be replaced with a more robust class containing character
+        private ILogger logger;
+        private Socket sendToServerSocket;
+        private Socket receiveFromServerSocket;
+        private int receivePort;
+        private string clientName;
 
-        public ConnectionToServer(ILogger logger, string charName, string hostIP, int hostPort, int buffersize, int pollingRateInMS)
+        public string DataToSend { get; set; } = "";
+
+        public ConnectionToServer(ILogger inLogger, string charName, string hostIP, string myIP, int hostPort)
         {
-            // Initialize required elements
-            this.sleepDelay = pollingRateInMS;
-            this.buffersize = buffersize;
+            logger = inLogger;
+            receivePort = hostPort + 1;
+            clientName = charName;
+            Thread createReceive = new Thread(CreateReceiveConnectionToServer);
+            createReceive.Start();
 
-            CreateConnection(logger, hostIP, hostPort);
-            Thread ioLoop = new Thread(InputOutputLoop);
-            ioLoop.Start();
+            CreateSendConnectionToServer(hostIP, hostPort);           
+            Thread sendThread = new Thread(SendLoop);
+            sendThread.Start();
         }
 
-        public void SendAction(UserAction inputAction)
+        private void CreateSendConnectionToServer(string serverSite, int hostPort)
         {
-            userAction = inputAction;
-        }
-
-        private void CreateConnection(ILogger logger, string hostIP, int hostPort)
-        {
-            IPAddress ipAddress;
-            IPEndPoint remoteEP;
-            IPHostEntry host;
-            this.logger = logger;
-
             try
             {
-                host = Dns.GetHostEntry(hostIP);
-                ipAddress = host.AddressList[0];
-                remoteEP = new IPEndPoint(ipAddress, hostPort);
-                server = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                logger.Log(LogLevel.Info, $"Trying to connect to : {ipAddress.ToString()}");
-                server.Connect(remoteEP);
-                logger.Log(LogLevel.Info, $"Socket connected to {server.RemoteEndPoint.ToString()}");
-
+                // Create the socket that hooks into the server
+                IPHostEntry serverHost = Dns.GetHostEntry(serverSite);
+                IPAddress serverIpAddress = serverHost.AddressList[0];
+                IPEndPoint remoteEP = new IPEndPoint(serverIpAddress, hostPort);
+                sendToServerSocket = new Socket(serverIpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                logger.Log(LogLevel.Info, $"Trying to connect to : {serverIpAddress.ToString()}");
+                sendToServerSocket.Connect(remoteEP);
+                logger.Log(LogLevel.Info, $"Socket connected to {sendToServerSocket.RemoteEndPoint.ToString()}");
+                DataToSend = clientName;
             }
             catch (Exception exception)
             {
                 logger.Log(LogLevel.Error, exception.Message);
             }
         }
-        public void InputOutputLoop()
+        private void CreateReceiveConnectionToServer()
         {
+            // Create open listener for the server to connect to
+
             try
             {
-                networkStream = new NetworkStream(server);                
+                // TODO unhardcode the 110001
+                IPHostEntry host = Dns.GetHostEntry("localhost");
+                IPAddress ipAddress = host.AddressList[0];
+                IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 11001);
+                receiveFromServerSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                receiveFromServerSocket.Bind(localEndPoint);
+                receiveFromServerSocket.Listen(10);
+                receiveFromServerSocket = receiveFromServerSocket.Accept();
+                logger.Log(LogLevel.Info, "Client has recieved connection on its receiver");
 
-                while (true)
+                Thread receiveThread = new Thread(ReceiveLoop);
+                receiveThread.Start();
+            }
+            catch(Exception e)
+            {
+                logger.Log(LogLevel.Error, $"Client Error: CreateReceiveConnectionToServer\n\nMessage:\n{e.Message}\n\nTrace:\n{e.StackTrace}\n\n");
+                
+            }
+        }
+
+        public void ReceiveLoop()
+        {
+            bool connected = true;
+            NetworkStream stream = new NetworkStream(receiveFromServerSocket);
+            while (connected)
+            {
+                try
                 {
-                    Thread.Sleep(sleepDelay);
-                    byte[] fromServer = new byte[buffersize];
-                    networkStream.ReadAsync(fromServer, 0, fromServer.Length);
-                    byte[] incomingBytes = new byte[fromServer.Length];
-                    Array.Copy(fromServer, 0, incomingBytes, 0, fromServer.Length);
-                    Array.Clear(fromServer, 0, fromServer.Length);
-                    if (incomingBytes != null && incomingBytes.Length > 0)
-                    {
-                        try
-                        {
-                            MessageAction inObject = JsonConvert.DeserializeObject<MessageAction>(Encoding.ASCII.GetString(incomingBytes));
+                    var receivedText = Receive(stream);
 
-                            if (inObject == null) {
-                                //Console.WriteLine("IncomingObject is null");
-                            }else
-                            {
-                                Console.WriteLine("Client Recieved object with message|" + inObject.Message + "|From Server");
-                            }
-                        } catch (Exception e) {
-                            Console.WriteLine(e.StackTrace);
-                        }
-                    }
-
-                    if(userAction != null)
-                    {                       
-                        string serializedAction = JsonConvert.SerializeObject(userAction);
-                        byte[] msg = Encoding.ASCII.GetBytes(serializedAction.ToCharArray());
-                        networkStream.Write(msg, 0, msg.Length);                        
-                        userAction = null;
-                    }                    
+                    // todo process the data from the server
+                }
+                catch (SocketException)
+                {
+                    logger.Log(LogLevel.Info, $"Server has disconnected");
+                    connected = false;
+                }
+                catch (Exception exception)
+                {
+                    logger.Log(LogLevel.Error, $"ConnectionToServer: {exception.Message}");
+                    connected = false;
                 }
             }
-            catch (ArgumentNullException argumentNullException)
+        }
+        public void SendLoop()
+        {
+            bool connected = true;
+            NetworkStream stream = new NetworkStream(sendToServerSocket);
+            while (connected)
             {
-                logger.Log(LogLevel.Error, $"ArgumentNullException : {argumentNullException.ToString()}");
+                if(DataToSend.Trim() != null && DataToSend.Trim() != "")
+                {
+                    Send(stream, DataToSend);
+                }
             }
-            catch (SocketException socketException)
-            {
-                logger.Log(LogLevel.Error, $"SocketException : {socketException.ToString()}");
-            }
-            catch (Exception exception)
-            {
-                logger.Log(LogLevel.Error, $"Unexpected exception : {exception.ToString()}");
-            }
-            finally
-            {
-                server.Shutdown(SocketShutdown.Both);
-                server.Close();
-            }
-        }        
+        }
+        private string Receive(NetworkStream networkStream)
+        {
+            byte[] bytesFrom = new byte[1024];
+            networkStream.Read(bytesFrom); // todo just changed this better chek to make sure it works
+            string dataFromServer = Encoding.ASCII.GetString(bytesFrom);
+            logger.Log(LogLevel.Info, $"<< From Server: {dataFromServer}");
+            return dataFromServer;
+        }
+        private void Send(NetworkStream networkStream, string data)
+        {
+            byte[] sendBytes = Encoding.ASCII.GetBytes(data);
+            networkStream.Write(sendBytes, 0, sendBytes.Length);
+            logger.Log(LogLevel.Info, $">> To Server: {data}");
+            DataToSend = "";
+        }
     }
 }

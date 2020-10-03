@@ -6,7 +6,7 @@ namespace Alzendor.Server
 {
     public interface IServerData
     {
-        public GameState LoadGameState();
-        public void SaveGameState(GameState state);
+        public string LoadGameState();
+        public void SaveGameState(string state);
     }
 }
