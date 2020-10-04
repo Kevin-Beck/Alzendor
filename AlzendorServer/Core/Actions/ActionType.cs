@@ -1,4 +1,4 @@
-﻿namespace Alzendor.Core.Utilities.Actions
+﻿namespace Alzendor.Server.Core.Actions
 {
     public enum ActionType
     {

@@ -20,7 +20,7 @@ namespace Alzendor.Server.DataSources
 
                     while ((serializedObject = streamReader.ReadLine()) != null)
                     {
-                        gameState += (JsonConvert.DeserializeObject<ServerObject>(serializedObject));
+                        gameState += (JsonConvert.DeserializeObject<GameElement>(serializedObject));
                     }
                 }
             }catch(FileNotFoundException e)

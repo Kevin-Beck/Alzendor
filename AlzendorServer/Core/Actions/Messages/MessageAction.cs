@@ -1,6 +1,6 @@
-﻿namespace Alzendor.Core.Utilities.Actions
+﻿namespace Alzendor.Server.Core.Actions
 {
-    public class MessageAction : UserAction
+    public class MessageAction : ActionObject
     {
         public string Sender { get; set; }
         public string receiver { get; set; }

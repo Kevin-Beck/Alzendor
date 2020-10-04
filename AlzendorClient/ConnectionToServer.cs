@@ -1,5 +1,4 @@
 ﻿using Alzendor.Core.Utilities.Logger;
-using Newtonsoft.Json;
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -10,15 +9,15 @@ namespace Alzendor.Client
 {
     public class ConnectionToServer
     {
-        private ILogger logger;
+        private readonly ILogger logger;
         private Socket sendToServerSocket;
         private Socket receiveFromServerSocket;
-        private int receivePort;
-        private string clientName;
+        private readonly int receivePort;
+        private readonly string clientName;
 
         public string DataToSend { get; set; } = "";
 
-        public ConnectionToServer(ILogger inLogger, string charName, string hostIP, string myIP, int hostPort)
+        public ConnectionToServer(ILogger inLogger, string charName, string hostIP, int hostPort)
         {
             logger = inLogger;
             receivePort = hostPort + 1;
@@ -53,13 +52,12 @@ namespace Alzendor.Client
         private void CreateReceiveConnectionToServer()
         {
             // Create open listener for the server to connect to
-
             try
             {
                 // TODO unhardcode the 110001
                 IPHostEntry host = Dns.GetHostEntry("localhost");
                 IPAddress ipAddress = host.AddressList[0];
-                IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 11001);
+                IPEndPoint localEndPoint = new IPEndPoint(ipAddress, receivePort);
                 receiveFromServerSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 receiveFromServerSocket.Bind(localEndPoint);
                 receiveFromServerSocket.Listen(10);

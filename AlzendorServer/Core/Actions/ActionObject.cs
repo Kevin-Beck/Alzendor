@@ -1,12 +1,12 @@
-﻿namespace Alzendor.Core.Utilities.Actions
+﻿namespace Alzendor.Server.Core.Actions
 {
-    public class UserAction
+    public class ActionObject
     {
         public string Name { get; }
         public ActionPriority Priority { get; }
         public ActionType Type { get; }
 
-        public UserAction(string name, ActionPriority priority, ActionType type)
+        public ActionObject(string name, ActionPriority priority, ActionType type)
         {
             Name = name;
             Priority = priority;

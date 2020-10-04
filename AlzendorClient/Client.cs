@@ -1,7 +1,5 @@
 ﻿using Alzendor.Core.Utilities.Logger;
 using System;
-using System.Net;
-using System.Threading;
 
 namespace Alzendor.Client
 {
@@ -10,6 +8,7 @@ namespace Alzendor.Client
         public static int Main(String[] args)
         {
             ILogger logger = new LocalFileLogger();
+            ConnectionToServer serverConnection;
             string serverIP ="localhost";
             string myIP = "localhost";
             int serverPort = 11000;
@@ -19,11 +18,10 @@ namespace Alzendor.Client
             return 0;
         }
 
-        // TODO add debug/info logging
-        private ILogger logger;
-        private string serverIP;
-        private string myIP;
-        private int serverPort;
+
+        private readonly ILogger logger;
+        private readonly string serverIP;
+        private readonly int serverPort;
 
         public CommandLineClient(ILogger log, string serverip, string myIP, int port)
         {
@@ -41,13 +39,11 @@ namespace Alzendor.Client
         }
         private void StartClientIO(string name)
         {
-            ConnectionToServer serverConnection = new ConnectionToServer(logger, name, serverIP, myIP, serverPort);
+            ConnectionToServer serverConnection = new ConnectionToServer(logger, name, serverIP, serverPort);
 
-
-            for(int i = 0; i < 10; i++)
+            while (true)
             {
-                Thread.Sleep(5000);
-                serverConnection.DataToSend = $"Client Msg ({i})";
+                serverConnection.DataToSend = Console.ReadLine();
             }
         }       
     }

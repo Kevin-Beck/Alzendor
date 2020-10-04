@@ -1,10 +1,11 @@
-﻿using Alzendor.Core.Utilities.Actions;
+﻿using Alzendor.Server.Core.Actions;
 using Alzendor.Core.Utilities.Logger;
 using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using Alzendor.Server.Core.DataTransfer;
 
 namespace Alzendor.Server
 {
@@ -12,33 +13,27 @@ namespace Alzendor.Server
     public class ConnectionToClient
     {
         private readonly ILogger logger;
-        private Socket sendToClientSocket;
-        public Socket receiveFromClientSocket;
-        string clientID = "unknown ID";
-        string clientIP = "unknown IP";
+        private NetworkStream networkStreamOut;
+        private NetworkStream networkStreamIn;
+        private ActionProcessor actionProcessor;
+        private UserInputInterpretter userInputInterpretter;
 
-        public string DataToSend { get; set; }
+        public string ClientID { get; set; } = "unknown ID";
 
-        public ConnectionToClient(ILogger inlogger)
+        public ConnectionToClient(ILogger inlogger, ActionProcessor processor, UserInputInterpretter interpretter)
         {
             logger = inlogger;
+            actionProcessor = processor;
+            userInputInterpretter = interpretter;
         }
         public void StartClient(Socket inClientSocket)
         {
-            DataToSend = "";
-            receiveFromClientSocket = inClientSocket; 
+            networkStreamIn = new NetworkStream(inClientSocket);
             Thread receiveThread = new Thread(ReceiveLoop);
             receiveThread.Start();
-            CreateSendConnectionToServer(inClientSocket.RemoteEndPoint as IPEndPoint);
-
-            for (int i = 0; i < 10; i++)
-            {
-                Thread.Sleep(2000);
-                DataToSend = $"Server Msg ({i})";
-            }
-
+            CreateSendConnection(inClientSocket.RemoteEndPoint as IPEndPoint);
         }
-        private void CreateSendConnectionToServer(IPEndPoint endPoint)
+        private void CreateSendConnection(IPEndPoint endPoint)
         {
             try
             {
@@ -46,53 +41,42 @@ namespace Alzendor.Server
                 IPHostEntry serverHost = Dns.GetHostEntry(endPoint.Address);
                 IPAddress serverIpAddress = serverHost.AddressList[0];
                 IPEndPoint remoteEP = new IPEndPoint(endPoint.Address, 11001);
-                sendToClientSocket = new Socket(serverIpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                
-                
-                logger.Log(LogLevel.Info, $"Trying to connect to : {serverIpAddress.ToString()}");
+                Socket sendToClientSocket = new Socket(serverIpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+                logger.Log(LogLevel.Info, $"Trying to connect to: {serverIpAddress.ToString()}");
                 sendToClientSocket.Connect(remoteEP);
-                logger.Log(LogLevel.Info, $"Socket connected to {sendToClientSocket.RemoteEndPoint.ToString()}");
-                Thread sendThread = new Thread(SendLoop);
-                sendThread.Start();
+                logger.Log(LogLevel.Info, $"Socket connected to: {sendToClientSocket.RemoteEndPoint.ToString()}");
+
+                networkStreamOut = new NetworkStream(sendToClientSocket);
             }
             catch (Exception exception)
             {
                 logger.Log(LogLevel.Error, exception.Message);
             }
         }
-        public void SendLoop()
-        {
-            bool connected = true;
-            NetworkStream stream = new NetworkStream(sendToClientSocket);
-            while (connected)
-            {
-                if (DataToSend.Trim() != null && DataToSend.Trim() != "")
-                {
-                    Send(stream, DataToSend);
-                }
-            }
-        }
+        
         private void ReceiveLoop()
         {            
             bool connected = true;
-            NetworkStream stream = new NetworkStream(receiveFromClientSocket);
-            clientID = Receive(stream);
+            ClientID = Receive(networkStreamIn);
 
-            Console.WriteLine("Server has: " + clientID);
+            logger.Log(LogLevel.Info, "ConnectionToClient has: " + ClientID);
             while (connected)
             {
                 try
                 {
-                    var receivedText = Receive(stream);
+                    var receivedText = Receive(networkStreamIn);
+                    var output = userInputInterpretter.ParseActionFromText(ClientID, receivedText);
+                    actionProcessor.Add(output);
                 }
                 catch (SocketException)
                 {
-                    logger.Log(LogLevel.Info, $">> client({clientID}) disconnected");
+                    logger.Log(LogLevel.Info, $">> client({ClientID}) disconnected");
                     connected = false;
                 }
                 catch (Exception exception)
                 {
-                    logger.Log(LogLevel.Error, $">> client({clientID}) ERROR: {exception.Message}");
+                    logger.Log(LogLevel.Error, $">> client({ClientID}) ERROR: {exception.Message}");
                     connected = false;
                 }
             }
@@ -102,14 +86,13 @@ namespace Alzendor.Server
             byte[] bytesFrom = new byte[1024];
             networkStream.Read(bytesFrom);
             string dataFromClient = Encoding.ASCII.GetString(bytesFrom);
-            logger.Log(LogLevel.Info, $"<< From client {clientID}: {dataFromClient}");
+            logger.Log(LogLevel.Info, $"<< From client {ClientID}: {dataFromClient}");
             return dataFromClient;
         }
-        private void Send(NetworkStream networkStream, string data){ 
+        public void Send(string data){ 
             byte[] sendBytes = Encoding.ASCII.GetBytes(data);
-            networkStream.Write(sendBytes, 0, sendBytes.Length);
-            logger.Log(LogLevel.Info, $">> To client {clientID}: {data}");
-            DataToSend = "";
+            networkStreamOut.Write(sendBytes, 0, sendBytes.Length);
+            logger.Log(LogLevel.Info, $">> To client {ClientID}: {data}");
         }
     }
 }

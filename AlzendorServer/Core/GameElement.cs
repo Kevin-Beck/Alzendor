@@ -4,16 +4,16 @@ using System.Text;
 
 namespace Alzendor.Server
 {
-    public class ServerObject
+    public class GameElement
     {
         public bool IsDirty { get; set; }
 
-        protected List<ConnectionToClient> subscribers;
-        public void AddSubscriber(ConnectionToClient subscriber)
+        protected List<string> subscribers;
+        public void AddSubscriber(string subscriber)
         {
             subscribers.Add(subscriber);
         }
-        public void RemoveSubscriber(ConnectionToClient subscriber)
+        public void RemoveSubscriber(string subscriber)
         {
             subscribers.Remove(subscriber);
         }

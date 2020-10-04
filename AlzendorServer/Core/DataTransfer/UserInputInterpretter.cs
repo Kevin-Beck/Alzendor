@@ -1,8 +1,8 @@
-﻿using Alzendor.Core.Utilities.Actions;
+﻿using Alzendor.Server.Core.Actions;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace Alzendor.Core.Utilities.DataTransfer
+namespace Alzendor.Server.Core.DataTransfer
 {
     public class UserInputInterpretter
     {
@@ -16,10 +16,10 @@ namespace Alzendor.Core.Utilities.DataTransfer
             actionMap.Add("say", ActionType.MESSAGE);
             actionMap.Add("tell", ActionType.MESSAGE);
         }
-        public UserAction ParseActionFromText(string characterName, string input)
+        public ActionObject ParseActionFromText(string characterName, string input)
         {
             input = input.ToLower().Trim();
-            UserAction result = null;
+            ActionObject result = null;
             // Check for whitespace first character
             if (input.Length < 1)
             {
@@ -38,9 +38,9 @@ namespace Alzendor.Core.Utilities.DataTransfer
             }
             return result;
         }
-        private UserAction ProcessMultiWordAction(string characterName, string input)
+        private ActionObject ProcessMultiWordAction(string characterName, string input)
         {
-            UserAction multiWordActionResult = null;
+            ActionObject multiWordActionResult = null;
             string command = input.Substring(0, input.IndexOf(" "));
             if (!actionMap.ContainsKey(command))
             {
@@ -87,9 +87,9 @@ namespace Alzendor.Core.Utilities.DataTransfer
 
             return multiWordActionResult;
         }
-        private UserAction ProcessSingleWordAction(string characterName, string input)
+        private ActionObject ProcessSingleWordAction(string characterName, string input)
         {
-            UserAction singleWordActionResult = null;
+            ActionObject singleWordActionResult = null;
             return singleWordActionResult;
         }
     }
