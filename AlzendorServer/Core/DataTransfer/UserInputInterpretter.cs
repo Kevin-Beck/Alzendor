@@ -1,4 +1,5 @@
 ﻿using Alzendor.Server.Core.Actions;
+using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -13,35 +14,36 @@ namespace Alzendor.Server.Core.DataTransfer
         public UserInputInterpretter()
         {
             actionMap = new Dictionary<string, ActionType>();
-            actionMap.Add("say", ActionType.MESSAGE);
             actionMap.Add("tell", ActionType.MESSAGE);
+            actionMap.Add("create", ActionType.CREATE);
+            actionMap.Add("listen", ActionType.SUBSCRIBE);
+            
         }
         public ActionObject ParseActionFromText(string characterName, string input)
         {
-            input = input.ToLower().Trim();
+            List<string> words = new List<string>(CleanInput(input).Split(" "));
+            
             ActionObject result = null;
-            // Check for whitespace first character
-            if (input.Length < 1)
+
+            if (words.Count < 1)
             {
                 return null;
             }
             // Check for multi-word
-            Regex multiWordRegex = new Regex(@"^\S+\s+\S+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-            Match multiword = multiWordRegex.Match(input);
-            if (multiword.Success)
-            {
-                result = ProcessMultiWordAction(characterName, input);
+            if(words.Count > 1)
+            { 
+                result = ProcessMultiWordAction(characterName, words);
             }
             else
             {
-                result = ProcessSingleWordAction(characterName, input);
+                result = ProcessSingleWordAction(characterName, words);
             }
             return result;
         }
-        private ActionObject ProcessMultiWordAction(string characterName, string input)
+        private ActionObject ProcessMultiWordAction(string characterName, List<string> actionWords)
         {
             ActionObject multiWordActionResult = null;
-            string command = input.Substring(0, input.IndexOf(" "));
+            string command = actionWords[0];
             if (!actionMap.ContainsKey(command))
             {
                 return null;
@@ -62,18 +64,12 @@ namespace Alzendor.Server.Core.DataTransfer
                     break;
                 case ActionType.MESSAGE:
                     {
-                        if (command == "say")
+                        if (command == "tell")
                         {
-                            var textMatch = Regex.Match(input, @"^say\s+(.*)");
-                            var text = textMatch.Groups[1].Value;
-                            multiWordActionResult = new MessageAction(characterName, "", MessageType.Local, text);
-                        }
-                        else if (command == "tell")
-                        {
-                            var textMatch = Regex.Match(input, @"^tell\s+(\S+)\s+(.*)");
-                            var recipient = textMatch.Groups[1].Value;
-                            var text = textMatch.Groups[2].Value;
-                            multiWordActionResult = new MessageAction(characterName, recipient, MessageType.Direct, text);
+                            var recipient = actionWords[1];
+                            var message = string.Join(' ', actionWords.GetRange(2, actionWords.Count-2));
+
+                            multiWordActionResult = new MessageAction(characterName, recipient, MessageType.CHANNEL, message);
                         }
                     }
                     break;
@@ -81,13 +77,46 @@ namespace Alzendor.Server.Core.DataTransfer
                     break;
                 case ActionType.PICKUP:
                     break;
+                case ActionType.SUBSCRIBE:
+                    {                        
+                        if (command == "listen")
+                        {
+                            var subscriptionTarget = actionWords[2];
+                            multiWordActionResult = new SubscribeAction(characterName, subscriptionTarget, SubscriptionType.CHANNEL);
+                        }
+                    }                       
+                    break;
+                case ActionType.CREATE:
+                    {
+                        if(command == "create")
+                        {
+                            var thingToCreate = actionWords[1];
+                            if(thingToCreate.ToLower() == "channel" && actionWords.Count == 3)
+                            {
+                                multiWordActionResult = new CreateAction(characterName, actionWords[1], actionWords[2]);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Create failed, incorrect word count for channel creation");
+                            }
+                            // other create commands
+                        }
+                    }
+                    break;
                 default:
                     break;
             }
 
             return multiWordActionResult;
         }
-        private ActionObject ProcessSingleWordAction(string characterName, string input)
+        private string CleanInput(string val)
+        {
+            string cleanedInput = val;
+            cleanedInput = cleanedInput.Trim();
+            Regex.Replace(cleanedInput, @"\s+", " ");
+            return cleanedInput;
+        }
+        private ActionObject ProcessSingleWordAction(string characterName, List<string> actionWords)
         {
             ActionObject singleWordActionResult = null;
             return singleWordActionResult;

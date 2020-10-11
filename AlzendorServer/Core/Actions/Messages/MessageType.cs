@@ -2,8 +2,6 @@
 {
     public enum MessageType
     {
-        Direct,
-        Local,
-        Channel,
+        CHANNEL,
     }
 }

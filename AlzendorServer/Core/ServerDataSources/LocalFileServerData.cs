@@ -1,8 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Alzendor.Server.DataSources
 {
@@ -14,17 +12,17 @@ namespace Alzendor.Server.DataSources
             string gameState = "";
             try
             {
-                using (StreamReader streamReader = File.OpenText(path))
-                {
-                    string serializedObject = "";
+                using StreamReader streamReader = File.OpenText(path);
+                string serializedObject = "";
 
-                    while ((serializedObject = streamReader.ReadLine()) != null)
-                    {
-                        gameState += (JsonConvert.DeserializeObject<GameElement>(serializedObject));
-                    }
+                while ((serializedObject = streamReader.ReadLine()) != null)
+                {
+                    gameState += (JsonConvert.DeserializeObject<GameElement>(serializedObject));
                 }
-            }catch(FileNotFoundException e)
+            }
+            catch(FileNotFoundException e)
             {
+                
                 Console.WriteLine("No local saved gamestate found, starting from scratch");
             }catch(Exception other)
             {
@@ -39,11 +37,8 @@ namespace Alzendor.Server.DataSources
             string path = Directory.GetCurrentDirectory() + "\\ServerData";
             string gameState = "";
 
-            using (StreamWriter streamWriter = new StreamWriter(path))
-            {    
-                streamWriter.WriteLine(gameState);
-            
-            }
+            using StreamWriter streamWriter = new StreamWriter(path);
+            streamWriter.WriteLine(gameState);
         }
     }
 }

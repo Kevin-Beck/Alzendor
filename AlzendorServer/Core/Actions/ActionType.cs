@@ -10,5 +10,8 @@
         CONSUME,
         LOGIN,
         LOGOUT,
+        SUBSCRIBE,
+        CREATE,
+
     }
 }

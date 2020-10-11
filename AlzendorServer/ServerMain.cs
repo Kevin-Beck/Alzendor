@@ -3,84 +3,104 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using Alzendor.Server.Core.Actions;
-using Alzendor.Core.Utilities.DataTransfer;
-using Alzendor.Core.Utilities.Logger;
-using Alzendor.Server.DataSources;
 using Alzendor.Server.Core.DataTransfer;
-using System.Threading;
+using System.IO;
+using System.Reflection;
+using log4net;
+using log4net.Config;
 
 namespace Alzendor.Server
 {
     public class ServerMain
     {
+        /// <summary>
+        /// Logger is log4net which needs to be configured here an din the log4net.config file at project root.
+        /// </summary>
+        private static readonly ILog logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        public string HostURL { get; set; }
+        public int Port { get; set; } = 11000;
+        // TODO fix the server so it resolves its IP without having to be passed it
+
+        public UserInputInterpretter userInputInterpretter; // used by each client connection
+        public List<GameElement> worldElements; // list of all world elements
+        public Dictionary<string, ConnectionToClient> users; // list of connections to the server
+        // this is the users inventory
+        public Dictionary<string, ChannelElement> channels; // list of communication channels
+
+        public ActionProcessor actionProcessor;
+        public ServerMain(string url)
+        {
+            HostURL = url;
+            userInputInterpretter = new UserInputInterpretter();
+            worldElements = new List<GameElement>();
+            users = new Dictionary<string, ConnectionToClient>();
+            channels = new Dictionary<string, ChannelElement>();
+
+            actionProcessor = new ActionProcessor(logger, this);
+        }
+        
         public static int Main(String[] args)
         {
-            Server theServer = new Server();
+            var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
+            XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));           
+
+            ServerMain theServer = new ServerMain(args.Length > 0 ? args[0] : "localhost");
             RunListenerLoop(theServer);
             return 0;
         }
-        public class Server
-        {
-            public ILogger logger = new LocalFileLogger();
-            public string hostURL { get; set; } = "localhost";
-            public int port { get; set; }  = 11000;
-
-            public UserInputInterpretter userInputInterpretter;
-            readonly List<GameElement> worldElements;
-            public Dictionary<string, ConnectionToClient> users;
-            public ActionProcessor actionProcessor;
-            public Server()
-            {
-                userInputInterpretter = new UserInputInterpretter();
-                worldElements = new List<GameElement>();
-                users = new Dictionary<string, ConnectionToClient>();
-                actionProcessor = new ActionProcessor(logger, worldElements, users);
-                Thread processor = new Thread(ProcessorLoop);
-                processor.Start();
-            }
-            private void ProcessorLoop()
-            {
-                while (true)
-                {
-                    actionProcessor.Process();
-                }
-            }
-        }
-        public static void RunListenerLoop(Server server)
+        public static void RunListenerLoop(ServerMain server)
         {
             try
             {
-                IPHostEntry host = Dns.GetHostEntry(server.hostURL);
+                logger.Info($"Server operating on: {server.HostURL}");
+                IPHostEntry host = Dns.GetHostEntry(server.HostURL);
                 IPAddress ipAddress = host.AddressList[0];
-                IPEndPoint localEndPoint = new IPEndPoint(ipAddress, server.port);
+                IPEndPoint localEndPoint = new IPEndPoint(ipAddress, server.Port);
                 Socket listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                listener.Bind(localEndPoint); 
+                listener.Bind(localEndPoint);
                 listener.Listen(10);
 
                 Socket incomingClient;
 
                 while (true)
-                {                    
-                    server.logger.Log(LogLevel.Info, "Waiting for a connection...");
+                {
+                    logger.Info("Waiting for a connection...");
                     incomingClient = listener.Accept();
-                    
-                    ConnectionToClient client = new ConnectionToClient(server.logger, server.actionProcessor, server.userInputInterpretter);
-                    server.logger.Log(LogLevel.Info, "ServerMain received connection.");
+
+                    ConnectionToClient client = new ConnectionToClient(logger, server.actionProcessor, server.userInputInterpretter);
+                    logger.Info("ServerMain received connection.");
                     client.StartClient(incomingClient);
-                    server.logger.Log(LogLevel.Info, $"ServerMain created and started connection for: {client.ClientID}");
+                    logger.Info($"ServerMain created and started connection for: {client.ClientID}");
 
 
-                    server.logger.Log(LogLevel.Info, $"Adding client: {client.ClientID} to user Dictionary");
-                    server.users.Add(client.ClientID, client);
+                    logger.Info($"Adding client: {client.ClientID} to user Dictionary");
+                    if (server.users.TryGetValue(client.ClientID, out ConnectionToClient connection)){
+                        logger.Warn("User already exists");
+                    }
+                    else
+                    {
+                        server.users.Add(client.ClientID, client);
+                    }
 
-
+                    if (server.channels.TryGetValue(client.ClientID, out ChannelElement channelElement))
+                    {
+                        logger.Warn("User channel already exists");
+                    }
+                    else
+                    {
+                        logger.Info($"Creating channel for user {client.ClientID} and adding it to channels list");
+                        var userChannel = new ChannelElement(client.ClientID, client.ClientID);
+                        server.channels.Add(client.ClientID, userChannel);
+                        server.actionProcessor.Add(new SubscribeAction(client.ClientID, client.ClientID, SubscriptionType.CHANNEL));                        
+                    }
                 }
             }
             catch (Exception e)
             {
-                server.logger.Log(LogLevel.Error, e.ToString());
+                logger.Error(e.ToString());
             }
-            server.logger.Log(LogLevel.Info, "Press any key to continue...");
+            logger.Info("Press any key to continue...");
         }
     }
 }
+
