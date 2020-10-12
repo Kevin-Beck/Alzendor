@@ -1,4 +1,5 @@
-﻿using log4net;
+﻿using Alzendor.Server.Core.Actions.Edit;
+using log4net;
 using System;
 using System.Collections.Generic;
 
@@ -153,6 +154,21 @@ namespace Alzendor.Server.Core.Actions
                                 {
                                     logger.Warn("User who sent create channel command no longer exists.");
                                 }
+                            }
+                        }
+                    }else if(curObject.Type == ActionType.EDIT)
+                    {
+                        EditAction editAction = (EditAction)curObject;
+                        if(editAction.TypeOfEdit == EditType.CHANNEL && editAction.Component == "name")
+                        {
+                            server.channels.TryGetValue(editAction.ElementToEdit, out ChannelElement channel);
+                            if(channel != null)
+                            {
+                                if(channel.ChannelOwner == editAction.Sender && !server.channels.ContainsKey(editAction.NewValue))
+                                {
+                                    channel.ChannelName = editAction.NewValue;
+                                } // todo create the logging for this, create the process for telling everyone its been renamed
+                                // todo 
                             }
                         }
                     }

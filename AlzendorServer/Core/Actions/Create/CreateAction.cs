@@ -17,3 +17,6 @@ namespace Alzendor.Server.Core.Actions
         }
     }
 }
+
+// TODO edit the base level of Action object to have sender and type, (channel, item, player etc)
+// and standarize the name etc level of the actions, getting too wide

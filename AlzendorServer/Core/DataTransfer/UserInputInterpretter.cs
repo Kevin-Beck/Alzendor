@@ -1,4 +1,5 @@
 ﻿using Alzendor.Server.Core.Actions;
+using Alzendor.Server.Core.Actions.Edit;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -7,17 +8,22 @@ namespace Alzendor.Server.Core.DataTransfer
 {
     public class UserInputInterpretter
     {
-        private Dictionary<string, ActionType> actionMap;
+        private readonly Dictionary<string, ActionType> actionMap;
 
         // This should probably use reflection and go through all the types of of actions and get the trigger words
-
+        // TODO add logger to this
         public UserInputInterpretter()
         {
             actionMap = new Dictionary<string, ActionType>();
             actionMap.Add("tell", ActionType.MESSAGE);
             actionMap.Add("create", ActionType.CREATE);
-            actionMap.Add("listen", ActionType.SUBSCRIBE);
-            
+            actionMap.Add("subscribe", ActionType.SUBSCRIBE);
+            actionMap.Add("edit", ActionType.EDIT);
+            // TODO make the edit for toggling a channel to private/public
+            // TODO make the command for listing out commands, this can loop through the above dictionary and print the keys
+            // TODO for each command make a response for when just the command is sent to give a description
+            // if someone sends "tell" respond with "you can tell someone something by saying 'tell <player> message' or you 
+            // talk to a channel by saying 'tell <channel> message'
         }
         public ActionObject ParseActionFromText(string characterName, string input)
         {
@@ -100,6 +106,29 @@ namespace Alzendor.Server.Core.DataTransfer
                                 Console.WriteLine("Create failed, incorrect word count for channel creation");
                             }
                             // other create commands
+                        }
+                    }
+                    break;
+                case ActionType.EDIT:
+                    {
+                        if(command == "edit")
+                        {
+                            var editTarget = actionWords[1];
+                            if(editTarget == "channel")
+                            {
+                                try
+                                {
+                                    // edit channel <channelName> <name> <newName>
+                                    var channelName = actionWords[2];
+                                    var channelComponent = actionWords[3];
+                                    var value = actionWords[4];
+                                    multiWordActionResult = new EditAction(characterName, EditType.CHANNEL, channelName, channelComponent, value);
+                                    Console.WriteLine("Created edit action");
+                                }catch(Exception e)
+                                {
+                                    Console.WriteLine(e.ToString());
+                                }
+                            }
                         }
                     }
                     break;

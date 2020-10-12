@@ -12,6 +12,7 @@
         LOGOUT,
         SUBSCRIBE,
         CREATE,
+        EDIT,
 
     }
 }
