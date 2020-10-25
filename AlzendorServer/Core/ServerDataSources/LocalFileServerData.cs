@@ -1,8 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using AlzendorServer.Core.Elements;
+using Newtonsoft.Json;
 using System;
 using System.IO;
 
-namespace Alzendor.Server.DataSources
+namespace AlzendorServer.DataSources
 {
     class LocalFileServerData : IServerData
     {
@@ -23,7 +24,7 @@ namespace Alzendor.Server.DataSources
             catch(FileNotFoundException e)
             {
                 
-                Console.WriteLine("No local saved gamestate found, starting from scratch");
+                Console.WriteLine("No local saved gamestate found, starting from scratch " + e.ToString());
             }catch(Exception other)
             {
                 Console.WriteLine("ServerError: " + other.Message);

@@ -1,13 +1,14 @@
-﻿using Alzendor.Server.Core.Actions;
+﻿using AlzendorServer.Core.Actions;
 using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using Alzendor.Server.Core.DataTransfer;
+using AlzendorServer.Core.DataTransfer;
 using log4net;
+using StackExchange.Redis;
 
-namespace Alzendor.Server
+namespace AlzendorServer
 {
 
     public class ConnectionToClient
@@ -17,26 +18,49 @@ namespace Alzendor.Server
         private NetworkStream networkStreamIn;
         private readonly ActionProcessor actionProcessor;
         private readonly UserInputInterpretter userInputInterpretter;
+        private readonly IDatabase database;
+        private readonly ISubscriber subscriber;
 
         public string ClientID { get; set; } = "unknown ID";
 
-        public ConnectionToClient(ILog inlogger, ActionProcessor processor, UserInputInterpretter interpretter)
+        public ConnectionToClient(ILog log, IDatabase data, ISubscriber sub)
         {
-            logger = inlogger;
-            actionProcessor = processor;
-            userInputInterpretter = interpretter;
+            logger = log;
+            database = data;
+            subscriber = sub;
+            actionProcessor = new ActionProcessor(log, data, sub);
+            userInputInterpretter = new UserInputInterpretter();
         }
         public void StartClient(Socket clientSocket)
         {
             networkStreamIn = new NetworkStream(clientSocket);
             networkStreamOut = new NetworkStream(clientSocket);
 
-            ClientID = Receive(networkStreamIn);
-            logger.Info("ConnectionToClient has: " + ClientID);
+            //TODO create an action for logging in etc, and have the action processor manage it
+            bool nameGood = false;
+            while (!nameGood) 
+            {
+                ClientID = Receive(networkStreamIn);
+                logger.Info("ConnectionToClient received name: " + ClientID);
+                if (database.KeyExists("channel:" + ClientID))
+                {
+                    // TODO change this to an object to send back, should be handled by above todo
+                    Send("\nName already exist, choose again:");
+                }
+                else
+                {
+                    subscriber.Subscribe("channel:" + ClientID, (channel, message) =>
+                    {
+                        Send($"{channel}><{message}");
+                    });
+                    nameGood = true;
+                    database.SetAdd("loggedIn", ClientID);
+                }
+            }
+
 
             Thread receiveThread = new Thread(ReceiveLoop);
             receiveThread.Start();
-
         }
                
         // TODO create a proper disconnection protocol which will purge game of user and remove their subscriptions
@@ -51,7 +75,7 @@ namespace Alzendor.Server
                 {
                     var receivedText = Receive(networkStreamIn);
                     var userAction = userInputInterpretter.ParseActionFromText(ClientID, receivedText);
-                    actionProcessor.Add(userAction);
+                    actionProcessor.Process(userAction);
                 }
                 catch (SocketException)
                 {
@@ -65,6 +89,7 @@ namespace Alzendor.Server
                 }
             }
         }
+        // todo i think this should all be recieving based entirely on the redis pubsub now
         private string Receive(NetworkStream networkStream)
         {
             byte[] bytesFrom = new byte[1024];
@@ -77,15 +102,6 @@ namespace Alzendor.Server
             byte[] sendBytes = Encoding.ASCII.GetBytes(data.Trim());
             networkStreamOut.Write(sendBytes, 0, sendBytes.Length);
             logger.Info($">> To client {ClientID}: {data}");
-        }
-
-        private void SelfDestruct()
-        {
-            networkStreamIn.Close();
-            networkStreamOut.Close();
-            networkStreamIn.Dispose();
-            networkStreamOut.Dispose();
-            actionProcessor.RemoveUser(ClientID);
         }
     }
 }

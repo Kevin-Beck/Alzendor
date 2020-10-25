@@ -55,7 +55,7 @@ namespace Alzendor.Client
             while(true)
             {
                 var dataFromServer = connection.Receive();
-                logger.Info(dataFromServer);
+                //logger.Info(dataFromServer);
             }
         }
         private void LogIn()

@@ -2,14 +2,17 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using Alzendor.Server.Core.Actions;
-using Alzendor.Server.Core.DataTransfer;
+using AlzendorServer.Core.Actions;
+using AlzendorServer.Core.DataTransfer;
 using System.IO;
 using System.Reflection;
 using log4net;
 using log4net.Config;
+using AlzendorServer.Elements;
+using AlzendorServer.Core.Elements;
+using StackExchange.Redis;
 
-namespace Alzendor.Server
+namespace AlzendorServer
 {
     public class ServerMain
     {
@@ -19,32 +22,37 @@ namespace Alzendor.Server
         private static readonly ILog logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         public string HostURL { get; set; }
         public int Port { get; set; } = 11000;
-        // TODO fix the server so it resolves its IP without having to be passed it
+        private readonly ConnectionMultiplexer redisMuxor;
 
-        public UserInputInterpretter userInputInterpretter; // used by each client connection
-        public List<GameElement> worldElements; // list of all world elements
-        public Dictionary<string, ConnectionToClient> users; // list of connections to the server
-        // this is the users inventory
-        public Dictionary<string, ChannelElement> channels; // list of communication channels
-
-        public ActionProcessor actionProcessor;
-        public ServerMain(string url)
+        
+        public ServerMain(string serverURL = "localhost", string redisURL = "127.0.0.1:6379")
         {
-            HostURL = url;
-            userInputInterpretter = new UserInputInterpretter();
-            worldElements = new List<GameElement>();
-            users = new Dictionary<string, ConnectionToClient>();
-            channels = new Dictionary<string, ChannelElement>();
+            HostURL = serverURL; // TODO fix the server so it resolves its IP without having to be passed it
 
-            actionProcessor = new ActionProcessor(logger, this);
+            while(redisMuxor == null)
+            {
+                try
+                {
+                    logger.Info($"Connecting to redis at {redisURL}");
+                    redisMuxor = ConnectionMultiplexer.Connect(redisURL);
+                    redisMuxor.GetDatabase().StringSet("admin:LastServerRedisAccess", System.DateTime.Now.ToString());
+                }
+                catch (Exception e)
+                {
+                    logger.Error(e.ToString());
+                }
+            }
+            logger.Info("Successfully connected to redis");
         }
         
         public static int Main(String[] args)
         {
+            // configure logging
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));           
 
-            ServerMain theServer = new ServerMain(args.Length > 0 ? args[0] : "localhost");
+            // kick off the server, if nothing is passed in default to localhost
+            ServerMain theServer = new ServerMain();
             RunListenerLoop(theServer);
             return 0;
         }
@@ -64,34 +72,20 @@ namespace Alzendor.Server
 
                 while (true)
                 {
-                    logger.Info("Waiting for a connection...");
-                    incomingClient = listener.Accept();
-
-                    ConnectionToClient client = new ConnectionToClient(logger, server.actionProcessor, server.userInputInterpretter);
-                    logger.Info("ServerMain received connection.");
-                    client.StartClient(incomingClient);
-                    logger.Info($"ServerMain created and started connection for: {client.ClientID}");
-
-
-                    logger.Info($"Adding client: {client.ClientID} to user Dictionary");
-                    if (server.users.TryGetValue(client.ClientID, out ConnectionToClient connection)){
-                        logger.Warn("User already exists");
-                    }
-                    else
+                    try
                     {
-                        server.users.Add(client.ClientID, client);
-                    }
 
-                    if (server.channels.TryGetValue(client.ClientID, out ChannelElement channelElement))
+                        logger.Info("Waiting for a connection...");
+                        incomingClient = listener.Accept();
+                        // create a client object for each incoming connection and spin off a new redis connection for each
+                        logger.Info("ServerMain received connection.");
+                        ConnectionToClient client = new ConnectionToClient(logger, server.redisMuxor.GetDatabase(), server.redisMuxor.GetSubscriber());
+                        client.StartClient(incomingClient);
+                        logger.Info($"ServerMain created and started connection for: {incomingClient.RemoteEndPoint}");
+                    }catch(Exception e)
                     {
-                        logger.Warn("User channel already exists");
-                    }
-                    else
-                    {
-                        logger.Info($"Creating channel for user {client.ClientID} and adding it to channels list");
-                        var userChannel = new ChannelElement(client.ClientID, client.ClientID);
-                        server.channels.Add(client.ClientID, userChannel);
-                        server.actionProcessor.Add(new SubscribeAction(client.ClientID, client.ClientID, SubscriptionType.CHANNEL));                        
+                        logger.Info("Caught Exception while listening and creating new connections to clients");
+                        logger.Error(e.ToString());
                     }
                 }
             }

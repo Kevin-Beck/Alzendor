@@ -50,7 +50,7 @@ namespace Alzendor.Client
                 
         public string Receive()
         {
-            byte[] bytesFrom = new byte[128];
+            byte[] bytesFrom = new byte[2048];
             networkStreamIn.Read(bytesFrom); // todo just changed this better chek to make sure it works
             string dataFromServer = Encoding.ASCII.GetString(bytesFrom).Replace("\0", string.Empty).Trim(); ;
             logger.Info($"<< From Server: {dataFromServer}");

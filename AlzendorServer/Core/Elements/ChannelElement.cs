@@ -1,7 +1,8 @@
-﻿using Alzendor.Server.Core.Actions;
+﻿using AlzendorServer.Core.Actions;
 using AlzendorCore.Utilities;
+using AlzendorServer.Core.Elements;
 
-namespace Alzendor.Server
+namespace AlzendorServer.Elements
 {
     public class ChannelElement : GameElement
     {
@@ -15,7 +16,7 @@ namespace Alzendor.Server
         }
         public void AddMessage(MessageAction message)
         {
-            ChatData newChatText = new ChatData(message.Name, message.Sender, message.Receiver, message.Message);
+            ChatData newChatText = new ChatData(message.ElementName, message.Sender, message.Message);
             foreach(ConnectionToClient sub in subscribers)
             {                
                 sub.Send(Objectifier.Stringify(newChatText));

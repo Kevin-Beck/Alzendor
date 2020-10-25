@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Alzendor.Server
+namespace AlzendorServer
 {
     public interface IServerData
     {

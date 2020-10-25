@@ -1,16 +1,29 @@
-﻿namespace Alzendor.Server.Core.Actions
+﻿using AlzendorServer.Core.Elements;
+
+namespace AlzendorServer.Core.Actions
 {
     public class ActionObject
     {
-        public string Name { get; }
+        public string Sender { get; }
+        public ActionType ActionType { get; }
+        public ElementType ElementType { get; }
+        public string ElementName { get; }
         public ActionPriority Priority { get; }
-        public ActionType Type { get; }
-
-        public ActionObject(string name, ActionPriority priority, ActionType type)
+        /// <summary>
+        /// Action object represents an action performed by something (player, npc, room, etc) on another something (player, npc, room, etc)
+        /// </summary>
+        /// <param name="sender">The entity performing the object, usually a player entering a command</param>
+        /// <param name="action">The ActionType is the Enum that cooresponds to the Action, (A ChangeAction object will have ActionType.CHANGE)</param>
+        /// <param name="element">The receiving end of the action, the target element</param>
+        /// <param name="elementName">The name of the target GameElement (Player, npc, channel etc)</param>
+        /// <param name="priority">The priority of this action (not currently implemented)</param>
+        public ActionObject(string sender, ActionType action, ElementType element, string elementName, ActionPriority priority)
         {
-            Name = name;
+            Sender = sender;
+            ActionType = action;
+            ElementType = element;
+            ElementName = elementName;
             Priority = priority;
-            Type = type;
         }
     }
 }

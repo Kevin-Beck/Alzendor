@@ -1,10 +1,10 @@
-﻿using Alzendor.Server.Core.Actions;
-using Alzendor.Server.Core.Actions.Edit;
+﻿using AlzendorServer.Core.Actions;
+using AlzendorServer.Core.Elements;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace Alzendor.Server.Core.DataTransfer
+namespace AlzendorServer.Core.DataTransfer
 {
     public class UserInputInterpretter
     {
@@ -18,7 +18,13 @@ namespace Alzendor.Server.Core.DataTransfer
             actionMap.Add("tell", ActionType.MESSAGE);
             actionMap.Add("create", ActionType.CREATE);
             actionMap.Add("subscribe", ActionType.SUBSCRIBE);
-            actionMap.Add("edit", ActionType.EDIT);
+            actionMap.Add("change", ActionType.CHANGE);
+
+            // tell <player/channel> <message>
+            // create channel <channelname>
+            // subscribe to <channelname>
+            // change channel <channelname> name to <newChannelName>
+
             // TODO make the edit for toggling a channel to private/public
             // TODO make the command for listing out commands, this can loop through the above dictionary and print the keys
             // TODO for each command make a response for when just the command is sent to give a description
@@ -75,7 +81,7 @@ namespace Alzendor.Server.Core.DataTransfer
                             var recipient = actionWords[1];
                             var message = string.Join(' ', actionWords.GetRange(2, actionWords.Count-2));
 
-                            multiWordActionResult = new MessageAction(characterName, recipient, MessageType.CHANNEL, message);
+                            multiWordActionResult = new MessageAction(characterName, recipient, message);
                         }
                     }
                     break;
@@ -88,7 +94,7 @@ namespace Alzendor.Server.Core.DataTransfer
                         if (command == "listen")
                         {
                             var subscriptionTarget = actionWords[2];
-                            multiWordActionResult = new SubscribeAction(characterName, subscriptionTarget, SubscriptionType.CHANNEL);
+                            multiWordActionResult = new SubscribeAction(characterName, ElementType.CHANNEL, subscriptionTarget);
                         }
                     }                       
                     break;
@@ -99,7 +105,7 @@ namespace Alzendor.Server.Core.DataTransfer
                             var thingToCreate = actionWords[1];
                             if(thingToCreate.ToLower() == "channel" && actionWords.Count == 3)
                             {
-                                multiWordActionResult = new CreateAction(characterName, actionWords[1], actionWords[2]);
+                                multiWordActionResult = new CreateAction(characterName, ElementType.CHANNEL, actionWords[2]);
                             }
                             else
                             {
@@ -109,7 +115,7 @@ namespace Alzendor.Server.Core.DataTransfer
                         }
                     }
                     break;
-                case ActionType.EDIT:
+                case ActionType.CHANGE:
                     {
                         if(command == "edit")
                         {
@@ -120,9 +126,11 @@ namespace Alzendor.Server.Core.DataTransfer
                                 {
                                     // edit channel <channelName> <name> <newName>
                                     var channelName = actionWords[2];
-                                    var channelComponent = actionWords[3];
-                                    var value = actionWords[4];
-                                    multiWordActionResult = new EditAction(characterName, EditType.CHANNEL, channelName, channelComponent, value);
+                                    var channelProperty = actionWords[3];
+                                    var newPropertyValue = actionWords[4];
+                                    if (newPropertyValue.ToLower() == "to")
+                                        newPropertyValue = actionWords[5];
+                                    multiWordActionResult = new ChangeAction(characterName, ElementType.CHANNEL, channelName, channelProperty, newPropertyValue);
                                     Console.WriteLine("Created edit action");
                                 }catch(Exception e)
                                 {

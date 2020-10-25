@@ -1,4 +1,4 @@
-﻿namespace Alzendor.Server.Core.Actions
+﻿namespace AlzendorServer.Core.Actions
 {
     public enum ActionType
     {
@@ -12,7 +12,7 @@
         LOGOUT,
         SUBSCRIBE,
         CREATE,
-        EDIT,
+        CHANGE
 
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Alzendor.Server
+namespace AlzendorServer.Core.Elements
 {
     public class GameElement
     {
