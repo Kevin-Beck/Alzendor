@@ -91,7 +91,7 @@ namespace AlzendorServer.Core.DataTransfer
                     break;
                 case ActionType.SUBSCRIBE:
                     {                        
-                        if (command == "listen")
+                        if (command == "subscribe")
                         {
                             var subscriptionTarget = actionWords[2];
                             multiWordActionResult = new SubscribeAction(characterName, ElementType.CHANNEL, subscriptionTarget);

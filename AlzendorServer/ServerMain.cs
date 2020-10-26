@@ -2,14 +2,10 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using AlzendorServer.Core.Actions;
-using AlzendorServer.Core.DataTransfer;
 using System.IO;
 using System.Reflection;
 using log4net;
 using log4net.Config;
-using AlzendorServer.Elements;
-using AlzendorServer.Core.Elements;
 using StackExchange.Redis;
 
 namespace AlzendorServer
@@ -49,7 +45,7 @@ namespace AlzendorServer
         {
             // configure logging
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
-            XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));           
+            XmlConfigurator.Configure(logRepository, new FileInfo("log4net.config"));        
 
             // kick off the server, if nothing is passed in default to localhost
             ServerMain theServer = new ServerMain();

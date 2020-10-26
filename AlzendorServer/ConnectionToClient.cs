@@ -7,6 +7,7 @@ using System.Threading;
 using AlzendorServer.Core.DataTransfer;
 using log4net;
 using StackExchange.Redis;
+using AlzendorServer.Core.Elements;
 
 namespace AlzendorServer
 {
@@ -20,6 +21,7 @@ namespace AlzendorServer
         private readonly UserInputInterpretter userInputInterpretter;
         private readonly IDatabase database;
         private readonly ISubscriber subscriber;
+        private bool isLoggedIn = false;
 
         public string ClientID { get; set; } = "unknown ID";
 
@@ -28,7 +30,7 @@ namespace AlzendorServer
             logger = log;
             database = data;
             subscriber = sub;
-            actionProcessor = new ActionProcessor(log, data, sub);
+            actionProcessor = new ActionProcessor(log, data, sub, this);
             userInputInterpretter = new UserInputInterpretter();
         }
         public void StartClient(Socket clientSocket)
@@ -37,23 +39,19 @@ namespace AlzendorServer
             networkStreamOut = new NetworkStream(clientSocket);
 
             //TODO create an action for logging in etc, and have the action processor manage it
-            bool nameGood = false;
-            while (!nameGood) 
+            while (!isLoggedIn) 
             {
                 ClientID = Receive(networkStreamIn);
                 logger.Info("ConnectionToClient received name: " + ClientID);
-                if (database.KeyExists("channel:" + ClientID))
+                if (database.KeyExists($"{ElementType.CHANNEL}:" + ClientID))
                 {
                     // TODO change this to an object to send back, should be handled by above todo
                     Send("\nName already exist, choose again:");
                 }
                 else
                 {
-                    subscriber.Subscribe("channel:" + ClientID, (channel, message) =>
-                    {
-                        Send($"{channel}><{message}");
-                    });
-                    nameGood = true;
+                    actionProcessor.Process(new CreateAction(ClientID, ElementType.CHANNEL, $"{ClientID}"));
+                    isLoggedIn = true;
                     database.SetAdd("loggedIn", ClientID);
                 }
             }
@@ -62,6 +60,7 @@ namespace AlzendorServer
             Thread receiveThread = new Thread(ReceiveLoop);
             receiveThread.Start();
         }
+        
                
         // TODO create a proper disconnection protocol which will purge game of user and remove their subscriptions
         // Wrap the send receive and have them throw the errors with connections back to the threads and handle the crashes and self destruct
@@ -84,6 +83,7 @@ namespace AlzendorServer
                 }
                 catch (Exception exception)
                 {
+                    logger.Info("RecieveLoop has crashed");
                     logger.Error($">> client({ClientID}) ERROR: {exception.Message}");
                     connected = false;
                 }
