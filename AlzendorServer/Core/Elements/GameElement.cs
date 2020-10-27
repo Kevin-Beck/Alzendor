@@ -5,24 +5,33 @@ namespace AlzendorServer.Core.Elements
 {
     public class GameElement
     {
-        public bool IsDirty { get; set; }
-
-        protected List<ConnectionToClient> subscribers = new List<ConnectionToClient>();
-        public void AddSubscriber(ConnectionToClient subscriber)
+        public List<string> subscribers = new List<string>();
+        public GameElement()
+        {
+            subscribers = new List<string>();
+        }
+        public void AddSubscriber(string subscriber)
         {
             if(subscriber == null)
             {
-                Console.WriteLine("Subscriber was null, returning from game element AddSubscriber");
                 return;
             }
             if(subscribers == null)
             {
-                subscribers = new List<ConnectionToClient>();
+                subscribers = new List<string>();
             }
             subscribers.Add(subscriber);
         }
-        public void RemoveSubscriber(ConnectionToClient subscriber)
+        public void RemoveSubscriber(string subscriber)
         {
+            if(subscriber == null)
+            {
+                return;
+            }
+            if(subscribers == null)
+            {
+                return;
+            }
             subscribers.Remove(subscriber);
         }
     }

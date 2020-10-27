@@ -8,29 +8,27 @@ using AlzendorServer.Core.DataTransfer;
 using log4net;
 using StackExchange.Redis;
 using AlzendorServer.Core.Elements;
+using System.Reflection;
 
 namespace AlzendorServer
 {
 
     public class ConnectionToClient
     {
-        private readonly ILog logger;
+        private readonly ILog logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private NetworkStream networkStreamOut;
         private NetworkStream networkStreamIn;
         private readonly ActionProcessor actionProcessor;
         private readonly UserInputInterpretter userInputInterpretter;
         private readonly IDatabase database;
-        private readonly ISubscriber subscriber;
         private bool isLoggedIn = false;
 
         public string ClientID { get; set; } = "unknown ID";
 
-        public ConnectionToClient(ILog log, IDatabase data, ISubscriber sub)
+        public ConnectionToClient(IDatabase data, ISubscriber sub)
         {
-            logger = log;
             database = data;
-            subscriber = sub;
-            actionProcessor = new ActionProcessor(log, data, sub, this);
+            actionProcessor = new ActionProcessor(data, sub, this);
             userInputInterpretter = new UserInputInterpretter();
         }
         public void StartClient(Socket clientSocket)
@@ -39,23 +37,24 @@ namespace AlzendorServer
             networkStreamOut = new NetworkStream(clientSocket);
 
             //TODO create an action for logging in etc, and have the action processor manage it
-            while (!isLoggedIn) 
+            logger.Info("Received unknown client");
+            while (!isLoggedIn)
             {
                 ClientID = Receive(networkStreamIn);
-                logger.Info("ConnectionToClient received name: " + ClientID);
                 if (database.KeyExists($"{ElementType.CHANNEL}:" + ClientID))
                 {
                     // TODO change this to an object to send back, should be handled by above todo
                     Send("\nName already exist, choose again:");
+                    logger.Info($"user logged in as {ClientID} but the name was already taken");
                 }
                 else
                 {
                     actionProcessor.Process(new CreateAction(ClientID, ElementType.CHANNEL, $"{ClientID}"));
                     isLoggedIn = true;
-                    database.SetAdd("loggedIn", ClientID);
+                    database.SetAdd("loggedIn", ClientID);                    
                 }
             }
-
+            logger.Info($"Identified client as {ClientID}");
 
             Thread receiveThread = new Thread(ReceiveLoop);
             receiveThread.Start();
@@ -95,13 +94,13 @@ namespace AlzendorServer
             byte[] bytesFrom = new byte[1024];
             networkStream.Read(bytesFrom);
             string dataFromClient = Encoding.ASCII.GetString(bytesFrom).Replace("\0", string.Empty).Trim();
-            logger.Info($"<< From client {ClientID}: {dataFromClient}");
+            logger.Info($">> From client {ClientID}: {dataFromClient}");
             return dataFromClient;
         }
         public void Send(string data){ 
             byte[] sendBytes = Encoding.ASCII.GetBytes(data.Trim());
             networkStreamOut.Write(sendBytes, 0, sendBytes.Length);
-            logger.Info($">> To client {ClientID}: {data}");
+            logger.Info($"<< To client {ClientID}: {data}");
         }
     }
 }

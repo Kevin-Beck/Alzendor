@@ -1,7 +1,9 @@
 ﻿using AlzendorServer.Core.Actions;
 using AlzendorServer.Core.Elements;
+using log4net;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace AlzendorServer.Core.DataTransfer
@@ -9,16 +11,20 @@ namespace AlzendorServer.Core.DataTransfer
     public class UserInputInterpretter
     {
         private readonly Dictionary<string, ActionType> actionMap;
+        private static readonly ILog logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 
         // This should probably use reflection and go through all the types of of actions and get the trigger words
         // TODO add logger to this
         public UserInputInterpretter()
         {
-            actionMap = new Dictionary<string, ActionType>();
-            actionMap.Add("tell", ActionType.MESSAGE);
-            actionMap.Add("create", ActionType.CREATE);
-            actionMap.Add("subscribe", ActionType.SUBSCRIBE);
-            actionMap.Add("change", ActionType.CHANGE);
+            actionMap = new Dictionary<string, ActionType>
+            {
+                { "tell", ActionType.MESSAGE },
+                { "create", ActionType.CREATE },
+                { "subscribe", ActionType.SUBSCRIBE },
+                { "change", ActionType.CHANGE }
+            };
 
             // tell <player/channel> <message>
             // create channel <channelname>
@@ -39,15 +45,18 @@ namespace AlzendorServer.Core.DataTransfer
 
             if (words.Count < 1)
             {
+                logger.Info("WordCount is zero, returning null");
                 return null;
             }
             // Check for multi-word
             if(words.Count > 1)
-            { 
+            {
+                logger.Info($"WordCount is {words.Count}, detected multi-word action");
                 result = ProcessMultiWordAction(characterName, words);
             }
             else
             {
+                logger.Info($"WordCount is {words.Count}, detected single word action");
                 result = ProcessSingleWordAction(characterName, words);
             }
             return result;
@@ -56,8 +65,10 @@ namespace AlzendorServer.Core.DataTransfer
         {
             ActionObject multiWordActionResult = null;
             string command = actionWords[0];
+            logger.Info($"Building action object based on command word: {command}");
             if (!actionMap.ContainsKey(command))
             {
+                logger.Info($"Command not found in dictionary, returning null");
                 return null;
             }
             ActionType actionType = actionMap[command];
@@ -141,13 +152,22 @@ namespace AlzendorServer.Core.DataTransfer
                     }
                     break;
                 default:
+                    
                     break;
             }
-
+            if(multiWordActionResult == null)
+            {
+                logger.Info($"Interpretter failed to derive action object from user input, returning null");
+            }
+            else
+            {
+                logger.Info($"Interpretter derived a {multiWordActionResult.ActionType} from user intpu");
+            }
             return multiWordActionResult;
         }
         private string CleanInput(string val)
         {
+            logger.Info("Cleaning the input from user");
             string cleanedInput = val;
             cleanedInput = cleanedInput.Trim();
             Regex.Replace(cleanedInput, @"\s+", " ");

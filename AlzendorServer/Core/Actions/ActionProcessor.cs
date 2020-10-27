@@ -4,28 +4,23 @@ using AlzendorServer.Elements;
 using log4net;
 using StackExchange.Redis;
 using System;
-using System.Collections.Generic;
+using System.Reflection;
 
 namespace AlzendorServer.Core.Actions
 {
     public class ActionProcessor
     {
-        private static ILog logger;
+        private static ILog logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         // TODO map the functions for each action to a static class and pass each one into a dictionary, then just retrieve the function needed and pass the object in
         //private readonly Dictionary<ActionType, Func<string, string>> thing = new Dictionary<ActionType, Func<string, string>>();
         readonly IDatabase database;
         readonly ISubscriber subscriber; // DO NOT USE THE SUBSCRIBER just dont touch it. only subscribe using the SUbscribeAction.
         private ConnectionToClient connection;
-        public ActionProcessor(ILog log, IDatabase data, ISubscriber sub, ConnectionToClient con)
+        public ActionProcessor(IDatabase data, ISubscriber sub, ConnectionToClient con)
         {
-            logger = log;
             database = data;
             subscriber = sub; // sub should only be used to subscribe and unsubscribe from things, otherwise it just receives messages.
             connection = con;
-        }
-        public void RemoveUser(string username)
-        {
-            database.KeyDelete("user:" + username);
         }
 
         public void Process(ActionObject curObject)
@@ -41,42 +36,80 @@ namespace AlzendorServer.Core.Actions
                 {
                     MessageAction messageAction = (MessageAction)curObject;
                     logger.Debug($"------>{messageAction.ElementType}:{messageAction.ElementName}<-------");
-                    if (database.Publish($"{messageAction.ElementType}:{messageAction.ElementName}", Objectifier.Stringify(messageAction)) == 0)
+                    var targetName = $"{messageAction.ElementType}:{messageAction.ElementName}";
+                    if (database.KeyExists(targetName))
                     {
-                        logger.Info($"{messageAction.Sender} sent message to {messageAction.ElementName} but no one was found by that name");
-                        database.Publish($"{ElementType.CHANNEL}:{messageAction.Sender}", Objectifier.Stringify(new MessageAction("ServerWarning", messageAction.Sender, "There was no recipient by that name")));
-                    }
-                    else
-                    {
-                        logger.Info($"{messageAction.Sender} sent message to {messageAction.ElementName}");
-                    }                 
+                        logger.Info($"Key exists for {targetName}, getting ChannelElement");
+                        ChannelElement channelElement = Objectifier.DeStringify<ChannelElement>(database.StringGet(targetName));
+
+                        // If the sender is subscribed to the channel or the channel is a person who is logged in, they can send the message
+                        if (channelElement.subscribers.Contains(messageAction.Sender))
+                        {
+                            logger.Info($"{messageAction.Sender} was found in the ChannelElement's Subscribers list");
+                            // TODO make a lightweight chat element for the following publishing
+                            if (database.Publish(targetName, Objectifier.Stringify(new MessageAction(messageAction.Sender, messageAction.ElementName, messageAction.Message))) != 0)
+                            {
+                                logger.Info($"{messageAction.Sender} sent message to {messageAction.ElementName}");
+                            }
+                            else
+                            {
+                                logger.Warn($"{messageAction.Sender} sent message to {messageAction.ElementName} but no one was found by that name");
+                            }
+                        }else if (database.SetContains("loggedIn", messageAction.ElementName))
+                        {
+                            logger.Info($"{messageAction.Sender} was not found in the ChannelElement's Subscribers list, but the target '{messageAction.ElementName}' is in the set 'loggedIn'");
+                            // TODO make a lightweight chat element for the following publishing
+                            if (database.Publish(targetName, Objectifier.Stringify(new MessageAction(messageAction.Sender, messageAction.ElementName, messageAction.Message))) != 0)
+                            {
+                                logger.Info($"{messageAction.Sender} sent message to {messageAction.ElementName}");
+                            }
+                            else
+                            {
+                                logger.Warn($"{messageAction.Sender} sent message to {messageAction.ElementName} but no one was found by that name");
+                            }
+                        }
+                        else
+                        {
+                            logger.Info($"{messageAction.Sender} is not in the channel's subscribers list, and the target {messageAction.ElementName} is not in the loggedIn set");
+                        }
+                    }               
                 }
                 else if (curObject.ActionType == ActionType.SUBSCRIBE) // HEY THE ONLY WAY TO SUBSCRIBE IS THROUGH A SUBSCRIBE ACTION
                 {
                     SubscribeAction subscribeAction = (SubscribeAction)curObject;
+                    logger.Info($"{subscribeAction.Sender} subscribing to element of type: {subscribeAction.ElementType} and name {subscribeAction.ElementName}");
                     if (subscribeAction.ElementType == ElementType.CHANNEL)
                     {
-                        if (database.KeyExists($"{subscribeAction.ElementType}:{subscribeAction.ElementName}"))
+                        var targetName = $"{subscribeAction.ElementType}:{subscribeAction.ElementName}";
+                        if (database.KeyExists(targetName))
                         {
-                            subscriber.Subscribe($"{subscribeAction.ElementType}:{subscribeAction.ElementName}", (channel, message) =>
+                            logger.Info($"Database contains a key for {targetName}, fetching ChannelElement");
+                            ChannelElement channel = Objectifier.DeStringify<ChannelElement>(database.StringGet(targetName));
+                            if (channel.subscribers.Contains(subscribeAction.Sender))
                             {
-                                connection.Send($"{channel}|{message}");
-                            });
-                            database.Publish(
-                                $"{subscribeAction.ElementType}:{subscribeAction.ElementName}", Objectifier.Stringify(
-                                new MessageAction(
-                                    "ChannelAlert", // rename this to some kind of object that isnt the same as message action
-                                    subscribeAction.ElementName,
-                                    $"{subscribeAction.Sender} has joined {subscribeAction.ElementName}"
-                                    )
-                                ));
+                                logger.Info($"{subscribeAction.Sender} is subscribed already? {channel.subscribers.Contains(subscribeAction.Sender)}");
+                                database.Publish(targetName, "you're already subscribed to this channel"); // todo make a lightweight return object
+                                return;
+                            }else if(!channel.IsPrivate || subscribeAction.Sender == subscribeAction.ElementName) // the channel is public, or you're subscribing to your own initial channel
+                            {
+                                logger.Info($"{subscribeAction.Sender} is allowed to subscribe to {channel.ChannelName}");
+                                channel.AddSubscriber(subscribeAction.Sender.ToLower());
+                                database.StringSet(targetName, Objectifier.Stringify(channel));
 
-                            // TODO return a success message to sender
-                            // for attack
-                            // kevin attack will with kick
-                            // get user:target -> position health level data -> deserialize into targetObject
-                            // get user:me -> position health level data -> deserialize int userObject
-                            // userObject.getAttack(object.elementName).attack(targetObject.health)
+                                subscriber.Subscribe(targetName, (channel, message) =>
+                                {
+                                    connection.Send($"{channel}|{message}");
+                                });
+                                logger.Info($"{subscribeAction.Sender} successfully subscribed");
+                                database.Publish(
+                                    $"{targetName}", Objectifier.Stringify( // TODO create a class for message objects that are lighter weight to send to clients
+                                    new MessageAction(
+                                        "ChannelAlert", // todo rename this to some kind of object that isnt the same as message action
+                                        subscribeAction.ElementName,
+                                        $"{subscribeAction.Sender} has joined {subscribeAction.ElementName}"
+                                        )
+                                    ));
+                            }
                         }
                         else
                         {
@@ -88,16 +121,24 @@ namespace AlzendorServer.Core.Actions
                 else if (curObject.ActionType == ActionType.CREATE)
                 {
                     CreateAction createAction = (CreateAction)curObject;
+                    logger.Info($"{createAction.Sender} wants to create {createAction.ElementType} with name '{createAction.ElementName}'");
                     if (createAction.ElementType == ElementType.CHANNEL)
                     {
                         var name = $"{createAction.ElementType}:{createAction.ElementName}";
                         if (!database.KeyExists(name))
                         {
-                            // create a channel element, set the conditions to defaults and store it in database
-                            // subscribe to that channel
-                            database.StringSet(name, true); // todo figure out what to do with these channels
+                            var channel = new ChannelElement(createAction.ElementName, createAction.Sender, false);
+                            // Special case for people's personal channels:
+                            if (createAction.ElementName == createAction.Sender)
+                            {
+                                channel.IsPrivate = true;
+                                channel.ChannelOwner = "admin";
+                            }
+
+                            database.StringSet(name, Objectifier.Stringify(channel));
                             Process(new SubscribeAction(createAction.Sender, ElementType.CHANNEL, createAction.ElementName));
                             database.Publish(name, $"The {createAction.ElementName} channel has been created successfully!");
+                            logger.Info($"The {createAction.ElementName} channel has been created successfully by {createAction.Sender}");
                         }
                         else
                         {
@@ -112,14 +153,7 @@ namespace AlzendorServer.Core.Actions
                 }
                 else if (curObject.ActionType == ActionType.CHANGE)
                 {
-                    // todo, to change a channel we'll need to store the entire channel object with extra data, not just use the pub/sub channels
-                    // so we will see if the channel exists then we will retrieve it and determine who owns it and if its public etc. this will require more involvement
-                    // as we will no longer be able to depend on the super straight forward pubsub
-                    // if(contains key channel:whatever)
-                    // get the value from that key, that value will be an object that can be destringified and checked. Here we can set the owners tag and publicity then re-store it
-                    // back in redis as the object, there is documentation about how to store these kidns of things with parameters online somewhere
-                    // If you're accessing just a single element of the object you'll want to store it as pieces, but if you're always pulling the entire object you might as well 
-                    // just json it all and store it.
+                    
                 }
             }
             catch (Exception e)

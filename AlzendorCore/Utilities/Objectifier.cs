@@ -11,5 +11,9 @@ namespace AlzendorCore.Utilities
         {
             return JsonConvert.SerializeObject(thing);
         }
+        public static T DeStringify<T>(string s)
+        {
+            return JsonConvert.DeserializeObject<T>(s);
+        }
     }
 }

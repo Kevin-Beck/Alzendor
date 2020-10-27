@@ -75,7 +75,7 @@ namespace AlzendorServer
                         incomingClient = listener.Accept();
                         // create a client object for each incoming connection and spin off a new redis connection for each
                         logger.Info("ServerMain received connection.");
-                        ConnectionToClient client = new ConnectionToClient(logger, server.redisMuxor.GetDatabase(), server.redisMuxor.GetSubscriber());
+                        ConnectionToClient client = new ConnectionToClient(server.redisMuxor.GetDatabase(), server.redisMuxor.GetSubscriber());
                         client.StartClient(incomingClient);
                         logger.Info($"ServerMain created and started connection for: {incomingClient.RemoteEndPoint}");
                     }catch(Exception e)

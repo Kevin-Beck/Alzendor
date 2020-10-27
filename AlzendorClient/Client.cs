@@ -54,8 +54,7 @@ namespace Alzendor.Client
         {
             while(true)
             {
-                var dataFromServer = connection.Receive();
-                //logger.Info(dataFromServer);
+                var dataFromServer = connection.Receive(); // Receive prints it out in the connection fyi            
             }
         }
         private void LogIn()
