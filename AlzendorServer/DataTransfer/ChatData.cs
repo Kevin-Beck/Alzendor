@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace AlzendorServer
+namespace AlzendorServer.DataTransfer
 {
     public class ChatData
     {
-        public string Channel {get; set;}
+        public string Recipient {get; set;}
         public string Sender { get; set; }
         public string Message { get; set; }
 
-        public ChatData(string channel, string sender, string message)
+        public ChatData(string sender, string recipient, string message)
         {
-            Channel = channel;
+            Recipient = recipient;
             Sender = sender;
             Message = message;
         }

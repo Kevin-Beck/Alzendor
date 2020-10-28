@@ -1,4 +1,4 @@
-﻿namespace AlzendorServer.Core.Actions
+﻿namespace AlzendorServer.Actions
 {
     public enum ActionPriority
     {

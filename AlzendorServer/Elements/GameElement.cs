@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace AlzendorServer.Core.Elements
+namespace AlzendorServer.Elements
 {
     public class GameElement
     {

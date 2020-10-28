@@ -1,12 +1,12 @@
-﻿using AlzendorServer.Core.Actions;
-using AlzendorServer.Core.Elements;
+﻿using AlzendorServer.Actions;
+using AlzendorServer.Elements;
 using log4net;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-namespace AlzendorServer.Core.DataTransfer
+namespace AlzendorServer.DataTransfer
 {
     public class UserInputInterpretter
     {

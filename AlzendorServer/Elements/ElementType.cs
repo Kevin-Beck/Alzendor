@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace AlzendorServer.Core.Elements
+namespace AlzendorServer.Elements
 {
     public enum ElementType
     {

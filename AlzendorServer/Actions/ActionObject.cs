@@ -1,6 +1,6 @@
-﻿using AlzendorServer.Core.Elements;
+﻿using AlzendorServer.Elements;
 
-namespace AlzendorServer.Core.Actions
+namespace AlzendorServer.Actions
 {
     public class ActionObject
     {

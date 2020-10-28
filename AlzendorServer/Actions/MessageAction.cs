@@ -1,5 +1,5 @@
-﻿using AlzendorServer.Core.Elements;
-namespace AlzendorServer.Core.Actions
+﻿using AlzendorServer.Elements;
+namespace AlzendorServer.Actions
 {
     public class MessageAction : ActionObject
     {

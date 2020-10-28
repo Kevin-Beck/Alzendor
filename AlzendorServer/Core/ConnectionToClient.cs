@@ -1,18 +1,17 @@
-﻿using AlzendorServer.Core.Actions;
+﻿using AlzendorServer.Actions;
 using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using AlzendorServer.Core.DataTransfer;
+using AlzendorServer.DataTransfer;
 using log4net;
 using StackExchange.Redis;
-using AlzendorServer.Core.Elements;
+using AlzendorServer.Elements;
 using System.Reflection;
 
-namespace AlzendorServer
+namespace AlzendorServer.Core
 {
-
     public class ConnectionToClient
     {
         private readonly ILog logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);

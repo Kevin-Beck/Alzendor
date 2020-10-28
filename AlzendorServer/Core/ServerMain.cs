@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
@@ -8,7 +7,7 @@ using log4net;
 using log4net.Config;
 using StackExchange.Redis;
 
-namespace AlzendorServer
+namespace AlzendorServer.Core
 {
     public class ServerMain
     {
