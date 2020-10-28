@@ -25,7 +25,6 @@ namespace AlzendorServer.Core
         {
             return $"{type}:{elementName}";
         }
-
         private long SendMessageToChannelFromSender(string sender, string receiver, string message)
         {
             return database.Publish(GetNamingConvention(ElementType.CHANNEL, receiver), Objectifier.Stringify(new ChatData(sender, receiver, message)));
