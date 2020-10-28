@@ -23,7 +23,9 @@ namespace AlzendorServer.DataTransfer
                 { "tell", ActionType.MESSAGE },
                 { "create", ActionType.CREATE },
                 { "subscribe", ActionType.SUBSCRIBE },
-                { "change", ActionType.CHANGE }
+                { "sub", ActionType.SUBSCRIBE },
+                { "change", ActionType.CHANGE },
+                { "edit", ActionType.CHANGE },
             };
 
             // tell <player/channel> <message>
@@ -40,16 +42,14 @@ namespace AlzendorServer.DataTransfer
         public ActionObject ParseActionFromText(string characterName, string input)
         {
             List<string> words = new List<string>(CleanInput(input).Split(" "));
-            
-            ActionObject result = null;
-
             if (words.Count < 1)
             {
                 logger.Info("WordCount is zero, returning null");
                 return null;
             }
-            // Check for multi-word
-            if(words.Count > 1)
+
+            ActionObject result;
+            if (words.Count > 1)
             {
                 logger.Info($"WordCount is {words.Count}, detected multi-word action");
                 result = ProcessMultiWordAction(characterName, words);
@@ -87,13 +87,9 @@ namespace AlzendorServer.DataTransfer
                     break;
                 case ActionType.MESSAGE:
                     {
-                        if (command == "tell")
-                        {
-                            var recipient = actionWords[1];
-                            var message = string.Join(' ', actionWords.GetRange(2, actionWords.Count-2));
-
-                            multiWordActionResult = new MessageAction(characterName, recipient, message);
-                        }
+                        var recipient = actionWords[1];
+                        var message = string.Join(' ', actionWords.GetRange(2, actionWords.Count-2));
+                        multiWordActionResult = new MessageAction(characterName, recipient, message);
                     }
                     break;
                 case ActionType.MOVEMENT:
@@ -102,57 +98,48 @@ namespace AlzendorServer.DataTransfer
                     break;
                 case ActionType.SUBSCRIBE:
                     {                        
-                        if (command == "subscribe")
-                        {
-                            var subscriptionTarget = actionWords[2];
-                            multiWordActionResult = new SubscribeAction(characterName, ElementType.CHANNEL, subscriptionTarget);
-                        }
+                        var subscriptionTarget = actionWords[2];
+                        multiWordActionResult = new SubscribeAction(characterName, ElementType.CHANNEL, subscriptionTarget);
                     }                       
                     break;
                 case ActionType.CREATE:
                     {
-                        if(command == "create")
+                        var thingToCreate = actionWords[1];
+                        if(thingToCreate.ToLower() == "channel" && actionWords.Count == 3)
                         {
-                            var thingToCreate = actionWords[1];
-                            if(thingToCreate.ToLower() == "channel" && actionWords.Count == 3)
-                            {
-                                multiWordActionResult = new CreateAction(characterName, ElementType.CHANNEL, actionWords[2]);
-                            }
-                            else
-                            {
-                                Console.WriteLine("Create failed, incorrect word count for channel creation");
-                            }
-                            // other create commands
+                            multiWordActionResult = new CreateAction(characterName, ElementType.CHANNEL, actionWords[2]);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Create failed, incorrect word count for channel creation");
                         }
                     }
                     break;
                 case ActionType.CHANGE:
                     {
-                        if(command == "edit")
+                        var editTarget = actionWords[1];
+                        if(editTarget == "channel")
                         {
-                            var editTarget = actionWords[1];
-                            if(editTarget == "channel")
+                            try
                             {
-                                try
+                                // edit channel <channelName> <name> <newName>
+                                var channelName = actionWords[2];
+                                var channelProperty = actionWords[3];
+                                var newPropertyValue = actionWords[4];
+                                if (newPropertyValue.ToLower() == "to")
                                 {
-                                    // edit channel <channelName> <name> <newName>
-                                    var channelName = actionWords[2];
-                                    var channelProperty = actionWords[3];
-                                    var newPropertyValue = actionWords[4];
-                                    if (newPropertyValue.ToLower() == "to")
-                                        newPropertyValue = actionWords[5];
-                                    multiWordActionResult = new ChangeAction(characterName, ElementType.CHANNEL, channelName, channelProperty, newPropertyValue);
-                                    Console.WriteLine("Created edit action");
-                                }catch(Exception e)
-                                {
-                                    Console.WriteLine(e.ToString());
+                                    newPropertyValue = actionWords[5];
                                 }
+                                multiWordActionResult = new ChangeAction(characterName, ElementType.CHANNEL, channelName, channelProperty, newPropertyValue);
+                                Console.WriteLine("Created edit action");
+                            }catch(Exception e)
+                            {
+                                Console.WriteLine(e.ToString());
                             }
                         }
                     }
                     break;
-                default:
-                    
+                default:                    
                     break;
             }
             if(multiWordActionResult == null)

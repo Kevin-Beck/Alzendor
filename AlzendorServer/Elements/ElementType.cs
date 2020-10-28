@@ -14,6 +14,5 @@ namespace AlzendorServer.Elements
         ITEM, // weapons, clothing, etc in game
         ROOM, // the group of tiles that can be navigated around
         SPACE, // the tile upon which a person stands
-        HELP // Info about the game itself (how commands work etc)
     }
 }

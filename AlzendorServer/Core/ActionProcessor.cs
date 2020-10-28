@@ -11,7 +11,7 @@ namespace AlzendorServer.Core
 {
     public class ActionProcessor
     {
-        private static ILog logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly static ILog logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private readonly IDatabase database;
         private readonly ISubscriber subscriber;
         private readonly ConnectionToClient connection;
@@ -80,12 +80,48 @@ namespace AlzendorServer.Core
                 }
                 else if (curObject.ActionType == ActionType.CHANGE)
                 {
-                    // TODO change a channel etc.
+                    ChangeAction changeAction = (ChangeAction)curObject;
+                    ProcessChangeAction(changeAction);
                 }
             }
             catch (Exception e)
             {
                 logger.Error($"While processing ActionObject: {curObject.ToString()}\n\n{e.Message}\n\n{e.StackTrace}\n\n");
+            }
+        }
+        private void ProcessChangeAction(ChangeAction changeAction)
+        {
+            logger.Info($"{changeAction.Sender} is trying to change {changeAction.ElementType} {changeAction.ElementName}'s property {changeAction.ElementProperty} to {changeAction.NewElementPropertyValue}");
+            if(changeAction.ElementType == ElementType.CHANNEL)
+            {
+                if(GetElementFromDatabase(changeAction.ElementName, changeAction.ElementType, out ChannelElement channel))
+                {
+                    logger.Info($"Channel '{changeAction.ElementName}' has been found in database. Preparing to change property.");
+                    if(channel.ChannelOwner != changeAction.Sender)
+                    {
+                        SendServerMessageToChannel(ServerMessageType.Warning, changeAction.Sender, $"You cannot change the channel's name as you are not the owner");
+                        return;
+                    }
+                    if(changeAction.ElementProperty == "privacy")
+                    {
+                        if (changeAction.NewElementPropertyValue == "public")
+                        {
+                            channel.IsPrivate = false;
+                            SendServerMessageToChannel(ServerMessageType.Info, channel.ChannelName, $"{channel.ChannelName} has been set to public.");
+                            database.StringSet(GetNamingConvention(ElementType.CHANNEL, changeAction.ElementName), Objectifier.Stringify(channel));
+                        }
+                        else if (changeAction.NewElementPropertyValue == "private")
+                        {
+                            channel.IsPrivate = true;
+                            SendServerMessageToChannel(ServerMessageType.Info, channel.ChannelName, $"{channel.ChannelName} has been set to private.");
+                            database.StringSet(GetNamingConvention(ElementType.CHANNEL, changeAction.ElementName), Objectifier.Stringify(channel));
+                        }
+                        else
+                        {
+                            SendServerMessageToChannel(ServerMessageType.Warning, changeAction.Sender, $"Unrecognized privacy setting: {changeAction.NewElementPropertyValue}");
+                        }
+                    }
+                }
             }
         }
         private void ProcessCreateAction(CreateAction createAction)
