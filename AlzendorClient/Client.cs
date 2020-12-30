@@ -31,6 +31,7 @@ namespace Alzendor.Client
         private readonly string serverIP;
         private readonly int serverPort;
         ConnectionToServer connection;
+        private bool loggedIn = false;
 
         public CommandLineClient(ILog log, string serverip, int port)
         {
@@ -59,19 +60,11 @@ namespace Alzendor.Client
         }
         private void LogIn()
         {
-            // todo create the protocol for logging in (the back and forth auth system
-            // probably do something like the following: (or just use a library of some kind
-            // 1 username is not on the server, reply with "Create new character?"
-            // client sends yes, server generates a random salt and sends random salt to user
-            // client enters password and salts it, they send this salted password to server.
-            // server stores client's name, clients randomly generated salt, and clients salted password
-            // client is logged in
+            while (!loggedIn)
+            {
 
-            // in the future, when client requests to connect to the game server sends back the stored rng salt
-            // client types in password which gets salted with the rng salt and then a returned value is sent back
-            // server verifies that the sent salted password matches the salted password int he data base
-            Console.Write("Enter your username: ");
-            connection.Send(Console.ReadLine());
+                connection.Send(Console.ReadLine());
+            }
         }
     }
 }

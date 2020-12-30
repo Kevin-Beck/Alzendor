@@ -9,9 +9,15 @@ using log4net;
 using StackExchange.Redis;
 using AlzendorServer.Elements;
 using System.Reflection;
+using AlzendorCore.Utilities;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace AlzendorServer.Core
 {
+    /// <summary>
+    /// Connection to client is the object that is created on the server to maintain the connection to the client. It is created by ServerMain each time a new client connects.
+    /// </summary>
     public class ConnectionToClient
     {
         private readonly ILog logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -20,47 +26,84 @@ namespace AlzendorServer.Core
         private readonly ActionProcessor actionProcessor;
         private readonly UserInputInterpretter userInputInterpretter;
         private readonly IDatabase database;
-        private bool isLoggedIn = false;
+        private LogInStatus logInState = LogInStatus.LoggedOut;
 
         public string ClientID { get; set; } = "unknown ID";
 
-        public ConnectionToClient(IDatabase data, ISubscriber sub)
+        public ConnectionToClient(IDatabase data, ISubscriber sub, Socket client)
         {
             database = data;
             actionProcessor = new ActionProcessor(data, sub, this);
             userInputInterpretter = new UserInputInterpretter();
+            Thread clientThread = new Thread(() => StartClient(client));
+            clientThread.Start();
         }
-        public void StartClient(Socket clientSocket)
+        private void StartClient(Socket incomingClient)
         {
-            networkStreamIn = new NetworkStream(clientSocket);
-            networkStreamOut = new NetworkStream(clientSocket);
-
-            //TODO create an action for logging in etc, and have the action processor manage it
+            networkStreamIn = new NetworkStream(incomingClient);
+            networkStreamOut = new NetworkStream(incomingClient);
+                        
             logger.Info("Received unknown client");
-            while (!isLoggedIn)
+            while (logInState != LogInStatus.LoggedIn)
             {
-                ClientID = Receive(networkStreamIn);
-                if (database.KeyExists($"{ElementType.CHANNEL}:" + ClientID))
-                {
-                    // TODO change this to an object to send back, should be handled by above todo
-                    Send("\nName already exist, choose again:");
-                    logger.Info($"user logged in as {ClientID} but the name was already taken");
-                }
-                else
-                {
-                    actionProcessor.Process(new CreateAction(ClientID, ElementType.CHANNEL, $"{ClientID}"));
-                    isLoggedIn = true;
-                    database.SetAdd("loggedIn", ClientID);                    
-                }
+                var userLogIn = UserLogIn();
+                logInState = userLogIn.logInStatus;
+                ClientID = userLogIn.loginName;
             }
+            // Actually log the player in
+
+            actionProcessor.Process(new CreateAction(ClientID, ElementType.CHANNEL, $"{ClientID}"));
+
+
             logger.Info($"Identified client as {ClientID}");
 
             Thread receiveThread = new Thread(ReceiveLoop);
             receiveThread.Start();
         }
+
+        private (string loginName, LogInStatus logInStatus) UserLogIn()
+        {
+            Send(new ChatData(ServerMessageType.Info.ToString(), "new connection", "Enter your character name, or CREATE to make a new character"));
+
+            string choice = Receive(networkStreamIn);
+            if (choice.ToLower().Trim() == "create")
+            {
+                Send(new ChatData(ServerMessageType.Info.ToString(), "new connection", "Choose a character name:"));
+                string characterName = Receive(networkStreamIn);
+                if (database.KeyExists(actionProcessor.GetNamingConvention(ElementType.USER, characterName.ToLower())))
+                {
+                    Send(new ChatData(ServerMessageType.Info.ToString(), "new connection", "User already exists, you'll have to choose another name."));
+                    return ("unknown", LogInStatus.LoggedOut);
+                }
+                else
+                {
+                    Regex regex = new Regex("^[a-zA-Z]+");
+                    if (!regex.IsMatch(characterName) || (characterName.Count(c => "aeiouy".Contains(Char.ToLower(c))) < 1) || characterName.Length < 2)
+                    {
+                        Send(new ChatData(ServerMessageType.Warning.ToString(), "new connection", "Name must contain 2 characters, only letters, 1 being a vowel."));
+                        return ("unknown", LogInStatus.LoggedOut);
+                    }
+                    else
+                    {
+                        // create new user
+                        User user = new User(characterName);
+
+                        database.StringSet(actionProcessor.GetNamingConvention(ElementType.USER, user.CharacterName), Objectifier.Stringify(user));
+                        return (user.CharacterName, LogInStatus.LoggedIn);
+                    }
+                }
+            }
+            else
+            {
+                // TODO other side of login
+                // find out if the user exists, cause we have a username
+                // if it doesnt, go through the process of sorting out 
+                return ("TODO", LogInStatus.LoggedIn);
+            }
+        }
         
                
-        // TODO create a proper disconnection protocol which will purge game of user and remove their subscriptions
+        // TODO create a proper disconnection protocol which will purge game of user
         // Wrap the send receive and have them throw the errors with connections back to the threads and handle the crashes and self destruct
         private void ReceiveLoop()
         {            
@@ -87,17 +130,18 @@ namespace AlzendorServer.Core
                 }
             }
         }
-        // todo i think this should all be recieving based entirely on the redis pubsub now
+
         private string Receive(NetworkStream networkStream)
         {
             byte[] bytesFrom = new byte[1024];
             networkStream.Read(bytesFrom);
-            string dataFromClient = Encoding.ASCII.GetString(bytesFrom).Replace("\0", string.Empty).Trim();
+            string dataFromClient = Encoding.Default.GetString(bytesFrom).Replace("\0", string.Empty).Trim();
             logger.Info($">> From client {ClientID}: {dataFromClient}");
             return dataFromClient;
         }
-        public void Send(string data){ 
-            byte[] sendBytes = Encoding.ASCII.GetBytes(data.Trim());
+        public void Send(TransmitData objectData){
+            string data = Objectifier.Stringify(objectData);
+            byte[] sendBytes = Encoding.Default.GetBytes(data.Trim());
             networkStreamOut.Write(sendBytes, 0, sendBytes.Length);
             logger.Info($"<< To client {ClientID}: {data}");
         }

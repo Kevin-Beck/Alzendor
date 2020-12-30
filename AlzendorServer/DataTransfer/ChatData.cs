@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace AlzendorServer.DataTransfer
+﻿namespace AlzendorServer.DataTransfer
 {
-    public class ChatData
+    public class ChatData : TransmitData
     {
         public string Recipient {get; set;}
         public string Sender { get; set; }

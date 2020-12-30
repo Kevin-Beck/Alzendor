@@ -52,13 +52,13 @@ namespace Alzendor.Client
         {
             byte[] bytesFrom = new byte[2048];
             networkStreamIn.Read(bytesFrom); // todo just changed this better chek to make sure it works
-            string dataFromServer = Encoding.ASCII.GetString(bytesFrom).Replace("\0", string.Empty).Trim(); ;
+            string dataFromServer = Encoding.Default.GetString(bytesFrom).Replace("\0", string.Empty).Trim(); ;
             logger.Info($">> From Server: {dataFromServer}");
             return dataFromServer;
         }
         public void Send(string data)
         {
-            byte[] sendBytes = Encoding.ASCII.GetBytes(data);
+            byte[] sendBytes = Encoding.Default.GetBytes(data);
             networkStreamOut.Write(sendBytes, 0, sendBytes.Length);
             logger.Info($"<< To Server: {data}");
         }

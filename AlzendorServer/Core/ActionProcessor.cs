@@ -21,7 +21,7 @@ namespace AlzendorServer.Core
             subscriber = sub; // sub should only be used to subscribe and unsubscribe from things, otherwise it just receives messages.
             connection = con;
         }
-        private string GetNamingConvention(ElementType type, string elementName)
+        public string GetNamingConvention(ElementType type, string elementName)
         {
             return $"{type}:{elementName}";
         }
@@ -81,6 +81,11 @@ namespace AlzendorServer.Core
                 {
                     ChangeAction changeAction = (ChangeAction)curObject;
                     ProcessChangeAction(changeAction);
+                }
+                else if(curObject.ActionType == ActionType.LOGIN)
+                {
+                    LogInAction logInAction = (LogInAction)curObject;
+                    ProcessLogInAction(logInAction);
                 }
             }
             catch (Exception e)
@@ -148,9 +153,9 @@ namespace AlzendorServer.Core
                     }
                 }
             }
-            else
+            else if(createAction.ElementType == ElementType.PLAYER)
             {
-                // TODO other kinds of create
+                
             }
         }
         private void ProcessSubscribeAction(SubscribeAction subscribeAction)
@@ -170,13 +175,13 @@ namespace AlzendorServer.Core
                     else if (!channel.IsPrivate || subscribeAction.Sender == subscribeAction.ElementName) // the channel is public, or you're subscribing to your own initial channel
                     {
                         logger.Info($"{subscribeAction.Sender} is allowed to subscribe to {channel.ChannelName}");
-                        channel.AddSubscriber(subscribeAction.Sender.ToLower());
+                        channel.AddSubscriber(subscribeAction.Sender);
 
                         database.StringSet(GetNamingConvention(ElementType.CHANNEL, subscribeAction.ElementName), Objectifier.Stringify(channel));
-
+                        var getbackchannel = Objectifier.DeStringify<ChannelElement>(database.StringGet(GetNamingConvention(ElementType.CHANNEL, subscribeAction.ElementName)));
                         subscriber.Subscribe(GetNamingConvention(ElementType.CHANNEL, subscribeAction.ElementName), (channel, message) =>
                         {
-                            connection.Send($"{channel}|{message}");
+                            connection.Send(new ChatData(channel, subscribeAction.Sender, message));
                         });
 
                         logger.Info($"{subscribeAction.Sender} successfully subscribed");
@@ -225,6 +230,26 @@ namespace AlzendorServer.Core
             {
                 SendServerMessageToChannel(ServerMessageType.Warning, messageAction.Sender, "Sorry, theres nothing to tell by that name.");
             }
+        }
+        private bool ProcessLogInAction(LogInAction logInAction)
+        {
+            if(logInAction.CurrentStep == LogInStatus.RequestingSalt)
+            {
+                
+                // get the user object from redis, get the salt from the user, send the salt back to the user
+                return true;
+            }else if(logInAction.CurrentStep == LogInStatus.RequestingConfirmation)
+            {
+                // get the user object from redis, compare the logInData to the salted password stored
+                // if they are equal the user has entered the correct password
+                return true;
+                // else return false
+            }else if(logInAction.CurrentStep == LogInStatus.LoggedIn)
+            {
+                // get the user object from redis, send all the channel subscribe commands to resub to the channels
+                // put the player in the correct space/square and return the inventory objects to player
+            }
+            return false;
         }
     }
 }
