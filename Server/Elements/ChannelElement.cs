@@ -8,7 +8,7 @@ namespace Server.Elements
         public string ChannelName { get; set; }
         public string ChannelOwner { get; set; }
         public bool IsPrivate { get; set; } = true;
-        public ChannelElement(string channelName, string channelCreator, bool isPrivate) : base()
+        public ChannelElement(string channelName, string channelCreator, bool isPrivate) : base(ElementType.CHANNEL, channelName)
         {
             ChannelName = channelName;
             ChannelOwner = channelCreator;

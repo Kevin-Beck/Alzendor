@@ -4,10 +4,17 @@ namespace Server.Elements
 {
     public class GameElement
     {
-        public List<string> subscribers = new List<string>();
-        public GameElement()
+        public List<string> subscribers;
+        public ElementType elementType;
+        public string elementName;
+        public GameElement(ElementType typeOfElement, string nameOfElement)
         {
-            subscribers = new List<string>();
+            elementType = typeOfElement;
+            elementName = nameOfElement;
+            if(subscribers == null)
+            {
+                subscribers = new List<string>();
+            }
         }
         public void AddSubscriber(string subscriber)
         {

@@ -12,6 +12,7 @@ using System.Reflection;
 using Core.Utilities;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Server.Database;
 
 namespace Server.Base
 {
@@ -25,15 +26,15 @@ namespace Server.Base
         private NetworkStream networkStreamIn;
         private readonly ActionProcessor actionProcessor;
         private readonly UserInputInterpretter userInputInterpretter;
-        private readonly IDatabase database;
+        private readonly IDatabaseWrapper databaseWrapper;
         private LogInStatus logInState = LogInStatus.LoggedOut;
 
         public string ClientID { get; set; } = "unknown ID";
 
-        public ConnectionToClient(IDatabase data, ISubscriber sub, Socket client)
+        public ConnectionToClient(IDatabaseWrapper data, Socket client)
         {
-            database = data;
-            actionProcessor = new ActionProcessor(data, sub, this);
+            databaseWrapper = data;
+            actionProcessor = new ActionProcessor(databaseWrapper, this);
             userInputInterpretter = new UserInputInterpretter();
             Thread clientThread = new Thread(() => StartClient(client));
             clientThread.Start();
@@ -70,7 +71,7 @@ namespace Server.Base
             {
                 Send(new ChatData(ServerMessageType.Info.ToString(), "new connection", "Choose a character name:"));
                 string characterName = Receive(networkStreamIn);
-                if (database.KeyExists(actionProcessor.GetNamingConvention(ElementType.USER, characterName.ToLower())))
+                if (databaseWrapper.GetElementFromDatabase<User>(characterName.ToLower(), ElementType.USER, out User user))
                 {
                     Send(new ChatData(ServerMessageType.Info.ToString(), "new connection", "User already exists, you'll have to choose another name."));
                     return ("unknown", LogInStatus.LoggedOut);
@@ -86,10 +87,10 @@ namespace Server.Base
                     else
                     {
                         // create new user
-                        User user = new User(characterName);
+                        User newUser = new User(characterName);
 
-                        database.StringSet(actionProcessor.GetNamingConvention(ElementType.USER, user.CharacterName), Objectifier.Stringify(user));
-                        return (user.CharacterName, LogInStatus.LoggedIn);
+                        databaseWrapper.AddElementToDatabase<User>(newUser);
+                        return (newUser.elementName, LogInStatus.LoggedIn);
                     }
                 }
             }

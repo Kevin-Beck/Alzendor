@@ -6,6 +6,7 @@ using System.Reflection;
 using log4net;
 using log4net.Config;
 using StackExchange.Redis;
+using Server.Database;
 
 namespace Server.Base
 {
@@ -73,7 +74,9 @@ namespace Server.Base
                         incomingClient = listener.Accept();
                         // create a client object for each incoming connection and spin off a new redis connection for each
                         logger.Info("ServerMain received connection.");
-                        ConnectionToClient client = new ConnectionToClient(server.redisMuxor.GetDatabase(), server.redisMuxor.GetSubscriber(), incomingClient);
+                        RedisImplementation redisImplementation = new RedisImplementation(server.redisMuxor.GetDatabase(), server.redisMuxor.GetSubscriber());
+
+                        ConnectionToClient client = new ConnectionToClient(redisImplementation, incomingClient);
                         logger.Info($"ServerMain created and started connection for: {incomingClient.RemoteEndPoint}");
                     }catch(Exception e)
                     {

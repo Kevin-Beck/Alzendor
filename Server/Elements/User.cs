@@ -4,34 +4,10 @@ using System.Security.Cryptography;
 
 namespace Server.Elements
 {
-    public class User
+    public class User : GameElement
     {
-        public string CharacterName { get; set; }
-        private static int saltLength = 32;
-        public byte[] Salt { get; set; }
-        public string SaltedPassword { get; set; }
-        public List<string> ChatChannels = new List<string>();
-
-        public User(string name)
+        public User(string name) : base(ElementType.USER, name)
         {
-            CharacterName = name;
-            GenerateSalt();
-        }
-        public byte[] GetSalt()
-        {
-            if(Salt == null || Salt.Length == 0)
-            {
-                GenerateSalt();
-            }
-            return Salt;
-        }
-        public void GenerateSalt()
-        {
-            Salt = new byte[saltLength];
-            using (var random = new RNGCryptoServiceProvider())
-            {
-                random.GetNonZeroBytes(Salt);
-            }
         }
     }
 }
