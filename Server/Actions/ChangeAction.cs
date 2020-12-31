@@ -1,9 +1,15 @@
-﻿using Server.Elements;
+﻿using log4net;
+using Server.Base;
+using Server.Database;
+using Server.DataTransfer;
+using Server.Elements;
+using System.Reflection;
 
 namespace Server.Actions
 {
     public class ChangeAction : ActionObject
     {
+        private readonly static ILog logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         public string ElementProperty { get; set; }
         public string NewElementPropertyValue { get; set; }
 
@@ -24,6 +30,42 @@ namespace Server.Actions
         {
             ElementProperty = property;
             NewElementPropertyValue = newPropertyValue;
+        }
+
+        public override void ExecuteAction(IDatabaseWrapper storage, ConnectionToClient connection)
+        {
+            logger.Info($"{Sender} is trying to change {ElementType} {ElementName}'s property {ElementProperty} to {NewElementPropertyValue}");
+            if (ElementType == ElementType.CHANNEL)
+            {
+                if (storage.GetElementFromDatabase(ElementName, ElementType, out ChannelElement channel))
+                {
+                    logger.Info($"Channel '{ElementName}' has been found in database. Preparing to change property.");
+                    if (channel.ChannelOwner != Sender)
+                    {
+                        storage.SendServerMessageToChannel(ServerMessageType.Warning, Sender, $"You cannot change the channel's name as you are not the owner");
+                        return;
+                    }
+                    if (ElementProperty == "privacy")
+                    {
+                        if (NewElementPropertyValue == "public")
+                        {
+                            channel.IsPrivate = false;
+                            storage.SendServerMessageToChannel(ServerMessageType.Info, channel.ChannelName, $"{channel.ChannelName} has been set to public.");
+                            storage.AddElementToDatabase<ChannelElement>(channel);
+                        }
+                        else if (NewElementPropertyValue == "private")
+                        {
+                            channel.IsPrivate = true;
+                            storage.SendServerMessageToChannel(ServerMessageType.Info, channel.ChannelName, $"{channel.ChannelName} has been set to private.");
+                            storage.AddElementToDatabase<ChannelElement>(channel);
+                        }
+                        else
+                        {
+                            storage.SendServerMessageToChannel(ServerMessageType.Warning, Sender, $"Unrecognized privacy setting: {NewElementPropertyValue}");
+                        }
+                    }
+                }
+            }
         }
     }
 }

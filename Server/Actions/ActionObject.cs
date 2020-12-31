@@ -1,8 +1,10 @@
-﻿using Server.Elements;
+﻿using Server.Base;
+using Server.Database;
+using Server.Elements;
 
 namespace Server.Actions
 {
-    public class ActionObject
+    public abstract class ActionObject
     {
         public string Sender { get; }
         public ActionType ActionType { get; }
@@ -25,5 +27,7 @@ namespace Server.Actions
             ElementName = elementName;
             Priority = priority;
         }
+
+        public abstract void ExecuteAction(IDatabaseWrapper storage, ConnectionToClient connection);
     }
 }
