@@ -1,7 +1,7 @@
 # Alzendor - AWS
 The purpose of this project is to explore different elements of AWS and Redis as well as C# networking using sockets. AWS EC2 instance of a server which each connected to a single scalable instance of Redis running on another ec2 instance. The servers would manage the connection for each client and pass relevant data into the redis game state. The redis instance managed the 'game' and would use its pub sub system to message all relevant parties when an event occured.
 
-The client passes action objects into a server which vets the input and decides what relevant into to pass into the game state on redis. This hop allowed for an additional layer between the client and the redis instance. Each server would reject known bad/illegal inputs and malformed input objects which allowed the redis instance to work within the AWS security group and only communicate with known servers using their own faster/smaller data objects. The input would be parsed and broken down by the servers and then only the smallest most relevant data would be passed into the redis game state data storage. This triggered response events which would be sent back out to any number of servers.
+The client passes action objects into a server which vets the input and decides what relevant info to pass into the game state on redis. This hop allowed for an additional layer between the client and the redis instance. Each server would reject known bad/illegal inputs and malformed input objects which allowed the redis instance to work within the AWS security group and only communicate with known servers using their own faster/smaller data objects which would be validated and responded to. The request/input would be parsed and broken down by the servers and then only the smallest most relevant data would be passed into the redis game state data storage. This triggered response events which would be sent back out to any number of servers.
 
 Server 1 would have client a, b, c. Each would log in and connect to the server after being authorized by the server the connection was linked to the redis instance.
 Server 2 would have client x, y, z. And other servers would have other clients.
@@ -20,7 +20,7 @@ A lack of nuance is that client connections simply reach out to a single entity 
 Also this is not a robust way to do a networking system. Its the absolute bare necessity. If you were to look to make something similar you'd be better off just https://github.com/vis2k/Telepathy as it has everything required with all the flexibility. 
 
 
-This project overall was a great way to learn about AWS, C# socket networking, Jenkins and Docker stuff.
+This project was extremely complex for me and definitely a jump into the deep end, but overall was a great way to learn about AWS, C# socket networking, Jenkins and Docker stuff.
 
 
 
