@@ -1,0 +1,1137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alzendor</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --panel: #ffffff; --text: #24221f; --muted: #6f6a62; --border: #ddd8ce;
+    --accent: #8a5a12; --say: #1f5e8c; --emote: #6b3f8f; --move: #5b6b2f; --system: #8c3b2f;
+    --tell: #a3367a; --chat: #2f7a6b; --ambient: #6f6a62;
+    --pc: #1f5e8c; --npc: #9a4a14;
+    --hp-good: #4c8a3a; --hp-mid: #c28a1c; --hp-low: #b8402e; --hp-track: #e7e2d8;
+    --map-bg: #fbfaf7; --edge: #8b857b; --fog: #b9b3a8; --box: #e9e4da; --box-line: #cfc8bb;
+    --area-1: #4f7fb8; --area-2: #d9822b; --area-3: #3f9a5a; --area-4: #8e5bb5; --area-5: #c25a7c; --area-6: #2f8f8f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17161a; --panel: #201f24; --text: #e8e4dc; --muted: #9a958c; --border: #34323a;
+      --accent: #e0a64a; --say: #7fb8e6; --emote: #c49be6; --move: #b3c77a; --system: #e6907f;
+      --tell: #e690c8; --chat: #7fd1bf; --ambient: #9a958c;
+      --pc: #7fb8e6; --npc: #f0a060;
+      --hp-good: #6fbf5a; --hp-mid: #e0b040; --hp-low: #ef6a55; --hp-track: #34323a;
+      --map-bg: #1b1a1f; --edge: #77727c; --fog: #57535c; --box: #24232a; --box-line: #3d3b44;
+      --area-1: #6f9fd8; --area-2: #f0a050; --area-3: #5fbf7a; --area-4: #b48ae0; --area-5: #e07fa0; --area-6: #5fc0c0;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17161a; --panel: #201f24; --text: #e8e4dc; --muted: #9a958c; --border: #34323a;
+    --accent: #e0a64a; --say: #7fb8e6; --emote: #c49be6; --move: #b3c77a; --system: #e6907f;
+    --tell: #e690c8; --chat: #7fd1bf; --ambient: #9a958c;
+    --pc: #7fb8e6; --npc: #f0a060;
+    --hp-good: #6fbf5a; --hp-mid: #e0b040; --hp-low: #ef6a55; --hp-track: #34323a;
+    --map-bg: #1b1a1f; --edge: #77727c; --fog: #57535c; --box: #24232a; --box-line: #3d3b44;
+    --area-1: #6f9fd8; --area-2: #f0a050; --area-3: #5fbf7a; --area-4: #b48ae0; --area-5: #e07fa0; --area-6: #5fc0c0;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 14px/1.45 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px; padding: 8px 16px;
+    border-bottom: 1px solid var(--border); background: var(--panel);
+  }
+  header h1 { font-size: 15px; margin: 0; color: var(--accent); letter-spacing: .05em; }
+  #status { margin-left: auto; color: var(--muted); font-size: 12px; }
+  #status.live::before { content: "● "; color: var(--move); }
+  #status.down::before { content: "● "; color: var(--system); }
+  button {
+    font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border);
+    border-radius: 4px; padding: 3px 9px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: progress; }
+  input {
+    font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border);
+    border-radius: 4px; padding: 6px 8px; min-width: 0;
+  }
+  input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .hidden { display: none !important; }
+
+  /* Game screen: map and log on the left, room panels on the right. */
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 320px; }
+  #left { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  #map-wrap { position: relative; flex: 1 1 58%; min-height: 160px; background: var(--map-bg); border-bottom: 1px solid var(--border); }
+  #map { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; user-select: none; }
+  #map.dragging { cursor: grabbing; }
+  #map .node { cursor: pointer; }
+  #map .node.current { cursor: default; }
+  #map text {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    paint-order: stroke; stroke: var(--box); stroke-linejoin: round; pointer-events: none;
+  }
+  #map .node:hover .dot { stroke: var(--accent); }
+  #map-tools { position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; }
+  #map-tools button { background: var(--panel); font-size: 12px; }
+  #map-tools button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  #map-hint { position: absolute; left: 10px; bottom: 6px; font-size: 11px; color: var(--muted); pointer-events: none; }
+  #log-wrap { position: relative; flex: 1 1 42%; min-height: 120px; display: flex; }
+  #log { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #log .ev { margin: 2px 0; }
+  #log .room { margin: 8px 0; padding-left: 10px; border-left: 2px solid var(--accent); }
+  #log .room .name { color: var(--accent); font-weight: bold; }
+  #log .step { color: var(--muted); }
+  #log .mine { opacity: .8; }
+  .t-say { color: var(--say); } .t-emote { color: var(--emote); }
+  .t-arrive, .t-leave, .t-item { color: var(--move); }
+  .t-system, .t-error { color: var(--system); } .t-tell { color: var(--tell); }
+  .t-chat { color: var(--chat); } .t-ambient { color: var(--ambient); font-style: italic; }
+  #latest { position: absolute; right: 16px; bottom: 8px; background: var(--panel); box-shadow: 0 2px 8px rgba(0, 0, 0, .15); }
+  form#command { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-top: 1px solid var(--border); background: var(--panel); }
+  form#command input { flex: 1; }
+  #target-chip {
+    display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 8px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--bg); white-space: nowrap; max-width: 40%; overflow: hidden;
+  }
+  #target-chip .name { overflow: hidden; text-overflow: ellipsis; }
+  #target-chip button { border: 0; padding: 0 6px; background: none; color: var(--muted); }
+
+  aside { border-left: 1px solid var(--border); background: var(--panel); overflow-y: auto; min-height: 0; }
+  aside section { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  aside h2 {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px;
+  }
+  aside h2 .hint { text-transform: none; letter-spacing: 0; font-weight: normal; }
+  #room-name { color: var(--accent); font-weight: bold; font-size: 15px; }
+  #room-area { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+  #exits { display: flex; flex-wrap: wrap; gap: 4px; }
+  #exits button { font-size: 12px; padding: 2px 7px; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  .empty { color: var(--muted); font-style: italic; }
+
+  .card {
+    display: block; width: 100%; text-align: left; margin: 0 0 6px; padding: 6px 8px;
+    border: 1px solid var(--border); border-radius: 6px; background: var(--bg);
+  }
+  .card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .card .top { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+  .card .name { font-weight: bold; }
+  .card.pc .name { color: var(--pc); }
+  .card.npc .name { color: var(--npc); }
+  .card .label { color: var(--muted); font-size: 12px; }
+  .card .desc { color: var(--muted); font-style: italic; font-size: 12px; }
+  .hp { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 11px; color: var(--muted); }
+  .hp .track { flex: 1; height: 6px; border-radius: 3px; background: var(--hp-track); overflow: hidden; }
+  .hp .fill { height: 100%; border-radius: 3px; background: var(--hp-good); }
+  .hp .fill.mid { background: var(--hp-mid); }
+  .hp .fill.low { background: var(--hp-low); }
+
+  /* Combat rhythms: each ball swings out and back; hit Enter as it enters the centre. */
+  #timings { margin: 0 0 10px; display: grid; gap: 8px; }
+  .rhythm .status { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; font-size: 11px; color: var(--muted); }
+  .rhythm .label { font-weight: bold; text-transform: uppercase; letter-spacing: .06em; color: var(--text); }
+  .rhythm .result { margin-left: auto; font-weight: bold; color: var(--text); }
+  .rhythm .bar { position: relative; height: 16px; border-radius: 8px; background: var(--hp-track); overflow: hidden; }
+  .rhythm .lane { position: absolute; top: 0; bottom: 0; left: 8px; right: 8px; }
+  .rhythm .zone, .rhythm .sweet { position: absolute; top: 0; bottom: 0; transform: translateX(-50%); left: 50%; }
+  .rhythm .zone { background: color-mix(in srgb, var(--accent) 22%, transparent); transition: background .15s; }
+  .rhythm .sweet { background: color-mix(in srgb, var(--accent) 50%, transparent); }
+  .rhythm .ball {
+    position: absolute; top: 50%; left: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px;
+    border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--panel);
+  }
+  .rhythm.idle .ball { background: var(--fog); }
+  .rhythm.idle .zone, .rhythm.idle .sweet { opacity: .3; }
+  .rhythm.spent .zone { opacity: .35; }
+  .rhythm.hit .zone { background: color-mix(in srgb, var(--hp-good) 55%, transparent); }
+  .rhythm.miss .zone { background: color-mix(in srgb, var(--hp-low) 45%, transparent); }
+  #me-hp { width: 120px; margin: 0; }
+  .t-heal { color: var(--hp-good); } .t-death { color: var(--system); }
+
+  #ground li { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
+  #ground li .thing { flex: 1; cursor: pointer; }
+  #ground li .thing:hover { text-decoration: underline; }
+  #ground li.feature .thing { color: var(--muted); }
+  #ground li button { font-size: 11px; padding: 1px 6px; }
+
+  #login {
+    max-width: 360px; margin: 10vh auto; padding: 24px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 10px;
+  }
+  #login h2 { margin: 0 0 4px; color: var(--accent); font-size: 18px; }
+  #login .row { display: flex; gap: 8px; }
+  #login .row button { flex: 1; }
+  #login-error { color: var(--system); min-height: 1.5em; margin: 0; }
+  #login-note { color: var(--muted); margin: 0; }
+  #login-note:empty { display: none; }
+
+  @media (max-width: 760px) {
+    main { display: flex; flex-direction: column; overflow-y: auto; }
+    #left { flex: none; }
+    #map-wrap { flex: none; height: 42vh; }
+    #log-wrap { flex: none; height: 34vh; }
+    aside { border-left: 0; overflow: visible; }
+    #login { margin: 6vh 16px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>ALZENDOR</h1>
+  <span id="who"></span>
+  <span id="me-hp" class="hidden"></span>
+  <span id="status" class="down">offline</span>
+  <button id="reconnect" class="hidden" type="button">Reconnect</button>
+</header>
+
+<form id="login" autocomplete="on">
+  <h2>Enter the world</h2>
+  <input id="name" name="username" placeholder="Name (3–16 letters or digits)" autocomplete="username" required minlength="3" maxlength="16" pattern="[A-Za-z][A-Za-z0-9]{2,15}" title="3–16 letters or digits, starting with a letter">
+  <input id="password" name="password" type="password" placeholder="Password (8+ characters)" autocomplete="current-password" required minlength="8" maxlength="128">
+  <div class="row">
+    <button type="submit" data-kind="login">Log in</button>
+    <button type="submit" data-kind="register">Create account</button>
+  </div>
+  <p id="login-note" aria-live="polite"></p>
+  <p id="login-error" role="alert"></p>
+</form>
+
+<main id="world" class="hidden">
+  <section id="left">
+    <div id="map-wrap">
+      <svg id="map" role="img" aria-label="Map of explored rooms"></svg>
+      <div id="map-tools">
+        <button id="map-area" type="button" aria-pressed="true" title="Focus on the area you're in">Area</button>
+        <button id="map-all" type="button" aria-pressed="false" title="Show everywhere you've been">All</button>
+      </div>
+      <div id="map-hint">Click a room to walk there · drag to pan · scroll to zoom</div>
+    </div>
+    <div id="log-wrap">
+      <div id="log" aria-live="polite"></div>
+      <button id="latest" class="hidden" type="button">↓ Latest</button>
+    </div>
+    <form id="command" autocomplete="off">
+      <span id="target-chip" class="hidden" title="Commands like 'kick' or 'inspect' go to your target. Esc clears it.">
+        ▸ <span class="name" id="target-name"></span>
+        <button id="target-clear" type="button" aria-label="Clear target">×</button>
+      </span>
+      <input id="input" placeholder="Type a command — Tab picks a target, k kicks" maxlength="500" aria-label="Command">
+      <button type="submit">Send</button>
+    </form>
+  </section>
+  <aside>
+    <section>
+      <div id="room-name">—</div>
+      <div id="room-area"></div>
+      <div id="exits"></div>
+    </section>
+    <section>
+      <h2>Here <span class="hint">Tab to target</span></h2>
+      <div id="timings" class="hidden" role="group" aria-label="Combat timing"></div>
+      <ul id="entities"></ul>
+    </section>
+    <section>
+      <h2>On the ground</h2>
+      <ul id="ground"></ul>
+    </section>
+  </aside>
+</main>
+
+<script>
+"use strict";
+// The protocol is documented in alzendor/session.py. Everything the player sees
+// after logging in arrives as an `event` with a global sequence number; the
+// client keeps the last one so it can resume after a dropped connection
+// without missing or repeating anything.
+
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(key) { try { return localStorage.getItem(key); } catch { return null; } },
+  set(key, value) { try { localStorage.setItem(key, value); } catch {} },
+  remove(key) { try { localStorage.removeItem(key); } catch {} },
+};
+
+let ws = null;
+let me = null;          // player id
+let lastSeq = 0;        // highest event sequence number shown
+let retries = 0;
+let reconnectTimer = null;
+let room = null;        // latest room snapshot, kept current by room events
+let resuming = false;   // waiting to hear whether a saved session is still valid
+let target = null;      // selected entity id ('pc:…' or 'npc:…')
+let walk = null;        // a click-to-walk in progress: { dest, steps: [{dir, to}], expect, timer }
+const history = [];
+let historyIndex = 0;
+
+// Connection -------------------------------------------------------------------
+
+function wsUrl() {
+  return (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws";
+}
+
+function setStatus(text, live) {
+  $("status").textContent = text;
+  $("status").className = live ? "live" : "down";
+}
+
+function connect(first) {
+  clearTimeout(reconnectTimer);
+  $("reconnect").classList.add("hidden");
+  ws = new WebSocket(wsUrl());
+  setStatus("connecting…", false);
+  ws.onopen = () => {
+    setStatus(me ? "resuming…" : "connected", true);
+    if (first) ws.send(JSON.stringify(first));
+  };
+  ws.onmessage = (message) => handle(JSON.parse(message.data));
+  ws.onclose = (close) => {
+    ws = null;
+    stopWalk();
+    clearInterval(clock.timer);
+    setStatus("offline", false);
+    if (!me) {
+      if (loginBusy()) $("login-error").textContent = "Couldn't reach the server. Is it running?";
+      return setBusy(null);
+    }
+    if (close.code === 1000 && close.reason) {
+      // The server ended this session on purpose: quit, logout, or logged in elsewhere.
+      line(close.reason, "t-system");
+      if (close.reason.includes("logged out")) return signOut();
+      $("reconnect").classList.remove("hidden");
+      return;
+    }
+    const delay = Math.min(1000 * 2 ** retries++, 15000);
+    setStatus(`reconnecting in ${Math.round(delay / 1000)}s…`, false);
+    reconnectTimer = setTimeout(resume, delay);
+  };
+}
+
+function resume() {
+  const token = store.get("alz.token");
+  if (!token) return signOut();
+  resuming = true;
+  connect({ type: "resume", token, since: lastSeq });
+}
+
+function handle(message) {
+  switch (message.type) {
+    case "auth_ok":
+      me = message.player;
+      resuming = false;
+      retries = 0;
+      store.set("alz.token", message.token);
+      setBusy(null);
+      $("password").value = "";
+      $("who").textContent = message.name;
+      $("login").classList.add("hidden");
+      $("world").classList.remove("hidden");
+      setStatus("connected · " + message.server, true);
+      startClockSync();
+      $("input").focus();
+      break;
+    case "auth_error":
+      if (resuming) signOut();
+      setBusy(null);
+      $("login-error").textContent = message.message;
+      break;
+    case "event":
+      if (message.event.seq <= lastSeq) return;
+      lastSeq = message.event.seq;
+      show(message.event);
+      break;
+    case "error":
+      line(message.message, "t-error");
+      break;
+    case "pong":
+      onPong(message);
+      break;
+  }
+}
+
+// Sends a command, with the selected target for commands that take one.
+function sendCmd(text) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return line("Not connected.", "t-error");
+  ws.send(JSON.stringify(target ? { type: "cmd", text, target } : { type: "cmd", text }));
+}
+
+// Log ------------------------------------------------------------------------------
+// The log follows new events, staying scrolled to the bottom. Scrolling up to
+// read pauses that until you scroll back down, send a command, or press Latest.
+let following = true;
+
+function scrollToLatest() {
+  following = true;
+  $("log").scrollTop = $("log").scrollHeight;
+  $("latest").classList.add("hidden");
+}
+
+$("log").addEventListener("scroll", () => {
+  const log = $("log");
+  following = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+  if (following) $("latest").classList.add("hidden");
+});
+$("latest").addEventListener("click", scrollToLatest);
+
+function line(text, className) {
+  const log = $("log");
+  const div = document.createElement("div");
+  div.className = "ev " + (className || "");
+  div.textContent = text;
+  log.append(div);
+  while (log.childElementCount > 1000) log.firstElementChild.remove();
+  if (following) log.scrollTop = log.scrollHeight;
+  else $("latest").classList.remove("hidden");
+  return div;
+}
+
+// Events ---------------------------------------------------------------------------
+
+function show(event) {
+  if (event.type === "map") return applyMap(event);
+  if (event.type === "timing") return applyTiming(event);
+  if ((event.type === "combat" || event.type === "heal") && (event.actor === me || event.channel === "PLAYER:" + me)) showResult(event);
+  if (event.type === "room") return showRoom(event.room, event.text, event.cause);
+  if (room && event.channel === "ROOM:" + room.id) updateRoom(event);
+  if (walk && event.type === "system" && event.channel === "PLAYER:" + me) stopWalk();
+  if (!event.text) return; // a pure state update
+  const div = line(event.text, "t-" + event.type);
+  if (event.actor === me) div.classList.add("mine");
+}
+
+// Keeps the room panels in step with what happens in the room.
+function updateRoom(event) {
+  const cards = room.entities;
+  if (event.type === "arrive" && event.entity && event.actor !== me) {
+    room.entities = [...cards.filter((c) => c.id !== event.entity.id), event.entity].sort(byCardOrder);
+  } else if ((event.type === "leave" || event.type === "death") && event.entity_id) {
+    room.entities = cards.filter((c) => c.id !== event.entity_id);
+    if (target === event.entity_id) setTarget(null);
+  } else if (event.type === "entity" && event.entity.id === "pc:" + me) {
+    room.self = event.entity;
+    showSelf(event.entity);
+  } else if (event.type === "entity") {
+    room.entities = cards.map((c) => (c.id === event.entity.id ? event.entity : c));
+  } else if (event.type === "item" && event.verb === "get") {
+    room.items = room.items.filter((i) => i.id !== event.item.id);
+  } else if (event.type === "item" && event.verb === "drop") {
+    room.items = [...room.items, event.item].sort((a, b) => a.name.localeCompare(b.name));
+  } else {
+    return;
+  }
+  renderPanels();
+}
+
+function byCardOrder(a, b) {
+  if (a.kind !== b.kind) return a.kind === "npc" ? -1 : 1;
+  return a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
+}
+
+function showRoom(snapshot, text, cause) {
+  // After a reconnect the server sends the room again in case anything changed
+  // while the connection was down; only show it if something did.
+  const unchanged = cause === "resume" && JSON.stringify(snapshot) === JSON.stringify(room);
+  const moved = !room || room.id !== snapshot.id;
+  room = snapshot;
+  showSelf(snapshot.self);
+  if (moved) setTarget(null);
+  else if (target && !room.entities.some((c) => c.id === target)) setTarget(null);
+
+  const midWalk = walk && cause === "move" && advanceWalk(snapshot.id);
+  if (!unchanged) {
+    if (midWalk) {
+      line("→ " + snapshot.name, "step");
+    } else {
+      const div = line("", "room");
+      const [name, ...rest] = text.split("\n");
+      const title = document.createElement("div");
+      title.className = "name";
+      title.textContent = name;
+      div.append(title, rest.join("\n"));
+      if (following) $("log").scrollTop = $("log").scrollHeight;
+    }
+  }
+  renderPanels();
+  renderMap();
+}
+
+// Room panels ------------------------------------------------------------------------
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function renderPanels() {
+  $("room-name").textContent = room ? room.name : "—";
+  $("room-area").textContent = room && room.area ? room.area : "";
+  $("exits").replaceChildren(...(room ? room.exits : []).map((dir) => {
+    const b = el("button", "", dir);
+    b.type = "button";
+    b.onclick = () => { stopWalk(); sendCmd("move " + dir); };
+    return b;
+  }));
+  renderEntities();
+  renderGround();
+}
+
+function renderEntities() {
+  const cards = room ? room.entities : [];
+  $("timings").classList.toggle("hidden", !inCombat() && !cards.some((c) => c.kind === "npc"));
+  if (!cards.length) return $("entities").replaceChildren(el("li", "empty", "No one else is here."));
+  $("entities").replaceChildren(...cards.map((card) => {
+    const li = el("li");
+    const b = el("button", `card ${card.kind}${card.id === target ? " selected" : ""}`);
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(card.id === target));
+    const top = el("div", "top");
+    top.append(el("span", "name", card.name), el("span", "label", card.label));
+    b.append(top);
+    if (card.description) b.append(el("div", "desc", card.description));
+    b.append(healthBar(card.hp, card.max_hp));
+    b.onclick = () => { setTarget(card.id === target ? null : card.id); $("input").focus(); };
+    li.append(b);
+    return li;
+  }));
+}
+
+function healthBar(hp, max) {
+  const pct = max > 0 ? Math.max(0, Math.min(100, Math.round((hp / max) * 100))) : 0;
+  const wrap = el("div", "hp");
+  const track = el("div", "track");
+  const fill = el("div", "fill" + (pct <= 25 ? " low" : pct <= 50 ? " mid" : ""));
+  fill.style.width = pct + "%";
+  track.append(fill);
+  track.setAttribute("role", "meter");
+  track.setAttribute("aria-label", "Health");
+  track.setAttribute("aria-valuenow", String(hp));
+  track.setAttribute("aria-valuemin", "0");
+  track.setAttribute("aria-valuemax", String(max));
+  wrap.append(track, el("span", "", `${hp}/${max}`));
+  return wrap;
+}
+
+function renderGround() {
+  const items = room ? room.items : [];
+  const features = room ? room.features : [];
+  if (!items.length && !features.length) return $("ground").replaceChildren(el("li", "empty", "Nothing here."));
+  const rows = items.map((item) => {
+    const li = el("li", "item");
+    const name = el("span", "thing", item.name);
+    name.title = "Look at it";
+    name.onclick = () => sendCmd("look " + item.id);
+    const get = el("button", "", "get");
+    get.type = "button";
+    get.onclick = () => sendCmd("get " + item.id);
+    li.append(name, get);
+    return li;
+  });
+  for (const feature of features) {
+    const li = el("li", "feature");
+    const name = el("span", "thing", feature);
+    name.title = "Look at it";
+    name.onclick = () => sendCmd("look " + feature);
+    li.append(name);
+    rows.push(li);
+  }
+  $("ground").replaceChildren(...rows);
+}
+
+// Targeting -------------------------------------------------------------------------
+
+function setTarget(id) {
+  target = id;
+  const card = id && room ? room.entities.find((c) => c.id === id) : null;
+  if (id && !card) target = null;
+  $("target-chip").classList.toggle("hidden", !target);
+  $("target-name").textContent = card ? card.name : "";
+  $("target-name").style.color = card ? `var(--${card.kind})` : "";
+  renderEntities();
+}
+
+function cycleTarget(step) {
+  const cards = room ? room.entities : [];
+  if (!cards.length) return setTarget(null);
+  const i = cards.findIndex((c) => c.id === target);
+  const next = i === -1 ? (step > 0 ? 0 : cards.length - 1) : (i + step + cards.length) % cards.length;
+  setTarget(cards[next].id);
+}
+
+$("target-clear").addEventListener("click", () => { setTarget(null); $("input").focus(); });
+
+// Combat rhythms -------------------------------------------------------------------------
+// Each kind of action (melee, spells, potions) has its own rhythm and bar. The
+// server judges actions by Redis's clock; the client keeps an estimate of that
+// clock (from ping/pong) and of the one-way trip to the server, and draws each
+// ball where it will be when a command sent now arrives. Press Enter as a ball
+// enters the centre and that action lands on its beat.
+
+const clock = { offset: 0, trip: 0, samples: [], timer: null };
+const rhythms = {};     // name -> { row, event }; event is set while the rhythm is running
+let timingFrame = null;
+
+function sendPing() {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "ping", t: performance.now() }));
+}
+
+function startClockSync() {
+  clearInterval(clock.timer);
+  clock.samples = [];
+  for (let i = 0; i < 5; i++) setTimeout(sendPing, i * 250);
+  clock.timer = setInterval(sendPing, 15000);
+}
+
+function onPong(message) {
+  if (typeof message.t !== "number") return;
+  const rtt = performance.now() - message.t;
+  clock.samples = [...clock.samples.slice(-7), { rtt, offset: message.server_ms - (message.t + rtt / 2) }];
+  // The quickest round trip is the least distorted by delays along the way.
+  const best = clock.samples.reduce((a, b) => (b.rtt < a.rtt ? b : a));
+  clock.offset = best.offset;
+  clock.trip = best.rtt / 2;
+}
+
+// Redis's clock at the moment a command sent now would reach the server.
+function arrivalTime() {
+  return performance.now() + clock.offset + clock.trip;
+}
+
+function inCombat() {
+  return Object.values(rhythms).some((r) => r.event);
+}
+
+function rhythmRow(name) {
+  if (rhythms[name]) return rhythms[name];
+  const row = el("div", "rhythm idle");
+  const status = el("div", "status");
+  status.append(el("span", "label"), el("span", "note"), el("span", "result"));
+  const lane = el("div", "lane");
+  lane.append(el("div", "zone"), el("div", "sweet"), el("div", "ball"));
+  const bar = el("div", "bar");
+  bar.append(lane);
+  row.append(status, bar);
+  $("timings").append(row);
+  rhythms[name] = { row, event: null, resultTimer: null };
+  return rhythms[name];
+}
+
+function applyTiming(event) {
+  const rhythm = rhythmRow(event.rhythm);
+  const { row } = rhythm;
+  const q = (cls) => row.querySelector("." + cls);
+  rhythm.event = event.active ? event : null;
+  if (event.label) q("label").textContent = event.label;
+  if (event.hint) rhythm.hint = event.hint;
+  row.classList.toggle("idle", !event.active);
+  if (event.active) {
+    // A ball covers half its lane in half a beat, so a window of g ms either
+    // side of the centre spans 2g/period of the lane.
+    q("zone").style.width = (200 * event.grace_ms) / event.period_ms + "%";
+    q("sweet").style.width = (200 * event.perfect_ms) / event.period_ms + "%";
+    q("note").textContent = `every ${(event.period_ms / 1000).toFixed(1)}s`;
+    if (!timingFrame) timingFrame = requestAnimationFrame(drawTiming);
+  } else {
+    q("ball").style.left = "50%";
+    row.classList.remove("spent");
+    q("note").textContent = rhythm.hint || "";
+  }
+  renderEntities();
+}
+
+function drawTiming() {
+  timingFrame = null;
+  const t = arrivalTime();
+  for (const [name, rhythm] of Object.entries(rhythms)) {
+    const event = rhythm.event;
+    if (!event) continue;
+    if (t - event.last_ms > event.timeout_ms) { applyTiming({ rhythm: name, active: false }); continue; }
+    // Out to the right and back in one beat, out to the left and back in the next.
+    const u = Math.max(0, (t - event.start_ms) / event.period_ms);
+    const swing = 1 - Math.abs(1 - 2 * (u % 1));
+    const side = Math.floor(u) % 2 === 0 ? 1 : -1;
+    rhythm.row.querySelector(".ball").style.left = 50 + 50 * swing * side + "%";
+    // The coming centre crossing is already used up (by a miss): nothing to aim for.
+    rhythm.row.classList.toggle("spent", Math.round(u) <= event.last_beat);
+  }
+  if (inCombat()) timingFrame = requestAnimationFrame(drawTiming);
+}
+
+const RESULTS = { opener: "Opening", perfect: "Perfect!", good: "Hit", early: "Too early", late: "Too late" };
+
+function showResult(event) {
+  const rhythm = rhythms[event.rhythm];
+  if (!rhythm || !RESULTS[event.result]) return; // a room "miss" adds nothing to the private early/late message
+  const amount = event.damage !== undefined ? ` (${event.damage})` : event.amount !== undefined ? ` (+${event.amount})` : "";
+  const landed = !["early", "late"].includes(event.result);
+  rhythm.row.querySelector(".result").textContent = RESULTS[event.result] + amount;
+  rhythm.row.classList.remove("hit", "miss");
+  rhythm.row.classList.add(landed ? "hit" : "miss");
+  clearTimeout(rhythm.resultTimer);
+  rhythm.resultTimer = setTimeout(() => {
+    rhythm.row.classList.remove("hit", "miss");
+    rhythm.row.querySelector(".result").textContent = "";
+  }, 900);
+}
+
+// Your own health, in the header.
+function showSelf(card) {
+  if (!card) return;
+  $("me-hp").replaceChildren(healthBar(card.hp, card.max_hp));
+  $("me-hp").classList.remove("hidden");
+}
+
+// Map -------------------------------------------------------------------------------
+// Rooms sit on an abstract plane (positions from the seed map). The view is a
+// centre point plus a scale in map units per pixel, so it always matches the
+// SVG's shape. It frames the area you're in and glides to each new area as you
+// enter it; dragging or zooming takes over until the next area, or Area / All.
+
+const SVG = "http://www.w3.org/2000/svg";
+const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+const known = { rooms: {}, areas: {}, cities: {} };
+const view = { cx: 0, cy: 0, k: 0.25, mode: "area", area: null }; // mode: area | all | free
+const measurer = document.createElement("canvas").getContext("2d");
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+let glide = null;
+
+// Space around boxes, in pixels, so titles never sit on rooms at any zoom.
+const AREA_PAD = { side: 18, top: 40, bottom: 16 };
+const CITY_PAD = { side: 16, top: 28, bottom: 16 };
+// Space around a framed area, in pixels: room for the boxes, labels and buttons.
+const FRAME_MARGIN = { left: 56, right: 120, top: 80, bottom: 48 };
+
+function applyMap(event) {
+  if (event.full) for (const kind of ["rooms", "areas", "cities"]) known[kind] = {};
+  for (const r of event.rooms) {
+    if (known.rooms[r.id] && known.rooms[r.id].explored && !r.explored) continue;
+    known.rooms[r.id] = r;
+  }
+  for (const a of event.areas) known.areas[a.id] = a;
+  for (const c of event.cities) known.cities[c.id] = c;
+  renderMap();
+}
+
+function areaColor(id) {
+  const area = known.areas[id];
+  return `var(--area-${area ? area.color : 1})`;
+}
+
+function textWidth(text, size, weight) {
+  measurer.font = `${weight} ${size}px ${FONT}`;
+  return measurer.measureText(text).width;
+}
+
+function svgEl(tag, attrs, parent) {
+  const node = document.createElementNS(SVG, tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (parent) parent.append(node);
+  return node;
+}
+
+function areaRect(area, k) {
+  const [x1, y1, x2, y2] = area.bounds, p = AREA_PAD;
+  return [x1 - p.side * k, y1 - p.top * k, x2 + p.side * k, y2 + p.bottom * k];
+}
+
+function cityRect(city, k) {
+  const [x1, y1, x2, y2] = city.bounds, a = AREA_PAD, c = CITY_PAD;
+  return [x1 - (a.side + c.side) * k, y1 - (a.top + c.top) * k, x2 + (a.side + c.side) * k, y2 + (a.bottom + c.bottom) * k];
+}
+
+// The view that shows a box of map units within the frame margins.
+function frame([x1, y1, x2, y2]) {
+  const svg = $("map"), m = FRAME_MARGIN;
+  const w = Math.max(x2 - x1, 24), h = Math.max(y2 - y1, 16);
+  const k = Math.max(w / Math.max(svg.clientWidth - m.left - m.right, 60), h / Math.max(svg.clientHeight - m.top - m.bottom, 60), 0.12); // don't blow small areas up
+  return { cx: (x1 + x2) / 2 + ((m.right - m.left) / 2) * k, cy: (y1 + y2) / 2 + ((m.bottom - m.top) / 2) * k, k };
+}
+
+function targetView() {
+  const here = room && known.rooms[room.id];
+  if (view.mode === "all") {
+    const rooms = Object.values(known.rooms);
+    if (!rooms.length) return null;
+    const xs = rooms.map((r) => r.pos[0]), ys = rooms.map((r) => r.pos[1]);
+    return frame([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]);
+  }
+  if (!here) return null;
+  const area = known.areas[here.area];
+  return frame(area ? area.bounds : [here.pos[0] - 15, here.pos[1] - 15, here.pos[0] + 15, here.pos[1] + 15]);
+}
+
+function glideTo(target) {
+  if (!target) return;
+  if (glide) cancelAnimationFrame(glide);
+  if (reduceMotion.matches) { Object.assign(view, target); glide = null; return drawMap(); }
+  const from = { cx: view.cx, cy: view.cy, k: view.k };
+  const start = performance.now();
+  const step = (now) => {
+    const t = Math.min(1, (now - start) / 500);
+    const e = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+    view.cx = from.cx + (target.cx - from.cx) * e;
+    view.cy = from.cy + (target.cy - from.cy) * e;
+    view.k = Math.exp(Math.log(from.k) + (Math.log(target.k) - Math.log(from.k)) * e);
+    drawMap();
+    glide = t < 1 ? requestAnimationFrame(step) : null;
+  };
+  glide = requestAnimationFrame(step);
+}
+
+// Decides where the view should be after something changed, then draws.
+function renderMap() {
+  const svg = $("map");
+  if (!svg.clientWidth) return;
+  const here = room && known.rooms[room.id];
+  const area = here ? here.area : null;
+  if (area !== view.area) {
+    // Entered a new area (or arrived in the world): focus on it.
+    const first = view.area === null;
+    view.area = area;
+    view.mode = "area";
+    const target = targetView();
+    if (first && target) { Object.assign(view, target); return drawMap(); }
+    return glideTo(target);
+  }
+  if (glide) return;
+  if (view.mode !== "free") {
+    Object.assign(view, targetView() || {});
+  } else if (here) {
+    const halfW = (svg.clientWidth * view.k) / 2 - 20 * view.k, halfH = (svg.clientHeight * view.k) / 2 - 20 * view.k;
+    if (Math.abs(here.pos[0] - view.cx) > halfW || Math.abs(here.pos[1] - view.cy) > halfH) {
+      return glideTo({ cx: here.pos[0], cy: here.pos[1], k: view.k });
+    }
+  }
+  drawMap();
+}
+
+const overlaps = (a, b) => a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1];
+
+// Whether a line segment passes through a rectangle (Liang–Barsky clipping).
+function crosses([x1, y1, x2, y2], [rx1, ry1, rx2, ry2]) {
+  let t0 = 0, t1 = 1;
+  const dx = x2 - x1, dy = y2 - y1;
+  for (const [p, q] of [[-dx, x1 - rx1], [dx, rx2 - x1], [-dy, y1 - ry1], [dy, ry2 - y1]]) {
+    if (p === 0) { if (q < 0) return false; continue; }
+    const r = q / p;
+    if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; }
+    else { if (r < t0) return false; if (r < t1) t1 = r; }
+  }
+  return true;
+}
+
+// Draws the current view. Labels are laid out in screen pixels: each room name
+// tries a few spots around its room and takes the first that collides with
+// nothing; names with no free spot are left to the room's tooltip.
+function drawMap() {
+  const svg = $("map");
+  const W = svg.clientWidth, H = svg.clientHeight;
+  if (!W || !H) return;
+  const k = view.k;
+  const vx = view.cx - (W * k) / 2, vy = view.cy - (H * k) / 2;
+  svg.setAttribute("viewBox", `${vx} ${vy} ${W * k} ${H * k}`);
+  svg.replaceChildren();
+  const toPx = (x, y) => [(x - vx) / k, (y - vy) / k];
+  const line = { "vector-effect": "non-scaling-stroke" };
+  const here = room && known.rooms[room.id];
+  const blocked = []; // pixel rectangles labels must avoid
+  const rooms = Object.values(known.rooms);
+  const dots = rooms.map((r) => { const [px, py] = toPx(...r.pos); return [px - 13, py - 13, px + 13, py + 13]; });
+  const titleFits = (box) => !dots.some((d) => overlaps(box, d)) && !blocked.some((b) => overlaps(box, b));
+  const edges = [];   // pixel segments labels should avoid
+  const label = (x, y, text, size, weight, fill, anchor = "start", extra = {}) => {
+    const t = svgEl("text", { x: vx + x * k, y: vy + y * k, "font-size": size * k, "font-weight": weight, fill,
+      "text-anchor": anchor, "stroke-width": 3 * k, ...extra }, svg);
+    t.textContent = text;
+  };
+
+  // Nested boxes: cities, and the areas inside them, each titled top-left.
+  for (const city of Object.values(known.cities)) {
+    const [x1, y1, x2, y2] = cityRect(city, k);
+    svgEl("rect", { x: x1, y: y1, width: x2 - x1, height: y2 - y1, rx: 14 * k, fill: "none",
+      stroke: "var(--box-line)", "stroke-width": 1.5, "stroke-dasharray": "6 4", ...line }, svg);
+    const [px, py] = toPx(x1, y1);
+    const box = [px + 10, py + 4, px + 18 + textWidth(city.name, 13, 600), py + 24];
+    if (titleFits(box)) {
+      label(px + 14, py + 19, city.name, 13, 600, "var(--muted)");
+      blocked.push(box);
+    }
+  }
+  for (const area of Object.values(known.areas)) {
+    const [x1, y1, x2, y2] = areaRect(area, k);
+    svgEl("rect", { x: x1, y: y1, width: x2 - x1, height: y2 - y1, rx: 10 * k, fill: "var(--box)",
+      stroke: areaColor(area.id), "stroke-opacity": area.id === view.area ? 0.9 : 0.4, "stroke-width": area.id === view.area ? 1.5 : 1, ...line }, svg);
+    const [px, py] = toPx(x1, y1);
+    const title = area.name.toUpperCase();
+    const box = [px + 6, py + 5, px + 14 + textWidth(title, 10, 650) + title.length * 0.8, py + 23];
+    if (titleFits(box)) {
+      label(px + 10, py + 18, title, 10, 650, areaColor(area.id), "start", { "letter-spacing": "0.08em" });
+      blocked.push(box);
+    }
+  }
+
+  // Connections. Up/down exits are dashed; ones into unexplored rooms dotted.
+  const drawn = new Set();
+  for (const r of Object.values(known.rooms)) {
+    if (!r.explored) continue;
+    for (const [dir, dest] of Object.entries(r.exits || {})) {
+      const other = known.rooms[dest];
+      const key = [r.id, dest].sort().join("|");
+      if (!other || drawn.has(key)) continue;
+      drawn.add(key);
+      svgEl("line", { x1: r.pos[0], y1: r.pos[1], x2: other.pos[0], y2: other.pos[1],
+        stroke: other.explored ? "var(--edge)" : "var(--fog)", "stroke-width": 1.5,
+        "stroke-dasharray": dir === "up" || dir === "down" ? "5 4" : other.explored ? "none" : "2 4", ...line }, svg);
+      edges.push([...toPx(...r.pos), ...toPx(...other.pos)]);
+    }
+  }
+
+  if (walk && here) {
+    const points = [here.pos, ...walk.steps.map((s) => known.rooms[s.to].pos)].map((p) => p.join(",")).join(" ");
+    svgEl("polyline", { points, fill: "none", stroke: "var(--accent)", "stroke-width": 4, "stroke-opacity": 0.5,
+      "stroke-linecap": "round", "stroke-linejoin": "round", ...line }, svg);
+  }
+
+  // Rooms.
+  for (const r of rooms) {
+    const current = here && r.id === here.id;
+    const [px, py] = toPx(...r.pos);
+    const radius = current ? 7 : r.explored ? 5.5 : 4.5;
+    const g = svgEl("g", { class: "node" + (current ? " current" : ""), "data-room": r.id }, svg);
+    svgEl("title", {}, g).textContent = r.explored ? r.name : "Unexplored";
+    if (current) svgEl("circle", { cx: r.pos[0], cy: r.pos[1], r: 12 * k, fill: "none", stroke: "var(--accent)", "stroke-width": 2, ...line }, g);
+    svgEl("circle", { class: "dot", cx: r.pos[0], cy: r.pos[1], r: radius * k,
+      fill: r.explored ? areaColor(r.area) : "var(--map-bg)", stroke: r.explored ? "var(--map-bg)" : "var(--fog)",
+      "stroke-width": r.explored ? 2 : 1.5, ...line }, g);
+    svgEl("circle", { cx: r.pos[0], cy: r.pos[1], r: 14 * k, fill: "transparent" }, g); // a bigger click target
+    if (!current) g.addEventListener("click", () => { if (!dragged) walkTo(r.id); });
+    blocked.push([px - (current ? 13 : radius + 2), py - (current ? 13 : radius + 2), px + (current ? 13 : radius + 2), py + (current ? 13 : radius + 2)]);
+  }
+
+  // Room names: the current room first, then its area, then everything else.
+  const named = rooms.filter((r) => r.explored)
+    .sort((a, b) => (b === here) - (a === here) || (b.area === view.area) - (a.area === view.area));
+  for (const r of named) {
+    const current = r === here;
+    const size = current ? 12.5 : 11, weight = current ? 700 : 500;
+    const w = textWidth(r.name, size, weight);
+    const [px, py] = toPx(...r.pos);
+    const gap = current ? 16 : 9;
+    const spots = [
+      { x: px + gap, y: py + size * 0.35, anchor: "start", box: [px + gap - 2, py - size * 0.6, px + gap + w + 2, py + size * 0.5] },
+      { x: px - gap, y: py + size * 0.35, anchor: "end", box: [px - gap - w - 2, py - size * 0.6, px - gap + 2, py + size * 0.5] },
+      { x: px, y: py + gap + size * 0.8, anchor: "middle", box: [px - w / 2 - 2, py + gap - 1, px + w / 2 + 2, py + gap + size + 1] },
+      { x: px, y: py - gap, anchor: "middle", box: [px - w / 2 - 2, py - gap - size, px + w / 2 + 2, py - gap + 3] },
+    ];
+    let best = null, bestScore = Infinity;
+    for (const spot of spots) {
+      const own = (b) => b[0] <= px && b[2] >= px && b[1] <= py && b[3] >= py; // this room's own dot
+      let score = blocked.filter((b) => !own(b) && overlaps(spot.box, b)).length * 10;
+      score += edges.filter((e) => crosses(e, spot.box)).length;
+      if (spot.box[0] < 0 || spot.box[2] > W || spot.box[1] < 0 || spot.box[3] > H) score += 10;
+      if (score < bestScore) { best = spot; bestScore = score; }
+      if (score === 0) break;
+    }
+    if (bestScore >= 10 && !current) continue;
+    label(best.x, best.y, r.name, size, weight, current ? "var(--accent)" : "var(--text)", best.anchor, { "class": "room-name" });
+    blocked.push(best.box);
+  }
+}
+
+function setMapMode(mode) {
+  view.mode = mode;
+  $("map-area").setAttribute("aria-pressed", String(mode === "area"));
+  $("map-all").setAttribute("aria-pressed", String(mode === "all"));
+  glideTo(targetView());
+}
+
+// Pan and zoom.
+let drag = null;
+let dragged = false;
+function takeOver() {
+  if (glide) { cancelAnimationFrame(glide); glide = null; }
+  view.mode = "free";
+  $("map-area").setAttribute("aria-pressed", "false");
+  $("map-all").setAttribute("aria-pressed", "false");
+}
+$("map").addEventListener("pointerdown", (e) => {
+  drag = { x: e.clientX, y: e.clientY, cx: view.cx, cy: view.cy };
+  dragged = false;
+});
+window.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!dragged && Math.hypot(dx, dy) < 4) return;
+  if (!dragged) { takeOver(); drag.cx = view.cx; drag.cy = view.cy; drag.x = e.clientX; drag.y = e.clientY; }
+  dragged = true;
+  $("map").classList.add("dragging");
+  view.cx = drag.cx - (e.clientX - drag.x) * view.k;
+  view.cy = drag.cy - (e.clientY - drag.y) * view.k;
+  drawMap();
+});
+window.addEventListener("pointerup", () => {
+  drag = null;
+  $("map").classList.remove("dragging");
+  setTimeout(() => { dragged = false; }, 0);
+});
+$("map").addEventListener("wheel", (e) => {
+  e.preventDefault();
+  takeOver();
+  const rect = $("map").getBoundingClientRect();
+  const mx = view.cx + (e.clientX - rect.left - rect.width / 2) * view.k;
+  const my = view.cy + (e.clientY - rect.top - rect.height / 2) * view.k;
+  const k = Math.min(2, Math.max(0.03, view.k * Math.exp(e.deltaY * 0.0015)));
+  // Zoom around the pointer: keep the map point under it in place.
+  view.cx = mx - (mx - view.cx) * (k / view.k);
+  view.cy = my - (my - view.cy) * (k / view.k);
+  view.k = k;
+  drawMap();
+}, { passive: false });
+$("map-area").addEventListener("click", () => setMapMode("area"));
+$("map-all").addEventListener("click", () => setMapMode("all"));
+window.addEventListener("resize", () => { renderMap(); if (following) scrollToLatest(); });
+
+// Click to walk ------------------------------------------------------------------------
+// Walks the shortest known path one real move at a time. Typing a command,
+// clicking the map again, or any refusal from the server stops it.
+
+function findPath(from, to) {
+  const previous = { [from]: null };
+  const queue = [from];
+  while (queue.length) {
+    const id = queue.shift();
+    if (id === to) break;
+    const r = known.rooms[id];
+    if (!r || !r.explored) continue;
+    for (const [dir, dest] of Object.entries(r.exits || {})) {
+      if (dest in previous || !known.rooms[dest]) continue;
+      previous[dest] = { id, dir };
+      queue.push(dest);
+    }
+  }
+  if (!(to in previous)) return null;
+  const steps = [];
+  for (let id = to; previous[id]; id = previous[id].id) steps.unshift({ dir: previous[id].dir, to: id });
+  return steps;
+}
+
+function walkTo(id) {
+  if (walk) return stopWalk();
+  if (!room || id === room.id) return;
+  const steps = findPath(room.id, id);
+  if (!steps) return line("You don't know a way there yet.", "t-system");
+  walk = { dest: id, steps };
+  renderMap();
+  nextStep();
+}
+
+function nextStep() {
+  walk.expect = walk.steps[0].to;
+  sendCmd("move " + walk.steps[0].dir);
+}
+
+// Called when a move lands; true if the walk continues past this room.
+function advanceWalk(roomId) {
+  if (roomId !== walk.expect) { stopWalk(); return false; }
+  walk.steps.shift();
+  if (!walk.steps.length) { walk = null; return false; }
+  walk.timer = setTimeout(nextStep, 300);
+  return true;
+}
+
+function stopWalk() {
+  if (!walk) return;
+  clearTimeout(walk.timer);
+  walk = null;
+  renderMap();
+}
+
+// Login ------------------------------------------------------------------------------
+
+function signOut() {
+  me = null;
+  resuming = false;
+  room = null;
+  lastSeq = 0;
+  stopWalk();
+  setTarget(null);
+  for (const name of Object.keys(rhythms)) applyTiming({ rhythm: name, active: false });
+  $("me-hp").classList.add("hidden");
+  for (const kind of ["rooms", "areas", "cities"]) known[kind] = {};
+  view.area = null;
+  view.mode = "area";
+  store.remove("alz.token");
+  $("log").replaceChildren();
+  $("world").classList.add("hidden");
+  $("login").classList.remove("hidden");
+  $("who").textContent = "";
+}
+
+// Disables the login buttons and shows what's happening, or (with null) undoes that.
+function setBusy(label) {
+  for (const button of $("login").querySelectorAll("button")) button.disabled = Boolean(label);
+  $("login-note").textContent = label || "";
+}
+
+function loginBusy() {
+  return $("login-note").textContent !== "";
+}
+
+$("login").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (loginBusy()) return;
+  $("login-error").textContent = "";
+  const kind = e.submitter ? e.submitter.dataset.kind : "login";
+  setBusy(kind === "register" ? "Creating your account…" : "Logging in…");
+  const credentials = { type: kind, name: $("name").value, password: $("password").value };
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(credentials));
+  else connect(credentials);
+});
+
+// Command line -------------------------------------------------------------------------
+
+$("command").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = $("input").value.trim();
+  if (!text) return;
+  stopWalk();
+  history.push(text);
+  scrollToLatest();
+  historyIndex = history.length;
+  sendCmd(text);
+  // In a fight, keep the command (selected, so typing replaces it): Enter repeats it on the next beat.
+  if (inCombat() || /^(k|kick|mm|missile|cast|hp|potion|quaff)\b/i.test(text)) $("input").select();
+  else $("input").value = "";
+});
+
+$("input").addEventListener("keydown", (e) => {
+  if (e.key === "Tab") {
+    e.preventDefault();
+    cycleTarget(e.shiftKey ? -1 : 1);
+  } else if (e.key === "Escape") {
+    setTarget(null);
+    stopWalk();
+  } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+    e.preventDefault();
+    historyIndex = Math.max(0, Math.min(history.length, historyIndex + (e.key === "ArrowUp" ? -1 : 1)));
+    $("input").value = history[historyIndex] || "";
+  }
+});
+
+$("reconnect").addEventListener("click", resume);
+
+renderPanels();
+if (store.get("alz.token")) {
+  $("login").classList.add("hidden");
+  $("world").classList.remove("hidden");
+  me = "pending";
+  resume();
+}
+</script>
+</body>
+</html>

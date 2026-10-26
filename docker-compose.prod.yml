@@ -1,0 +1,38 @@
+# Production overrides: nothing but Caddy is reachable from outside, and Caddy
+# terminates HTTPS (certificates are automatic) and balances across the servers.
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+services:
+  redis:
+    ports: !reset []
+
+  server1:
+    ports: !reset []
+    environment: &prod-env
+      ALZ_TRUST_PROXY: "true"
+      ALZ_ALLOWED_ORIGINS: ${ALZ_ALLOWED_ORIGINS:-https://${ALZ_DOMAIN:?set ALZ_DOMAIN in .env}}
+
+  server2:
+    ports: !reset []
+    environment: *prod-env
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "${ALZ_HTTP_PORT:-80}:80"
+      - "${ALZ_HTTPS_PORT:-443}:443"
+    environment:
+      ALZ_DOMAIN: ${ALZ_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      server1:
+        condition: service_healthy
+      server2:
+        condition: service_healthy
+
+volumes:
+  caddy-data:
+  caddy-config:

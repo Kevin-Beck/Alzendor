@@ -1,0 +1,699 @@
+{
+  "start_room": "tavern",
+  "cities": {
+    "harrowgate": {
+      "name": "Harrowgate"
+    },
+    "harrowlake": {
+      "name": "Harrowlake"
+    },
+    "spiderwood": {
+      "name": "Spiderwood"
+    }
+  },
+  "areas": {
+    "old_quarter": {
+      "name": "the Old Quarter",
+      "city": "harrowgate"
+    },
+    "docks": {
+      "name": "the Docks",
+      "city": "harrowgate"
+    },
+    "lake_road": {
+      "name": "the Lake Road",
+      "city": "harrowlake"
+    },
+    "harrowlake_village": {
+      "name": "Harrowlake Village",
+      "city": "harrowlake"
+    },
+    "forest_edge": {
+      "name": "the Forest Edge",
+      "city": "spiderwood"
+    },
+    "webbed_hollow": {
+      "name": "the Webbed Hollow",
+      "city": "spiderwood"
+    }
+  },
+  "rooms": {
+    "tavern": {
+      "name": "The Gilded Tankard",
+      "area": "old_quarter",
+      "pos": [
+        40,
+        40
+      ],
+      "description": "A low-beamed tavern thick with pipe smoke. A fire crackles in the hearth, and a scarred oak bar runs along the back wall. A trapdoor behind the bar leads down, and a side door opens east onto an alley.",
+      "exits": {
+        "north": "market_square",
+        "down": "cellar",
+        "east": "back_alley"
+      },
+      "features": {
+        "ground": "Worn floorboards, dark with a century of spilled ale.",
+        "hearth": "A wide stone hearth. The fire in it never seems to go out.",
+        "bar": "Scarred oak, polished by a thousand elbows."
+      },
+      "flavor": {
+        "touch:ground": "crouches and presses a palm to the worn floorboards.",
+        "touch:hearth": "holds a hand to the hearth and pulls it back quickly.",
+        "sit:bar": "pulls up a stool at the bar."
+      }
+    },
+    "cellar": {
+      "name": "Tavern Cellar",
+      "area": "old_quarter",
+      "pos": [
+        48,
+        48
+      ],
+      "description": "A cool, damp cellar stacked with casks. Somewhere water drips steadily onto stone.",
+      "exits": {
+        "up": "tavern"
+      },
+      "features": {
+        "casks": "Oak casks, chalk-marked with dates and the brewer's initials.",
+        "ground": "Packed earth, cold and slightly damp."
+      },
+      "flavor": {
+        "touch:ground": "kneels and touches the cold, packed earth.",
+        "touch:casks": "raps a knuckle on a cask. It sounds full."
+      }
+    },
+    "market_square": {
+      "name": "Market Square",
+      "area": "old_quarter",
+      "pos": [
+        40,
+        20
+      ],
+      "description": "Stalls crowd the cobbled square around a mossy fountain. Hawkers shout prices over one another. The tavern lies south, a smithy east, the temple north, the harbor road heads west, and an alley slips away southeast.",
+      "exits": {
+        "south": "tavern",
+        "east": "smithy",
+        "north": "temple_steps",
+        "west": "harbor_road",
+        "southeast": "back_alley"
+      },
+      "features": {
+        "fountain": "A stone fountain carved with leaping fish. Coins glint at the bottom.",
+        "stalls": "Canvas-roofed stalls selling everything from turnips to tin charms.",
+        "ground": "Uneven cobbles, slick in places."
+      },
+      "flavor": {
+        "touch:fountain": "trails their fingers through the cold fountain water.",
+        "sit:fountain": "sits on the rim of the fountain."
+      }
+    },
+    "smithy": {
+      "name": "Brannoc's Smithy",
+      "area": "old_quarter",
+      "pos": [
+        60,
+        20
+      ],
+      "description": "Heat rolls out of the forge in waves. Tools hang in neat rows above a heavy anvil.",
+      "exits": {
+        "west": "market_square",
+        "south": "back_alley"
+      },
+      "features": {
+        "anvil": "A dented iron anvil, still warm from the morning's work.",
+        "forge": "A coal forge glowing a sullen orange."
+      },
+      "flavor": {
+        "touch:anvil": "lays a hand on the anvil and snatches it back. Still warm."
+      }
+    },
+    "temple_steps": {
+      "name": "Temple Steps",
+      "area": "old_quarter",
+      "pos": [
+        40,
+        0
+      ],
+      "description": "Broad marble steps climb to the temple doors. A great bronze bell hangs in the archway above. A lane runs north to the city gate.",
+      "exits": {
+        "south": "market_square",
+        "north": "north_gate"
+      },
+      "features": {
+        "bell": "A bronze bell green with age. It rings the hours across the Old Quarter.",
+        "steps": "Marble steps worn into shallow bowls by countless feet."
+      },
+      "flavor": {
+        "touch:bell": "reaches up and touches the bell. It hums faintly.",
+        "sit:steps": "sits down on the temple steps."
+      }
+    },
+    "harbor_road": {
+      "name": "Harbor Road",
+      "area": "docks",
+      "pos": [
+        10,
+        20
+      ],
+      "description": "A muddy road slopes down toward the water, lined with warehouses and the smell of tar. The market is east; the pier is west and the fish market south.",
+      "exits": {
+        "east": "market_square",
+        "west": "pier",
+        "south": "fish_market"
+      },
+      "features": {
+        "warehouses": "Tall timber warehouses, their doors chained shut."
+      }
+    },
+    "pier": {
+      "name": "The Long Pier",
+      "area": "docks",
+      "pos": [
+        -10,
+        20
+      ],
+      "description": "Weathered planks stretch out over grey water. Gulls squabble on the pilings, and a lighthouse stands to the north. A shore path leads west, out of the city toward Harrowlake.",
+      "exits": {
+        "east": "harbor_road",
+        "north": "lighthouse",
+        "southeast": "fish_market",
+        "west": "lake_road"
+      },
+      "features": {
+        "water": "Grey, choppy water that slaps against the pilings.",
+        "ropes": "Coils of salt-stiff rope."
+      },
+      "flavor": {
+        "touch:water": "leans over the edge and dips a hand into the cold sea.",
+        "sit:ropes": "sits on a coil of rope, legs dangling over the edge."
+      }
+    },
+    "fish_market": {
+      "name": "Fish Market",
+      "area": "docks",
+      "pos": [
+        10,
+        40
+      ],
+      "description": "Slabs of ice glisten under the morning catch. Everything smells of brine.",
+      "exits": {
+        "north": "harbor_road",
+        "northwest": "pier"
+      },
+      "features": {
+        "ice": "Rough blocks of ice, shipped down from the mountains."
+      }
+    },
+    "lighthouse": {
+      "name": "Lighthouse Base",
+      "area": "docks",
+      "pos": [
+        -10,
+        0
+      ],
+      "description": "The whitewashed lighthouse towers overhead. Its door is locked, but the keeper's bench outside is free.",
+      "exits": {
+        "south": "pier"
+      },
+      "features": {
+        "bench": "A salt-bleached bench facing the sea.",
+        "door": "An iron-banded door, firmly locked."
+      },
+      "flavor": {
+        "sit:bench": "settles onto the keeper's bench and looks out to sea."
+      }
+    },
+    "back_alley": {
+      "name": "Back Alley",
+      "area": "old_quarter",
+      "pos": [
+        60,
+        40
+      ],
+      "description": "A narrow, rubbish-strewn alley behind the tavern. Someone has scratched crude tusks into the brickwork. The smithy's back door is north; the market square opens to the northwest.",
+      "exits": {
+        "west": "tavern",
+        "north": "smithy",
+        "northwest": "market_square"
+      },
+      "features": {
+        "bricks": "Old bricks, scratched with a crude drawing of tusks.",
+        "ground": "Wet cobbles and broken crates."
+      },
+      "flavor": {
+        "touch:bricks": "runs a hand over the scratched brickwork."
+      }
+    },
+    "north_gate": {
+      "name": "North Gate",
+      "area": "old_quarter",
+      "pos": [
+        40,
+        -20
+      ],
+      "description": "A squat stone gatehouse marks the edge of Harrowgate. Beyond it, a cart track runs north toward a dark line of trees.",
+      "exits": {
+        "south": "temple_steps",
+        "north": "woodland_path"
+      },
+      "features": {
+        "gate": "Iron-bound oak doors, propped open. Bored guards ignore you.",
+        "trees": "Spiderwood. Nobody goes there without a reason."
+      },
+      "flavor": {
+        "touch:gate": "lays a hand on the cold iron bands of the gate."
+      }
+    },
+    "lake_road": {
+      "name": "Lake Road",
+      "area": "lake_road",
+      "pos": [
+        -85,
+        20
+      ],
+      "description": "A rutted road follows the shoreline west, away from Harrowgate's smoke. Reeds whisper on either side.",
+      "exits": {
+        "east": "pier",
+        "west": "reed_marsh"
+      },
+      "features": {
+        "reeds": "Tall reeds, rattling in the wind."
+      }
+    },
+    "reed_marsh": {
+      "name": "Reed Marsh",
+      "area": "lake_road",
+      "pos": [
+        -115,
+        20
+      ],
+      "description": "The road sinks into a marsh of black water and reeds taller than a man. Something large has flattened a path through them.",
+      "exits": {
+        "east": "lake_road",
+        "west": "village_green"
+      },
+      "features": {
+        "water": "Black, still water. You can't see the bottom.",
+        "path": "A trail of crushed reeds, as wide as a cart."
+      },
+      "flavor": {
+        "touch:water": "dips a hand into the black water and quickly pulls it out."
+      }
+    },
+    "village_green": {
+      "name": "Village Green",
+      "area": "harrowlake_village",
+      "pos": [
+        -170,
+        20
+      ],
+      "description": "A sloping green at the heart of Harrowlake, ringed by fishing cottages. The lake glitters beyond the rooftops.",
+      "exits": {
+        "east": "reed_marsh",
+        "north": "chapel",
+        "west": "drowned_lantern",
+        "southwest": "ferry_dock"
+      },
+      "features": {
+        "well": "A mossy well with a tin cup on a chain."
+      },
+      "flavor": {
+        "touch:well": "leans on the well's mossy rim and peers down."
+      }
+    },
+    "chapel": {
+      "name": "Lakeside Chapel",
+      "area": "harrowlake_village",
+      "pos": [
+        -170,
+        0
+      ],
+      "description": "A whitewashed chapel with a bell tower and a single stained-glass window showing a ferryman.",
+      "exits": {
+        "south": "village_green"
+      },
+      "features": {
+        "window": "Stained glass: a ferryman poling across a lake of stars."
+      }
+    },
+    "drowned_lantern": {
+      "name": "The Drowned Lantern",
+      "area": "harrowlake_village",
+      "pos": [
+        -190,
+        20
+      ],
+      "description": "A smoky inn with nets hung from the rafters and a lantern in a bottle over the door.",
+      "exits": {
+        "east": "village_green"
+      },
+      "features": {
+        "nets": "Old fishing nets, heavy with dust and dried weed.",
+        "hearth": "A peat fire, more smoke than flame."
+      },
+      "flavor": {
+        "touch:hearth": "warms their hands over the smoky peat fire."
+      }
+    },
+    "ferry_dock": {
+      "name": "Ferry Dock",
+      "area": "harrowlake_village",
+      "pos": [
+        -190,
+        40
+      ],
+      "description": "A long jetty juts into the lake. A flat-bottomed ferry is tied up, rocking gently.",
+      "exits": {
+        "northeast": "village_green"
+      },
+      "features": {
+        "ferry": "A broad, flat ferry with a pole and a lantern hook."
+      }
+    },
+    "woodland_path": {
+      "name": "Woodland Path",
+      "area": "forest_edge",
+      "pos": [
+        40,
+        -130
+      ],
+      "description": "The cart track dwindles to a path under old oaks. Pale threads drift between the branches overhead.",
+      "exits": {
+        "south": "north_gate",
+        "northwest": "mossy_clearing",
+        "northeast": "hunters_camp",
+        "north": "web_tunnel"
+      },
+      "features": {
+        "threads": "Spider silk, thick as twine.",
+        "ground": "Leaf litter and roots."
+      },
+      "flavor": {
+        "touch:threads": "brushes a strand of silk. It clings to their fingers."
+      }
+    },
+    "mossy_clearing": {
+      "name": "Mossy Clearing",
+      "area": "forest_edge",
+      "pos": [
+        15,
+        -155
+      ],
+      "description": "A quiet clearing carpeted in moss. A fallen oak lies across it, hollowed by rot.",
+      "exits": {
+        "southeast": "woodland_path"
+      },
+      "features": {
+        "oak": "A fallen oak, soft with rot."
+      },
+      "flavor": {
+        "sit:oak": "sits on the fallen oak. It creaks."
+      }
+    },
+    "hunters_camp": {
+      "name": "Hunter's Camp",
+      "area": "forest_edge",
+      "pos": [
+        65,
+        -155
+      ],
+      "description": "A lean-to and a ring of stones. Snares and drying pelts hang from the branches.",
+      "exits": {
+        "southwest": "woodland_path"
+      },
+      "features": {
+        "pelts": "Fox and hare pelts, drying on a line.",
+        "fire": "A banked fire, still warm."
+      }
+    },
+    "web_tunnel": {
+      "name": "Web Tunnel",
+      "area": "webbed_hollow",
+      "pos": [
+        40,
+        -225
+      ],
+      "description": "The trees close in and the path becomes a tunnel of web. Wrapped bundles hang from the walls, some of them twitching.",
+      "exits": {
+        "south": "woodland_path",
+        "west": "hollow_tree",
+        "north": "silk_cavern"
+      },
+      "features": {
+        "bundles": "Silk-wrapped bundles. You'd rather not know what's inside."
+      },
+      "flavor": {
+        "touch:bundles": "pokes a wrapped bundle. It twitches back."
+      }
+    },
+    "hollow_tree": {
+      "name": "Hollow Tree",
+      "area": "webbed_hollow",
+      "pos": [
+        15,
+        -225
+      ],
+      "description": "The inside of an enormous dead tree, lined with old silk and scattered bones.",
+      "exits": {
+        "east": "web_tunnel"
+      },
+      "features": {
+        "bones": "Small bones, picked clean."
+      }
+    },
+    "silk_cavern": {
+      "name": "Silk Cavern",
+      "area": "webbed_hollow",
+      "pos": [
+        40,
+        -260
+      ],
+      "description": "A vast hollow beneath the roots, its ceiling lost in curtains of silk. Something huge shifts in the dark.",
+      "exits": {
+        "south": "web_tunnel"
+      },
+      "features": {
+        "silk": "Curtains of silk, thick enough to climb."
+      }
+    }
+  },
+  "items": {
+    "lantern-1": {
+      "name": "brass lantern",
+      "keywords": "lantern brass lamp",
+      "room": "cellar",
+      "description": "A dented brass lantern. It still has a little oil in it."
+    },
+    "map-1": {
+      "name": "worn map",
+      "keywords": "map",
+      "room": "tavern",
+      "description": "A hand-drawn map of Harrowgate, stained with ale rings."
+    },
+    "horseshoe-1": {
+      "name": "iron horseshoe",
+      "keywords": "horseshoe shoe iron",
+      "room": "smithy",
+      "description": "A freshly forged horseshoe. Supposedly lucky."
+    },
+    "coin-1": {
+      "name": "copper coin",
+      "keywords": "coin copper",
+      "room": "market_square",
+      "description": "A copper coin stamped with a leaping fish."
+    },
+    "net-1": {
+      "name": "fishing net",
+      "keywords": "net",
+      "room": "pier",
+      "description": "A tangle of knotted net, still damp."
+    },
+    "flute-1": {
+      "name": "reed flute",
+      "keywords": "flute reed",
+      "room": "reed_marsh",
+      "description": "A simple flute cut from a marsh reed."
+    },
+    "token-1": {
+      "name": "ferry token",
+      "keywords": "token ferry",
+      "room": "ferry_dock",
+      "description": "A bronze token stamped with an oar."
+    },
+    "hatchet-1": {
+      "name": "rusty hatchet",
+      "keywords": "hatchet axe rusty",
+      "room": "mossy_clearing",
+      "description": "A hatchet, rusted but still sharp."
+    },
+    "silk-1": {
+      "name": "silk bundle",
+      "keywords": "silk bundle",
+      "room": "hollow_tree",
+      "description": "A tight bundle of spider silk. Strong as rope."
+    }
+  },
+  "npcs": {
+    "marta": {
+      "name": "Marta",
+      "proper": true,
+      "label": "Human Innkeeper",
+      "description": "round-faced, sleeves rolled up",
+      "details": "Marta runs the Gilded Tankard with a loud laugh and a louder ladle.",
+      "keywords": "innkeeper barkeep",
+      "room": "tavern",
+      "max_hp": 30
+    },
+    "brannoc": {
+      "name": "Brannoc",
+      "proper": true,
+      "label": "Dwarf Blacksmith",
+      "description": "soot-streaked and broad as a door",
+      "details": "Brannoc hammers without looking up. His beard is singed at the edges.",
+      "keywords": "smith blacksmith dwarf",
+      "room": "smithy",
+      "max_hp": 60
+    },
+    "orc-1": {
+      "name": "Orc Warrior",
+      "label": "Orc Warrior",
+      "description": "armored and angry",
+      "details": "A hulking orc in mismatched plate, knuckles wrapped in leather. It watches you without blinking.",
+      "keywords": "orc warrior",
+      "room": "back_alley",
+      "max_hp": 80
+    },
+    "rat-1": {
+      "name": "Dock Rat",
+      "label": "Vermin",
+      "description": "mangy, missing an ear",
+      "keywords": "rat",
+      "room": "fish_market",
+      "max_hp": 5
+    },
+    "rat-2": {
+      "name": "Dock Rat",
+      "label": "Vermin",
+      "description": "fat and bold",
+      "keywords": "rat",
+      "room": "fish_market",
+      "max_hp": 5
+    },
+    "tamsin": {
+      "name": "Old Tamsin",
+      "proper": true,
+      "label": "Human Lighthouse Keeper",
+      "description": "weathered, squinting out to sea",
+      "keywords": "tamsin keeper",
+      "room": "lighthouse",
+      "max_hp": 25
+    },
+    "lurker-1": {
+      "name": "Bog Lurker",
+      "label": "Swamp Creature",
+      "description": "dripping weed, eyes like lamps",
+      "keywords": "lurker bog creature",
+      "details": "A hunched shape of mud and weed. Two pale eyes follow every move you make.",
+      "room": "reed_marsh",
+      "max_hp": 45
+    },
+    "ilse": {
+      "name": "Sister Ilse",
+      "proper": true,
+      "label": "Human Priest",
+      "description": "serene, ink-stained fingers",
+      "keywords": "ilse sister priest",
+      "room": "chapel",
+      "max_hp": 25
+    },
+    "osric": {
+      "name": "Osric",
+      "proper": true,
+      "label": "Human Ferryman",
+      "description": "silent, pole in hand",
+      "keywords": "osric ferryman",
+      "details": "Osric says nothing. He holds out a hand, palm up, as if waiting for a token.",
+      "room": "ferry_dock",
+      "max_hp": 35
+    },
+    "wren": {
+      "name": "Wren",
+      "proper": true,
+      "label": "Half-elf Ranger",
+      "description": "lean, bow across her back",
+      "keywords": "wren ranger hunter",
+      "room": "hunters_camp",
+      "max_hp": 50
+    },
+    "spider-1": {
+      "name": "Giant Spider",
+      "label": "Arachnid Hunter",
+      "description": "eight glossy eyes, dripping fangs",
+      "keywords": "spider giant",
+      "details": "A spider the size of a pony, legs bristling with black hairs. It is very still.",
+      "room": "web_tunnel",
+      "max_hp": 40
+    },
+    "brood-1": {
+      "name": "Broodmother",
+      "label": "Ancient Arachnid",
+      "description": "vast, pale, and patient",
+      "keywords": "broodmother spider mother",
+      "details": "She fills the far end of the cavern: a bloated, ancient spider, older than the city.",
+      "room": "silk_cavern",
+      "max_hp": 200
+    }
+  },
+  "channels": [
+    "general"
+  ],
+  "ambient": [
+    {
+      "channel": "AREA:old_quarter",
+      "every": 900,
+      "texts": [
+        "The temple bell tolls the hour across the Old Quarter."
+      ]
+    },
+    {
+      "channel": "AREA:docks",
+      "every": 600,
+      "texts": [
+        "A ship's bell clangs somewhere out on the water.",
+        "Gulls wheel and scream over the harbor."
+      ]
+    },
+    {
+      "channel": "CITY:harrowgate",
+      "every": 1200,
+      "texts": [
+        "A cold wind blows in off the sea.",
+        "Light rain begins to fall over Harrowgate.",
+        "The clouds break, and thin sunlight falls across the rooftops."
+      ]
+    },
+    {
+      "channel": "CITY:harrowlake",
+      "every": 900,
+      "texts": [
+        "Mist rolls in off the lake.",
+        "A heron cries somewhere out on the water."
+      ]
+    },
+    {
+      "channel": "CITY:spiderwood",
+      "every": 600,
+      "texts": [
+        "Something skitters through the canopy overhead.",
+        "The trees creak, though there is no wind."
+      ]
+    },
+    {
+      "channel": "AREA:webbed_hollow",
+      "every": 900,
+      "texts": [
+        "A web somewhere nearby thrums, as if plucked."
+      ]
+    }
+  ]
+}

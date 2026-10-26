@@ -1,0 +1,58 @@
+import os
+from pathlib import Path
+
+import pytest
+from redis.exceptions import ConnectionError as RedisConnectionError
+
+from alzendor.feed import Feed
+from alzendor.server import open_redis
+from alzendor.world import World
+
+# Tests use a database of their own and empty it before and after each test.
+REDIS_URL = os.environ.get("ALZ_TEST_REDIS_URL", "redis://localhost:6379/15")
+SEED = Path(__file__).parent.parent / "world" / "seed.json"
+
+
+@pytest.fixture
+async def redis():
+    client = open_redis(REDIS_URL)
+    try:
+        await client.ping()
+    except (RedisConnectionError, OSError):
+        await client.aclose()
+        pytest.skip(f"no Redis at {REDIS_URL} (start one with: docker compose up -d redis)")
+    await client.flushdb()
+    yield client
+    await client.flushdb()
+    await client.aclose()
+
+
+@pytest.fixture
+async def world(redis):
+    world = World(redis)
+    await world.load_rules()
+    await world.seed(SEED)
+    return world
+
+
+async def enter(world: World, pid: str, session: str | None = None, since: int = 0) -> Feed:
+    """Puts a player into the world, as a server does after login."""
+    await world.redis.hsetnx(f"ACCOUNT:{pid}", "name", pid.capitalize())
+    session = session or f"session-{pid}"
+    cursor = await world.call("connect", pid, session, since)
+    return await Feed.open(world.redis, pid, session, cursor)
+
+
+async def drain(feed: Feed) -> list[dict]:
+    """Reads everything currently waiting for this feed."""
+    events = []
+    while True:
+        before = feed.cursor
+        events += await feed.read(block_ms=50)
+        if feed.cursor == before or feed.ended:
+            return events
+
+
+def texts(events: list[dict]) -> list[str]:
+    """The text of events that have any (state updates like `map` don't)."""
+    return [e["text"] for e in events if "text" in e]

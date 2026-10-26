@@ -1,0 +1,63 @@
+# Local setup: Redis plus two game servers, to show that players on different
+# servers share one world. Open http://localhost:8001 and http://localhost:8002.
+# Production adds docker-compose.prod.yml on top of this file (see README).
+name: alzendor
+
+x-server-env: &server-env
+  ALZ_REDIS_URL: redis://redis:6379/0
+
+x-server: &server
+  build: .
+  image: alzendor:latest
+  restart: unless-stopped
+  env_file:
+    - path: .env
+      required: false
+  depends_on:
+    redis:
+      condition: service_healthy
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  server1:
+    <<: *server
+    environment:
+      <<: *server-env
+      ALZ_SERVER_ID: server1
+    ports:
+      - "8001:8000"
+
+  server2:
+    <<: *server
+    environment:
+      <<: *server-env
+      ALZ_SERVER_ID: server2
+    ports:
+      - "8002:8000"
+
+  test:
+    build:
+      context: .
+      target: test
+    profiles: [test]
+    environment:
+      ALZ_TEST_REDIS_URL: redis://redis:6379/15
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis-data:
