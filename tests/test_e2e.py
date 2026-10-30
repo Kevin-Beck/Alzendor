@@ -79,7 +79,7 @@ async def test_players_on_different_servers_see_each_other(redis):
             assert (await kevin.auth(type="register", name="Kevin", password="correct horse"))["server"] == "one"
             assert (await mara.auth(type="register", name="Mara", password="battery staple"))["server"] == "two"
 
-            await kevin.until("Mara appears.")
+            await kevin.until("Mara arrives, well rested.")
             await kevin.send(type="cmd", text="north")
             await mara.until("Kevin heads north.")
             await mara.send(type="cmd", text="n")
@@ -105,7 +105,7 @@ async def test_idle_connections_stay_open(redis):
         async with Client.open(url) as kevin, Client.open(url) as mara:
             await kevin.auth(type="register", name="Kevin", password="correct horse")
             await mara.auth(type="register", name="Mara", password="battery staple")
-            await kevin.until("Mara appears.")
+            await kevin.until("Mara arrives, well rested.")
             await asyncio.sleep(FEED_BLOCK_MS / 1000 + 2)
             await mara.send(type="cmd", text="say Still there?")
             assert await kevin.until('Mara says, "Still there?"') == ['Mara says, "Still there?"']
@@ -130,7 +130,7 @@ async def test_quitting_closes_with_a_reason(redis):
         async with Client.open(url) as kevin:
             await kevin.auth(type="register", name="Kevin", password="correct horse")
             await kevin.send(type="cmd", text="quit")
-            await kevin.until("Kevin fades from view.")
+            await kevin.until("Kevin settles in to rest, and is gone.")
             async with asyncio.timeout(5):
                 await kevin.ws.wait_closed()
             assert kevin.ws.close_reason == "You leave the world."

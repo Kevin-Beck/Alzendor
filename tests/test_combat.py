@@ -204,41 +204,45 @@ async def test_equipping_changes_a_slots_gear_and_timing(world):
     assert texts(events) == ["Slot 1: Dagger, every 1.2s."]
     timing = of_type(events, "timing")[0]
     assert (timing["slot"], timing["gear"], timing["active"], timing["period_ms"]) == (1, "dagger", False, 1200)
+    assert of_type(events, "kit")[0]["slots"] == ["dagger", "missile", "potion"]
     assert await world.redis.hget("PLAYER:kevin:slots", "1") == "dagger"
 
     await world.call("equip", "kevin", "magic missile", 1)  # by name, or keyword
+    await world.call("equip", "kevin", "axe", 1)  # not owned yet
+    await world.redis.sadd("PLAYER:kevin:gear", "greataxe")
     await world.call("equip", "kevin", "axe", 1)
     await world.call("equip", "kevin", "axe", 1)
     await world.call("equip", "kevin", "banjo", 1)
-    await world.call("equip", "kevin", "sword", 4)
+    await world.call("equip", "kevin", "dagger", 4)
     assert texts(await drain(kevin)) == [
-        "Slot 1: Magic Missile, every 8.0s.", "Slot 1: Greataxe, every 4.5s.", "Slot 1 already holds Greataxe.",
-        "There's no gear called 'banjo'. Type 'gear' to see what there is.", "Your slots are 1, 2 and 3.",
+        "Slot 1: Magic Missile, every 8.0s.", "You don't have Greataxe.", "Slot 1: Greataxe, every 4.5s.",
+        "Slot 1 already holds Greataxe.", "There's no gear called 'banjo'. Type 'gear' to see what you have.",
+        "Your slots are 1, 2 and 3.",
     ]
 
 
 async def test_equip_without_a_slot_fills_the_first_empty_one(world):
     kevin = await enter(world, "kevin")
-    await world.call("equip", "kevin", "sword", "")
+    await world.call("equip", "kevin", "dagger", "")
     await world.call("unequip", "kevin", 2)
-    await world.call("equip", "kevin", "sword", "")
+    await world.call("equip", "kevin", "dagger", "")
     await world.call("use", "kevin", 2, "")
     await drain(kevin)
-    assert await world.redis.hgetall("PLAYER:kevin:slots") == {"1": "kick", "2": "sword", "3": "potion"}
+    assert await world.redis.hgetall("PLAYER:kevin:slots") == {"1": "kick", "2": "dagger", "3": "potion"}
     await world.call("unequip", "kevin", 2)
     await world.call("unequip", "kevin", 2)
     await world.call("use", "kevin", 2, "orc")
     assert texts(await drain(kevin)) == [
         "Slot 2 is empty now.", "Slot 2 is already empty.",
-        "Slot 2 is empty. Try 'equip <gear> 2', or 'gear' to see what there is.",
+        "Slot 2 is empty. Try 'equip <gear> 2', or 'gear' to see what you have.",
     ]
 
 
 async def test_a_full_loadout_needs_a_slot_number(world):
     kevin = await enter(world, "kevin")
     await drain(kevin)
-    await world.call("equip", "kevin", "sword", "")
-    assert texts(await drain(kevin)) == ["Your slots are full. Say which one to replace: 'equip sword 1', 2 or 3."]
+    await world.call("equip", "kevin", "dagger", "")
+    assert texts(await drain(kevin)) == ["Your slots are full. Say which one to replace: 'equip dagger 1', 2 or 3."]
 
 
 async def test_a_slot_in_rhythm_cannot_be_swapped(world):
@@ -264,12 +268,12 @@ async def test_the_starting_loadout_is_only_given_once(world):
     assert [t["label"] for t in of_type(await drain(again), "timing")] == ["Kick", "Magic Missile", "Empty"]
 
 
-async def test_gear_lists_everything_fastest_first(world):
+async def test_gear_lists_what_you_own_fastest_first(world):
     kevin = await enter(world, "kevin")
     await drain(kevin)
     await world.call("gear", "kevin")
     event = of_type(await drain(kevin), "gear")[0]
-    assert [g["id"] for g in event["gear"]][:3] == ["dagger", "kick", "draught"]
+    assert [g["id"] for g in event["gear"]] == ["dagger", "kick", "potion", "missile"]
     assert event["slots"] == ["kick", "missile", "potion"]
     lines = event["text"].split("\n")
     assert "  Dagger (weapon): every 1.2s, ±200ms, 3 / 5 damage" in lines

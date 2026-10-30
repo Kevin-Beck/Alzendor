@@ -60,7 +60,7 @@ async def test_commands_call_one_game_function(ctx):
         await dispatch(ctx, text)
     assert ctx.world.calls == [
         ("move", "kevin", "north"),
-        ("say", "kevin", "hi"),
+        ("say", "kevin", "hi", ""),
         ("emote", "kevin", "touch", "ground", "", "{actor} touches {target}."),
         ("get", "kevin", "brass lantern"),
         ("tell", "kevin", "mara", "psst"),
@@ -78,7 +78,7 @@ async def test_selected_target_fills_in_for_commands_that_take_one(ctx):
         ("inspect", "kevin", "npc:rat-2"),
         ("use", "kevin", "1", "orc"),  # typed names win
         ("emote", "kevin", "stand", "", "{actor} stands up.", ""),
-        ("say", "kevin", "hi"),
+        ("say", "kevin", "hi", "npc:rat-2"),  # said to the target
     ]
 
 
@@ -92,7 +92,7 @@ def test_target_ids_are_validated(value, expected):
 
 async def test_slot_commands(ctx):
     for text in ["3", "use 2 the orc", "2 at rat", "equip sword 2", "equip 1 magic missile", "wield greataxe in slot 3",
-                 "equip dagger", "unequip 2", "unequip slot 3", "gear", "slots"]:
+                 "equip dagger", "unequip 2", "unequip slot 3", "gear", "slots", "train Poise", "stats", "rep"]:
         await dispatch(ctx, text)
     assert ctx.world.calls == [
         ("use", "kevin", "3", ""),
@@ -106,6 +106,9 @@ async def test_slot_commands(ctx):
         ("unequip", "kevin", "3"),
         ("gear", "kevin"),
         ("gear", "kevin"),
+        ("train", "kevin", "poise"),
+        ("stats", "kevin"),
+        ("stats", "kevin"),
     ]
 
 
@@ -127,7 +130,9 @@ async def test_free_emote_gets_punctuation(ctx):
         ("stand on table", "Just 'stand'."),
         ("say", "Say what?"),
         ("tell mara", "Usage: tell <player> <message>"),
-        ("dance", "Unknown command 'dance'"),
+        ("juggle", "Unknown command 'juggle'"),
+        ("train", "Train which stat?"),
+        ("train strength", "Train which stat?"),
     ],
 )
 async def test_bad_input_gets_a_hint_not_an_action(ctx, text, reply):

@@ -76,6 +76,29 @@ local function notice(pid, text)
   return emit('PLAYER:' .. pid, {type = 'system', text = text})
 end
 
+local function capitalize(text)
+  return (string.gsub(text, '^%l', string.upper))
+end
+
+local function round(x)
+  if x >= 0 then return math.floor(x + 0.5) end
+  return -math.floor(-x + 0.5)
+end
+
+local function signed(n)
+  return (n > 0 and '+' or '') .. n
+end
+
+local function decode(json)
+  if not json or json == '' then return {} end
+  return cjson.decode(json)
+end
+
+-- A tunable number from the seed's "rules" (alz:rules), or the default.
+local function rule(name, default)
+  return tonumber(redis.call('HGET', 'alz:rules', name)) or default
+end
+
 local function fill(template, actor, target)
   local s = string.gsub(template, '{actor}', function() return actor end)
   s = string.gsub(s, '{target}', function() return target or '' end)
@@ -86,22 +109,76 @@ end
 -- Players and NPCs share one card shape, shown in a room's "Here" list.
 -- Their ids are 'pc:<player>' and 'npc:<npc>'.
 
+-- Stats are deliberately plain: everyone wants them, and you choose where your
+-- points go. Gear and abilities are what make characters different.
+local STATS = {'vigor', 'poise', 'focus', 'presence'}
+local STAT_INFO = {
+  vigor = 'Vigor: 8 more max health per point.',
+  poise = 'Poise: timing windows 15 ms wider per point.',
+  focus = 'Focus: perfect windows 10 ms wider per point.',
+  presence = 'Presence: your deeds move reputation 15% further per point.',
+}
+local BASE_HP, VIGOR_HP = 100, 8
+
+local function stat(pid, name)
+  return tonumber(redis.call('HGET', 'ACCOUNT:' .. pid, 'stat:' .. name)) or 0
+end
+
+local function max_hp_of(pid)
+  return BASE_HP + VIGOR_HP * stat(pid, 'vigor')
+end
+
+local function level_of(pid)
+  return tonumber(redis.call('HGET', 'ACCOUNT:' .. pid, 'level')) or 1
+end
+
+local function xp_needed(level)
+  return 100 * level
+end
+
 local function player_card(pid)
   local account = hgetall('ACCOUNT:' .. pid)
+  local max_hp = max_hp_of(pid)
   return {
     id = 'pc:' .. pid, kind = 'pc', name = account.name or pid, label = 'Adventurer',
     description = account.description or 'An ordinary traveller.',
-    hp = tonumber(account.hp) or 100, max_hp = tonumber(account.max_hp) or 100,
+    hp = math.min(tonumber(account.hp) or max_hp, max_hp), max_hp = max_hp,
+    level = tonumber(account.level) or 1, asleep = account.asleep == '1',
   }
 end
 
+local function npc_attacks(nid)
+  return decode(redis.call('HGET', 'NPC:' .. nid, 'attacks'))
+end
+
+-- NPCs also carry their nature (base_disposition: hostile, neutral or
+-- friendly); how one treats a particular player is sent to that player alone.
 local function npc_card(nid)
   local npc = hgetall('NPC:' .. nid)
   local max_hp = tonumber(npc.max_hp) or 10
+  local attacks = list()
+  for _, a in ipairs(decode(npc.attacks)) do
+    attacks[#attacks + 1] = {name = a.name, period_ms = a.period, damage = a.damage}
+  end
+  local faction = (npc.faction or '') ~= '' and redis.call('HGET', 'FACTION:' .. npc.faction, 'name')
   return {
     id = 'npc:' .. nid, kind = 'npc', name = npc.name or nid, label = npc.label or '',
     description = npc.description or '', hp = tonumber(npc.hp) or max_hp, max_hp = max_hp,
+    icon = (npc.icon or '') ~= '' and npc.icon or nil, base_disposition = npc.disposition or 'neutral',
+    faction = faction or nil, attacks = attacks, immortal = npc.immortal == '1',
   }
+end
+
+-- A fighting NPC's attacks and when each lands next, or nil if it isn't fighting.
+local function npc_fight(nid)
+  local due = hgetall('NPC:' .. nid .. ':next')
+  if not next(due) then return nil end
+  local attacks = list()
+  for i, a in ipairs(npc_attacks(nid)) do
+    attacks[i] = {name = a.name, period_ms = a.period, damage = a.damage, next_ms = tonumber(due[tostring(i)])}
+  end
+  local target = redis.call('ZRANGE', 'NPC:' .. nid .. ':foes', 0, 0)[1]
+  return {attacks = attacks, target = target and ('pc:' .. target) or nil}
 end
 
 -- How an NPC is named mid-sentence: "Brannoc", or "the Orc Warrior".
@@ -195,6 +272,81 @@ local function resubscribe(pid, add, remove)
   return seq
 end
 
+-- Factions and reputation ------------------------------------------------------
+-- An NPC can belong to a faction, and every faction keeps two separate opinions
+-- of each player: affinity (do they like you?) and respect (do they rate you?).
+-- Each faction's culture decides which deeds move which. Orcs may hate you for
+-- hunting them yet respect a fair fight with their warriors; spiders respect
+-- an ambush. A faction's rules (from the seed) each match a deed, optionally
+-- only when the NPC involved belongs to a given faction (`of`) or has a given
+-- `role`. PLAYER:<id>:rep:<faction> holds affinity and respect, -100 to 100.
+
+local function rep_of(pid, fid)
+  local rep = hgetall('PLAYER:' .. pid .. ':rep:' .. fid)
+  return tonumber(rep.affinity) or 0, tonumber(rep.respect) or 0
+end
+
+local function affinity_label(a)
+  if a <= -50 then return 'hated' elseif a <= -15 then return 'disliked'
+  elseif a < 15 then return 'indifferent' elseif a < 50 then return 'liked' end
+  return 'beloved'
+end
+
+local function respect_label(r)
+  if r <= -50 then return 'contempt' elseif r <= -15 then return 'scorned'
+  elseif r < 15 then return 'unproven' elseif r < 50 then return 'respected' end
+  return 'honoured'
+end
+
+-- How an NPC treats this player: its own nature, shifted by its faction's
+-- opinion. Respect alone can stay a hostile NPC's hand.
+local function disposition_for(pid, nid)
+  local npc = hgetall('NPC:' .. nid)
+  local base = npc.disposition or 'neutral'
+  if (npc.faction or '') == '' then return base end
+  local a, r = rep_of(pid, npc.faction)
+  if base == 'friendly' then return a <= -50 and 'hostile' or 'friendly' end
+  if base == 'neutral' then
+    if a <= -25 then return 'hostile' end
+    return a >= 25 and 'friendly' or 'neutral'
+  end
+  if a >= 50 then return 'friendly' end
+  if a >= 25 or r >= 30 then return 'neutral' end
+  return 'hostile'
+end
+
+local function factions_of(pid)
+  local out = list()
+  for _, fid in ipairs(sorted(redis.call('SMEMBERS', 'alz:factions'))) do
+    if redis.call('EXISTS', 'PLAYER:' .. pid .. ':rep:' .. fid) == 1 then
+      local a, r = rep_of(pid, fid)
+      out[#out + 1] = {id = fid, name = redis.call('HGET', 'FACTION:' .. fid, 'name') or fid,
+        affinity = a, respect = r, affinity_label = affinity_label(a), respect_label = respect_label(r)}
+    end
+  end
+  return out
+end
+
+-- Tells a player how each NPC in the room treats them.
+local function dispositions_event(pid, rid)
+  local map = {}
+  for _, nid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':npcs')) do map['npc:' .. nid] = disposition_for(pid, nid) end
+  return emit('PLAYER:' .. pid, {type = 'dispositions', dispositions = map})
+end
+
+-- Safe places: inns, shrines, camps. Leaving the world there is instant;
+-- anywhere else you lie down to sleep and your body stays a while. Perks can
+-- make a kind of terrain (forest, coast) safe for you.
+local function is_safe(pid, rid)
+  local info = hgetall('ROOM:' .. rid .. ':info')
+  if info.safe == '1' then return true end
+  if (info.terrain or '') == '' then return false end
+  for _, perk in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':perks')) do
+    if redis.call('HGET', 'PERK:' .. perk, 'safe_terrain') == info.terrain then return true end
+  end
+  return false
+end
+
 -- World views -----------------------------------------------------------------
 
 -- cause: 'look', 'move', 'enter' or 'resume' (a reconnecting client's refresh).
@@ -213,7 +365,9 @@ local function room_event(pid, rid, cause)
     if p ~= pid then entities[#entities + 1] = player_card(p) end
   end
   for _, nid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':npcs')) do
-    entities[#entities + 1] = npc_card(nid)
+    local card = npc_card(nid)
+    card.disposition, card.fight = disposition_for(pid, nid), npc_fight(nid)
+    entities[#entities + 1] = card
   end
   table.sort(entities, by_card_order)
   for i, card in ipairs(entities) do entity_names[i] = card.name end
@@ -230,7 +384,7 @@ local function room_event(pid, rid, cause)
     room = {
       id = rid, name = info.name, description = info.description, area = area or nil,
       exits = exits, items = items, features = features, entities = entities,
-      self = player_card(pid),
+      self = player_card(pid), safe = is_safe(pid, rid),
     },
     text = table.concat(lines, '\n'),
   })
@@ -335,10 +489,6 @@ end
 local SLOTS = 3
 local MIN_TIMEOUT_MS = 10000 -- a rhythm ends after this long unused, or two beats if longer
 
-local function capitalize(text)
-  return (string.gsub(text, '^%l', string.upper))
-end
-
 local function timeout_for(period)
   return math.max(MIN_TIMEOUT_MS, 2 * period)
 end
@@ -389,13 +539,17 @@ end
 
 -- Uses up one beat of a slot. Returns how well it was timed ('opener',
 -- 'perfect', 'good', 'early' or 'late'), the offset from the beat in ms, and
--- the slot's new state.
+-- the slot's new state. Poise and focus widen the gear's windows, but a window
+-- never reaches halfway to the next beat.
 local function take_beat(pid, n, gear)
   local now = now_ms()
   local state = live_slot(pid, n, now)
   local quality, offset
   if not state then
-    state = {gear = gear.id, start = now, period = gear.period, window = gear.window, perfect_window = gear.perfect_window, beat = 0}
+    local period = tonumber(gear.period)
+    local window = math.min(tonumber(gear.window) + 15 * stat(pid, 'poise'), math.ceil(period / 2) - 1)
+    local perfect = math.min(tonumber(gear.perfect_window) + 10 * stat(pid, 'focus'), window)
+    state = {gear = gear.id, start = now, period = period, window = window, perfect_window = perfect, beat = 0}
     quality = 'opener'
   else
     local start, period = tonumber(state.start), tonumber(state.period)
@@ -432,11 +586,19 @@ local function resend_timing(pid)
   for n = 1, SLOTS do timing_event(pid, n, live_slot(pid, n, now)) end
 end
 
--- Gives a player the starting loadout the first time they enter the world.
-local function ensure_loadout(pid)
-  if redis.call('HSETNX', 'ACCOUNT:' .. pid, 'loadout_set', '1') == 0 then return end
-  for n, gid in ipairs(redis.call('LRANGE', 'alz:default_loadout', 0, SLOTS - 1)) do
-    redis.call('HSET', 'PLAYER:' .. pid .. ':slots', n, gid)
+-- Gives a player their starting gear and loadout the first time they enter
+-- the world. PLAYER:<id>:gear is the gear they own: their inventory of things
+-- that go in slots.
+local function ensure_kit(pid)
+  local gear = 'PLAYER:' .. pid .. ':gear'
+  if redis.call('HSETNX', 'ACCOUNT:' .. pid, 'loadout_set', '1') == 1 then
+    for n, gid in ipairs(redis.call('LRANGE', 'alz:default_loadout', 0, SLOTS - 1)) do
+      redis.call('HSET', 'PLAYER:' .. pid .. ':slots', n, gid)
+    end
+  end
+  if redis.call('HSETNX', 'ACCOUNT:' .. pid, 'kit_set', '1') == 1 then
+    for _, gid in ipairs(redis.call('LRANGE', 'alz:starting_gear', 0, -1)) do redis.call('SADD', gear, gid) end
+    for _, gid in ipairs(redis.call('HVALS', 'PLAYER:' .. pid .. ':slots')) do redis.call('SADD', gear, gid) end
   end
 end
 
@@ -465,6 +627,250 @@ local function slot_busy(pid, n)
   return true
 end
 
+-- NPCs fighting back -----------------------------------------------------------
+-- NPC attacks are simple and slow next to a player's. Each attack has its own
+-- period, and NPCs never miss, so there is nothing to judge: the server just
+-- lands each one on time. Hostile NPCs attack players on sight; neutral ones
+-- fight back when attacked; friendly ones can't be attacked at all.
+-- NPC:<id>:foes (a sorted set, by when they joined the fight) holds who an NPC
+-- is fighting, and it attacks the first of them still in its room;
+-- PLAYER:<id>:foes is the reverse. NPC:<id>:next holds when each attack lands
+-- next, and alz:npc_attacks schedules them all ('<nid>#<n>' by time) for the
+-- `tick` function, which every server calls several times a second.
+
+local function npc_timing_event(nid)
+  local fight = npc_fight(nid)
+  local event = {type = 'npc_timing', entity_id = 'npc:' .. nid, active = fight ~= nil}
+  if fight then event.attacks, event.target = fight.attacks, fight.target end
+  return emit('ROOM:' .. redis.call('HGET', 'NPC:' .. nid, 'room'), event)
+end
+
+local function stop_fighting(nid)
+  for _, pid in ipairs(redis.call('ZRANGE', 'NPC:' .. nid .. ':foes', 0, -1)) do
+    redis.call('SREM', 'PLAYER:' .. pid .. ':foes', nid)
+  end
+  for _, n in ipairs(redis.call('HKEYS', 'NPC:' .. nid .. ':next')) do
+    redis.call('ZREM', 'alz:npc_attacks', nid .. '#' .. n)
+  end
+  if redis.call('DEL', 'NPC:' .. nid .. ':foes', 'NPC:' .. nid .. ':next') > 0 then npc_timing_event(nid) end
+end
+
+-- Starts (or joins) a fight. An NPC's first attacks come a full period in.
+local function engage(nid, pid)
+  local attacks = npc_attacks(nid)
+  if #attacks == 0 then return end
+  local now = now_ms()
+  redis.call('ZADD', 'NPC:' .. nid .. ':foes', 'NX', now, pid)
+  redis.call('SADD', 'PLAYER:' .. pid .. ':foes', nid)
+  if redis.call('EXISTS', 'NPC:' .. nid .. ':next') == 1 then return end
+  for n, attack in ipairs(attacks) do
+    redis.call('HSET', 'NPC:' .. nid .. ':next', n, now + attack.period)
+    redis.call('ZADD', 'alz:npc_attacks', now + attack.period, nid .. '#' .. n)
+  end
+  npc_timing_event(nid)
+end
+
+local function drop_foe(nid, pid)
+  redis.call('ZREM', 'NPC:' .. nid .. ':foes', pid)
+  redis.call('SREM', 'PLAYER:' .. pid .. ':foes', nid)
+  if redis.call('ZCARD', 'NPC:' .. nid .. ':foes') == 0 then stop_fighting(nid) end
+end
+
+local function fighting(nid, pid)
+  return redis.call('ZSCORE', 'NPC:' .. nid .. ':foes', pid) ~= false
+end
+
+-- Hostile NPCs in the room turn on a player (who is awake and in it).
+local function aggro(pid, rid)
+  for _, nid in ipairs(sorted(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':npcs'))) do
+    if #npc_attacks(nid) > 0 and not fighting(nid, pid) and disposition_for(pid, nid) == 'hostile' then
+      engage(nid, pid)
+      emit('ROOM:' .. rid, {type = 'emote', verb = 'aggro', entity_id = 'npc:' .. nid, target = 'pc:' .. pid,
+        text = capitalize(npc_display(nid)) .. ' turns on ' .. name_of(pid) .. '!'})
+    end
+  end
+end
+
+-- Character -----------------------------------------------------------------------
+-- Experience comes from defeating NPCs. Each level gives a stat point to spend
+-- ('train <stat>') and whatever the seed's level table grants: gear, or perks.
+
+local function gear_summary(g)
+  return {id = g.id, name = g.name, kind = g.kind, effect = g.effect, targets = g.targets ~= '' and g.targets or 'self',
+    period_ms = tonumber(g.period), grace_ms = tonumber(g.window), perfect_ms = tonumber(g.perfect_window),
+    amounts = list({tonumber(g.opener), tonumber(g.good), tonumber(g.perfect)})}
+end
+
+-- The gear a player owns, fastest first.
+local function owned_gear(pid)
+  local all = list()
+  for _, gid in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':gear')) do
+    local g = gear_info(gid)
+    if g then all[#all + 1] = g end
+  end
+  table.sort(all, function(a, b)
+    local pa, pb = tonumber(a.period), tonumber(b.period)
+    if pa ~= pb then return pa < pb end
+    return a.name < b.name
+  end)
+  return all
+end
+
+-- The player's inventory and slots, for the client's panels.
+local function kit_event(pid)
+  local gear, slots, items = list(), list(), list()
+  for _, g in ipairs(owned_gear(pid)) do gear[#gear + 1] = gear_summary(g) end
+  for n = 1, SLOTS do
+    local g = slot_gear(pid, n)
+    slots[n] = g and g.id or ''
+  end
+  for _, iid in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':inv')) do
+    items[#items + 1] = {id = iid, name = redis.call('HGET', 'ITEM:' .. iid, 'name') or iid}
+  end
+  table.sort(items, function(a, b) return a.name < b.name end)
+  return emit('PLAYER:' .. pid, {type = 'kit', gear = gear, slots = slots, items = items})
+end
+
+local function character_event(pid)
+  local account = hgetall('ACCOUNT:' .. pid)
+  local level = tonumber(account.level) or 1
+  local stats = {}
+  for _, s in ipairs(STATS) do stats[s] = tonumber(account['stat:' .. s]) or 0 end
+  local perks = list()
+  for _, id in ipairs(sorted(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':perks'))) do
+    local perk = hgetall('PERK:' .. id)
+    perks[#perks + 1] = {id = id, name = perk.name or id, description = perk.description or ''}
+  end
+  local card = player_card(pid)
+  return emit('PLAYER:' .. pid, {type = 'character', level = level, xp = tonumber(account.xp) or 0,
+    xp_next = xp_needed(level), points = tonumber(account.points) or 0, stats = stats, perks = perks,
+    factions = factions_of(pid), hp = card.hp, max_hp = card.max_hp})
+end
+
+-- Adds gear to a player's inventory; true if they didn't have it.
+local function grant_gear(pid, gid)
+  return gear_info(gid) ~= nil and redis.call('SADD', 'PLAYER:' .. pid .. ':gear', gid) == 1
+end
+
+local function gain_xp(pid, amount)
+  if amount <= 0 then return end
+  local key = 'ACCOUNT:' .. pid
+  local xp, level = redis.call('HINCRBY', key, 'xp', amount), level_of(pid)
+  notice(pid, 'You gain ' .. amount .. ' experience.')
+  local leveled = false
+  while xp >= xp_needed(level) do
+    xp, level, leveled = xp - xp_needed(level), level + 1, true
+    redis.call('HSET', key, 'xp', xp, 'level', level)
+    redis.call('HINCRBY', key, 'points', 1)
+    local reward, new = hgetall('LEVEL:' .. level), {}
+    for _, gid in ipairs(decode(reward.gear)) do
+      if grant_gear(pid, gid) then new[#new + 1] = gear_info(gid).name end
+    end
+    for _, perk in ipairs(decode(reward.perks)) do
+      if redis.call('SADD', 'PLAYER:' .. pid .. ':perks', perk) == 1 then
+        new[#new + 1] = redis.call('HGET', 'PERK:' .. perk, 'name') or perk
+      end
+    end
+    notice(pid, 'You reach level ' .. level .. "! You have a stat point to spend: 'train <stat>'."
+      .. (#new > 0 and (' You gain: ' .. table.concat(new, ', ') .. '.') or ''))
+  end
+  if leveled then
+    emit('ROOM:' .. redis.call('GET', 'PLAYER:' .. pid .. ':room'), {type = 'entity', entity = player_card(pid)})
+    kit_event(pid)
+  end
+  character_event(pid)
+end
+
+-- Something a player did involving an NPC. Every faction's culture judges it.
+-- Deeds: kill, clean_kill (a perfect killing blow), ambush (striking an NPC
+-- that wasn't fighting you), flee (leaving a fight), defeated (falling to
+-- one), heal (healing one), greet and taunt (bow, wave… / laugh, poke…).
+local function deed(pid, name, nid)
+  local subject = hgetall('NPC:' .. nid)
+  local of, role = subject.faction or '', subject.role or ''
+  local scale = 1 + 0.15 * stat(pid, 'presence')
+  local changed = false
+  for _, fid in ipairs(sorted(redis.call('SMEMBERS', 'alz:factions'))) do
+    local faction = hgetall('FACTION:' .. fid)
+    local da, dr, notes = 0, 0, {}
+    for _, r in ipairs(decode(faction.rules)) do
+      if r.deed == name and (not r.of or r.of == of) and (not r.role or r.role == role) then
+        da, dr = da + (r.affinity or 0), dr + (r.respect or 0)
+        if r.note then notes[#notes + 1] = r.note end
+      end
+    end
+    local a, r = rep_of(pid, fid)
+    local na = math.max(-100, math.min(100, a + round(da * scale)))
+    local nr = math.max(-100, math.min(100, r + round(dr * scale)))
+    if na ~= a or nr ~= r then
+      redis.call('HSET', 'PLAYER:' .. pid .. ':rep:' .. fid, 'affinity', na, 'respect', nr)
+      local moved = {}
+      if na ~= a then moved[#moved + 1] = 'affinity ' .. signed(na - a) end
+      if nr ~= r then moved[#moved + 1] = 'respect ' .. signed(nr - r) end
+      emit('PLAYER:' .. pid, {type = 'reputation', faction = fid, faction_name = faction.name, affinity = na, respect = nr,
+        text = faction.name .. ': ' .. (#notes > 0 and (table.concat(notes, ' ') .. ' ') or '') .. '(' .. table.concat(moved, ', ') .. ')'})
+      changed = true
+    end
+  end
+  if not changed then return end
+  character_event(pid)
+  local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+  if rid and redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then
+    dispositions_event(pid, rid)
+    aggro(pid, rid)
+  end
+end
+
+-- Moves an awake player between rooms: leave and arrive events, subscriptions
+-- and the map. The caller sends the new room's view.
+local function relocate(pid, rid, dest, verb, target, leave, arrive)
+  emit('ROOM:' .. rid, {type = 'leave', actor = pid, verb = verb, target = target, entity_id = 'pc:' .. pid, text = leave})
+  redis.call('SREM', 'ROOM:' .. rid .. ':players', pid)
+  redis.call('SET', 'PLAYER:' .. pid .. ':room', dest)
+  redis.call('SADD', 'ROOM:' .. dest .. ':players', pid)
+  emit('ROOM:' .. dest, {type = 'arrive', actor = pid, verb = verb, target = target, entity = player_card(pid), text = arrive})
+  local old, new = place_channels(pid, rid), place_channels(pid, dest)
+  resubscribe(pid, minus(new, old), minus(old, new))
+  if explore(pid, dest) then map_event(pid, {dest}, false) end
+end
+
+-- A player at 0 HP wakes at the shrine with half their health, a little
+-- experience poorer (never a level). A sleeping body is struck from the field
+-- and wakes there next time.
+local function defeat(pid, nid)
+  local key, me = 'ACCOUNT:' .. pid, name_of(pid)
+  local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+  for _, other in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':foes')) do drop_foe(other, pid) end
+  local lost = math.min(tonumber(redis.call('HGET', key, 'xp')) or 0, math.floor(xp_needed(level_of(pid)) / 10))
+  redis.call('HSET', key, 'hp', math.floor(max_hp_of(pid) / 2), 'xp', (tonumber(redis.call('HGET', key, 'xp')) or 0) - lost)
+  local shrine = redis.call('HGET', 'alz:rules', 'shrine_room') or redis.call('GET', 'alz:start_room')
+  emit('ROOM:' .. rid, {type = 'death', entity_id = 'pc:' .. pid, text = me .. ' collapses.'})
+  if redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then
+    relocate(pid, rid, shrine, 'defeat', nil, me .. "'s body fades away.", me .. ' stumbles out of the shrine, pale and shaken.')
+    room_event(pid, shrine, 'move')
+    notice(pid, 'You were defeated, and wake at the shrine' .. (lost > 0 and (', ' .. lost .. ' experience poorer') or '') .. '.')
+    deed(pid, 'defeated', nid)
+    character_event(pid)
+  else
+    redis.call('SREM', 'ROOM:' .. rid .. ':players', pid)
+    redis.call('ZREM', 'alz:sleepers', pid)
+    redis.call('HDEL', key, 'asleep')
+    redis.call('SET', 'PLAYER:' .. pid .. ':room', shrine)
+    emit('ROOM:' .. rid, {type = 'leave', verb = 'defeat', entity_id = 'pc:' .. pid, text = me .. "'s body fades away."})
+    deed(pid, 'defeated', nid)
+  end
+end
+
+-- A sleeping body left out in the open fades from the world.
+local function fade_out(pid)
+  local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+  redis.call('HDEL', 'ACCOUNT:' .. pid, 'asleep')
+  for _, nid in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':foes')) do drop_foe(nid, pid) end
+  if rid and redis.call('SREM', 'ROOM:' .. rid .. ':players', pid) == 1 then
+    emit('ROOM:' .. rid, {type = 'leave', actor = pid, verb = 'fade', entity_id = 'pc:' .. pid, text = name_of(pid) .. "'s sleeping form fades away."})
+  end
+end
+
 local ARRIVE_FROM = {
   north = 'the south', south = 'the north', east = 'the west', west = 'the east',
   northeast = 'the southwest', northwest = 'the southeast',
@@ -490,93 +896,135 @@ redis.register_function('inspect', action(function(pid, rid, args)
   inspect(pid, rid, args[2])
 end))
 
--- The movement steps from todo.md, in order.
+-- The movement steps from todo.md, in order. A short cooldown between moves
+-- (move_cooldown_ms) stops a client from sending a whole journey at once.
+-- Leaving a fight is fleeing it, and some cultures judge that.
 redis.register_function('move', action(function(pid, rid, args)
   local dir = args[2]
   local dest = redis.call('HGET', 'ROOM:' .. rid .. ':exits', dir)
   if not dest then return notice(pid, "You can't go that way.") end
-  local me = name_of(pid)
-
-  emit('ROOM:' .. rid, {type = 'leave', actor = pid, verb = 'move', target = dir, entity_id = 'pc:' .. pid, text = me .. ' heads ' .. dir .. '.'})
-  redis.call('SREM', 'ROOM:' .. rid .. ':players', pid)
-  redis.call('SET', 'PLAYER:' .. pid .. ':room', dest)
-  redis.call('SADD', 'ROOM:' .. dest .. ':players', pid)
-
-  local from = ARRIVE_FROM[dir]
-  emit('ROOM:' .. dest, {
-    type = 'arrive', actor = pid, verb = 'move', target = dir, entity = player_card(pid),
-    text = me .. (from and (' arrives from ' .. from .. '.') or ' arrives.'),
-  })
-
-  local old, new = place_channels(pid, rid), place_channels(pid, dest)
-  resubscribe(pid, minus(new, old), minus(old, new))
-  if explore(pid, dest) then map_event(pid, {dest}, false) end
+  local cooldown = rule('move_cooldown_ms', 250)
+  if cooldown > 0 and not redis.call('SET', 'PLAYER:' .. pid .. ':moved', '1', 'NX', 'PX', cooldown) then
+    return notice(pid, 'You need a moment to find your footing.')
+  end
+  local fled = redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':foes')
+  for _, nid in ipairs(fled) do drop_foe(nid, pid) end
+  local me, from = name_of(pid), ARRIVE_FROM[dir]
+  relocate(pid, rid, dest, 'move', dir, me .. ' heads ' .. dir .. '.', me .. (from and (' arrives from ' .. from .. '.') or ' arrives.'))
   room_event(pid, dest, 'move')
+  for _, nid in ipairs(fled) do deed(pid, 'flee', nid) end
+  aggro(pid, dest)
 end))
 
--- Uses whatever is in a slot. args: pid, slot number, target word ('' for none;
--- gear that heals ignores it).
+-- Heals the player, or with gear that targets allies, another player or a
+-- friendly NPC. Returns the healed entity id and display name (nil for self).
+local function heal(pid, rid, n, gear, word)
+  local whom, display
+  if gear.targets == 'ally' and word ~= '' then
+    local kind, id, shown = resolve(pid, rid, word)
+    if kind == 'player' then
+      whom, display = 'pc:' .. id, shown
+    elseif kind == 'npc' and disposition_for(pid, id) == 'friendly' then
+      whom, display = 'npc:' .. id, shown
+    end
+  end
+  local quality, offset, state = take_beat(pid, n, gear)
+  local amount = tonumber(gear[quality])
+  if not amount then
+    whiff(pid, rid, n, gear, quality, offset, whom, display)
+    return timing_event(pid, n, state)
+  end
+  local kind, id = string.match(whom or ('pc:' .. pid), '^(%a+):(.+)$')
+  local card = kind == 'npc' and npc_card(id) or player_card(id)
+  local healed = math.min(amount, card.max_hp - card.hp)
+  if kind == 'npc' then
+    redis.call('HSET', 'NPC:' .. id, 'hp', card.hp + healed)
+  else
+    redis.call('HSET', 'ACCOUNT:' .. id, 'hp', card.hp + healed)
+  end
+  local text = fill(quality == 'perfect' and gear.perfect_hit or gear.hit, name_of(pid), display or 'themself')
+  emit('ROOM:' .. rid, {type = 'heal', actor = pid, verb = gear.id, slot = n, target = whom, result = quality,
+    amount = healed, offset_ms = offset, text = text .. (healed > 0 and (' (+' .. healed .. ')') or ' (already at full health)')})
+  emit('ROOM:' .. rid, {type = 'entity', entity = kind == 'npc' and npc_card(id) or player_card(id)})
+  if kind == 'npc' and healed > 0 then deed(pid, 'heal', id) end
+  timing_event(pid, n, state)
+end
+
+-- Uses whatever is in a slot. args: pid, slot number, target word ('' for
+-- none). Healing gear heals you, or an ally if it can and one is targeted.
 redis.register_function('use', action(function(pid, rid, args)
   local n = slot_number(args[2])
   if not n then return notice(pid, 'Your slots are 1, 2 and 3.') end
   local gear = slot_gear(pid, n)
-  if not gear then return notice(pid, 'Slot ' .. n .. " is empty. Try 'equip <gear> " .. n .. "', or 'gear' to see what there is.") end
-  local me = name_of(pid)
-
-  if gear.effect == 'heal' then
-    local quality, offset, state = take_beat(pid, n, gear)
-    local amount = tonumber(gear[quality])
-    if not amount then
-      whiff(pid, rid, n, gear, quality, offset, nil, nil)
-      return timing_event(pid, n, state)
-    end
-    local card = player_card(pid)
-    local healed = math.min(amount, card.max_hp - card.hp)
-    redis.call('HSET', 'ACCOUNT:' .. pid, 'hp', card.hp + healed, 'max_hp', card.max_hp)
-    local text = fill(quality == 'perfect' and gear.perfect_hit or gear.hit, me)
-    emit('ROOM:' .. rid, {type = 'heal', actor = pid, verb = gear.id, slot = n, result = quality,
-      amount = healed, offset_ms = offset, text = text .. (healed > 0 and (' (+' .. healed .. ')') or ' (already at full health)')})
-    emit('ROOM:' .. rid, {type = 'entity', entity = player_card(pid)})
-    return timing_event(pid, n, state)
-  end
-
+  if not gear then return notice(pid, 'Slot ' .. n .. " is empty. Try 'equip <gear> " .. n .. "', or 'gear' to see what you have.") end
   local word = args[3] or ''
+  if gear.effect == 'heal' then return heal(pid, rid, n, gear, word) end
+
   if word == '' then return notice(pid, gear.name .. ' what? Name a target, or press Tab to pick one.') end
   local kind, id, display = resolve(pid, rid, word)
   if not kind then return notice(pid, "You don't see that here.") end
   if kind == 'self' then return notice(pid, 'You think better of it.') end
   if kind == 'player' then return notice(pid, "You can't attack other players.") end
   if kind ~= 'npc' then return notice(pid, "You can't fight that.") end
+  if disposition_for(pid, id) == 'friendly' then return notice(pid, "You won't attack " .. display .. '.') end
 
+  local first = not fighting(id, pid)
   local quality, offset, state = take_beat(pid, n, gear)
   local damage = tonumber(gear[quality])
   if not damage then
     whiff(pid, rid, n, gear, quality, offset, 'npc:' .. id, display)
+    engage(id, pid)
     return timing_event(pid, n, state)
   end
 
+  local npc = hgetall('NPC:' .. id)
   local hp = redis.call('HINCRBY', 'NPC:' .. id, 'hp', -damage)
-  local text = fill(quality == 'perfect' and gear.perfect_hit or gear.hit, me, display)
+  local text = fill(quality == 'perfect' and gear.perfect_hit or gear.hit, name_of(pid), display)
   emit('ROOM:' .. rid, {type = 'combat', actor = pid, verb = gear.id, slot = n, target = 'npc:' .. id,
     result = quality, damage = damage, offset_ms = offset, text = text .. ' (' .. damage .. ')'})
-  if hp > 0 then
+  if hp > 0 or npc.immortal == '1' then
+    if hp <= 0 then
+      -- Practice targets never fall.
+      redis.call('HSET', 'NPC:' .. id, 'hp', npc.max_hp)
+      emit('ROOM:' .. rid, {type = 'emote', entity_id = 'npc:' .. id, text = capitalize(display) .. ' wobbles back upright.'})
+    end
     emit('ROOM:' .. rid, {type = 'entity', entity = npc_card(id)})
-  else
-    -- Down: out of the room until it respawns.
-    redis.call('HSET', 'NPC:' .. id, 'hp', 0)
-    redis.call('SREM', 'ROOM:' .. rid .. ':npcs', id)
-    local delay = (tonumber(redis.call('HGET', 'NPC:' .. id, 'respawn')) or 60) * 1000
-    redis.call('ZADD', 'alz:respawns', tonumber(state.last) + delay, id)
-    emit('ROOM:' .. rid, {type = 'death', entity_id = 'npc:' .. id, text = capitalize(display) .. ' collapses.'})
+    engage(id, pid)
+    timing_event(pid, n, state)
+    if first then deed(pid, 'ambush', id) end
+    return
   end
+
+  -- Down: out of the room until it respawns.
+  stop_fighting(id)
+  redis.call('HSET', 'NPC:' .. id, 'hp', 0)
+  redis.call('SREM', 'ROOM:' .. rid .. ':npcs', id)
+  local delay = (tonumber(npc.respawn) or 60) * 1000
+  redis.call('ZADD', 'alz:respawns', tonumber(state.last) + delay, id)
+  emit('ROOM:' .. rid, {type = 'death', entity_id = 'npc:' .. id, text = capitalize(display) .. ' collapses.'})
   timing_event(pid, n, state)
+  if first then deed(pid, 'ambush', id) end
+  deed(pid, 'kill', id)
+  if quality == 'perfect' then deed(pid, 'clean_kill', id) end
+  local taken = {}
+  for _, gid in ipairs(decode(npc.drops)) do
+    if grant_gear(pid, gid) then taken[#taken + 1] = gear_info(gid).name end
+  end
+  if #taken > 0 then
+    notice(pid, 'You take ' .. display .. "'s " .. table.concat(taken, ', ') .. ". ('inventory' to equip it.)")
+    kit_event(pid)
+  end
+  gain_xp(pid, tonumber(npc.xp) or 0)
 end))
 
 -- Puts gear in a slot. args: pid, gear word, slot number ('' for the first
 -- empty one).
 redis.register_function('equip', action(function(pid, rid, args)
   local gid = match_gear(args[2])
-  if not gid then return notice(pid, "There's no gear called '" .. args[2] .. "'. Type 'gear' to see what there is.") end
+  if not gid then return notice(pid, "There's no gear called '" .. args[2] .. "'. Type 'gear' to see what you have.") end
+  if redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':gear', gid) == 0 then
+    return notice(pid, "You don't have " .. gear_info(gid).name .. '.')
+  end
   local slots = 'PLAYER:' .. pid .. ':slots'
   local n
   if (args[3] or '') == '' then
@@ -595,6 +1043,7 @@ redis.register_function('equip', action(function(pid, rid, args)
   redis.call('DEL', slot_key(pid, n))
   notice(pid, 'Slot ' .. n .. ': ' .. gear.name .. ', ' .. every(tonumber(gear.period)) .. '.')
   timing_event(pid, n, nil)
+  kit_event(pid)
 end))
 
 -- Empties a slot. args: pid, slot number.
@@ -608,26 +1057,18 @@ redis.register_function('unequip', action(function(pid, rid, args)
   redis.call('DEL', slot_key(pid, n))
   notice(pid, 'Slot ' .. n .. ' is empty now.')
   timing_event(pid, n, nil)
+  kit_event(pid)
 end))
 
--- Lists the gear there is, fastest first, and what's in the player's slots.
+-- Lists the gear the player has, fastest first, and what's in their slots.
 redis.register_function('gear', action(function(pid, rid, args)
-  local all = list()
-  for _, gid in ipairs(redis.call('SMEMBERS', 'alz:gear')) do all[#all + 1] = gear_info(gid) end
-  table.sort(all, function(a, b)
-    local pa, pb = tonumber(a.period), tonumber(b.period)
-    if pa ~= pb then return pa < pb end
-    return a.name < b.name
-  end)
-  local gear, lines = list(), {'Gear (good timing / perfect, after the opener):'}
-  for _, g in ipairs(all) do
-    local period, window = tonumber(g.period), tonumber(g.window)
-    local amounts = list({tonumber(g.opener), tonumber(g.good), tonumber(g.perfect)})
-    gear[#gear + 1] = {id = g.id, name = g.name, kind = g.kind, effect = g.effect, period_ms = period,
-      grace_ms = window, perfect_ms = tonumber(g.perfect_window), amounts = amounts}
-    lines[#lines + 1] = '  ' .. g.name .. ' (' .. string.lower(g.kind or '') .. '): ' .. every(period) .. ', ±' .. window
-      .. 'ms, ' .. (g.effect == 'heal' and 'heals ' or '') .. amounts[2] .. ' / ' .. amounts[3]
-      .. (g.effect == 'heal' and '' or ' damage')
+  local gear, lines = list(), {'Your gear (good timing / perfect, after the opener):'}
+  for _, g in ipairs(owned_gear(pid)) do
+    local summary = gear_summary(g)
+    gear[#gear + 1] = summary
+    lines[#lines + 1] = '  ' .. g.name .. ' (' .. string.lower(g.kind or '') .. '): ' .. every(summary.period_ms)
+      .. ', ±' .. summary.grace_ms .. 'ms, ' .. (g.effect == 'heal' and 'heals ' or '') .. summary.amounts[2] .. ' / '
+      .. summary.amounts[3] .. (g.effect == 'heal' and '' or ' damage') .. (summary.targets == 'ally' and ', on you or an ally' or '')
   end
   local slots, labels = list(), {}
   for n = 1, SLOTS do
@@ -639,9 +1080,58 @@ redis.register_function('gear', action(function(pid, rid, args)
   emit('PLAYER:' .. pid, {type = 'gear', gear = gear, slots = slots, text = table.concat(lines, '\n')})
 end))
 
-redis.register_function('say', action(function(pid, rid, args)
-  emit('ROOM:' .. rid, {type = 'say', actor = pid, verb = 'say', message = args[2], text = name_of(pid) .. ' says, "' .. args[2] .. '"'})
+-- Spends a stat point. args: pid, stat.
+redis.register_function('train', action(function(pid, rid, args)
+  local name = args[2]
+  if not STAT_INFO[name] then return notice(pid, 'Your stats are vigor, poise, focus and presence.') end
+  local key = 'ACCOUNT:' .. pid
+  if (tonumber(redis.call('HGET', key, 'points')) or 0) < 1 then
+    return notice(pid, "You have no stat points to spend. You'll get one each level.")
+  end
+  local hp = player_card(pid).hp
+  redis.call('HINCRBY', key, 'points', -1)
+  local value = redis.call('HINCRBY', key, 'stat:' .. name, 1)
+  if name == 'vigor' then redis.call('HSET', key, 'hp', hp + VIGOR_HP) end
+  notice(pid, capitalize(name) .. ' is now ' .. value .. '. ' .. STAT_INFO[name])
+  character_event(pid)
+  emit('ROOM:' .. rid, {type = 'entity', entity = player_card(pid)})
 end))
+
+-- The character sheet, as text: level, stats, perks and reputation.
+redis.register_function('stats', action(function(pid, rid, args)
+  local account, card = hgetall('ACCOUNT:' .. pid), player_card(pid)
+  local level = tonumber(account.level) or 1
+  local lines = {name_of(pid) .. ', level ' .. level .. ' (' .. (tonumber(account.xp) or 0) .. ' / ' .. xp_needed(level)
+    .. ' experience). Health ' .. card.hp .. ' / ' .. card.max_hp .. '.'}
+  for _, s in ipairs(STATS) do lines[#lines + 1] = '  ' .. (tonumber(account['stat:' .. s]) or 0) .. '  ' .. STAT_INFO[s] end
+  local points = tonumber(account.points) or 0
+  if points > 0 then lines[#lines + 1] = 'Stat points to spend: ' .. points .. ". 'train <stat>'" end
+  for _, id in ipairs(sorted(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':perks'))) do
+    local perk = hgetall('PERK:' .. id)
+    lines[#lines + 1] = 'Perk: ' .. (perk.name or id) .. '. ' .. (perk.description or '')
+  end
+  for _, f in ipairs(factions_of(pid)) do
+    lines[#lines + 1] = f.name .. ': ' .. f.affinity_label .. ' (' .. f.affinity .. '), ' .. f.respect_label .. ' (' .. f.respect .. ')'
+  end
+  emit('PLAYER:' .. pid, {type = 'stats', text = table.concat(lines, '\n')})
+end))
+
+-- args: pid, message, target word ('' for none). A target in the room gets
+-- addressed by name.
+redis.register_function('say', action(function(pid, rid, args)
+  local me, message, word = name_of(pid), args[2], args[3] or ''
+  local kind, id, display
+  if word ~= '' then kind, id, display = resolve(pid, rid, word) end
+  if kind == 'player' or kind == 'npc' then
+    return emit('ROOM:' .. rid, {type = 'say', actor = pid, verb = 'say', target = (kind == 'npc' and 'npc:' or 'pc:') .. id,
+      message = message, text = me .. ' says to ' .. display .. ', "' .. message .. '"'})
+  end
+  emit('ROOM:' .. rid, {type = 'say', actor = pid, verb = 'say', message = message, text = me .. ' says, "' .. message .. '"'})
+end))
+
+-- Emotes aimed at NPCs are deeds their cultures may care about, at most once
+-- per NPC per social_cooldown seconds (so bowing on repeat earns nothing).
+local SOCIAL = {bow = 'greet', wave = 'greet', nod = 'greet', smile = 'greet', cheer = 'greet', laugh = 'taunt', poke = 'taunt', point = 'taunt'}
 
 -- args: pid, verb, target word, text without a target, text with a target.
 -- A free-form emote passes an empty verb and the finished text.
@@ -664,6 +1154,10 @@ redis.register_function('emote', action(function(pid, rid, args)
     text = fill(targeted, me, kind == 'self' and 'themself' or display)
   end
   emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = verb, target = id, text = text})
+  local social = kind == 'npc' and SOCIAL[verb]
+  if social and redis.call('SET', 'PLAYER:' .. pid .. ':social:' .. id, '1', 'NX', 'EX', rule('social_cooldown', 600)) then
+    deed(pid, social, id)
+  end
 end))
 
 redis.register_function('describe', action(function(pid, rid, args)
@@ -677,6 +1171,7 @@ redis.register_function('get', action(function(pid, rid, args)
   if not iid then return notice(pid, "You don't see that here.") end
   redis.call('SMOVE', 'ROOM:' .. rid .. ':items', 'PLAYER:' .. pid .. ':inv', iid)
   emit('ROOM:' .. rid, {type = 'item', actor = pid, verb = 'get', target = iid, item = {id = iid, name = item.name}, text = name_of(pid) .. ' picks up the ' .. item.name .. '.'})
+  kit_event(pid)
 end))
 
 redis.register_function('drop', action(function(pid, rid, args)
@@ -684,6 +1179,7 @@ redis.register_function('drop', action(function(pid, rid, args)
   if not iid then return notice(pid, "You aren't carrying that.") end
   redis.call('SMOVE', 'PLAYER:' .. pid .. ':inv', 'ROOM:' .. rid .. ':items', iid)
   emit('ROOM:' .. rid, {type = 'item', actor = pid, verb = 'drop', target = iid, item = {id = iid, name = item.name}, text = name_of(pid) .. ' drops the ' .. item.name .. '.'})
+  kit_event(pid)
 end))
 
 redis.register_function('inventory', action(function(pid, rid, args)
@@ -692,9 +1188,14 @@ redis.register_function('inventory', action(function(pid, rid, args)
     names[#names + 1] = redis.call('HGET', 'ITEM:' .. iid, 'name') or iid
   end
   sorted(names)
+  local slotted = {}
+  for n, gid in pairs(hgetall('PLAYER:' .. pid .. ':slots')) do slotted[gid] = (slotted[gid] and (slotted[gid] .. ',') or '') .. n end
+  local gear = {}
+  for _, g in ipairs(owned_gear(pid)) do gear[#gear + 1] = g.name .. (slotted[g.id] and (' [' .. slotted[g.id] .. ']') or '') end
   emit('PLAYER:' .. pid, {
     type = 'inventory', items = names,
-    text = #names > 0 and ('You are carrying: ' .. table.concat(names, ', ')) or 'You are carrying nothing.',
+    text = (#names > 0 and ('You are carrying: ' .. table.concat(names, ', ')) or 'You are carrying nothing.')
+      .. '\nGear: ' .. (#gear > 0 and table.concat(gear, ', ') or 'none') .. ". 'equip <gear> <slot>' to use it.",
   })
 end))
 
@@ -809,8 +1310,10 @@ redis.register_function('connect', function(keys, args)
     local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
     explore(pid, rid)
     map_event(pid, redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':explored'), true)
-    ensure_loadout(pid)
+    ensure_kit(pid)
     resend_timing(pid)
+    kit_event(pid)
+    character_event(pid)
     room_event(pid, rid, 'resume')
     return cursor
   end
@@ -820,8 +1323,15 @@ redis.register_function('connect', function(keys, args)
     rid = redis.call('GET', 'alz:start_room')
   end
   redis.call('SET', 'PLAYER:' .. pid .. ':room', rid)
-  redis.call('SADD', 'ROOM:' .. rid .. ':players', pid)
-  emit('ROOM:' .. rid, {type = 'arrive', actor = pid, verb = 'login', entity = player_card(pid), text = name_of(pid) .. ' appears.'})
+  local slept_here = redis.call('ZREM', 'alz:sleepers', pid) == 1 and redis.call('SISMEMBER', 'ROOM:' .. rid .. ':players', pid) == 1
+  redis.call('HDEL', 'ACCOUNT:' .. pid, 'asleep')
+  if slept_here then
+    -- Their body is still lying here: they wake up.
+    emit('ROOM:' .. rid, {type = 'entity', actor = pid, verb = 'wake', entity = player_card(pid), text = name_of(pid) .. ' wakes and gets up.'})
+  else
+    redis.call('SADD', 'ROOM:' .. rid .. ':players', pid)
+    emit('ROOM:' .. rid, {type = 'arrive', actor = pid, verb = 'login', entity = player_card(pid), text = name_of(pid) .. ' arrives, well rested.'})
+  end
 
   local cursor = current_seq()
   local subs = 'PLAYER:' .. pid .. ':subs'
@@ -835,9 +1345,12 @@ redis.register_function('connect', function(keys, args)
   resubscribe(pid, add, {})
   explore(pid, rid)
   map_event(pid, redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':explored'), true)
-  ensure_loadout(pid)
+  ensure_kit(pid)
   resend_timing(pid)
+  kit_event(pid)
+  character_event(pid)
   room_event(pid, rid, 'enter')
+  aggro(pid, rid)
   return cursor
 end)
 
@@ -859,10 +1372,18 @@ redis.register_function('disconnect', function(keys, args)
     if beat and tonumber(beat) > tonumber(cutoff) then return 0 end
   end
 
+  -- Somewhere safe, a player settles in to rest and is gone at once. Out in the
+  -- open they lie down to sleep, and their body stays for sleep_seconds; NPCs
+  -- already fighting them keep at it, so leaving is no escape.
   local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
-  if rid then
+  if rid and is_safe(pid, rid) then
     redis.call('SREM', 'ROOM:' .. rid .. ':players', pid)
-    emit('ROOM:' .. rid, {type = 'leave', actor = pid, verb = 'logout', entity_id = 'pc:' .. pid, text = name_of(pid) .. ' fades from view.'})
+    for _, nid in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':foes')) do drop_foe(nid, pid) end
+    emit('ROOM:' .. rid, {type = 'leave', actor = pid, verb = 'logout', entity_id = 'pc:' .. pid, text = name_of(pid) .. ' settles in to rest, and is gone.'})
+  elseif rid then
+    redis.call('HSET', 'ACCOUNT:' .. pid, 'asleep', '1')
+    redis.call('ZADD', 'alz:sleepers', now_ms() + rule('sleep_seconds', 120) * 1000, pid)
+    emit('ROOM:' .. rid, {type = 'entity', actor = pid, verb = 'sleep', entity = player_card(pid), text = name_of(pid) .. ' lies down to rest.'})
   end
   emit('PLAYER:' .. pid, {type = 'control', op = 'kick', session = current, reason = reason})
   local subs = 'PLAYER:' .. pid .. ':subs'
@@ -899,7 +1420,8 @@ redis.register_function('seed', function(keys, args)
     local base = 'ROOM:' .. rid
     local x, y = room.pos[1], room.pos[2]
     redis.call('DEL', base .. ':info', base .. ':exits', base .. ':features', base .. ':flavor')
-    redis.call('HSET', base .. ':info', 'name', room.name, 'description', room.description, 'area', room.area, 'x', x, 'y', y)
+    redis.call('HSET', base .. ':info', 'name', room.name, 'description', room.description, 'area', room.area, 'x', x, 'y', y,
+      'safe', room.safe and '1' or '0', 'terrain', room.terrain or '')
     local b = area_box[room.area]
     if b then
       b[1], b[2], b[3], b[4] = math.min(b[1], x), math.min(b[2], y), math.max(b[3], x), math.max(b[4], y)
@@ -930,7 +1452,10 @@ redis.register_function('seed', function(keys, args)
     local new = redis.call('EXISTS', key) == 0
     redis.call('HSET', key, 'name', npc.name, 'label', npc.label or '', 'description', npc.description or '',
       'details', npc.details or '', 'keywords', npc.keywords or '', 'max_hp', npc.max_hp or 10,
-      'proper', npc.proper and '1' or '0', 'respawn', npc.respawn or 60)
+      'proper', npc.proper and '1' or '0', 'respawn', npc.respawn or 60, 'icon', npc.icon or '',
+      'disposition', npc.disposition or 'neutral', 'faction', npc.faction or '', 'role', npc.role or '',
+      'attacks', cjson.encode(npc.attacks or {}), 'drops', cjson.encode(npc.drops or {}),
+      'xp', npc.xp or math.floor((npc.max_hp or 10) / 2), 'immortal', npc.immortal and '1' or '0')
     if new then
       redis.call('HSET', key, 'hp', npc.max_hp or 10, 'room', npc.room)
       redis.call('SADD', 'ROOM:' .. npc.room .. ':npcs', nid)
@@ -942,12 +1467,34 @@ redis.register_function('seed', function(keys, args)
   redis.call('DEL', 'alz:gear', 'alz:default_loadout')
   for gid, gear in pairs(world.gear or {}) do
     redis.call('HSET', 'GEAR:' .. gid, 'name', gear.name, 'kind', gear.kind or '', 'keywords', gear.keywords or '',
-      'effect', gear.effect, 'period', gear.period, 'window', gear.window, 'perfect_window', gear.perfect_window,
+      'effect', gear.effect, 'targets', gear.targets or 'self', 'period', gear.period, 'window', gear.window, 'perfect_window', gear.perfect_window,
       'opener', gear.amounts[1], 'good', gear.amounts[2], 'perfect', gear.amounts[3],
       'hit', gear.hit, 'perfect_hit', gear.perfect_hit, 'miss', gear.miss, 'whiff', gear.whiff)
     redis.call('SADD', 'alz:gear', gid)
   end
   for _, gid in ipairs(world.loadout or {}) do redis.call('RPUSH', 'alz:default_loadout', gid) end
+  redis.call('DEL', 'alz:starting_gear')
+  for _, gid in ipairs(world.starting_gear or {}) do redis.call('RPUSH', 'alz:starting_gear', gid) end
+  -- Factions, perks and the level table are static too.
+  for _, fid in ipairs(redis.call('SMEMBERS', 'alz:factions')) do redis.call('DEL', 'FACTION:' .. fid) end
+  redis.call('DEL', 'alz:factions')
+  for fid, faction in pairs(world.factions or {}) do
+    redis.call('HSET', 'FACTION:' .. fid, 'name', faction.name, 'description', faction.description or '',
+      'rules', cjson.encode(faction.rules or {}))
+    redis.call('SADD', 'alz:factions', fid)
+  end
+  for pid, perk in pairs(world.perks or {}) do
+    redis.call('DEL', 'PERK:' .. pid)
+    redis.call('HSET', 'PERK:' .. pid, 'name', perk.name, 'description', perk.description or '', 'safe_terrain', perk.safe_terrain or '')
+  end
+  for _, level in ipairs(redis.call('SMEMBERS', 'alz:levels')) do redis.call('DEL', 'LEVEL:' .. level) end
+  redis.call('DEL', 'alz:levels')
+  for level, reward in pairs(world.levels or {}) do
+    redis.call('HSET', 'LEVEL:' .. level, 'gear', cjson.encode(reward.gear or {}), 'perks', cjson.encode(reward.perks or {}))
+    redis.call('SADD', 'alz:levels', level)
+  end
+  redis.call('DEL', 'alz:rules')
+  for name, value in pairs(world.rules or {}) do redis.call('HSET', 'alz:rules', name, value) end
   for iid, item in pairs(world.items or {}) do
     local key = 'ITEM:' .. iid
     local new = redis.call('EXISTS', key) == 0
@@ -965,10 +1512,12 @@ redis.register_function('seed', function(keys, args)
   return 1
 end)
 
--- Ambient world events (bells, weather) published by the server's ticker.
--- Brings back NPCs whose respawn time has come. Any server may call this.
-redis.register_function('respawn', function(keys, args)
-  local due = redis.call('ZRANGEBYSCORE', 'alz:respawns', '-inf', now_ms())
+-- Upkeep -----------------------------------------------------------------------
+
+-- Brings back NPCs whose respawn time has come. Hostile ones turn on whoever
+-- is there.
+local function respawn_due(now)
+  local due = redis.call('ZRANGEBYSCORE', 'alz:respawns', '-inf', now)
   for _, nid in ipairs(due) do
     redis.call('ZREM', 'alz:respawns', nid)
     local npc = hgetall('NPC:' .. nid)
@@ -976,11 +1525,100 @@ redis.register_function('respawn', function(keys, args)
       redis.call('HSET', 'NPC:' .. nid, 'hp', npc.max_hp or 10)
       redis.call('SADD', 'ROOM:' .. npc.room .. ':npcs', nid)
       emit('ROOM:' .. npc.room, {type = 'arrive', entity = npc_card(nid), text = capitalize(npc_display(nid)) .. ' appears.'})
+      for _, pid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. npc.room .. ':players')) do
+        if redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then
+          dispositions_event(pid, npc.room)
+          aggro(pid, npc.room)
+        end
+      end
     end
   end
   return #due
+end
+
+redis.register_function('respawn', function(keys, args)
+  return respawn_due(now_ms())
 end)
 
+-- The slow upkeep every server runs every few seconds: respawns, sleeping
+-- bodies fading, and wounds healing out of a fight (faster somewhere safe).
+redis.register_function('upkeep', function(keys, args)
+  local now = now_ms()
+  respawn_due(now)
+  for _, pid in ipairs(redis.call('ZRANGEBYSCORE', 'alz:sleepers', '-inf', now)) do
+    redis.call('ZREM', 'alz:sleepers', pid)
+    fade_out(pid)
+  end
+  for _, pid in ipairs(redis.call('SMEMBERS', 'alz:wounded')) do
+    local card = player_card(pid)
+    if card.hp >= card.max_hp then
+      redis.call('SREM', 'alz:wounded', pid)
+    elseif redis.call('SCARD', 'PLAYER:' .. pid .. ':foes') == 0 and redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then
+      local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+      local amount = is_safe(pid, rid) and rule('safe_regen', 10) or rule('regen', 2)
+      redis.call('HSET', 'ACCOUNT:' .. pid, 'hp', math.min(card.max_hp, card.hp + amount))
+      emit('ROOM:' .. rid, {type = 'entity', entity = player_card(pid)})
+    end
+  end
+  return 1
+end)
+
+-- Lands every NPC attack that's due. Any server may call this, as often as it
+-- likes: each attack is taken off the schedule as it lands.
+redis.register_function('tick', function(keys, args)
+  local now = now_ms()
+  local due = redis.call('ZRANGEBYSCORE', 'alz:npc_attacks', '-inf', now, 'WITHSCORES', 'LIMIT', 0, 200)
+  local touched, order = {}, {}
+  for i = 1, #due, 2 do
+    local member, at = due[i], tonumber(due[i + 1])
+    redis.call('ZREM', 'alz:npc_attacks', member)
+    local nid, n = string.match(member, '^(.+)#(%d+)$')
+    local npc = hgetall('NPC:' .. nid)
+    local attack = decode(npc.attacks)[tonumber(n)]
+    if not attack or (tonumber(npc.hp) or 0) <= 0 or redis.call('SISMEMBER', 'ROOM:' .. (npc.room or '') .. ':npcs', nid) == 0 then
+      stop_fighting(nid)
+    else
+      -- It attacks the first foe still here, and forgets anyone who has left.
+      local target
+      for _, pid in ipairs(redis.call('ZRANGE', 'NPC:' .. nid .. ':foes', 0, -1)) do
+        if redis.call('SISMEMBER', 'ROOM:' .. npc.room .. ':players', pid) == 1 then
+          target = pid
+          break
+        end
+        drop_foe(nid, pid)
+      end
+      if not target then
+        stop_fighting(nid)
+      else
+        local hp = player_card(target).hp - attack.damage
+        redis.call('HSET', 'ACCOUNT:' .. target, 'hp', math.max(hp, 0))
+        redis.call('SADD', 'alz:wounded', target)
+        emit('ROOM:' .. npc.room, {type = 'combat', entity_id = 'npc:' .. nid, verb = attack.name, target = 'pc:' .. target,
+          result = 'hit', damage = attack.damage,
+          text = fill(attack.hit, capitalize(npc_display(nid)), name_of(target)) .. ' (' .. attack.damage .. ')'})
+        if hp <= 0 then
+          defeat(target, nid)
+        else
+          emit('ROOM:' .. npc.room, {type = 'entity', entity = player_card(target)})
+        end
+        if redis.call('HEXISTS', 'NPC:' .. nid .. ':next', n) == 1 then
+          local later = at + attack.period
+          if later <= now then later = now + attack.period end
+          redis.call('HSET', 'NPC:' .. nid .. ':next', n, later)
+          redis.call('ZADD', 'alz:npc_attacks', later, member)
+          if not touched[nid] then
+            touched[nid] = true
+            order[#order + 1] = nid
+          end
+        end
+      end
+    end
+  end
+  for _, nid in ipairs(order) do npc_timing_event(nid) end
+  return #due / 2
+end)
+
+-- Ambient world events (bells, weather) published by the server's ticker.
 redis.register_function('ambient', function(keys, args)
   local channel, text = args[1], args[2]
   if redis.call('EXISTS', channel .. ':info') == 0 then return 0 end

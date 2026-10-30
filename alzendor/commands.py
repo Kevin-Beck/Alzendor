@@ -184,9 +184,9 @@ async def move(ctx: Context, rest: str) -> None:
 # Acting in the room -----------------------------------------------------------
 
 
-@command("say", "say <message>", "Speak to everyone in the room. Shorthand: 'message")
+@command("say", "say <message>", "Speak to everyone in the room (addressed to your target, if you have one). Shorthand: 'message")
 async def say(ctx: Context, rest: str) -> None:
-    await ctx.call("say", _require(rest, "Say what?"))
+    await ctx.call("say", _require(rest, "Say what?"), ctx.target)
 
 
 @command("emote", "emote <action>", "Act something out, e.g. 'emote stretches'. Shorthand: :action", aliases=("me",))
@@ -206,6 +206,8 @@ VERBS: dict[str, tuple[str | None, str | None]] = {
     "bow": ("{actor} bows.", "{actor} bows to {target}."),
     "smile": ("{actor} smiles.", "{actor} smiles at {target}."),
     "laugh": ("{actor} laughs.", "{actor} laughs at {target}."),
+    "dance": ("{actor} dances.", "{actor} dances with {target}."),
+    "cheer": ("{actor} cheers.", "{actor} cheers for {target}."),
     "point": (None, "{actor} points at {target}."),
     "poke": (None, "{actor} pokes {target}."),
     "touch": (None, "{actor} touches {target}."),
@@ -277,9 +279,27 @@ async def unequip(ctx: Context, rest: str) -> None:
     await ctx.call("unequip", slot)
 
 
-@command("gear", "gear", "List the gear there is and what's in your slots.", aliases=("slots", "loadout"))
+@command("gear", "gear", "List your gear and what's in your slots.", aliases=("slots", "loadout"))
 async def gear(ctx: Context, rest: str) -> None:
     await ctx.call("gear")
+
+
+# Character ----------------------------------------------------------------------
+
+STATS = ("vigor", "poise", "focus", "presence")
+
+
+@command("stats", "stats", "Your level, stats, perks and reputation.", aliases=("character", "sheet", "reputation", "rep"))
+async def stats(ctx: Context, rest: str) -> None:
+    await ctx.call("stats")
+
+
+@command("train", "train <stat>", "Spend a stat point: vigor, poise, focus or presence.")
+async def train(ctx: Context, rest: str) -> None:
+    stat = rest.lower().strip()
+    if stat not in STATS:
+        raise Usage("Train which stat? " + ", ".join(STATS) + ".")
+    await ctx.call("train", stat)
 
 
 @command("get", "get <item>", "Pick something up.", aliases=("take",))

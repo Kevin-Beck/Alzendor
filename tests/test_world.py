@@ -167,8 +167,9 @@ async def test_disconnect_leaves_the_room_and_keeps_chat_channels(world):
     kevin, mara = await enter(world, "kevin"), await enter(world, "mara")
     await drain(kevin), await drain(mara)
     assert await world.call("disconnect", "kevin", "session-kevin", "", "Bye.") == 1
-    assert texts(await drain(mara)) == ["Kevin fades from view."]
-    assert texts(await drain(kevin)) == ["Kevin fades from view."]
+    # The tavern is a safe place, so Kevin is gone at once.
+    assert texts(await drain(mara)) == ["Kevin settles in to rest, and is gone."]
+    assert texts(await drain(kevin)) == ["Kevin settles in to rest, and is gone."]
     assert kevin.ended == "Bye."
     assert not await world.redis.sismember("ROOM:tavern:players", "kevin")
     assert set(await world.redis.hkeys("PLAYER:kevin:subs")) == {"CHANNEL:general"}
@@ -185,7 +186,9 @@ async def test_logging_in_elsewhere_ends_the_old_connection(world):
     new = await enter(world, "kevin", session="new")
     await drain(old)
     assert old.ended == "You connected from somewhere else."
-    assert [(e["type"], e.get("cause")) for e in await drain(new) if e["type"] != "timing"] == [("map", None), ("room", "resume")]
+    assert [(e["type"], e.get("cause")) for e in await drain(new) if e["type"] not in ("timing", "kit", "character")] == [
+        ("map", None), ("room", "resume"),
+    ]
     assert await drain(mara) == []  # no leave and re-enter for a takeover
 
 
@@ -226,7 +229,7 @@ async def test_map_shows_explored_rooms_and_glimpses_of_their_exits(world):
     assert {rid for rid, r in rooms.items() if not r["explored"]} == {"market_square", "back_alley", "cellar"}
     assert "name" not in rooms["cellar"]  # glimpsed rooms stay unnamed until visited
     assert [a["id"] for a in first["areas"]] == ["old_quarter"]
-    assert first["areas"][0]["bounds"] == [40, -20, 60, 48]
+    assert first["areas"][0]["bounds"] == [40, -20, 80, 48]
     assert first["areas"][0]["color"] == 5  # colours go in area id order: docks, forest_edge, …
     assert first["cities"][0]["id"] == "harrowgate"
 
@@ -252,8 +255,11 @@ async def test_rooms_list_npcs_and_players_as_cards(world):
     assert [c["id"] for c in room["entities"]] == ["npc:marta"]
     assert room["entities"][0] == {
         "id": "npc:marta", "kind": "npc", "name": "Marta", "label": "Human Innkeeper",
-        "description": "round-faced, sleeves rolled up", "hp": 30, "max_hp": 30,
+        "description": "round-faced, sleeves rolled up", "hp": 30, "max_hp": 30, "icon": "🍺",
+        "base_disposition": "friendly", "disposition": "friendly", "faction": "The Folk of Harrowgate",
+        "attacks": [], "immortal": False,
     }
+    assert room["safe"] is True
     assert room["features"] == ["bar", "ground", "hearth"]
     assert room["items"] == [{"id": "map-1", "name": "worn map"}]
 
@@ -293,7 +299,9 @@ async def test_named_npcs_read_naturally(world):
     kevin = await enter(world, "kevin")
     await drain(kevin)
     await world.call("emote", "kevin", "wave", "marta", "{actor} waves.", "{actor} waves at {target}.")
-    assert texts(await drain(kevin)) == ["Kevin waves at Marta."]
+    assert texts(await drain(kevin)) == [
+        "Kevin waves at Marta.", "The Folk of Harrowgate: Good manners go a long way. (affinity +1)",
+    ]
 
 
 async def test_describe_updates_your_card_for_the_room(world):

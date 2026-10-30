@@ -23,7 +23,7 @@ class World:
 
     async def seed(self, path: Path) -> dict:
         """Loads the map from a seed file and returns it (for its ambient events)."""
-        data = json.loads(Path(path).read_text())
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
         validate_seed(data)
         await self.call("seed", json.dumps(data))
         return data
@@ -35,6 +35,8 @@ BEARINGS = {"east": 0, "northeast": 45, "north": 90, "northwest": 135, "west": 1
 OPPOSITE = {"north": "south", "south": "north", "east": "west", "west": "east", "up": "down", "down": "up",
             "northeast": "southwest", "southwest": "northeast", "northwest": "southeast", "southeast": "northwest"}
 SLOTS = 3  # gear slots per player, as in alzendor.lua
+DISPOSITIONS = ("hostile", "neutral", "friendly")
+DEEDS = ("kill", "clean_kill", "ambush", "flee", "defeated", "heal", "greet", "taunt")  # see deed() in alzendor.lua
 # How far an exit's line on the map may stray from its direction before it looks wrong.
 BEARING_TOLERANCE = 10
 
@@ -78,12 +80,36 @@ def validate_seed(data: dict) -> None:
             problems.append(f"item {iid}: unknown room {item.get('room')!r}")
         if not item.get("name"):
             problems.append(f"item {iid}: missing name")
+    gear, factions, perks = data.get("gear", {}), data.get("factions", {}), data.get("perks", {})
     for nid, npc in data.get("npcs", {}).items():
         if npc.get("room") not in rooms:
             problems.append(f"npc {nid}: unknown room {npc.get('room')!r}")
         if not npc.get("name"):
             problems.append(f"npc {nid}: missing name")
-    gear = data.get("gear", {})
+        problems += [f"npc {nid}: {problem}" for problem in _npc_problems(npc, factions, gear)]
+    for fid, faction in factions.items():
+        if not faction.get("name"):
+            problems.append(f"faction {fid}: missing name")
+        for rule in faction.get("rules", []):
+            if rule.get("deed") not in DEEDS:
+                problems.append(f"faction {fid}: unknown deed {rule.get('deed')!r} (deeds are {', '.join(DEEDS)})")
+            if "of" in rule and rule["of"] not in factions:
+                problems.append(f"faction {fid}: rule for unknown faction {rule['of']!r}")
+    terrains = {room.get("terrain") for room in rooms.values()}
+    for pid, perk in perks.items():
+        if perk.get("safe_terrain") and perk["safe_terrain"] not in terrains:
+            problems.append(f"perk {pid}: no room has terrain {perk['safe_terrain']!r}")
+    for level, reward in data.get("levels", {}).items():
+        if not level.isdigit() or int(level) < 2:
+            problems.append(f"levels: {level!r} should be a level number from 2")
+        problems += [f"levels {level}: unknown gear {g!r}" for g in reward.get("gear", []) if g not in gear]
+        problems += [f"levels {level}: unknown perk {p!r}" for p in reward.get("perks", []) if p not in perks]
+    for gid in data.get("starting_gear", []):
+        if gid not in gear:
+            problems.append(f"starting_gear: unknown gear {gid!r}")
+    shrine = data.get("rules", {}).get("shrine_room")
+    if shrine is not None and shrine not in rooms:
+        problems.append(f"rules: shrine_room {shrine!r} is not a room")
     for gid, item in gear.items():
         problems += [f"gear {gid}: {problem}" for problem in _gear_problems(item)]
     loadout = data.get("loadout", [])
@@ -104,6 +130,21 @@ def validate_seed(data: dict) -> None:
             problems.append(f"ambient {channel}: needs texts and a positive 'every'")
     if problems:
         raise ValueError("Invalid seed map:\n  " + "\n  ".join(problems))
+
+
+def _npc_problems(npc: dict, factions: dict, gear: dict) -> list[str]:
+    problems = []
+    if npc.get("disposition", "neutral") not in DISPOSITIONS:
+        problems.append(f"disposition must be one of {', '.join(DISPOSITIONS)}")
+    if npc.get("faction") and npc["faction"] not in factions:
+        problems.append(f"unknown faction {npc['faction']!r}")
+    for attack in npc.get("attacks", []):
+        if not attack.get("name") or not attack.get("hit"):
+            problems.append("each attack needs a name and hit text")
+        if not all(isinstance(attack.get(key), int) and attack[key] > 0 for key in ("period", "damage")):
+            problems.append(f"attack {attack.get('name')!r}: period and damage must be positive whole numbers")
+    problems += [f"drops unknown gear {g!r}" for g in npc.get("drops", []) if g not in gear]
+    return problems
 
 
 def _gear_problems(gear: dict) -> list[str]:

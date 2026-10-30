@@ -56,6 +56,7 @@ class Session:
         self._allowance = float(COMMAND_BURST)
         self._last_command = time.monotonic()
         self._last_ping = 0.0
+        self.last_active = time.monotonic()  # the last command, for the idle timeout
 
     @property
     def address(self) -> str:
@@ -134,6 +135,7 @@ class Session:
         if not message or message.get("type") != "cmd" or not isinstance(message.get("text"), str):
             await self._send(type="error", message='Expected {"type": "cmd", "text": ...}.')
             return
+        self.last_active = time.monotonic()
         if not self._take_allowance():
             await self._send(type="error", message="Slow down a little.")
             return
