@@ -743,7 +743,7 @@ local function character_event(pid)
   end
   local card = player_card(pid)
   return emit('PLAYER:' .. pid, {type = 'character', level = level, xp = tonumber(account.xp) or 0,
-    xp_next = xp_needed(level), points = tonumber(account.points) or 0, stats = stats, perks = perks,
+    xp_next = xp_needed(level), points = tonumber(account.points) or 0, stats = stats, stat_info = STAT_INFO, perks = perks,
     factions = factions_of(pid), hp = card.hp, max_hp = card.max_hp})
 end
 

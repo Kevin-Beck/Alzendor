@@ -18,7 +18,8 @@ Server -> client
 
 Combat timing is judged by Redis's clock. A client syncs to it with ping/pong
 (server_ms is the time when the pong left, by Redis's clock) and uses that to
-draw the timing bar from `timing` events.
+draw the timing bars from `timing` events (your slots) and `npc_timing` events
+(an NPC's attacks). The README's Protocol section lists the event types.
 
 After authenticating, everything the client sees arrives as events in sequence
 order. The connection closes with the reason as its close message when the
