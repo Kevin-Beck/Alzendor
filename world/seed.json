@@ -60,7 +60,8 @@
         "touch:ground": "crouches and presses a palm to the worn floorboards.",
         "touch:hearth": "holds a hand to the hearth and pulls it back quickly.",
         "sit:bar": "pulls up a stool at the bar."
-      }
+      },
+      "safe": true
     },
     "cellar": {
       "name": "Tavern Cellar",
@@ -117,7 +118,8 @@
       "description": "Heat rolls out of the forge in waves. Tools hang in neat rows above a heavy anvil.",
       "exits": {
         "west": "market_square",
-        "south": "back_alley"
+        "south": "back_alley",
+        "east": "training_yard"
       },
       "features": {
         "anvil": "A dented iron anvil, still warm from the morning's work.",
@@ -146,7 +148,8 @@
       "flavor": {
         "touch:bell": "reaches up and touches the bell. It hums faintly.",
         "sit:steps": "sits down on the temple steps."
-      }
+      },
+      "safe": true
     },
     "harbor_road": {
       "name": "Harbor Road",
@@ -186,7 +189,8 @@
       "flavor": {
         "touch:water": "leans over the edge and dips a hand into the cold sea.",
         "sit:ropes": "sits on a coil of rope, legs dangling over the edge."
-      }
+      },
+      "terrain": "coast"
     },
     "fish_market": {
       "name": "Fish Market",
@@ -202,7 +206,8 @@
       },
       "features": {
         "ice": "Rough blocks of ice, shipped down from the mountains."
-      }
+      },
+      "terrain": "coast"
     },
     "lighthouse": {
       "name": "Lighthouse Base",
@@ -221,7 +226,8 @@
       },
       "flavor": {
         "sit:bench": "settles onto the keeper's bench and looks out to sea."
-      }
+      },
+      "terrain": "coast"
     },
     "back_alley": {
       "name": "Back Alley",
@@ -298,7 +304,8 @@
       },
       "flavor": {
         "touch:water": "dips a hand into the black water and quickly pulls it out."
-      }
+      },
+      "terrain": "marsh"
     },
     "village_green": {
       "name": "Village Green",
@@ -334,7 +341,8 @@
       },
       "features": {
         "window": "Stained glass: a ferryman poling across a lake of stars."
-      }
+      },
+      "safe": true
     },
     "drowned_lantern": {
       "name": "The Drowned Lantern",
@@ -353,7 +361,8 @@
       },
       "flavor": {
         "touch:hearth": "warms their hands over the smoky peat fire."
-      }
+      },
+      "safe": true
     },
     "ferry_dock": {
       "name": "Ferry Dock",
@@ -368,7 +377,8 @@
       },
       "features": {
         "ferry": "A broad, flat ferry with a pole and a lantern hook."
-      }
+      },
+      "terrain": "coast"
     },
     "woodland_path": {
       "name": "Woodland Path",
@@ -390,7 +400,8 @@
       },
       "flavor": {
         "touch:threads": "brushes a strand of silk. It clings to their fingers."
-      }
+      },
+      "terrain": "forest"
     },
     "mossy_clearing": {
       "name": "Mossy Clearing",
@@ -408,7 +419,8 @@
       },
       "flavor": {
         "sit:oak": "sits on the fallen oak. It creaks."
-      }
+      },
+      "terrain": "forest"
     },
     "hunters_camp": {
       "name": "Hunter's Camp",
@@ -424,7 +436,9 @@
       "features": {
         "pelts": "Fox and hare pelts, drying on a line.",
         "fire": "A banked fire, still warm."
-      }
+      },
+      "safe": true,
+      "terrain": "forest"
     },
     "web_tunnel": {
       "name": "Web Tunnel",
@@ -444,7 +458,8 @@
       },
       "flavor": {
         "touch:bundles": "pokes a wrapped bundle. It twitches back."
-      }
+      },
+      "terrain": "cave"
     },
     "hollow_tree": {
       "name": "Hollow Tree",
@@ -459,7 +474,8 @@
       },
       "features": {
         "bones": "Small bones, picked clean."
-      }
+      },
+      "terrain": "cave"
     },
     "silk_cavern": {
       "name": "Silk Cavern",
@@ -474,6 +490,22 @@
       },
       "features": {
         "silk": "Curtains of silk, thick enough to climb."
+      },
+      "terrain": "cave"
+    },
+    "training_yard": {
+      "name": "Training Yard",
+      "description": "A packed-earth yard behind the smithy, fenced with old spear shafts. Straw dummies and a battered sparring post stand ready for anyone who wants to practise their timing.",
+      "area": "old_quarter",
+      "pos": [
+        80,
+        20
+      ],
+      "exits": {
+        "west": "smithy"
+      },
+      "features": {
+        "rack": "A rack of blunted practice blades, dented from years of use."
       }
     }
   },
@@ -542,7 +574,11 @@
       "details": "Marta runs the Gilded Tankard with a loud laugh and a louder ladle.",
       "keywords": "innkeeper barkeep",
       "room": "tavern",
-      "max_hp": 30
+      "max_hp": 30,
+      "disposition": "friendly",
+      "faction": "harrowfolk",
+      "role": "civilian",
+      "icon": "🍺"
     },
     "brannoc": {
       "name": "Brannoc",
@@ -552,7 +588,11 @@
       "details": "Brannoc hammers without looking up. His beard is singed at the edges.",
       "keywords": "smith blacksmith dwarf",
       "room": "smithy",
-      "max_hp": 60
+      "max_hp": 60,
+      "disposition": "friendly",
+      "faction": "harrowfolk",
+      "role": "civilian",
+      "icon": "⚒️"
     },
     "orc-1": {
       "name": "Orc Warrior",
@@ -561,7 +601,30 @@
       "details": "A hulking orc in mismatched plate, knuckles wrapped in leather. It watches you without blinking.",
       "keywords": "orc warrior",
       "room": "back_alley",
-      "max_hp": 80
+      "max_hp": 80,
+      "disposition": "hostile",
+      "faction": "orcs",
+      "role": "warrior",
+      "icon": "👹",
+      "xp": 60,
+      "respawn": 90,
+      "drops": [
+        "greataxe"
+      ],
+      "attacks": [
+        {
+          "name": "cleaver",
+          "period": 6000,
+          "damage": 7,
+          "hit": "{actor} hacks at {target} with a cleaver."
+        },
+        {
+          "name": "shield bash",
+          "period": 9000,
+          "damage": 4,
+          "hit": "{actor} slams a shield into {target}."
+        }
+      ]
     },
     "rat-1": {
       "name": "Dock Rat",
@@ -569,7 +632,18 @@
       "description": "mangy, missing an ear",
       "keywords": "rat",
       "room": "fish_market",
-      "max_hp": 5
+      "max_hp": 5,
+      "disposition": "neutral",
+      "icon": "🐀",
+      "xp": 3,
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 5000,
+          "damage": 1,
+          "hit": "{actor} nips at {target}."
+        }
+      ]
     },
     "rat-2": {
       "name": "Dock Rat",
@@ -577,7 +651,18 @@
       "description": "fat and bold",
       "keywords": "rat",
       "room": "fish_market",
-      "max_hp": 5
+      "max_hp": 5,
+      "disposition": "neutral",
+      "icon": "🐀",
+      "xp": 3,
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 5000,
+          "damage": 1,
+          "hit": "{actor} nips at {target}."
+        }
+      ]
     },
     "tamsin": {
       "name": "Old Tamsin",
@@ -586,7 +671,11 @@
       "description": "weathered, squinting out to sea",
       "keywords": "tamsin keeper",
       "room": "lighthouse",
-      "max_hp": 25
+      "max_hp": 25,
+      "disposition": "friendly",
+      "faction": "harrowfolk",
+      "role": "civilian",
+      "icon": "🏮"
     },
     "lurker-1": {
       "name": "Bog Lurker",
@@ -595,7 +684,24 @@
       "keywords": "lurker bog creature",
       "details": "A hunched shape of mud and weed. Two pale eyes follow every move you make.",
       "room": "reed_marsh",
-      "max_hp": 45
+      "max_hp": 45,
+      "disposition": "hostile",
+      "icon": "🐸",
+      "xp": 30,
+      "attacks": [
+        {
+          "name": "grasp",
+          "period": 7000,
+          "damage": 5,
+          "hit": "{actor} drags at {target} with a muddy claw."
+        },
+        {
+          "name": "mire spit",
+          "period": 11000,
+          "damage": 3,
+          "hit": "{actor} spits stinking mire at {target}."
+        }
+      ]
     },
     "ilse": {
       "name": "Sister Ilse",
@@ -604,7 +710,11 @@
       "description": "serene, ink-stained fingers",
       "keywords": "ilse sister priest",
       "room": "chapel",
-      "max_hp": 25
+      "max_hp": 25,
+      "disposition": "friendly",
+      "faction": "harrowfolk",
+      "role": "civilian",
+      "icon": "🕯️"
     },
     "osric": {
       "name": "Osric",
@@ -614,7 +724,11 @@
       "keywords": "osric ferryman",
       "details": "Osric says nothing. He holds out a hand, palm up, as if waiting for a token.",
       "room": "ferry_dock",
-      "max_hp": 35
+      "max_hp": 35,
+      "disposition": "friendly",
+      "faction": "harrowfolk",
+      "role": "civilian",
+      "icon": "⛵"
     },
     "wren": {
       "name": "Wren",
@@ -623,7 +737,11 @@
       "description": "lean, bow across her back",
       "keywords": "wren ranger hunter",
       "room": "hunters_camp",
-      "max_hp": 50
+      "max_hp": 50,
+      "disposition": "friendly",
+      "faction": "wardens",
+      "role": "ranger",
+      "icon": "🏹"
     },
     "spider-1": {
       "name": "Giant Spider",
@@ -632,7 +750,26 @@
       "keywords": "spider giant",
       "details": "A spider the size of a pony, legs bristling with black hairs. It is very still.",
       "room": "web_tunnel",
-      "max_hp": 40
+      "max_hp": 40,
+      "disposition": "hostile",
+      "faction": "spiders",
+      "role": "hunter",
+      "icon": "🕷️",
+      "xp": 30,
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 6000,
+          "damage": 5,
+          "hit": "{actor} sinks its fangs into {target}."
+        },
+        {
+          "name": "web lash",
+          "period": 8000,
+          "damage": 3,
+          "hit": "{actor} lashes {target} with sticky silk."
+        }
+      ]
     },
     "brood-1": {
       "name": "Broodmother",
@@ -641,8 +778,492 @@
       "keywords": "broodmother spider mother",
       "details": "She fills the far end of the cavern: a bloated, ancient spider, older than the city.",
       "room": "silk_cavern",
-      "max_hp": 200
+      "max_hp": 200,
+      "disposition": "hostile",
+      "faction": "spiders",
+      "role": "matriarch",
+      "icon": "🕸️",
+      "xp": 150,
+      "respawn": 300,
+      "attacks": [
+        {
+          "name": "fangs",
+          "period": 7000,
+          "damage": 12,
+          "hit": "{actor} drives great fangs into {target}."
+        },
+        {
+          "name": "venom spray",
+          "period": 10000,
+          "damage": 8,
+          "hit": "{actor} sprays venom over {target}."
+        },
+        {
+          "name": "web shroud",
+          "period": 13000,
+          "damage": 5,
+          "hit": "{actor} wraps {target} in choking silk."
+        }
+      ]
+    },
+    "orc-2": {
+      "name": "Orc Whelp",
+      "label": "Young Orc",
+      "description": "scrawny, all elbows and bravado",
+      "details": "A young orc, barely grown into its tusks. It copies the warrior's scowl, badly.",
+      "keywords": "orc whelp young",
+      "room": "back_alley",
+      "max_hp": 25,
+      "disposition": "neutral",
+      "faction": "orcs",
+      "role": "young",
+      "icon": "👺",
+      "xp": 10,
+      "attacks": [
+        {
+          "name": "wild swing",
+          "period": 7000,
+          "damage": 3,
+          "hit": "{actor} takes a wild swing at {target}."
+        }
+      ]
+    },
+    "dummy-1": {
+      "name": "Training Dummy",
+      "label": "Straw and Sackcloth",
+      "description": "lumpy, patched, endlessly patient",
+      "details": "A sack of straw on a pole, with a painted face. It has taken a great many beatings and will take a great many more.",
+      "keywords": "dummy training",
+      "room": "training_yard",
+      "max_hp": 200,
+      "disposition": "neutral",
+      "immortal": true,
+      "icon": "🎯",
+      "xp": 0
+    },
+    "post-1": {
+      "name": "Sparring Post",
+      "label": "Oak and Iron",
+      "description": "a post with one swinging iron-shod arm",
+      "details": "An oak post with a weighted arm that swings back round whenever it's struck. Good for practising with a potion in one slot.",
+      "keywords": "post sparring",
+      "room": "training_yard",
+      "max_hp": 200,
+      "disposition": "neutral",
+      "immortal": true,
+      "icon": "🪵",
+      "xp": 0,
+      "attacks": [
+        {
+          "name": "swinging arm",
+          "period": 6000,
+          "damage": 2,
+          "hit": "{actor}'s arm swings round and clips {target}."
+        }
+      ]
     }
+  },
+  "gear": {
+    "dagger": {
+      "name": "Dagger",
+      "kind": "Weapon",
+      "keywords": "knife",
+      "effect": "damage",
+      "period": 1200,
+      "window": 200,
+      "perfect_window": 70,
+      "amounts": [
+        2,
+        3,
+        5
+      ],
+      "hit": "{actor} jabs {target} with a dagger.",
+      "perfect_hit": "{actor} slips a dagger neatly into {target}!",
+      "miss": "{actor} jabs at {target} and misses.",
+      "whiff": "your dagger thrust finds only air."
+    },
+    "kick": {
+      "name": "Kick",
+      "kind": "Melee",
+      "keywords": "",
+      "effect": "damage",
+      "period": 2000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        4,
+        5,
+        8
+      ],
+      "hit": "{actor} kicks {target}.",
+      "perfect_hit": "{actor} lands a perfect kick on {target}!",
+      "miss": "{actor} kicks at {target} and misses.",
+      "whiff": "your kick goes wide."
+    },
+    "sword": {
+      "name": "Sword",
+      "kind": "Weapon",
+      "keywords": "blade",
+      "effect": "damage",
+      "period": 2500,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        6,
+        7,
+        11
+      ],
+      "hit": "{actor} slashes {target} with a sword.",
+      "perfect_hit": "{actor} cuts {target} with a clean sword stroke!",
+      "miss": "{actor} swings a sword at {target} and misses.",
+      "whiff": "your sword cuts empty air."
+    },
+    "draught": {
+      "name": "Healing Draught",
+      "kind": "Potion",
+      "keywords": "draught",
+      "effect": "heal",
+      "period": 2500,
+      "window": 250,
+      "perfect_window": 80,
+      "amounts": [
+        4,
+        6,
+        10
+      ],
+      "hit": "{actor} sips a healing draught.",
+      "perfect_hit": "{actor} tosses back a healing draught without spilling a drop!",
+      "miss": "{actor} fumbles a healing draught.",
+      "whiff": "the draught slips through your fingers."
+    },
+    "firebolt": {
+      "name": "Firebolt",
+      "kind": "Spell",
+      "keywords": "fire bolt",
+      "effect": "damage",
+      "period": 4000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        8,
+        10,
+        16
+      ],
+      "hit": "{actor} flings a firebolt at {target}.",
+      "perfect_hit": "{actor}'s firebolt engulfs {target}!",
+      "miss": "{actor}'s firebolt sails past {target}.",
+      "whiff": "your firebolt sputters out."
+    },
+    "greataxe": {
+      "name": "Greataxe",
+      "kind": "Weapon",
+      "keywords": "axe",
+      "effect": "damage",
+      "period": 4500,
+      "window": 250,
+      "perfect_window": 80,
+      "amounts": [
+        10,
+        14,
+        24
+      ],
+      "hit": "{actor} hacks at {target} with a greataxe.",
+      "perfect_hit": "{actor} brings a greataxe down squarely on {target}!",
+      "miss": "{actor}'s greataxe thuds into the ground beside {target}.",
+      "whiff": "your greataxe swing comes too slow."
+    },
+    "potion": {
+      "name": "Health Potion",
+      "kind": "Potion",
+      "keywords": "potion hp",
+      "effect": "heal",
+      "period": 5000,
+      "window": 350,
+      "perfect_window": 120,
+      "amounts": [
+        10,
+        15,
+        25
+      ],
+      "hit": "{actor} drinks a health potion.",
+      "perfect_hit": "{actor} downs a health potion in one perfect gulp!",
+      "miss": "{actor} fumbles a health potion and spills it.",
+      "whiff": "you fumble the potion and spill it."
+    },
+    "missile": {
+      "name": "Magic Missile",
+      "kind": "Spell",
+      "keywords": "missile mm",
+      "effect": "damage",
+      "period": 8000,
+      "window": 400,
+      "perfect_window": 130,
+      "amounts": [
+        14,
+        18,
+        30
+      ],
+      "hit": "{actor} hurls a magic missile at {target}.",
+      "perfect_hit": "{actor}'s magic missile strikes {target} dead centre!",
+      "miss": "{actor}'s magic missile streaks past {target}.",
+      "whiff": "your magic missile fizzles."
+    },
+    "mending": {
+      "name": "Mending Light",
+      "kind": "Spell",
+      "keywords": "mend heal light",
+      "effect": "heal",
+      "targets": "ally",
+      "period": 6000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        8,
+        12,
+        20
+      ],
+      "hit": "{actor} lays glowing hands on {target}.",
+      "perfect_hit": "{actor} bathes {target} in warm, mending light!",
+      "miss": "{actor}'s mending light gutters out.",
+      "whiff": "the light slips away from you."
+    }
+  },
+  "starting_gear": [
+    "kick",
+    "missile",
+    "potion",
+    "dagger"
+  ],
+  "loadout": [
+    "kick",
+    "missile",
+    "potion"
+  ],
+  "factions": {
+    "harrowfolk": {
+      "name": "The Folk of Harrowgate",
+      "description": "Innkeepers, smiths, keepers and ferrymen. They value kindness, manners and safe streets.",
+      "rules": [
+        {
+          "deed": "kill",
+          "of": "orcs",
+          "role": "warrior",
+          "affinity": 3,
+          "note": "They're glad of one less orc in the alleys."
+        },
+        {
+          "deed": "kill",
+          "of": "orcs",
+          "role": "young",
+          "affinity": -2,
+          "respect": -2,
+          "note": "A whelp, though? People talk."
+        },
+        {
+          "deed": "kill",
+          "of": "spiders",
+          "affinity": 2,
+          "note": "Fewer spiders on the north road."
+        },
+        {
+          "deed": "heal",
+          "of": "harrowfolk",
+          "affinity": 4,
+          "respect": 1,
+          "note": "They won't forget a kindness."
+        },
+        {
+          "deed": "greet",
+          "of": "harrowfolk",
+          "affinity": 1,
+          "note": "Good manners go a long way."
+        },
+        {
+          "deed": "taunt",
+          "of": "harrowfolk",
+          "affinity": -3,
+          "respect": -1,
+          "note": "Rudeness gets noticed."
+        }
+      ]
+    },
+    "orcs": {
+      "name": "The Back-Alley Orcs",
+      "description": "They live by a warrior's code: fight openly, fight well, never run, and never prey on the young.",
+      "rules": [
+        {
+          "deed": "kill",
+          "of": "orcs",
+          "role": "warrior",
+          "affinity": -6,
+          "respect": 4,
+          "note": "They hate you for it, but a warrior's death is honourable."
+        },
+        {
+          "deed": "clean_kill",
+          "of": "orcs",
+          "respect": 3,
+          "note": "A clean killing blow. They respect that."
+        },
+        {
+          "deed": "kill",
+          "of": "orcs",
+          "role": "young",
+          "affinity": -10,
+          "respect": -10,
+          "note": "Killing whelps is a coward's work."
+        },
+        {
+          "deed": "ambush",
+          "of": "orcs",
+          "respect": -4,
+          "note": "Striking first, before they'd drawn a blade, is beneath a warrior."
+        },
+        {
+          "deed": "flee",
+          "of": "orcs",
+          "respect": -3,
+          "note": "You ran."
+        },
+        {
+          "deed": "defeated",
+          "of": "orcs",
+          "respect": -2,
+          "note": "You were beaten. Weakness."
+        },
+        {
+          "deed": "greet",
+          "of": "orcs",
+          "respect": 1,
+          "note": "A warrior's greeting."
+        },
+        {
+          "deed": "taunt",
+          "of": "orcs",
+          "affinity": -2,
+          "respect": 1,
+          "note": "Bold. They like bold."
+        }
+      ]
+    },
+    "spiders": {
+      "name": "The Spiderwood Brood",
+      "description": "Patient hunters. They prize cunning: the strike from hiding, and the wisdom to slip away.",
+      "rules": [
+        {
+          "deed": "ambush",
+          "of": "spiders",
+          "respect": 4,
+          "note": "The brood admires a hunter who strikes unseen."
+        },
+        {
+          "deed": "kill",
+          "of": "spiders",
+          "affinity": -6,
+          "note": "The web trembles with hatred."
+        },
+        {
+          "deed": "clean_kill",
+          "of": "spiders",
+          "respect": 2,
+          "note": "Swift and precise, as a hunter should be."
+        },
+        {
+          "deed": "flee",
+          "of": "spiders",
+          "respect": 1,
+          "note": "Knowing when to slip away is its own cunning."
+        },
+        {
+          "deed": "defeated",
+          "of": "spiders",
+          "respect": -3,
+          "note": "Caught in the web, like any prey."
+        },
+        {
+          "deed": "taunt",
+          "of": "spiders",
+          "respect": -2,
+          "note": "Only prey makes so much noise."
+        }
+      ]
+    },
+    "wardens": {
+      "name": "The Wardens of the Wood",
+      "description": "Rangers who keep the forest road. They value protecting the wood, and a light step in it.",
+      "rules": [
+        {
+          "deed": "kill",
+          "of": "spiders",
+          "affinity": 3,
+          "respect": 1,
+          "note": "The forest road is safer for it."
+        },
+        {
+          "deed": "heal",
+          "of": "wardens",
+          "affinity": 3,
+          "note": "A friend of the wardens."
+        },
+        {
+          "deed": "greet",
+          "of": "wardens",
+          "affinity": 1,
+          "note": "A friendly nod in the woods."
+        }
+      ]
+    }
+  },
+  "perks": {
+    "woodcraft": {
+      "name": "Woodcraft",
+      "description": "You can make camp anywhere in a forest: forests are safe places for you to rest.",
+      "safe_terrain": "forest"
+    },
+    "shore_sleeper": {
+      "name": "Shore-sleeper",
+      "description": "You can bed down in any sheltered spot on the coast: the shore is a safe place for you to rest.",
+      "safe_terrain": "coast"
+    }
+  },
+  "levels": {
+    "2": {
+      "gear": [
+        "sword"
+      ]
+    },
+    "3": {
+      "gear": [
+        "mending"
+      ],
+      "perks": [
+        "woodcraft"
+      ]
+    },
+    "4": {
+      "gear": [
+        "firebolt",
+        "draught"
+      ]
+    },
+    "5": {
+      "perks": [
+        "shore_sleeper"
+      ]
+    },
+    "6": {
+      "gear": [
+        "greataxe"
+      ]
+    }
+  },
+  "rules": {
+    "move_cooldown_ms": 250,
+    "sleep_seconds": 120,
+    "shrine_room": "temple_steps",
+    "regen": 2,
+    "safe_regen": 10,
+    "social_cooldown": 600
   },
   "channels": [
     "general"

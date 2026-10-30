@@ -32,6 +32,8 @@ async def world(redis):
     world = World(redis)
     await world.load_rules()
     await world.seed(SEED)
+    # Most tests walk several rooms in a row; the move cooldown has tests of its own.
+    await redis.hset("alz:rules", "move_cooldown_ms", 0)
     return world
 
 

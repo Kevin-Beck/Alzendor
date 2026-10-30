@@ -63,50 +63,167 @@ The web client is built around the map:
   is a real move, and typing a command, pressing Esc or clicking the map stops
   the walk. Drag to pan and scroll to zoom; **Area** and **All** switch between
   following your area and showing everywhere you've been.
+- **Combat.** Your three slots, and below them your target's card: a
+  portrait, health, whether they're hostile, neutral or friendly to you, what
+  their faction thinks of you, and each of an NPC's attacks with a bar filling
+  up to its next blow. Everything about a fight is in one place.
 - **Here.** Everyone in the room, as cards: name (players and NPCs in
-  different colours), race/class, short description and health.
+  different colours), race/class, short description, health, and an NPC's
+  disposition. Sleeping players are marked asleep.
+- **Inventory** and **Character** (header buttons). Your gear, with buttons to
+  put any piece in slot 1, 2 or 3; and your level, experience, stats (with
+  `+` buttons when you have points to spend), abilities and reputation.
 - **Targeting.** In the command box, **Tab** / **Shift+Tab** cycle through the
-  cards and **Esc** clears the selection. Commands that take a target (`kick`,
-  `poke`, `wave`, `inspect`, …) go to the selected card when you don't type a
+  cards and **Esc** clears the selection. Your slots and commands that take
+  a target (`poke`, `wave`, `inspect`, …) go to the selected card when you don't type a
   name, even if two NPCs share a name. Clicking a card selects it too.
 - **On the ground.** Items (click to look, or **get**) and room features you
   can look at or touch.
 
-### Combat and rhythms
+### Combat: three slots
 
-Every action in a fight belongs to a **rhythm**, and each rhythm has its own
-timing bar above the "Here" cards:
+You have three **slots**, and each holds one piece of gear: a weapon, a spell,
+a potion. The game treats them all alike. Press **1**, **2** or **3** (or click
+a slot's bar, or type `use 2`) to use one on your target. Each piece of gear
+has its own **beat**, timing window and amounts, so every slot keeps its own
+rhythm with its own timing bar above the "Here" cards.
 
-| Rhythm | Command | Beat | Window (perfect) | Effect |
+There's no roll to hit: if you land in the window, it lands. Fitting three
+rhythms together is the skill. Fast gear gives you lots of chances for small
+hits; slow gear hits hard but is easy to miss. Rhythms that overlap make it
+harder to land them all.
+
+| Gear | Kind | Beat | Window (perfect) | Effect |
 |---|---|---|---|---|
-| Melee | `k` / `kick` | 2 s | ±300 ms (±100) | 4 / 5 / 8 damage |
-| Spells | `mm` / `missile` / `cast magic missile` | 8 s | ±400 ms (±130) | 10 / 12 / 20 damage |
-| Potions | `hp` / `potion` | 5 s | ±350 ms (±120) | heals 10 / 15 / 25 |
+| Dagger | weapon | 1.2 s | ±200 ms (±70) | 2 / 3 / 5 damage |
+| Kick | melee | 2 s | ±300 ms (±100) | 4 / 5 / 8 damage |
+| Healing Draught | potion | 2.5 s | ±250 ms (±80) | heals 4 / 6 / 10 |
+| Sword | weapon | 2.5 s | ±300 ms (±100) | 6 / 7 / 11 damage |
+| Firebolt | spell | 4 s | ±300 ms (±100) | 8 / 10 / 16 damage |
+| Greataxe | weapon | 4.5 s | ±250 ms (±80) | 10 / 14 / 24 damage |
+| Health Potion | potion | 5 s | ±350 ms (±120) | heals 10 / 15 / 25 |
+| Magic Missile | spell | 8 s | ±400 ms (±130) | 14 / 18 / 30 damage |
 
-(Effects are opening / good / perfect.) The first use of a rhythm lands
-straight away and starts it. Its ball then swings out to the right and back to
-the centre, then out to the left and back, and each centre crossing is a beat.
-An action lands only if it reaches the server within its rhythm's window around
-a beat. A good fight keeps every rhythm on its beat.
+(Effects are opening / good / perfect.) There's also **Mending Light** (a
+6 s spell healing 8 / 12 / 20 that can heal another player or a friendly NPC
+you've targeted). New characters own a Dagger, Kick, Magic Missile and Health
+Potion, with the last three in their slots. The rest comes from levelling up
+and from what NPCs drop. `gear` (or the Inventory panel) lists what you own and
+what's in your slots; `equip sword 2` puts your sword in slot 2, and
+`unequip 2` empties it. The same gear can go in more than one slot: three
+potions is a loadout too.
+
+The first use of a slot lands straight away and starts its rhythm. Its ball
+then swings out to the right and back to the centre, then out to the left and
+back, and each centre crossing is a beat. A use lands only if it reaches the
+server within its gear's window around a beat.
 
 - Every attempt uses up a beat, hit or miss. One sent before the next unused
-  beat takes that beat and misses, so mashing Enter only burns beats.
-- In a fight the command box keeps your last command, highlighted: press Enter
-  on the beat to repeat it, or type to replace it.
+  beat takes that beat and misses, so mashing keys only burns beats.
+- **1**, **2** and **3** fire straight away when the command line is empty (or
+  in a fight, when it holds your last command, selected). Typing a sentence
+  with a number in it doesn't use a slot.
 - A rhythm belongs to you, not the fight. It carries on across targets, kills,
   leaving the room and reconnecting, and ends only after 10 seconds unused (or
-  two beats, if longer). Stepping out and back in doesn't buy a fresh opener.
+  two beats, if longer). Stepping out and back in doesn't buy a fresh opener,
+  and neither does swapping gear: a slot can't be changed while its rhythm is
+  running.
 - Redis's clock judges the timing, the one clock every server shares. The
   client syncs to it with ping/pong and draws each ball where it will be when
-  your command arrives, so pressing Enter when the ball looks centred lands on
-  the beat.
+  your command arrives, so pressing the key when the ball looks centred lands
+  on the beat.
 - An NPC at 0 HP collapses and comes back after its `respawn` time (60 s by
-  default). Players can't be attacked yet, so potions have nothing to heal for
-  now. Your health is in the header.
+  default). Your health is in the header.
+- The **Training Yard** (east of the smithy) has a Training Dummy, which never
+  attacks, and a Sparring Post, whose arm clips you every 6 seconds: good for
+  practising with a potion in a slot. Neither ever falls, and they give no
+  experience.
 
-Rhythms and abilities are defined at the top of the combat section of
-[alzendor/alzendor.lua](alzendor/alzendor.lua). A player can have their own
-beat for a rhythm (`period:<rhythm>` on their account).
+Gear is defined in [world/seed.json](world/seed.json) (see below); the rules
+are in the combat section of [alzendor/alzendor.lua](alzendor/alzendor.lua).
+
+### NPCs fight back
+
+NPCs have one or more attacks, each slow next to yours (one every 5–13
+seconds) and each on its own timer. NPCs never miss, so there's nothing for
+the server to judge: it simply lands each attack when it's due (every server
+runs a combat tick ten times a second, and each attack is taken off a shared
+schedule in Redis as it lands, so it lands exactly once). Their timers are
+shown on the target card so you can plan around them.
+
+Every NPC is **hostile** (attacks you on sight), **neutral** (fights back if
+you attack it) or **friendly** (can't be attacked). Everything can be
+targeted: friendly NPCs can be healed with gear that heals allies, and `say`
+and emotes go to your target. An NPC fights the first of its foes who is
+still in the room; leave and it forgets you.
+
+At 0 HP you collapse and wake at the temple shrine with half your health, a
+tenth of a level's experience poorer (never losing a level).
+
+### Reputation: affinity and respect
+
+NPCs can belong to a **faction**, and every faction holds two separate
+opinions of you: **affinity** (do they like you?) and **respect** (do they
+rate you?), each from -100 to 100. What moves them is the faction's
+**culture**: rules in the seed that match your deeds (`kill`, `clean_kill`
+(a perfect killing blow), `ambush` (striking an NPC that wasn't fighting you),
+`flee`, `defeated`, `heal`, `greet` (bow, wave, nod, smile, cheer) and `taunt`
+(laugh, poke, point)), optionally only when the NPC involved is of a given
+faction or role. Each change is shown with the reason.
+
+- **The Back-Alley Orcs** hate you for killing their warriors but respect a
+  fair fight: honourable kills and clean blows earn respect, while ambushes,
+  running away, losing, and killing their young cost it. Enough respect and
+  they stop attacking you on sight, even while they hate you.
+- **The Spiderwood Brood** prize cunning: ambushes and slipping away earn
+  their respect.
+- **The Folk of Harrowgate** like you for clearing out orcs and spiders,
+  healing them and having good manners, and dislike rudeness.
+- **The Wardens of the Wood** like you for keeping spiders off the road.
+
+Affinity and respect shift how an NPC treats you: a friendly NPC whose
+faction comes to hate you turns hostile; a neutral one turns hostile or
+friendly; a hostile one stays its hand if it respects you or likes you enough.
+Greetings and taunts count once per NPC per 10 minutes. Your **Presence**
+stat moves every change further.
+
+### Experience, stats and abilities
+
+Defeating NPCs earns experience (each level needs 100 × your level). Each
+level gives a **stat point** to spend with `train <stat>` (or the `+`
+buttons), and the seed's level table grants gear and abilities: a Sword at
+level 2, Mending Light and Woodcraft at 3, Firebolt and the Healing Draught at
+4, Shore-sleeper at 5, a Greataxe at 6.
+
+The stats are deliberately plain: everyone wants them, and you choose where
+your points go. Gear and abilities are what make characters different.
+
+| Stat | Each point |
+|---|---|
+| Vigor | 8 more max health |
+| Poise | timing windows 15 ms wider (never reaching halfway to the next beat) |
+| Focus | perfect windows 10 ms wider (never wider than the window) |
+| Presence | your deeds move reputation 15% further, good or bad |
+
+`stats` shows your sheet as text.
+
+### Resting and leaving
+
+Inns, shrines and camps are **safe places** (the room panel says "safe to
+rest"). Quit there, or go idle there, and you settle in to rest and are gone
+at once. Anywhere else you **lie down to rest**: your sleeping body stays in
+the room for two minutes, and everyone there can see it. NPCs already
+fighting you keep at it, so logging out is no escape. Come back in time and
+you wake where you lay; otherwise your body fades and you arrive later, well
+rested. Abilities can make a kind of terrain safe for you: **Woodcraft** makes
+any forest safe, **Shore-sleeper** any stretch of coast.
+
+The same happens if your connection drops and doesn't come back within
+`ALZ_LINKDEAD_SECONDS`, or if you send no commands for `ALZ_IDLE_MINUTES`.
+Out of a fight, wounds heal slowly (faster somewhere safe). Moving has a
+short cooldown (250 ms), so a client can't send a whole journey at once.
+See [docs/design.md](docs/design.md) for the thinking behind this and other
+options.
 
 ## Deploying
 
@@ -142,6 +259,7 @@ Servers read `ALZ_*` environment variables (compose passes `.env` through):
 | `ALZ_ALLOWED_ORIGINS` | any | Browser origins allowed to connect; production sets `https://$ALZ_DOMAIN` |
 | `ALZ_TRUST_PROXY` | `false` | Use `X-Forwarded-For` for client addresses (production sets it) |
 | `ALZ_LINKDEAD_SECONDS` | `60` | How long a dropped player stays in the world |
+| `ALZ_IDLE_MINUTES` | `30` | A player who sends no commands for this long leaves (lying down to sleep unless somewhere safe); `0` turns it off |
 | `ALZ_HEARTBEAT_SECONDS` | `10` | |
 | `ALZ_SESSION_TTL_DAYS` | `7` | Lifetime of a "stay signed in" token, extended on use |
 | `ALZ_SIGNUPS_PER_HOUR` | `20` | New accounts per client address per hour. Locally, all clients share Docker's gateway address |
@@ -152,7 +270,7 @@ Servers read `ALZ_*` environment variables (compose passes `.env` through):
 ## The world map
 
 [world/seed.json](world/seed.json) defines cities, areas, rooms, items, NPCs,
-default chat channels, and ambient events like bells and weather. Every
+gear, default chat channels, and ambient events like bells and weather. Every
 server loads it at start. Map data is rewritten each time. Live state (where
 items are, who is where, NPC health) is never overwritten.
 
@@ -172,7 +290,29 @@ items are, who is where, NPC health) is never overwritten.
   `details` for `inspect`, `keywords` to refer to them by, a `room` and
   `max_hp`, and optionally `respawn` (seconds, default 60). Set
   `"proper": true` for named characters ("Brannoc" rather than "the
-  Brannoc").
+  Brannoc"). For combat and reputation: `disposition` (`hostile`, `neutral`
+  or `friendly`), `faction`, `role` (e.g. `warrior`, `young`; cultures can
+  judge by it), an `icon` (an emoji for the target card), `attacks` (each
+  with a `name`, `period` in ms, `damage` and `hit` text using `{actor}` and
+  `{target}`), `xp` (default half its max HP), `drops` (gear ids given to
+  whoever kills it) and `"immortal": true` for practice targets.
+- **Rooms** can be `"safe": true` (inns, shrines, camps) and have a `terrain`
+  (`forest`, `coast`, …) that perks can make safe.
+- **Factions** have a `name`, `description` and `rules`: each rule has a
+  `deed`, optionally `of` (the faction of the NPC involved) and `role`, the
+  `affinity` and `respect` it adds, and a `note` explaining why.
+- **Perks** (abilities) have a `name`, `description` and optionally a
+  `safe_terrain`. **`levels`** maps a level number to the `gear` and `perks`
+  it grants. **`starting_gear`** is what new characters own.
+- **`rules`** holds tunable numbers: `move_cooldown_ms`, `sleep_seconds`,
+  `shrine_room`, `regen` and `safe_regen` (health per upkeep, every 5 s) and
+  `social_cooldown` (seconds).
+- **Gear** has a `name`, `kind` (shown in `gear`), `keywords`, an `effect`
+  (`damage` a target, or `heal` yourself), a `period` (ms between beats), a
+  `window` and `perfect_window` (ms either side of a beat), `amounts` (opening
+  / good / perfect), and texts: `hit`, `perfect_hit` and `miss` for the room
+  (with `{actor}` and `{target}`), and `whiff` for you when you mistime it.
+  `loadout` lists the gear new characters start with, one per slot.
 
 ## Protocol
 
@@ -190,11 +330,24 @@ state updates, without one:
 - `map`: explored rooms, glimpsed rooms, areas and cities (`full` replaces
   what the client knows; otherwise merge it in)
 - `entity`: a changed card
-- `timing`: one of your rhythms (`rhythm`, `label`, `hint`, `active`, and
-  while active `start_ms`, `period_ms`, `grace_ms`, `perfect_ms`,
-  `last_beat`, `last_ms`, `timeout_ms`). Every rhythm is sent on connect.
-- `combat` / `heal` (have text): an action's `rhythm`, `result` (`opener`,
-  `perfect`, `good`, `early`, `late`, `miss`), and `damage` or `amount`
+- `timing`: one of your slots (`slot`, `label`, and if it holds something
+  `gear`, `kind` and `period_ms`; `active`, and while active `start_ms`,
+  `grace_ms`, `perfect_ms`, `last_beat`, `last_ms`, `timeout_ms`). Every slot
+  is sent on connect, and again when its gear changes.
+- `gear` (has text): all the gear there is, and the ids in your `slots`
+- `combat` / `heal` (have text): a use's `slot`, `result` (`opener`,
+  `perfect`, `good`, `early`, `late`, `miss`), and `damage` or `amount`. An
+  NPC's attack is a `combat` event with its `entity_id`, the `target` it hit
+  and `damage`
+- `npc_timing`: an NPC starting, continuing or stopping a fight (`entity_id`,
+  `active`, `target`, and `attacks` with `name`, `period_ms`, `damage` and
+  `next_ms`, by Redis's clock). Room cards carry the same as `fight`
+- `dispositions`: how each NPC in your room treats you, by entity id. Room
+  cards carry `disposition` (for you) and `base_disposition` (its nature)
+- `kit`: the gear you own, your `slots` and the `items` you carry
+- `character`: your `level`, `xp`, `xp_next`, `points`, `stats`,
+  `stat_info`, `perks`, `factions` (with affinity and respect), `hp`, `max_hp`
+- `reputation` (has text): a faction's opinion of you changed
 - `death` (has text): an NPC going down, with its `entity_id`
 - `arrive` / `leave` (these have text) carry `entity` / `entity_id`, so the
   client can keep its cards current
@@ -225,6 +378,7 @@ alzendor/
   world.py       loading the rules and the map
   cli.py         terminal client
   web/index.html web client
-world/seed.json  the map
+world/seed.json  the map, gear, NPCs, factions, perks and levels
+docs/            design notes: stats, reputation, leaving the world, quests
 tests/
 ```

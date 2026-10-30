@@ -18,7 +18,8 @@ Server -> client
 
 Combat timing is judged by Redis's clock. A client syncs to it with ping/pong
 (server_ms is the time when the pong left, by Redis's clock) and uses that to
-draw the timing bar from `timing` events.
+draw the timing bars from `timing` events (your slots) and `npc_timing` events
+(an NPC's attacks). The README's Protocol section lists the event types.
 
 After authenticating, everything the client sees arrives as events in sequence
 order. The connection closes with the reason as its close message when the
@@ -56,6 +57,7 @@ class Session:
         self._allowance = float(COMMAND_BURST)
         self._last_command = time.monotonic()
         self._last_ping = 0.0
+        self.last_active = time.monotonic()  # the last command, for the idle timeout
 
     @property
     def address(self) -> str:
@@ -134,6 +136,7 @@ class Session:
         if not message or message.get("type") != "cmd" or not isinstance(message.get("text"), str):
             await self._send(type="error", message='Expected {"type": "cmd", "text": ...}.')
             return
+        self.last_active = time.monotonic()
         if not self._take_allowance():
             await self._send(type="error", message="Slow down a little.")
             return

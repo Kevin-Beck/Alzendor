@@ -92,7 +92,7 @@ class GameServer:
             max_size=MAX_MESSAGE_BYTES,
         ) as server:
             log.info("server %s listening on %s:%d", self.config.server_id, self.config.host, self.config.port)
-            tasks = [asyncio.create_task(self._heartbeats()), asyncio.create_task(self._ticker())]
+            tasks = [asyncio.create_task(loop()) for loop in (self._heartbeats, self._ticker, self._combat)]
             try:
                 await stop
             finally:
@@ -115,21 +115,44 @@ class GameServer:
                 for pid in await redis.zrangebyscore("alz:online", "-inf", cutoff):
                     if await self.world.call("disconnect", pid, "", cutoff, "Your connection was lost."):
                         log.info("removed %s from the world after their connection was lost", pid)
+                await self._send_idle_to_sleep()
             except Exception:
                 log.exception("heartbeat failed")
             await asyncio.sleep(self.config.heartbeat_seconds)
 
+    async def _send_idle_to_sleep(self) -> None:
+        """Takes players who have been idle too long out of the world."""
+        if self.config.idle_minutes <= 0:
+            return
+        limit = time.monotonic() - self.config.idle_minutes * 60
+        for session in list(self.sessions.values()):
+            if session.last_active < limit and session.pid:
+                await self.world.call("disconnect", session.pid, session.id, "", "You drifted off after a long while idle.")
+                log.info("%s left the world after being idle", session.pid)
+
+    async def _combat(self) -> None:
+        """Lands NPC attacks as they come due. Every server runs this loop; each
+        attack is taken off the schedule atomically, so it lands only once."""
+        while True:
+            await asyncio.sleep(0.1)
+            try:
+                await self.world.call("tick")
+            except Exception:
+                log.exception("combat tick failed")
+                await asyncio.sleep(1)
+
     async def _ticker(self) -> None:
-        """Brings back fallen NPCs and publishes the map's ambient events (bells,
-        weather). Every server runs this loop: respawning is atomic in Redis, and
-        a Redis key per time slot makes sure only one server fires each ambient."""
+        """Runs the world's upkeep (respawns, sleeping bodies fading, healing out
+        of a fight) and publishes the map's ambient events (bells, weather).
+        Every server runs this loop: upkeep is atomic in Redis, and a Redis key
+        per time slot makes sure only one server fires each ambient."""
         last_slot = {i: int(time.time() // a["every"]) for i, a in enumerate(self.ambient)}
         while True:
             await asyncio.sleep(5)
             try:
-                await self.world.call("respawn")
+                await self.world.call("upkeep")
             except Exception:
-                log.exception("respawn failed")
+                log.exception("upkeep failed")
             for i, ambient in enumerate(self.ambient):
                 slot = int(time.time() // ambient["every"])
                 if slot == last_slot[i]:

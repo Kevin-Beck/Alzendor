@@ -147,12 +147,31 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [x] The rhythm survives target changes, kills, leaving the room and reconnecting, and ends after 10s without attacking
 - [x] NPCs take damage, collapse at 0 HP and respawn
 - [x] Rhythms: melee (`k`, 2s), spells (`mm`, 8s) and potions (`hp`, 5s) each keep their own beat and bar
+- [x] Three slots, each holding gear (weapon, spell, potion — all alike to the game) with its own beat, window and amounts; 1/2/3 (or clicking a bar) use them
+- [x] Gear catalog in the seed; `gear`, `equip <gear> [slot]`, `unequip <slot>`; a starting loadout; slots can't be swapped mid-rhythm
+- [x] No roll to hit: a mistimed use is the miss, and it uses up that beat
 - [x] In a fight the command box keeps your last command, so Enter repeats it on the beat
 
+### 9. NPCs, reputation and characters
+- [x] NPCs fight back: each has one or more slow attacks on their own timers, landed by a server-side combat tick (NPCs never miss, so nothing to verify); their timers show on the target card
+- [x] Dispositions: hostile (attacks on sight), neutral (fights back), friendly (can't be attacked; can be healed); anything can be targeted, and `say` and emotes go to the target
+- [x] Defeat: wake at the temple shrine with half health, a little experience poorer
+- [x] Target card under the slots: portrait, health, disposition, faction standing, NPC attack timers
+- [x] Factions with two-axis reputation (affinity and respect) and cultures that judge deeds differently (orcs: honour; spiders: cunning; townsfolk: community; wardens: the wood)
+- [x] Experience and levels; stats to train (vigor, poise, focus, presence); a level table granting gear and abilities
+- [x] Gear is owned: an inventory of slot items, from starting gear, levels and NPC drops; Inventory and Character panels
+- [x] Training yard with an immortal dummy and a sparring post
+- [x] Safe places; sleeping bodies out in the open; Woodcraft and Shore-sleeper make terrain safe; idle timeout
+- [x] A short cooldown between moves
+- [x] Quest design options written up in [docs/quests.md](docs/quests.md)
+
 ### Next
+- [ ] Quests: start with small state machines driven by deeds, begun by talking to NPCs (see docs/quests.md)
+- [ ] More deeds for cultures to judge: looting, sparing, arena fights, deception, witnesses (see docs/design.md)
+- [ ] NPCs that talk back (topics), and choosing between abilities at some levels
 - [ ] Character creation: player race/class (cards say "Adventurer" for now)
-- [ ] NPCs that move, talk or react (publish room events like players do)
-- [ ] More combat: NPCs that fight back (so potions matter), more abilities per rhythm, player death, potions as inventory items, per-player beats that change with gear or skills
+- [ ] NPCs that move or wander (publish room events like players do)
+- [ ] More combat: potions that run out, gear to find or buy beyond drops and levels, balancing gear and NPCs, NPCs that heal or call for help
 - [ ] Map: separate floors for up/down (the cellar sits next to the tavern for now), and keyboard navigation of the map
 - [ ] Password change and reset (changing a password should revoke the account's other tokens)
 - [ ] Resume edge case: if a player's last command moved them and the connection dropped before they saw it, a resume skips the old room's events from that gap (they get a fresh room view instead)
