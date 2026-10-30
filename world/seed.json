@@ -644,6 +644,157 @@
       "max_hp": 200
     }
   },
+  "gear": {
+    "dagger": {
+      "name": "Dagger",
+      "kind": "Weapon",
+      "keywords": "knife",
+      "effect": "damage",
+      "period": 1200,
+      "window": 200,
+      "perfect_window": 70,
+      "amounts": [
+        2,
+        3,
+        5
+      ],
+      "hit": "{actor} jabs {target} with a dagger.",
+      "perfect_hit": "{actor} slips a dagger neatly into {target}!",
+      "miss": "{actor} jabs at {target} and misses.",
+      "whiff": "your dagger thrust finds only air."
+    },
+    "kick": {
+      "name": "Kick",
+      "kind": "Melee",
+      "keywords": "",
+      "effect": "damage",
+      "period": 2000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        4,
+        5,
+        8
+      ],
+      "hit": "{actor} kicks {target}.",
+      "perfect_hit": "{actor} lands a perfect kick on {target}!",
+      "miss": "{actor} kicks at {target} and misses.",
+      "whiff": "your kick goes wide."
+    },
+    "sword": {
+      "name": "Sword",
+      "kind": "Weapon",
+      "keywords": "blade",
+      "effect": "damage",
+      "period": 2500,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        6,
+        7,
+        11
+      ],
+      "hit": "{actor} slashes {target} with a sword.",
+      "perfect_hit": "{actor} cuts {target} with a clean sword stroke!",
+      "miss": "{actor} swings a sword at {target} and misses.",
+      "whiff": "your sword cuts empty air."
+    },
+    "draught": {
+      "name": "Healing Draught",
+      "kind": "Potion",
+      "keywords": "draught",
+      "effect": "heal",
+      "period": 2500,
+      "window": 250,
+      "perfect_window": 80,
+      "amounts": [
+        4,
+        6,
+        10
+      ],
+      "hit": "{actor} sips a healing draught.",
+      "perfect_hit": "{actor} tosses back a healing draught without spilling a drop!",
+      "miss": "{actor} fumbles a healing draught.",
+      "whiff": "the draught slips through your fingers."
+    },
+    "firebolt": {
+      "name": "Firebolt",
+      "kind": "Spell",
+      "keywords": "fire bolt",
+      "effect": "damage",
+      "period": 4000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        8,
+        10,
+        16
+      ],
+      "hit": "{actor} flings a firebolt at {target}.",
+      "perfect_hit": "{actor}'s firebolt engulfs {target}!",
+      "miss": "{actor}'s firebolt sails past {target}.",
+      "whiff": "your firebolt sputters out."
+    },
+    "greataxe": {
+      "name": "Greataxe",
+      "kind": "Weapon",
+      "keywords": "axe",
+      "effect": "damage",
+      "period": 4500,
+      "window": 250,
+      "perfect_window": 80,
+      "amounts": [
+        10,
+        14,
+        24
+      ],
+      "hit": "{actor} hacks at {target} with a greataxe.",
+      "perfect_hit": "{actor} brings a greataxe down squarely on {target}!",
+      "miss": "{actor}'s greataxe thuds into the ground beside {target}.",
+      "whiff": "your greataxe swing comes too slow."
+    },
+    "potion": {
+      "name": "Health Potion",
+      "kind": "Potion",
+      "keywords": "potion hp",
+      "effect": "heal",
+      "period": 5000,
+      "window": 350,
+      "perfect_window": 120,
+      "amounts": [
+        10,
+        15,
+        25
+      ],
+      "hit": "{actor} drinks a health potion.",
+      "perfect_hit": "{actor} downs a health potion in one perfect gulp!",
+      "miss": "{actor} fumbles a health potion and spills it.",
+      "whiff": "you fumble the potion and spill it."
+    },
+    "missile": {
+      "name": "Magic Missile",
+      "kind": "Spell",
+      "keywords": "missile mm",
+      "effect": "damage",
+      "period": 8000,
+      "window": 400,
+      "perfect_window": 130,
+      "amounts": [
+        14,
+        18,
+        30
+      ],
+      "hit": "{actor} hurls a magic missile at {target}.",
+      "perfect_hit": "{actor}'s magic missile strikes {target} dead centre!",
+      "miss": "{actor}'s magic missile streaks past {target}.",
+      "whiff": "your magic missile fizzles."
+    }
+  },
+  "loadout": [
+    "kick",
+    "missile",
+    "potion"
+  ],
   "channels": [
     "general"
   ],

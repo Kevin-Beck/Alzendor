@@ -131,9 +131,15 @@
   .hp .fill.mid { background: var(--hp-mid); }
   .hp .fill.low { background: var(--hp-low); }
 
-  /* Combat rhythms: each ball swings out and back; hit Enter as it enters the centre. */
+  /* Combat slots: each ball swings out and back; press the slot's key as it enters the centre. */
   #timings { margin: 0 0 10px; display: grid; gap: 8px; }
   .rhythm .status { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; font-size: 11px; color: var(--muted); }
+  .rhythm { cursor: pointer; }
+  .rhythm .key {
+    min-width: 16px; padding: 0 4px; border: 1px solid var(--muted); border-radius: 4px;
+    text-align: center; font-weight: bold; color: var(--text);
+  }
+  .rhythm.empty .label { color: var(--muted); }
   .rhythm .label { font-weight: bold; text-transform: uppercase; letter-spacing: .06em; color: var(--text); }
   .rhythm .result { margin-left: auto; font-weight: bold; color: var(--text); }
   .rhythm .bar { position: relative; height: 16px; border-radius: 8px; background: var(--hp-track); overflow: hidden; }
@@ -216,11 +222,11 @@
       <button id="latest" class="hidden" type="button">↓ Latest</button>
     </div>
     <form id="command" autocomplete="off">
-      <span id="target-chip" class="hidden" title="Commands like 'kick' or 'inspect' go to your target. Esc clears it.">
+      <span id="target-chip" class="hidden" title="Your slots (1, 2, 3) and commands like 'inspect' go to your target. Esc clears it.">
         ▸ <span class="name" id="target-name"></span>
         <button id="target-clear" type="button" aria-label="Clear target">×</button>
       </span>
-      <input id="input" placeholder="Type a command — Tab picks a target, k kicks" maxlength="500" aria-label="Command">
+      <input id="input" placeholder="Type a command — Tab picks a target, 1 2 3 use your slots" maxlength="500" aria-label="Command">
       <button type="submit">Send</button>
     </form>
   </section>
@@ -565,15 +571,16 @@ function cycleTarget(step) {
 
 $("target-clear").addEventListener("click", () => { setTarget(null); $("input").focus(); });
 
-// Combat rhythms -------------------------------------------------------------------------
-// Each kind of action (melee, spells, potions) has its own rhythm and bar. The
-// server judges actions by Redis's clock; the client keeps an estimate of that
-// clock (from ping/pong) and of the one-way trip to the server, and draws each
-// ball where it will be when a command sent now arrives. Press Enter as a ball
-// enters the centre and that action lands on its beat.
+// Combat slots ---------------------------------------------------------------------------
+// You have three slots, each holding a piece of gear with its own rhythm and
+// bar. Press 1, 2 or 3 (or click a bar) to use one. The server judges uses by
+// Redis's clock; the client keeps an estimate of that clock (from ping/pong)
+// and of the one-way trip to the server, and draws each ball where it will be
+// when a command sent now arrives. Use a slot as its ball enters the centre and
+// it lands on its beat.
 
 const clock = { offset: 0, trip: 0, samples: [], timer: null };
-const rhythms = {};     // name -> { row, event }; event is set while the rhythm is running
+const slots = {};       // slot number -> { row, info, event }; event is set while its rhythm is running
 let timingFrame = null;
 
 function sendPing() {
@@ -603,61 +610,71 @@ function arrivalTime() {
 }
 
 function inCombat() {
-  return Object.values(rhythms).some((r) => r.event);
+  return Object.values(slots).some((s) => s.event);
 }
 
-function rhythmRow(name) {
-  if (rhythms[name]) return rhythms[name];
+function useSlot(n) {
+  stopWalk();
+  sendCmd(String(n));
+}
+
+function slotRow(n) {
+  if (slots[n]) return slots[n];
   const row = el("div", "rhythm idle");
+  row.title = `Press ${n} (or click) to use this slot`;
   const status = el("div", "status");
-  status.append(el("span", "label"), el("span", "note"), el("span", "result"));
+  status.append(el("span", "key", String(n)), el("span", "label"), el("span", "note"), el("span", "result"));
   const lane = el("div", "lane");
   lane.append(el("div", "zone"), el("div", "sweet"), el("div", "ball"));
   const bar = el("div", "bar");
   bar.append(lane);
   row.append(status, bar);
-  $("timings").append(row);
-  rhythms[name] = { row, event: null, resultTimer: null };
-  return rhythms[name];
+  row.addEventListener("click", () => { useSlot(n); $("input").focus(); });
+  // Keep the slots in order however their first events arrive.
+  const after = Object.keys(slots).map(Number).filter((m) => m > n).sort((a, b) => a - b)[0];
+  $("timings").insertBefore(row, after ? slots[after].row : null);
+  slots[n] = { row, info: {}, event: null, resultTimer: null };
+  return slots[n];
 }
 
 function applyTiming(event) {
-  const rhythm = rhythmRow(event.rhythm);
-  const { row } = rhythm;
+  const slot = slotRow(event.slot);
+  const { row } = slot;
   const q = (cls) => row.querySelector("." + cls);
-  rhythm.event = event.active ? event : null;
-  if (event.label) q("label").textContent = event.label;
-  if (event.hint) rhythm.hint = event.hint;
+  if (event.label) slot.info = { label: event.label, period_ms: event.period_ms };
+  slot.event = event.active ? event : null;
+  q("label").textContent = slot.info.label || "";
   row.classList.toggle("idle", !event.active);
+  row.classList.toggle("empty", !slot.info.period_ms);
+  const period = slot.info.period_ms;
   if (event.active) {
     // A ball covers half its lane in half a beat, so a window of g ms either
     // side of the centre spans 2g/period of the lane.
     q("zone").style.width = (200 * event.grace_ms) / event.period_ms + "%";
     q("sweet").style.width = (200 * event.perfect_ms) / event.period_ms + "%";
-    q("note").textContent = `every ${(event.period_ms / 1000).toFixed(1)}s`;
     if (!timingFrame) timingFrame = requestAnimationFrame(drawTiming);
   } else {
     q("ball").style.left = "50%";
     row.classList.remove("spent");
-    q("note").textContent = rhythm.hint || "";
   }
+  q("note").textContent = period ? `every ${(period / 1000).toFixed(1)}s` : `equip something: 'equip <gear> ${event.slot}'`;
   renderEntities();
 }
 
 function drawTiming() {
   timingFrame = null;
   const t = arrivalTime();
-  for (const [name, rhythm] of Object.entries(rhythms)) {
-    const event = rhythm.event;
+  for (const [n, slot] of Object.entries(slots)) {
+    const event = slot.event;
     if (!event) continue;
-    if (t - event.last_ms > event.timeout_ms) { applyTiming({ rhythm: name, active: false }); continue; }
+    if (t - event.last_ms > event.timeout_ms) { applyTiming({ slot: Number(n), active: false }); continue; }
     // Out to the right and back in one beat, out to the left and back in the next.
     const u = Math.max(0, (t - event.start_ms) / event.period_ms);
     const swing = 1 - Math.abs(1 - 2 * (u % 1));
     const side = Math.floor(u) % 2 === 0 ? 1 : -1;
-    rhythm.row.querySelector(".ball").style.left = 50 + 50 * swing * side + "%";
+    slot.row.querySelector(".ball").style.left = 50 + 50 * swing * side + "%";
     // The coming centre crossing is already used up (by a miss): nothing to aim for.
-    rhythm.row.classList.toggle("spent", Math.round(u) <= event.last_beat);
+    slot.row.classList.toggle("spent", Math.round(u) <= event.last_beat);
   }
   if (inCombat()) timingFrame = requestAnimationFrame(drawTiming);
 }
@@ -665,17 +682,17 @@ function drawTiming() {
 const RESULTS = { opener: "Opening", perfect: "Perfect!", good: "Hit", early: "Too early", late: "Too late" };
 
 function showResult(event) {
-  const rhythm = rhythms[event.rhythm];
-  if (!rhythm || !RESULTS[event.result]) return; // a room "miss" adds nothing to the private early/late message
+  const slot = slots[event.slot];
+  if (!slot || !RESULTS[event.result]) return; // a room "miss" adds nothing to the private early/late message
   const amount = event.damage !== undefined ? ` (${event.damage})` : event.amount !== undefined ? ` (+${event.amount})` : "";
   const landed = !["early", "late"].includes(event.result);
-  rhythm.row.querySelector(".result").textContent = RESULTS[event.result] + amount;
-  rhythm.row.classList.remove("hit", "miss");
-  rhythm.row.classList.add(landed ? "hit" : "miss");
-  clearTimeout(rhythm.resultTimer);
-  rhythm.resultTimer = setTimeout(() => {
-    rhythm.row.classList.remove("hit", "miss");
-    rhythm.row.querySelector(".result").textContent = "";
+  slot.row.querySelector(".result").textContent = RESULTS[event.result] + amount;
+  slot.row.classList.remove("hit", "miss");
+  slot.row.classList.add(landed ? "hit" : "miss");
+  clearTimeout(slot.resultTimer);
+  slot.resultTimer = setTimeout(() => {
+    slot.row.classList.remove("hit", "miss");
+    slot.row.querySelector(".result").textContent = "";
   }, 900);
 }
 
@@ -1060,7 +1077,7 @@ function signOut() {
   lastSeq = 0;
   stopWalk();
   setTarget(null);
-  for (const name of Object.keys(rhythms)) applyTiming({ rhythm: name, active: false });
+  for (const n of Object.keys(slots)) applyTiming({ slot: Number(n), active: false });
   $("me-hp").classList.add("hidden");
   for (const kind of ["rooms", "areas", "cities"]) known[kind] = {};
   view.area = null;
@@ -1105,9 +1122,29 @@ $("command").addEventListener("submit", (e) => {
   historyIndex = history.length;
   sendCmd(text);
   // In a fight, keep the command (selected, so typing replaces it): Enter repeats it on the next beat.
-  if (inCombat() || /^(k|kick|mm|missile|cast|hp|potion|quaff)\b/i.test(text)) $("input").select();
+  if (inCombat() || /^(use|[123])\b/i.test(text)) $("input").select();
   else $("input").value = "";
 });
+
+// 1, 2 and 3 use your slots straight away, without Enter, unless you're
+// typing something: they work on an empty command line, or in a fight when
+// the kept command is all selected.
+function slotKey(e) {
+  if (!["1", "2", "3"].includes(e.key) || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return false;
+  if ($("world").classList.contains("hidden")) return false;
+  const field = e.target;
+  if (field === $("input")) {
+    const all = field.selectionStart === 0 && field.selectionEnd === field.value.length;
+    if (field.value && !(inCombat() && all)) return false;
+  } else if (field.closest && field.closest("input, textarea, select, [contenteditable]")) {
+    return false;
+  }
+  e.preventDefault();
+  useSlot(Number(e.key));
+  return true;
+}
+
+document.addEventListener("keydown", slotKey);
 
 $("input").addEventListener("keydown", (e) => {
   if (e.key === "Tab") {

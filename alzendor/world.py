@@ -34,6 +34,7 @@ DIRECTIONS = ("north", "south", "east", "west", "northeast", "northwest", "south
 BEARINGS = {"east": 0, "northeast": 45, "north": 90, "northwest": 135, "west": 180, "southwest": 225, "south": 270, "southeast": 315}
 OPPOSITE = {"north": "south", "south": "north", "east": "west", "west": "east", "up": "down", "down": "up",
             "northeast": "southwest", "southwest": "northeast", "northwest": "southeast", "southeast": "northwest"}
+SLOTS = 3  # gear slots per player, as in alzendor.lua
 # How far an exit's line on the map may stray from its direction before it looks wrong.
 BEARING_TOLERANCE = 10
 
@@ -82,6 +83,15 @@ def validate_seed(data: dict) -> None:
             problems.append(f"npc {nid}: unknown room {npc.get('room')!r}")
         if not npc.get("name"):
             problems.append(f"npc {nid}: missing name")
+    gear = data.get("gear", {})
+    for gid, item in gear.items():
+        problems += [f"gear {gid}: {problem}" for problem in _gear_problems(item)]
+    loadout = data.get("loadout", [])
+    if len(loadout) > SLOTS:
+        problems.append(f"loadout: at most {SLOTS} slots")
+    for gid in loadout:
+        if gid not in gear:
+            problems.append(f"loadout: unknown gear {gid!r}")
     if data.get("start_room") not in rooms:
         problems.append(f"start_room {data.get('start_room')!r} is not a room")
     for ambient in data.get("ambient", []):
@@ -94,6 +104,24 @@ def validate_seed(data: dict) -> None:
             problems.append(f"ambient {channel}: needs texts and a positive 'every'")
     if problems:
         raise ValueError("Invalid seed map:\n  " + "\n  ".join(problems))
+
+
+def _gear_problems(gear: dict) -> list[str]:
+    problems = []
+    for key in ("name", "hit", "perfect_hit", "miss", "whiff"):
+        if not gear.get(key):
+            problems.append(f"missing {key}")
+    if gear.get("effect") not in ("damage", "heal"):
+        problems.append("effect must be 'damage' or 'heal'")
+    period, window, perfect = (gear.get(key) for key in ("period", "window", "perfect_window"))
+    if not all(isinstance(n, int) and n > 0 for n in (period, window, perfect)):
+        problems.append("period, window and perfect_window must be positive whole ms")
+    elif not perfect <= window < period / 2:
+        problems.append("needs perfect_window <= window < half the period (windows can't overlap)")
+    amounts = gear.get("amounts")
+    if not (isinstance(amounts, list) and len(amounts) == 3 and all(isinstance(n, int) and n > 0 for n in amounts)):
+        problems.append("amounts must be [opener, good, perfect], positive whole numbers")
+    return problems
 
 
 def _valid_pos(room: dict) -> bool:

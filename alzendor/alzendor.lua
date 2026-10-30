@@ -313,47 +313,27 @@ local function action(fn)
 end
 
 -- Combat ----------------------------------------------------------------------
--- Every action in a fight belongs to a rhythm (melee, spells, potions), and
--- each rhythm keeps its own beat. The first use of a rhythm lands at once and
--- starts it. After that its timing ball crosses the centre of its bar every
--- `period` ms (a "beat"), and an action only lands if it arrives within the
--- rhythm's grace window around a beat. Every attempt uses up a beat, hit or
--- miss, and an attempt before the next unused beat counts against that beat:
--- mashing only burns beats. Good play keeps all the rhythms on their beats.
+-- A player has three slots, and each holds one piece of gear: a weapon, a
+-- spell, a potion. The game treats them all alike. Each piece of gear has its
+-- own beat (`period` ms), timing window and amounts, and each slot keeps its
+-- own rhythm. The first use of a slot lands at once and starts its rhythm.
+-- After that its timing ball crosses the centre of its bar every period (a
+-- "beat"), and a use only lands if it arrives within the gear's window around a
+-- beat. Every attempt uses up a beat, hit or miss, and an attempt before the
+-- next unused beat counts against that beat: mashing only burns beats. There
+-- is no roll to hit: timing is the skill. Fitting three rhythms together is up
+-- to the player.
 -- A rhythm is the player's, not the fight's: it carries on across targets,
 -- kills, leaving the room and reconnecting, and only ends after a timeout
 -- without use. Otherwise stepping out and back in (or switching to a fresh
--- target) would give a free, instant opening action.
--- PLAYER:<id>:rhythm:<name> holds start (ms), period (ms), beat (the last one
--- used) and last (ms of the last use). Players can have their own period for a
--- rhythm in their account (period:<name>).
+-- target) would give a free, instant opening action. For the same reason a
+-- slot's gear can't be changed while its rhythm is running.
+-- PLAYER:<id>:slots maps slot numbers onto gear ids. PLAYER:<id>:slot:<n>
+-- holds the running rhythm: the gear's timings when it started, start (ms),
+-- beat (the last one used) and last (ms of the last use).
 
-local RHYTHM_ORDER = {'melee', 'spell', 'potion'}
-local RHYTHMS = {
-  melee = {label = 'Melee', hint = 'k to kick', period = 2000, grace = 300, perfect = 100},
-  spell = {label = 'Spells', hint = 'mm for magic missile', period = 8000, grace = 400, perfect = 130},
-  potion = {label = 'Potions', hint = 'hp for a health potion', period = 5000, grace = 350, perfect = 120},
-}
+local SLOTS = 3
 local MIN_TIMEOUT_MS = 10000 -- a rhythm ends after this long unused, or two beats if longer
-
--- Amounts by how well the action was timed. Templates fill in {actor} and {target}.
-local ABILITIES = {
-  kick = {
-    rhythm = 'melee', opener = 4, good = 5, perfect = 8,
-    hit = '{actor} kicks {target}.', perfect_hit = '{actor} lands a perfect kick on {target}!',
-    miss = '{actor} kicks at {target} and misses.', whiff = 'your kick goes wide.',
-  },
-  missile = {
-    rhythm = 'spell', opener = 10, good = 12, perfect = 20,
-    hit = '{actor} hurls a magic missile at {target}.', perfect_hit = "{actor}'s magic missile strikes {target} dead centre!",
-    miss = "{actor}'s magic missile streaks past {target}.", whiff = 'your magic missile fizzles.',
-  },
-  potion = {
-    rhythm = 'potion', opener = 10, good = 15, perfect = 25,
-    hit = '{actor} drinks a health potion.', perfect_hit = '{actor} downs a health potion in one perfect gulp!',
-    miss = '{actor} fumbles a health potion and spills it.', whiff = 'you fumble the potion and spill it.',
-  },
-}
 
 local function capitalize(text)
   return (string.gsub(text, '^%l', string.upper))
@@ -363,68 +343,126 @@ local function timeout_for(period)
   return math.max(MIN_TIMEOUT_MS, 2 * period)
 end
 
--- Sends the player the state of one rhythm (inactive if `state` is nil).
-local function timing_event(pid, name, state)
-  local rhythm = RHYTHMS[name]
-  local event = {type = 'timing', rhythm = name, label = rhythm.label, hint = rhythm.hint, active = false}
+local function gear_info(gid)
+  if not gid then return nil end
+  local gear = hgetall('GEAR:' .. gid)
+  if not gear.name then return nil end
+  gear.id = gid
+  return gear
+end
+
+local function slot_gear(pid, n)
+  return gear_info(redis.call('HGET', 'PLAYER:' .. pid .. ':slots', n))
+end
+
+local function slot_key(pid, n)
+  return 'PLAYER:' .. pid .. ':slot:' .. n
+end
+
+-- A slot's rhythm if it's still running, else nil.
+local function live_slot(pid, n, now)
+  local state = hgetall(slot_key(pid, n))
+  if state.last and now - tonumber(state.last) <= timeout_for(tonumber(state.period)) then return state end
+end
+
+-- "every 2.5s"
+local function every(period)
+  return 'every ' .. string.format('%.1f', period / 1000) .. 's'
+end
+
+-- Sends the player the state of one slot (inactive if `state` is nil).
+local function timing_event(pid, n, state)
+  local gear = slot_gear(pid, n)
+  local event = {type = 'timing', slot = n, active = false, label = gear and gear.name or 'Empty'}
+  if gear then
+    event.gear, event.kind, event.period_ms = gear.id, gear.kind, tonumber(gear.period)
+  end
   if state then
     local period = tonumber(state.period)
     event.active = true
     event.start_ms, event.period_ms = tonumber(state.start), period
-    event.grace_ms, event.perfect_ms = rhythm.grace, rhythm.perfect
+    event.grace_ms, event.perfect_ms = tonumber(state.window), tonumber(state.perfect_window)
     event.last_beat, event.last_ms, event.timeout_ms = tonumber(state.beat), tonumber(state.last), timeout_for(period)
   end
   return emit('PLAYER:' .. pid, event)
 end
 
--- Uses up one beat of a player's rhythm. Returns how well it was timed
--- ('opener', 'perfect', 'good', 'early' or 'late'), the offset from the beat
--- in ms, and the rhythm's new state.
-local function take_beat(pid, name)
-  local rhythm = RHYTHMS[name]
-  local key = 'PLAYER:' .. pid .. ':rhythm:' .. name
+-- Uses up one beat of a slot. Returns how well it was timed ('opener',
+-- 'perfect', 'good', 'early' or 'late'), the offset from the beat in ms, and
+-- the slot's new state.
+local function take_beat(pid, n, gear)
   local now = now_ms()
-  local state = hgetall(key)
+  local state = live_slot(pid, n, now)
   local quality, offset
-  if not state.start or now - tonumber(state.last) > timeout_for(tonumber(state.period)) then
-    local period = tonumber(redis.call('HGET', 'ACCOUNT:' .. pid, 'period:' .. name)) or rhythm.period
-    state = {start = now, period = period, beat = 0}
+  if not state then
+    state = {gear = gear.id, start = now, period = gear.period, window = gear.window, perfect_window = gear.perfect_window, beat = 0}
     quality = 'opener'
   else
     local start, period = tonumber(state.start), tonumber(state.period)
     local beat = math.max(math.floor((now - start) / period + 0.5), tonumber(state.beat) + 1)
     offset = now - (start + beat * period)
     state.beat = beat
-    if math.abs(offset) <= rhythm.perfect then
+    if math.abs(offset) <= tonumber(state.perfect_window) then
       quality = 'perfect'
-    elseif math.abs(offset) <= rhythm.grace then
+    elseif math.abs(offset) <= tonumber(state.window) then
       quality = 'good'
     else
       quality = offset < 0 and 'early' or 'late'
     end
   end
   state.last = now
-  redis.call('HSET', key, 'start', state.start, 'period', state.period, 'beat', state.beat, 'last', state.last)
+  local key = slot_key(pid, n)
+  redis.call('HSET', key, 'gear', state.gear, 'start', state.start, 'period', state.period, 'window', state.window,
+    'perfect_window', state.perfect_window, 'beat', state.beat, 'last', state.last)
   redis.call('PEXPIRE', key, timeout_for(tonumber(state.period)) * 3)
   return quality, offset, state
 end
 
--- Reports a mistimed action: privately how, and to the room that it missed.
-local function whiff(pid, rid, ability_name, quality, offset, target_id, target_display)
-  local ability = ABILITIES[ability_name]
-  emit('PLAYER:' .. pid, {type = 'combat', rhythm = ability.rhythm, result = quality, offset_ms = offset,
-    text = (quality == 'early' and 'Too early' or 'Too late') .. ': ' .. ability.whiff})
-  emit('ROOM:' .. rid, {type = 'combat', actor = pid, verb = ability_name, rhythm = ability.rhythm, target = target_id,
-    result = 'miss', text = fill(ability.miss, name_of(pid), target_display)})
+-- Reports a mistimed use: privately how, and to the room that it missed.
+local function whiff(pid, rid, n, gear, quality, offset, target_id, target_display)
+  emit('PLAYER:' .. pid, {type = 'combat', slot = n, gear = gear.id, result = quality, offset_ms = offset,
+    text = (quality == 'early' and 'Too early' or 'Too late') .. ': ' .. gear.whiff})
+  emit('ROOM:' .. rid, {type = 'combat', actor = pid, verb = gear.id, slot = n, target = target_id,
+    result = 'miss', text = fill(gear.miss, name_of(pid), target_display)})
 end
 
--- Tells a (re)connecting player about each of their rhythms.
+-- Tells a (re)connecting player about each of their slots.
 local function resend_timing(pid)
-  for _, name in ipairs(RHYTHM_ORDER) do
-    local state = hgetall('PLAYER:' .. pid .. ':rhythm:' .. name)
-    local live = state.last and now_ms() - tonumber(state.last) <= timeout_for(tonumber(state.period))
-    timing_event(pid, name, live and state or nil)
+  local now = now_ms()
+  for n = 1, SLOTS do timing_event(pid, n, live_slot(pid, n, now)) end
+end
+
+-- Gives a player the starting loadout the first time they enter the world.
+local function ensure_loadout(pid)
+  if redis.call('HSETNX', 'ACCOUNT:' .. pid, 'loadout_set', '1') == 0 then return end
+  for n, gid in ipairs(redis.call('LRANGE', 'alz:default_loadout', 0, SLOTS - 1)) do
+    redis.call('HSET', 'PLAYER:' .. pid .. ':slots', n, gid)
   end
+end
+
+local function match_gear(word)
+  for _, gid in ipairs(redis.call('SMEMBERS', 'alz:gear')) do
+    local gear = hgetall('GEAR:' .. gid)
+    local name = string.lower(gear.name or '')
+    local words = ' ' .. (gear.keywords or '') .. ' ' .. name .. ' '
+    if gid == word or name == word or string.find(words, ' ' .. word .. ' ', 1, true) then return gid end
+  end
+end
+
+-- A slot number from args, or nil.
+local function slot_number(value)
+  local n = tonumber(value)
+  if n and n >= 1 and n <= SLOTS and n % 1 == 0 then return n end
+end
+
+-- Refuses to change a slot mid-rhythm. Returns true if it refused.
+local function slot_busy(pid, n)
+  local now = now_ms()
+  local state = live_slot(pid, n, now)
+  if not state then return false end
+  local left = timeout_for(tonumber(state.period)) - (now - tonumber(state.last))
+  notice(pid, 'Slot ' .. n .. ' is still in rhythm. It settles ' .. math.ceil(left / 1000) .. 's after its last use.')
+  return true
 end
 
 local ARRIVE_FROM = {
@@ -476,26 +514,50 @@ redis.register_function('move', action(function(pid, rid, args)
   room_event(pid, dest, 'move')
 end))
 
--- An attack on an NPC. args: pid, ability, target word.
-redis.register_function('attack', action(function(pid, rid, args)
-  local name = args[2]
-  local ability = ABILITIES[name]
-  local kind, id, display = resolve(pid, rid, args[3])
+-- Uses whatever is in a slot. args: pid, slot number, target word ('' for none;
+-- gear that heals ignores it).
+redis.register_function('use', action(function(pid, rid, args)
+  local n = slot_number(args[2])
+  if not n then return notice(pid, 'Your slots are 1, 2 and 3.') end
+  local gear = slot_gear(pid, n)
+  if not gear then return notice(pid, 'Slot ' .. n .. " is empty. Try 'equip <gear> " .. n .. "', or 'gear' to see what there is.") end
+  local me = name_of(pid)
+
+  if gear.effect == 'heal' then
+    local quality, offset, state = take_beat(pid, n, gear)
+    local amount = tonumber(gear[quality])
+    if not amount then
+      whiff(pid, rid, n, gear, quality, offset, nil, nil)
+      return timing_event(pid, n, state)
+    end
+    local card = player_card(pid)
+    local healed = math.min(amount, card.max_hp - card.hp)
+    redis.call('HSET', 'ACCOUNT:' .. pid, 'hp', card.hp + healed, 'max_hp', card.max_hp)
+    local text = fill(quality == 'perfect' and gear.perfect_hit or gear.hit, me)
+    emit('ROOM:' .. rid, {type = 'heal', actor = pid, verb = gear.id, slot = n, result = quality,
+      amount = healed, offset_ms = offset, text = text .. (healed > 0 and (' (+' .. healed .. ')') or ' (already at full health)')})
+    emit('ROOM:' .. rid, {type = 'entity', entity = player_card(pid)})
+    return timing_event(pid, n, state)
+  end
+
+  local word = args[3] or ''
+  if word == '' then return notice(pid, gear.name .. ' what? Name a target, or press Tab to pick one.') end
+  local kind, id, display = resolve(pid, rid, word)
   if not kind then return notice(pid, "You don't see that here.") end
   if kind == 'self' then return notice(pid, 'You think better of it.') end
   if kind == 'player' then return notice(pid, "You can't attack other players.") end
   if kind ~= 'npc' then return notice(pid, "You can't fight that.") end
 
-  local quality, offset, state = take_beat(pid, ability.rhythm)
-  local damage = ability[quality]
+  local quality, offset, state = take_beat(pid, n, gear)
+  local damage = tonumber(gear[quality])
   if not damage then
-    whiff(pid, rid, name, quality, offset, 'npc:' .. id, display)
-    return timing_event(pid, ability.rhythm, state)
+    whiff(pid, rid, n, gear, quality, offset, 'npc:' .. id, display)
+    return timing_event(pid, n, state)
   end
 
   local hp = redis.call('HINCRBY', 'NPC:' .. id, 'hp', -damage)
-  local text = fill(quality == 'perfect' and ability.perfect_hit or ability.hit, name_of(pid), display)
-  emit('ROOM:' .. rid, {type = 'combat', actor = pid, verb = name, rhythm = ability.rhythm, target = 'npc:' .. id,
+  local text = fill(quality == 'perfect' and gear.perfect_hit or gear.hit, me, display)
+  emit('ROOM:' .. rid, {type = 'combat', actor = pid, verb = gear.id, slot = n, target = 'npc:' .. id,
     result = quality, damage = damage, offset_ms = offset, text = text .. ' (' .. damage .. ')'})
   if hp > 0 then
     emit('ROOM:' .. rid, {type = 'entity', entity = npc_card(id)})
@@ -507,26 +569,74 @@ redis.register_function('attack', action(function(pid, rid, args)
     redis.call('ZADD', 'alz:respawns', tonumber(state.last) + delay, id)
     emit('ROOM:' .. rid, {type = 'death', entity_id = 'npc:' .. id, text = capitalize(display) .. ' collapses.'})
   end
-  timing_event(pid, ability.rhythm, state)
+  timing_event(pid, n, state)
 end))
 
--- Drinking a health potion (unlimited, for now). args: pid.
-redis.register_function('drink', action(function(pid, rid, args)
-  local ability = ABILITIES.potion
-  local quality, offset, state = take_beat(pid, ability.rhythm)
-  local amount = ability[quality]
-  if not amount then
-    whiff(pid, rid, 'potion', quality, offset, nil, nil)
-    return timing_event(pid, ability.rhythm, state)
+-- Puts gear in a slot. args: pid, gear word, slot number ('' for the first
+-- empty one).
+redis.register_function('equip', action(function(pid, rid, args)
+  local gid = match_gear(args[2])
+  if not gid then return notice(pid, "There's no gear called '" .. args[2] .. "'. Type 'gear' to see what there is.") end
+  local slots = 'PLAYER:' .. pid .. ':slots'
+  local n
+  if (args[3] or '') == '' then
+    for i = 1, SLOTS do
+      if not slot_gear(pid, i) then n = i break end
+    end
+    if not n then return notice(pid, "Your slots are full. Say which one to replace: 'equip " .. args[2] .. " 1', 2 or 3.") end
+  else
+    n = slot_number(args[3])
+    if not n then return notice(pid, 'Your slots are 1, 2 and 3.') end
   end
-  local card = player_card(pid)
-  local healed = math.min(amount, card.max_hp - card.hp)
-  redis.call('HSET', 'ACCOUNT:' .. pid, 'hp', card.hp + healed, 'max_hp', card.max_hp)
-  local text = fill(quality == 'perfect' and ability.perfect_hit or ability.hit, name_of(pid))
-  emit('ROOM:' .. rid, {type = 'heal', actor = pid, verb = 'potion', rhythm = ability.rhythm, result = quality,
-    amount = healed, offset_ms = offset, text = text .. (healed > 0 and (' (+' .. healed .. ')') or ' (already at full health)')})
-  emit('ROOM:' .. rid, {type = 'entity', entity = player_card(pid)})
-  timing_event(pid, ability.rhythm, state)
+  local gear = gear_info(gid)
+  if redis.call('HGET', slots, n) == gid then return notice(pid, 'Slot ' .. n .. ' already holds ' .. gear.name .. '.') end
+  if slot_busy(pid, n) then return end
+  redis.call('HSET', slots, n, gid)
+  redis.call('DEL', slot_key(pid, n))
+  notice(pid, 'Slot ' .. n .. ': ' .. gear.name .. ', ' .. every(tonumber(gear.period)) .. '.')
+  timing_event(pid, n, nil)
+end))
+
+-- Empties a slot. args: pid, slot number.
+redis.register_function('unequip', action(function(pid, rid, args)
+  local n = slot_number(args[2])
+  if not n then return notice(pid, 'Your slots are 1, 2 and 3.') end
+  local gear = slot_gear(pid, n)
+  if not gear then return notice(pid, 'Slot ' .. n .. ' is already empty.') end
+  if slot_busy(pid, n) then return end
+  redis.call('HDEL', 'PLAYER:' .. pid .. ':slots', n)
+  redis.call('DEL', slot_key(pid, n))
+  notice(pid, 'Slot ' .. n .. ' is empty now.')
+  timing_event(pid, n, nil)
+end))
+
+-- Lists the gear there is, fastest first, and what's in the player's slots.
+redis.register_function('gear', action(function(pid, rid, args)
+  local all = list()
+  for _, gid in ipairs(redis.call('SMEMBERS', 'alz:gear')) do all[#all + 1] = gear_info(gid) end
+  table.sort(all, function(a, b)
+    local pa, pb = tonumber(a.period), tonumber(b.period)
+    if pa ~= pb then return pa < pb end
+    return a.name < b.name
+  end)
+  local gear, lines = list(), {'Gear (good timing / perfect, after the opener):'}
+  for _, g in ipairs(all) do
+    local period, window = tonumber(g.period), tonumber(g.window)
+    local amounts = list({tonumber(g.opener), tonumber(g.good), tonumber(g.perfect)})
+    gear[#gear + 1] = {id = g.id, name = g.name, kind = g.kind, effect = g.effect, period_ms = period,
+      grace_ms = window, perfect_ms = tonumber(g.perfect_window), amounts = amounts}
+    lines[#lines + 1] = '  ' .. g.name .. ' (' .. string.lower(g.kind or '') .. '): ' .. every(period) .. ', ±' .. window
+      .. 'ms, ' .. (g.effect == 'heal' and 'heals ' or '') .. amounts[2] .. ' / ' .. amounts[3]
+      .. (g.effect == 'heal' and '' or ' damage')
+  end
+  local slots, labels = list(), {}
+  for n = 1, SLOTS do
+    local g = slot_gear(pid, n)
+    slots[n] = g and g.id or ''
+    labels[n] = n .. ' ' .. (g and g.name or '(empty)')
+  end
+  lines[#lines + 1] = 'Your slots: ' .. table.concat(labels, ' · ') .. ". Change one with 'equip <gear> <slot>'."
+  emit('PLAYER:' .. pid, {type = 'gear', gear = gear, slots = slots, text = table.concat(lines, '\n')})
 end))
 
 redis.register_function('say', action(function(pid, rid, args)
@@ -699,6 +809,7 @@ redis.register_function('connect', function(keys, args)
     local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
     explore(pid, rid)
     map_event(pid, redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':explored'), true)
+    ensure_loadout(pid)
     resend_timing(pid)
     room_event(pid, rid, 'resume')
     return cursor
@@ -724,6 +835,7 @@ redis.register_function('connect', function(keys, args)
   resubscribe(pid, add, {})
   explore(pid, rid)
   map_event(pid, redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':explored'), true)
+  ensure_loadout(pid)
   resend_timing(pid)
   room_event(pid, rid, 'enter')
   return cursor
@@ -824,6 +936,18 @@ redis.register_function('seed', function(keys, args)
       redis.call('SADD', 'ROOM:' .. npc.room .. ':npcs', nid)
     end
   end
+  -- Gear is static: the catalog is rewritten every time. Players' slots keep
+  -- what they hold; gear that's gone from the seed acts like an empty slot.
+  for _, gid in ipairs(redis.call('SMEMBERS', 'alz:gear')) do redis.call('DEL', 'GEAR:' .. gid) end
+  redis.call('DEL', 'alz:gear', 'alz:default_loadout')
+  for gid, gear in pairs(world.gear or {}) do
+    redis.call('HSET', 'GEAR:' .. gid, 'name', gear.name, 'kind', gear.kind or '', 'keywords', gear.keywords or '',
+      'effect', gear.effect, 'period', gear.period, 'window', gear.window, 'perfect_window', gear.perfect_window,
+      'opener', gear.amounts[1], 'good', gear.amounts[2], 'perfect', gear.amounts[3],
+      'hit', gear.hit, 'perfect_hit', gear.perfect_hit, 'miss', gear.miss, 'whiff', gear.whiff)
+    redis.call('SADD', 'alz:gear', gid)
+  end
+  for _, gid in ipairs(world.loadout or {}) do redis.call('RPUSH', 'alz:default_loadout', gid) end
   for iid, item in pairs(world.items or {}) do
     local key = 'ITEM:' .. iid
     local new = redis.call('EXISTS', key) == 0

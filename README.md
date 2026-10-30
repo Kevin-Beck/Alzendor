@@ -66,47 +66,66 @@ The web client is built around the map:
 - **Here.** Everyone in the room, as cards: name (players and NPCs in
   different colours), race/class, short description and health.
 - **Targeting.** In the command box, **Tab** / **Shift+Tab** cycle through the
-  cards and **Esc** clears the selection. Commands that take a target (`kick`,
-  `poke`, `wave`, `inspect`, …) go to the selected card when you don't type a
+  cards and **Esc** clears the selection. Your slots and commands that take
+  a target (`poke`, `wave`, `inspect`, …) go to the selected card when you don't type a
   name, even if two NPCs share a name. Clicking a card selects it too.
 - **On the ground.** Items (click to look, or **get**) and room features you
   can look at or touch.
 
-### Combat and rhythms
+### Combat: three slots
 
-Every action in a fight belongs to a **rhythm**, and each rhythm has its own
-timing bar above the "Here" cards:
+You have three **slots**, and each holds one piece of gear: a weapon, a spell,
+a potion. The game treats them all alike. Press **1**, **2** or **3** (or click
+a slot's bar, or type `use 2`) to use one on your target. Each piece of gear
+has its own **beat**, timing window and amounts, so every slot keeps its own
+rhythm with its own timing bar above the "Here" cards.
 
-| Rhythm | Command | Beat | Window (perfect) | Effect |
+There's no roll to hit: if you land in the window, it lands. Fitting three
+rhythms together is the skill. Fast gear gives you lots of chances for small
+hits; slow gear hits hard but is easy to miss. Rhythms that overlap make it
+harder to land them all.
+
+| Gear | Kind | Beat | Window (perfect) | Effect |
 |---|---|---|---|---|
-| Melee | `k` / `kick` | 2 s | ±300 ms (±100) | 4 / 5 / 8 damage |
-| Spells | `mm` / `missile` / `cast magic missile` | 8 s | ±400 ms (±130) | 10 / 12 / 20 damage |
-| Potions | `hp` / `potion` | 5 s | ±350 ms (±120) | heals 10 / 15 / 25 |
+| Dagger | weapon | 1.2 s | ±200 ms (±70) | 2 / 3 / 5 damage |
+| Kick | melee | 2 s | ±300 ms (±100) | 4 / 5 / 8 damage |
+| Healing Draught | potion | 2.5 s | ±250 ms (±80) | heals 4 / 6 / 10 |
+| Sword | weapon | 2.5 s | ±300 ms (±100) | 6 / 7 / 11 damage |
+| Firebolt | spell | 4 s | ±300 ms (±100) | 8 / 10 / 16 damage |
+| Greataxe | weapon | 4.5 s | ±250 ms (±80) | 10 / 14 / 24 damage |
+| Health Potion | potion | 5 s | ±350 ms (±120) | heals 10 / 15 / 25 |
+| Magic Missile | spell | 8 s | ±400 ms (±130) | 14 / 18 / 30 damage |
 
-(Effects are opening / good / perfect.) The first use of a rhythm lands
-straight away and starts it. Its ball then swings out to the right and back to
-the centre, then out to the left and back, and each centre crossing is a beat.
-An action lands only if it reaches the server within its rhythm's window around
-a beat. A good fight keeps every rhythm on its beat.
+(Effects are opening / good / perfect.) New characters start with Kick, Magic
+Missile and Health Potion. `gear` lists everything and what's in your slots;
+`equip sword 2` puts a sword in slot 2, and `unequip 2` empties it. The same
+gear can go in more than one slot: three potions is a loadout too.
+
+The first use of a slot lands straight away and starts its rhythm. Its ball
+then swings out to the right and back to the centre, then out to the left and
+back, and each centre crossing is a beat. A use lands only if it reaches the
+server within its gear's window around a beat.
 
 - Every attempt uses up a beat, hit or miss. One sent before the next unused
-  beat takes that beat and misses, so mashing Enter only burns beats.
-- In a fight the command box keeps your last command, highlighted: press Enter
-  on the beat to repeat it, or type to replace it.
+  beat takes that beat and misses, so mashing keys only burns beats.
+- **1**, **2** and **3** fire straight away when the command line is empty (or
+  in a fight, when it holds your last command, selected). Typing a sentence
+  with a number in it doesn't use a slot.
 - A rhythm belongs to you, not the fight. It carries on across targets, kills,
   leaving the room and reconnecting, and ends only after 10 seconds unused (or
-  two beats, if longer). Stepping out and back in doesn't buy a fresh opener.
+  two beats, if longer). Stepping out and back in doesn't buy a fresh opener,
+  and neither does swapping gear: a slot can't be changed while its rhythm is
+  running.
 - Redis's clock judges the timing, the one clock every server shares. The
   client syncs to it with ping/pong and draws each ball where it will be when
-  your command arrives, so pressing Enter when the ball looks centred lands on
-  the beat.
+  your command arrives, so pressing the key when the ball looks centred lands
+  on the beat.
 - An NPC at 0 HP collapses and comes back after its `respawn` time (60 s by
   default). Players can't be attacked yet, so potions have nothing to heal for
   now. Your health is in the header.
 
-Rhythms and abilities are defined at the top of the combat section of
-[alzendor/alzendor.lua](alzendor/alzendor.lua). A player can have their own
-beat for a rhythm (`period:<rhythm>` on their account).
+Gear is defined in [world/seed.json](world/seed.json) (see below); the rules
+are in the combat section of [alzendor/alzendor.lua](alzendor/alzendor.lua).
 
 ## Deploying
 
@@ -152,7 +171,7 @@ Servers read `ALZ_*` environment variables (compose passes `.env` through):
 ## The world map
 
 [world/seed.json](world/seed.json) defines cities, areas, rooms, items, NPCs,
-default chat channels, and ambient events like bells and weather. Every
+gear, default chat channels, and ambient events like bells and weather. Every
 server loads it at start. Map data is rewritten each time. Live state (where
 items are, who is where, NPC health) is never overwritten.
 
@@ -173,6 +192,12 @@ items are, who is where, NPC health) is never overwritten.
   `max_hp`, and optionally `respawn` (seconds, default 60). Set
   `"proper": true` for named characters ("Brannoc" rather than "the
   Brannoc").
+- **Gear** has a `name`, `kind` (shown in `gear`), `keywords`, an `effect`
+  (`damage` a target, or `heal` yourself), a `period` (ms between beats), a
+  `window` and `perfect_window` (ms either side of a beat), `amounts` (opening
+  / good / perfect), and texts: `hit`, `perfect_hit` and `miss` for the room
+  (with `{actor}` and `{target}`), and `whiff` for you when you mistime it.
+  `loadout` lists the gear new characters start with, one per slot.
 
 ## Protocol
 
@@ -190,10 +215,12 @@ state updates, without one:
 - `map`: explored rooms, glimpsed rooms, areas and cities (`full` replaces
   what the client knows; otherwise merge it in)
 - `entity`: a changed card
-- `timing`: one of your rhythms (`rhythm`, `label`, `hint`, `active`, and
-  while active `start_ms`, `period_ms`, `grace_ms`, `perfect_ms`,
-  `last_beat`, `last_ms`, `timeout_ms`). Every rhythm is sent on connect.
-- `combat` / `heal` (have text): an action's `rhythm`, `result` (`opener`,
+- `timing`: one of your slots (`slot`, `label`, and if it holds something
+  `gear`, `kind` and `period_ms`; `active`, and while active `start_ms`,
+  `grace_ms`, `perfect_ms`, `last_beat`, `last_ms`, `timeout_ms`). Every slot
+  is sent on connect, and again when its gear changes.
+- `gear` (has text): all the gear there is, and the ids in your `slots`
+- `combat` / `heal` (have text): a use's `slot`, `result` (`opener`,
   `perfect`, `good`, `early`, `late`, `miss`), and `damage` or `amount`
 - `death` (has text): an NPC going down, with its `entity_id`
 - `arrive` / `leave` (these have text) carry `entity` / `entity_id`, so the

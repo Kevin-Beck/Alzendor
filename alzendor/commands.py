@@ -93,6 +93,8 @@ def parse(text: str) -> tuple[str, str] | None:
         return "emote", text[1:].strip()
     first, _, rest = text.partition(" ")
     first = first.lower()
+    if first in SLOT_NUMBERS:  # "2 orc" uses slot 2
+        return "use", text
     if not rest and (first in DIRECTIONS or first in SHORT_DIRECTIONS):
         return "move", SHORT_DIRECTIONS.get(first, first)
     return ALIASES.get(first, first), rest
@@ -240,40 +242,44 @@ async def describe(ctx: Context, rest: str) -> None:
 # Combat -----------------------------------------------------------------------
 
 
-# Each of these keeps its own rhythm (see alzendor.lua): the first use lands at
-# once, and after that they land only on their beat.
+# Three slots, each holding a piece of gear with its own rhythm (see
+# alzendor.lua): the first use lands at once, and after that only on its beat.
+SLOT_NUMBERS = ("1", "2", "3")
+SLOT_FILLER = ("in", "into", "to", "slot")
 
 
-async def _attack(ctx: Context, ability: str, rest: str, what: str) -> None:
-    target = _thing(rest) or ctx.target
-    await ctx.call("attack", ability, _require(target, f"{what} what? Name it, or press Tab to pick a target."))
+@command("use", "use <slot> [target]", "Use what's in slot 1, 2 or 3, on its beat. Shorthand: 1, 2, 3")
+async def use(ctx: Context, rest: str) -> None:
+    slot, _, target = rest.partition(" ")
+    if slot not in SLOT_NUMBERS:
+        raise Usage("Use which slot? 1, 2 or 3.")
+    await ctx.call("use", slot, _thing(target) or ctx.target)
 
 
-@command("kick", "kick [target]", "Melee attack, on the melee beat.", aliases=("k",))
-async def kick(ctx: Context, rest: str) -> None:
-    await _attack(ctx, "kick", rest, "Kick")
+@command("equip", "equip <gear> [slot]", "Put gear in a slot, e.g. 'equip sword 2'. 'gear' lists it all.", aliases=("wield",))
+async def equip(ctx: Context, rest: str) -> None:
+    words = rest.lower().split()
+    slot = ""
+    if words and words[-1] in SLOT_NUMBERS:
+        slot = words.pop()
+    elif words and words[0] in SLOT_NUMBERS:
+        slot = words.pop(0)
+    while words and words[-1] in SLOT_FILLER:
+        words.pop()
+    await ctx.call("equip", _require(_thing(" ".join(words)), "Equip what? Type 'gear' to see what there is."), slot)
 
 
-@command("missile", "missile [target]", "Cast magic missile, on the spell beat.", aliases=("mm",))
-async def missile(ctx: Context, rest: str) -> None:
-    await _attack(ctx, "missile", rest, "Missile")
+@command("unequip", "unequip <slot>", "Empty a slot.")
+async def unequip(ctx: Context, rest: str) -> None:
+    slot = rest.lower().removeprefix("slot").strip()
+    if slot not in SLOT_NUMBERS:
+        raise Usage("Unequip which slot? 1, 2 or 3.")
+    await ctx.call("unequip", slot)
 
 
-SPELLS = {"magic missile": missile, "missile": missile, "mm": missile}
-
-
-@command("cast", "cast <spell> [target]", "Cast a spell. You know: magic missile.")
-async def cast(ctx: Context, rest: str) -> None:
-    spoken = " ".join(rest.lower().replace("'", " ").replace('"', " ").split())  # cast 'magic missile' orc
-    for name, handler in SPELLS.items():
-        if spoken == name or spoken.startswith(name + " "):
-            return await handler(ctx, spoken[len(name):].strip())
-    raise Usage("You know one spell: magic missile.")
-
-
-@command("potion", "potion", "Drink a health potion, on the potion beat.", aliases=("hp", "quaff"))
-async def potion(ctx: Context, rest: str) -> None:
-    await ctx.call("drink")
+@command("gear", "gear", "List the gear there is and what's in your slots.", aliases=("slots", "loadout"))
+async def gear(ctx: Context, rest: str) -> None:
+    await ctx.call("gear")
 
 
 @command("get", "get <item>", "Pick something up.", aliases=("take",))

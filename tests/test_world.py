@@ -349,3 +349,26 @@ def test_seed_validation_checks_exits_match_the_map(change, message):
     change(data["rooms"])
     with pytest.raises(ValueError, match=message):
         validate_seed(data)
+
+
+@pytest.mark.parametrize("change, message", [
+    (lambda d: d["gear"]["sword"].update(window=1300), "windows can't overlap"),
+    (lambda d: d["gear"]["sword"].update(perfect_window=400), "windows can't overlap"),
+    (lambda d: d["gear"]["sword"].update(effect="poison"), "effect must be"),
+    (lambda d: d["gear"]["sword"].update(amounts=[1, 2]), "amounts must be"),
+    (lambda d: d["gear"]["sword"].pop("whiff"), "missing whiff"),
+    (lambda d: d["loadout"].append("banjo"), "unknown gear 'banjo'"),
+    (lambda d: d["loadout"].append("sword"), "at most 3 slots"),
+])
+def test_seed_validation_checks_gear(change, message):
+    data = json.loads(SEED.read_text())
+    change(data)
+    with pytest.raises(ValueError, match=message):
+        validate_seed(data)
+
+
+async def test_reseeding_replaces_the_gear_catalog(world):
+    await world.redis.hset("GEAR:kick", "period", 1)
+    await world.seed(SEED)
+    assert await world.redis.hget("GEAR:kick", "period") == "2000"
+    assert await world.redis.lrange("alz:default_loadout", 0, -1) == ["kick", "missile", "potion"]
