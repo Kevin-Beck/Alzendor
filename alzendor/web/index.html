@@ -79,11 +79,12 @@
   .splitter:hover, .splitter:focus-visible, .splitter.dragging { background: var(--accent); outline: none; }
   #split-side { width: 1px; cursor: col-resize; }
   #split-map { height: 1px; cursor: row-resize; }
+  #split-weather { width: 1px; cursor: col-resize; }
   #left { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
   /* The top: the weather and the map side by side, the same width. */
   #top { display: flex; flex: 58 1 0; min-height: 120px; }
   #map-wrap { position: relative; flex: 1 1 0; min-width: 0; background: var(--map-bg); }
-  #weather-panel { flex: 1 1 0; min-width: 0; overflow-y: auto; padding: 12px 16px; background: var(--panel); border-right: 1px solid var(--border); }
+  #weather-panel { flex: 1 1 0; min-width: 0; overflow-y: auto; padding: 12px 16px; background: var(--panel); container: wx / size; }
   #map { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; user-select: none; }
   #map.dragging { cursor: grabbing; }
   #map .node { cursor: pointer; }
@@ -296,20 +297,23 @@
   #exits .hidden-ways { font-size: 12px; color: var(--muted); font-style: italic; align-self: center; }
   .boon.off { opacity: .6; }
 
-  /* The weather panel: four columns, always in the same order. */
-  #weather-panel { --wx-size: clamp(150px, 17vw, 230px); }
-  .wxcols { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
-  .wxcol { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
-  .wxstack { display: flex; flex-direction: column; gap: 12px; min-width: 0; flex: 1; }
-  .wxstack .wxcol { align-items: flex-start; }
+  /* The weather panel: four boxes, always in the same order. They sit one
+     above another when the pane is narrow, two by two when it's wider, and in
+     a row when it's wide (or wide and short). The sky grid fits its box. */
+  .wxgrid { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+  @container wx (min-width: 330px) { .wxgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @container wx (min-width: 600px) or ((min-width: 440px) and (min-aspect-ratio: 2 / 1)) {
+    .wxgrid { grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); }
+  }
+  .wxbox { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 0;
+    padding: 10px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
   .wxhead { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-  .wxval { font-size: 12px; color: var(--text); text-align: center; max-width: 90px; line-height: 1.3; }
-  .wxstack .wxval { text-align: left; max-width: none; }
-  #wx-grid { width: var(--wx-size); height: var(--wx-size); border: 1px solid var(--border); border-radius: 6px; background: var(--map-bg); }
+  .wxval { font-size: 12px; color: var(--text); text-align: center; line-height: 1.3; }
+  #wx-grid { width: min(100%, 230px, 52cqh); aspect-ratio: 1; height: auto; border: 1px solid var(--border); border-radius: 6px; background: var(--map-bg); }
   #wx-grid text { font-family: system-ui, sans-serif; fill: var(--muted); }
-  #wx-precip-bar { width: 14px; height: var(--wx-size); border: 1px solid var(--border); border-radius: 7px; background: var(--hp-track); position: relative; overflow: hidden; }
+  #wx-precip-bar { width: 16px; height: min(120px, 30cqh); border: 1px solid var(--border); border-radius: 7px; background: var(--hp-track); position: relative; overflow: hidden; }
   #wx-precip-bar .fill { position: absolute; left: 0; right: 0; bottom: 0; background: var(--wet); transition: height .6s; }
-  #wx-wheel { width: 84px; height: 84px; }
+  #wx-wheel { width: min(84px, 26cqh); height: min(84px, 26cqh); }
   .ground-icon { font-size: 30px; line-height: 1; height: 38px; display: grid; place-items: center; }
   #weather-panel .about { margin-top: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 3px; }
   #weather-panel .about .main { color: var(--text); }
@@ -469,12 +473,18 @@
     #top { flex: none !important; flex-direction: column; }
     #map-wrap { flex: none !important; height: 42vh; border-bottom: 1px solid var(--border); }
     /* The weather is a slim strip until you open it. */
-    #weather-panel { --wx-size: 72px; flex: none; border-right: 0; border-bottom: 1px solid var(--border); padding: 8px 16px; }
+    #weather-panel { flex: none; border-bottom: 1px solid var(--border); padding: 8px 16px; container-type: inline-size; }
+    #weather-panel:not(.open) .wxgrid { grid-template-columns: repeat(4, auto); justify-content: space-between; gap: 6px; }
+    #weather-panel:not(.open) .wxbox { padding: 4px; border: 0; background: none; }
+    #weather-panel:not(.open) #wx-grid { width: 64px; }
+    #weather-panel:not(.open) #wx-precip-bar { height: 64px; }
     #wx-head { cursor: pointer; }
     #weather-panel:not(.open) .about, #weather-panel:not(.open) .wxval { display: none; }
     #weather-panel:not(.open) #wx-wheel { width: 52px; height: 52px; }
+    #weather-panel.open #wx-grid { width: min(100%, 230px); }
+    #weather-panel.open #wx-precip-bar { height: 120px; }
+    #weather-panel.open #wx-wheel { width: 84px; height: 84px; }
     #weather-panel:not(.open) #wx-grid text { display: none; } /* too small to read until it's opened */
-    #weather-panel:not(.open) .wxstack { flex-direction: row; }
     .splitter { display: none; }
     #log-wrap { flex: none !important; height: 34vh; }
     aside { overflow: visible; }
@@ -523,23 +533,23 @@
 <main id="world" class="hidden">
   <section id="left">
     <div id="top">
-      <!-- Weather, left to right: the sky (temperature across, energy up), what's
-           falling, the time of day, and the ground underfoot. -->
+      <!-- Weather: the sky (temperature across, energy up), what's falling, the
+           time of day and the ground underfoot, in four boxes that sit in a row,
+           two by two, or one above another, as the pane's shape allows. -->
       <section id="weather-panel" class="hidden">
         <h2 id="wx-head" title="On a phone, tap to open or close">Weather <span class="hint" id="wx-place"></span></h2>
-        <div class="wxcols">
-          <div class="wxcol"><div class="wxhead">Sky</div><svg id="wx-grid" role="img" aria-label="The weather: temperature across, energy up"></svg></div>
-          <div class="wxcol"><div class="wxhead">Rain</div><div class="precip" id="wx-precip-bar"><div class="fill" id="wx-precip"></div></div>
+        <div class="wxgrid">
+          <div class="wxbox"><div class="wxhead">Sky</div><svg id="wx-grid" role="img" aria-label="The weather: temperature across, energy up"></svg></div>
+          <div class="wxbox"><div class="wxhead">Rain</div><div class="precip" id="wx-precip-bar"><div class="fill" id="wx-precip"></div></div>
             <div class="wxval" id="wx-precip-text"></div></div>
-          <div class="wxstack">
-            <div class="wxcol"><div class="wxhead">Time</div><svg id="wx-wheel" role="img" aria-label="Time of day"></svg>
-              <div class="wxval" id="wx-time-text"></div></div>
-            <div class="wxcol"><div class="wxhead">Ground</div><div class="ground-icon" id="wx-ground-icon"></div>
-              <div class="wxval" id="wx-ground-text"></div></div>
-          </div>
+          <div class="wxbox"><div class="wxhead">Time</div><svg id="wx-wheel" role="img" aria-label="Time of day"></svg>
+            <div class="wxval" id="wx-time-text"></div></div>
+          <div class="wxbox"><div class="wxhead">Ground</div><div class="ground-icon" id="wx-ground-icon"></div>
+            <div class="wxval" id="wx-ground-text"></div></div>
         </div>
         <div class="about" id="wx-about"></div>
       </section>
+      <div class="splitter" id="split-weather" role="separator" aria-orientation="vertical" tabindex="0" title="Drag to resize the weather and the map · double-click to reset"></div>
       <div id="map-wrap">
         <svg id="map" role="img" aria-label="Map of explored rooms"></svg>
         <div id="map-tools">
@@ -2721,24 +2731,29 @@ $("map-all").addEventListener("click", () => setMapMode("all"));
 window.addEventListener("resize", () => applyLayout(false));
 
 // Resizable panels -----------------------------------------------------------------------
-// Two bars: one between the map/log and the side panel, one between the map and
-// the log. Drag them (or focus one and use the arrow keys); double-click resets.
+// Three bars: one between the left and the side panel, one between the weather
+// and the map, and one between them and the log. Drag them (or focus one and use the arrow keys); double-click resets.
 // Sizes are a per-browser preference.
 
 const SIDE = { min: 260, max: 640, initial: 360 };
 const MAP = { min: 0.2, max: 0.8, initial: 0.58 };
-let sideWidth = SIDE.initial, mapShare = MAP.initial;
+const WEATHER = { min: 0.15, max: 0.75, initial: 0.5 };
+let sideWidth = SIDE.initial, mapShare = MAP.initial, weatherShare = WEATHER.initial;
 
 function applyLayout(save) {
   const room = innerWidth - 320; // always leave the map and log some width
   sideWidth = Math.round(Math.min(Math.max(sideWidth, SIDE.min), SIDE.max, Math.max(room, SIDE.min)));
   mapShare = Math.min(Math.max(mapShare, MAP.min), MAP.max);
+  weatherShare = Math.min(Math.max(weatherShare, WEATHER.min), WEATHER.max);
+  $("weather-panel").style.flexGrow = Math.round(weatherShare * 100);
+  $("map-wrap").style.flexGrow = 100 - Math.round(weatherShare * 100);
+  $("split-weather").setAttribute("aria-valuenow", Math.round(weatherShare * 100));
   $("world").style.setProperty("--side-width", `${sideWidth}px`);
   $("top").style.flexGrow = Math.round(mapShare * 100);
   $("log-wrap").style.flexGrow = 100 - Math.round(mapShare * 100);
   $("split-side").setAttribute("aria-valuenow", sideWidth);
   $("split-map").setAttribute("aria-valuenow", Math.round(mapShare * 100));
-  if (save) store.set("layout", JSON.stringify({ side: sideWidth, map: mapShare }));
+  if (save) store.set("layout", JSON.stringify({ side: sideWidth, map: mapShare, weather: weatherShare }));
   renderMap();
   if (following) scrollToLatest();
 }
@@ -2768,6 +2783,15 @@ dragBar($("split-map"), (e) => {
   const map = $("top").getBoundingClientRect(), log = $("log-wrap").getBoundingClientRect();
   mapShare = (e.clientY - map.top) / (log.bottom - map.top);
 });
+dragBar($("split-weather"), (e) => {
+  const top = $("top").getBoundingClientRect();
+  weatherShare = (e.clientX - top.left) / top.width;
+});
+$("split-weather").addEventListener("dblclick", () => { weatherShare = WEATHER.initial; applyLayout(true); });
+$("split-weather").addEventListener("keydown", (e) => {
+  const step = { ArrowLeft: -0.04, ArrowRight: 0.04 }[e.key];
+  if (step) { e.preventDefault(); weatherShare += step; applyLayout(true); }
+});
 $("split-side").addEventListener("dblclick", () => { sideWidth = SIDE.initial; applyLayout(true); });
 $("split-map").addEventListener("dblclick", () => { mapShare = MAP.initial; applyLayout(true); });
 $("split-side").addEventListener("keydown", (e) => {
@@ -2782,6 +2806,7 @@ try {
   const saved = JSON.parse(store.get("layout") || "{}");
   if (Number.isFinite(saved.side)) sideWidth = saved.side;
   if (Number.isFinite(saved.map)) mapShare = saved.map;
+  if (Number.isFinite(saved.weather)) weatherShare = saved.weather;
 } catch {}
 applyLayout(false);
 

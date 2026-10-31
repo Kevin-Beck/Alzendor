@@ -64,8 +64,9 @@ The web client is built around the map:
 - **Layout.** At the top left, the weather and the map side by side, the same
   size; under them, across the full width, the pinned quest line, the log and
   the command box. The right side, top to bottom, is here and now: the room,
-  who's here, your target, your slots. Drag the bar between the two sides, or the
-  bar between the top and the log, to resize them. Focus a bar and use the
+  who's here, your target, your slots. Drag the bar between the two sides, the
+  bar between the weather and the map, or the bar between the top and the log,
+  to resize them. Focus a bar and use the
   arrow keys to nudge it, or double-click it to reset. Sizes are remembered
   per browser. On a phone, the panels stack instead.
 - **Map.** Routes are drawn along their waypoints as roads you can't walk
@@ -99,7 +100,8 @@ The web client is built around the map:
 
   Picking up a map (for example the sea chart in the Drowned Lantern, which
   reveals Saltmere Isle) makes the regions it shows discovered.
-- **Weather.** Beside the map, as big as it. Four columns, always in the same order: **Sky** (a grid of
+- **Weather.** Beside the map. Four boxes, always in the same order, that sit
+  in a row, two by two, or one above another as the pane's shape allows: **Sky** (a grid of
   temperature across and energy up, with today's weather as a dot, a blurred
   patch if you can't read these skies, and the forecast as a dotted trail if
   you can), **Rain** (what's falling, and how hard), **Time** (a day/night
