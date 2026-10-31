@@ -221,6 +221,10 @@
           "text": "The Eclipse Hound swallowed the last lantern-keeper. It dens past the Moonwell. Its eclipse can only be dodged.",
           "starts": "hm_hound"
         }
+      },
+      "lure": {
+        "sense": "{Where}, the glow of many lanterns against the dark.",
+        "rumour": "Siel in Lantern Square needs lanterns lit."
       }
     },
     "shadow_stalker_1": {
@@ -496,7 +500,7 @@
       "start": "oil",
       "steps": {
         "oil": {
-          "goal": "Take Siel's moon-oil: ASK SIEL ABOUT OIL.",
+          "goal": "Take Siel's moon-oil: DISCUSS OIL WITH SIEL.",
           "on": {
             "ask": "siel",
             "about": "oil"
@@ -551,7 +555,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Siel: ASK SIEL ABOUT LANTERNS.",
+          "goal": "Tell Siel: DISCUSS LANTERNS WITH SIEL.",
           "on": {
             "ask": "siel",
             "about": "lanterns"
@@ -580,7 +584,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Siel: ASK SIEL ABOUT HUNT.",
+          "goal": "Tell Siel: DISCUSS HUNT WITH SIEL.",
           "on": {
             "ask": "siel",
             "about": "hunt"
@@ -608,7 +612,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Siel: ASK SIEL ABOUT HOUND.",
+          "goal": "Tell Siel: DISCUSS HOUND WITH SIEL.",
           "on": {
             "ask": "siel",
             "about": "hound"

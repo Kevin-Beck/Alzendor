@@ -184,6 +184,10 @@
           "starts": "sf_lantern"
         },
         "gnasher": "Old Gnasher. He's eaten three knights. Don't be the fourth."
+      },
+      "lure": {
+        "sense": "{Where}, candlelight in a small chapel window.",
+        "rumour": "Sister Odile in the fen chapel has troubles of her own."
       }
     },
     "giant_leech_1": {
@@ -452,10 +456,10 @@
           "then": "back"
         },
         "back": {
-          "goal": "Get out the same way, and bring it to Sister Odile: USE RELIQUARY ON ODILE.",
+          "goal": "Get out the same way, and bring it to Sister Odile: GIVE RELIQUARY TO ODILE.",
           "on": {
-            "use": "reliquary",
-            "on": "odile"
+            "give": "reliquary",
+            "to": "odile"
           },
           "effects": [
             {
@@ -487,7 +491,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Odile: ASK ODILE ABOUT LEECHES.",
+          "goal": "Tell Odile: DISCUSS LEECHES WITH ODILE.",
           "on": {
             "ask": "odile",
             "about": "leeches"
@@ -516,7 +520,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Odile: ASK ODILE ABOUT LANTERNS.",
+          "goal": "Tell Odile: DISCUSS LANTERNS WITH ODILE.",
           "on": {
             "ask": "odile",
             "about": "lanterns"

@@ -290,6 +290,10 @@
           "text": "Ash wyrms. Five of them, and the road's safe for a season. They come up under you: dodge.",
           "starts": "ew_wyrms"
         }
+      },
+      "lure": {
+        "sense": "{Where}, the clink of water-skins, and a woman counting.",
+        "rumour": "Saffa at the dry well needs water more than gold."
       }
     },
     "ithren": {
@@ -311,6 +315,10 @@
           "starts": "ew_exile"
         },
         "duke": "The Ashen Duke. He'll steal the Ember Crown one day. Mark me."
+      },
+      "lure": {
+        "sense": "{Where}, a scrap of red silk snapping in the hot wind.",
+        "rumour": "There's an exile in a red tent with a story to tell."
       }
     },
     "ash_wyrm_1": {
@@ -689,7 +697,7 @@
       "start": "wraps",
       "steps": {
         "wraps": {
-          "goal": "Ask Saffa for it: ASK SAFFA ABOUT WRAPS.",
+          "goal": "Ask Saffa for it: DISCUSS WRAPS WITH SAFFA.",
           "on": {
             "ask": "saffa",
             "about": "wraps"
@@ -713,7 +721,7 @@
       "start": "skins",
       "steps": {
         "skins": {
-          "goal": "Take the skins: ASK SAFFA ABOUT SKINS.",
+          "goal": "Take the skins: DISCUSS SKINS WITH SAFFA.",
           "on": {
             "ask": "saffa",
             "about": "skins"
@@ -752,10 +760,10 @@
           "then": "back"
         },
         "back": {
-          "goal": "Bring them back to Saffa: USE SKINS ON SAFFA.",
+          "goal": "Bring them back to Saffa: GIVE SKINS TO SAFFA.",
           "on": {
-            "use": "water_skins",
-            "on": "saffa"
+            "give": "water_skins",
+            "to": "saffa"
           },
           "effects": [
             {
@@ -787,7 +795,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Saffa: ASK SAFFA ABOUT WYRMS.",
+          "goal": "Tell Saffa: DISCUSS WYRMS WITH SAFFA.",
           "on": {
             "ask": "saffa",
             "about": "wyrms"
@@ -808,7 +816,7 @@
       "start": "ruuk",
       "steps": {
         "ruuk": {
-          "goal": "Get past the Cinder Colossus to the rift in the caldera's heart, cross into the Ember Courts, and ASK RUUK ABOUT ITHREN.",
+          "goal": "Get past the Cinder Colossus to the rift in the caldera's heart, cross into the Ember Courts, and DISCUSS ITHREN WITH RUUK.",
           "on": {
             "ask": "ruuk",
             "about": "ithren"

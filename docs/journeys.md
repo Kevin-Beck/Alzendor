@@ -59,10 +59,15 @@ A trap is set in a room. Walking in springs it unless you pass a check.
   it marks a neighbouring room that holds a trap with a small warning glyph
   on the map, so you see it before you step. Without it, you only have the
   signs.
-- **Remembered.** Once you've sprung or sensed a trap, your map keeps a mark
-  on that room. A trap you know about you can step around, or walk into
-  carefully (`CREEP <direction>`: slower, with a bonus to the
-  check).
+- **Remembered.** Once you've read its sign, sprung it or sensed it, your
+  map keeps a mark on that room, and reading the sign says what to do.
+- **Sneak in, sneak out** ([talk-and-layout.md](talk-and-layout.md)).
+  Walking in is the trap's check. `CREEP <direction>` takes three times as
+  long, with +50% to the check; creeping into a trap you know about always
+  gets you past, and leaves it set (for the next person, and for you next
+  time). `DISARM <direction>` from next door is a check: pass and it's
+  sprung harmlessly for everyone until it rearms; fail and it springs on
+  you.
 - **Rearming.** A sprung trap rearms after `rearm` seconds (the trapper
   comes back), so it stays a hazard on a route you use.
 

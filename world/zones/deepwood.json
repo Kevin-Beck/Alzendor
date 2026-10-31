@@ -157,7 +157,11 @@
           "starts": "dw_queen"
         }
       },
-      "faction": "thornkin"
+      "faction": "thornkin",
+      "lure": {
+        "sense": "{Where}, the creak of living wood, like slow speech.",
+        "rumour": "The Thornkin elder wants help with something in the deep wood."
+      }
     },
     "deep_spider_1": {
       "name": "Deep Spider",
@@ -435,7 +439,7 @@
       "start": "ask",
       "steps": {
         "ask": {
-          "goal": "Something is driving the spiders south. Go north through the Spiderwood's silk cavern into the Deepwood, and ASK BARKMOTHER ABOUT SPIDERS.",
+          "goal": "Something is driving the spiders south. Go north through the Spiderwood's silk cavern into the Deepwood, and DISCUSS SPIDERS WITH BARKMOTHER.",
           "on": {
             "ask": "barkmother",
             "about": "spiders"
@@ -443,7 +447,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Wren, at the hunters' camp: ASK WREN ABOUT DEEPWOOD.",
+          "goal": "Tell Wren, at the hunters' camp: DISCUSS DEEPWOOD WITH WREN.",
           "on": {
             "ask": "wren",
             "about": "deepwood"
@@ -469,7 +473,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell the Barkmother: ASK BARKMOTHER ABOUT BROOD.",
+          "goal": "Tell the Barkmother: DISCUSS BROOD WITH BARKMOTHER.",
           "on": {
             "ask": "barkmother",
             "about": "brood"
@@ -497,7 +501,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell the Barkmother: ASK BARKMOTHER ABOUT QUEEN.",
+          "goal": "Tell the Barkmother: DISCUSS QUEEN WITH BARKMOTHER.",
           "on": {
             "ask": "barkmother",
             "about": "queen"

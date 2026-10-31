@@ -206,6 +206,10 @@
           "text": "The Fallen Star is alive, and angry. Its heart is a relic of yours, I think. Its starfire can't be stopped. Its ray can be dodged.",
           "starts": "st_heart"
         }
+      },
+      "lure": {
+        "sense": "{Where}, the squeak of a great brass telescope turning.",
+        "rumour": "Ilun the star-reader is counting fallen stars."
       }
     },
     "crystal_golem_1": {
@@ -444,7 +448,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Ilun: ASK ILUN ABOUT SHARDS.",
+          "goal": "Tell Ilun: DISCUSS SHARDS WITH ILUN.",
           "on": {
             "ask": "ilun",
             "about": "shards"
@@ -481,7 +485,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Show Ilun: ASK ILUN ABOUT HEART.",
+          "goal": "Show Ilun: DISCUSS HEART WITH ILUN.",
           "on": {
             "ask": "ilun",
             "about": "heart"

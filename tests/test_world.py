@@ -262,7 +262,7 @@ async def test_rooms_list_npcs_and_players_as_cards(world):
         "id": "npc:marta", "kind": "npc", "name": "Marta", "label": "Human Innkeeper",
         "description": "round-faced, sleeves rolled up", "hp": 30, "max_hp": 30, "icon": "🍺",
         "base_disposition": "friendly", "disposition": "friendly", "faction": "The Folk of Harrowgate",
-        "attacks": [], "immortal": False, "topics": ["millbrook", "redcaps", "work"],
+        "attacks": [], "immortal": False, "topics": ["millbrook", "place", "quests", "redcaps", "rumours", "work"], "rapport": "stranger",
     }
     assert room["safe"] is True
     assert room["features"] == ["bar", "ground", "hearth"]

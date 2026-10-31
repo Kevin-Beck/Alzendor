@@ -52,7 +52,7 @@ Open <http://localhost:8001> and <http://localhost:8002> in two windows. Each
 one is served by a different server, and both are in the same world. Create an
 account in each, then a character (a class, an ancestry and a background), and
 play through your background's starting realm: it teaches moving, looking,
-talking (`ASK <name> ABOUT <topic>`), quests, fighting and the weather, and
+talking (`DISCUSS <topic>`), quests, fighting and the weather, and
 ends with a journey into the world proper. Try `help` for every command.
 
 The game writes commands in capitals (`TRAVEL VILLAGE GREEN`, `HELP`) so they
@@ -61,9 +61,11 @@ lowercase words are what you fill in (`EQUIP <gear> <slot>`).
 
 The web client is built around the map:
 
-- **Layout.** The map and log are on the left, and the room, weather, loadout
-  and who's here are on the right. Drag the bar between the two sides, or the
-  bar between the map and the log, to resize them. Focus a bar and use the
+- **Layout.** At the top left, the weather and the map side by side, the same
+  size; under them, across the full width, the pinned quest line, the log and
+  the command box. The right side, top to bottom, is here and now: the room,
+  who's here, your target, your slots. Drag the bar between the two sides, or the
+  bar between the top and the log, to resize them. Focus a bar and use the
   arrow keys to nudge it, or double-click it to reset. Sizes are remembered
   per browser. On a phone, the panels stack instead.
 - **Map.** Routes are drawn along their waypoints as roads you can't walk
@@ -97,7 +99,7 @@ The web client is built around the map:
 
   Picking up a map (for example the sea chart in the Drowned Lantern, which
   reveals Saltmere Isle) makes the regions it shows discovered.
-- **Weather.** Four columns, always in the same order: **Sky** (a grid of
+- **Weather.** Beside the map, as big as it. Four columns, always in the same order: **Sky** (a grid of
   temperature across and energy up, with today's weather as a dot, a blurred
   patch if you can't read these skies, and the forecast as a dotted trail if
   you can), **Rain** (what's falling, and how hard), **Time** (a day/night
@@ -110,9 +112,12 @@ The web client is built around the map:
   lands; your three **slots**, each marked ▲ or ▼ with what the weather is
   doing to it; and the **defend** row (7). Your own health fills the whole
   panel faintly from the bottom, so you see it fall without looking away.
-  Hover a slot (or gear in the Inventory, or a talent, or tap it on a phone)
-  for what it is, its rarity and weather sensitivity, where on the weather
-  grid it works best, and today's conditions line by line.
+  Hover a slot (or gear in the Inventory, or a talent, or worn gear, or tap
+  it on a phone) for its **card**, always laid out the same way: its name in
+  its rarity's colour and its key, what it is, an icon for its kind, then
+  ruled sections for what it does, the weather (where on the grid it works
+  best, and whether it wants rain or dry), what today's weather does to it,
+  and its story.
 - **Inventory**, **Character**, **Reputation** and **Quests** (header
   buttons). Your gear and what it does in today's weather, with buttons to
   put any piece in slot 1, 2 or 3, and how full your pack is; your class,
@@ -122,7 +127,9 @@ The web client is built around the map:
   abilities; the factions that know you, grouped by realm (home first), with
   their affinity and respect; and your quests. A badge shows when you have
   points or picks to spend, or quests on the go.
-- **Quest.** The goal of your current quest, always visible in the side panel.
+- **Quest line.** The quest you're on and what it needs next, pinned above
+  the log. Collapse it to just the name, or hide it; a new quest, or a step
+  done, opens it again. Click it for all your quests.
 - **Journeys.** On a route, your dot moves along it on the map, the room
   panel says where you are, and a travel event appears in the log as a card
   with a button for each choice.
@@ -340,8 +347,12 @@ forest), plus whatever snow and mud add. Click-to-walk paces itself to match.
 **Traps** lie in some rooms: walking in springs one unless you pass a stat
 check (a snare tests Poise, a rockfall Vigor), and the next room over always
 shows a sign for those who look ("a coil of trapper's wire in the leaves").
-`CREEP <direction>` steps in slowly and carefully, with a better chance; a
-trap you already know about is easier too, and your map marks it ⚠.
+Look at a sign and the trap's yours to know (your map marks it ⚠), with what
+to do about it. `CREEP <direction>` steps in three times as slowly, with a
+much better chance; creep into a trap you know about and you always get
+past, though it's still set for whoever comes next (and for you, next time).
+`DISARM <direction>`, from next door, is a check: pass and it's sprung
+harmlessly for everyone until it rearms; fail and it springs on you.
 **Trapsense** (an ancestry passive) warns you of traps next door.
 
 **Checks** (traps, travel events) test one stat: the chance is the
@@ -352,7 +363,7 @@ that suits the check adds 35%.
 **Day and night, and the dark.** A game day lasts an hour of real time
 (`day_minutes`). Towns keep their lamps lit, but in the wilds at night, and
 in dark rooms (caves, shuttered lofts) at any hour, you can't see or walk
-past the ways you know without a light in your hand: `WEAR TORCH`. Some
+past the ways you know without a light in your hand: `HOLD TORCH`. Some
 travel events only happen at night. A realm can have a sky of its own:
 the Stillsands' sun never sets. `SETCLOCK <hour>` (admin) pins the hour for
 testing.
@@ -416,12 +427,31 @@ you defeat drop more. The guide to places and travel is
 
 ### Quests
 
-People have things to say: a character's card lists their topics, and `ASK
-<name> ABOUT <topic>` asks. Some start quests. `QUESTS` (or the Quests
-panel) lists yours with what each needs next, and the side panel shows the
-current goal. Quests move on when you do what they ask: talk to someone,
-pick something up, go somewhere, defeat something, use an item on something
-(`USE <item> ON <thing>`), or be somewhere in the right weather. Quest items
+People have things to say ([docs/talk-and-layout.md](docs/talk-and-layout.md)).
+`DISCUSS <topic>` talks it over with your target (`DISCUSS SIGNET WITH NAN`
+for someone else; `ASK` works too), and `DISCUSS` alone, or their card, lists
+what they'll talk about **with you, now**: some topics need them to know you
+better (rapport), their people to like you, or a quest to be on, and some
+close when the moment's passed. `GREET` says hello: they remember whether
+they've met you, and say if they've work for you. Everyone answers
+`DISCUSS QUESTS`, and most `DISCUSS RUMOURS`, which often point you to
+someone with work.
+
+Someone who has work for you asks, and waits: `ACCEPT` (or `DECLINE`, except
+for the first quests, which can't be turned down). The quest you're on is
+pinned above the log. Quests move on when you do what they ask: talk to
+someone, pick something up, go somewhere, defeat something, hand something
+over (`GIVE <item> TO <someone>`), use an item on something (`USE <item> ON
+<thing>`), or be somewhere in the right weather. Stuck? `WHAT NOW` repeats
+your quest, or, with none, points you towards the nearest person with work,
+by what you can see, hear or smell. Now and then you'll notice one as you
+walk, too.
+
+**Giving and selling.** `GIVE` hands something to someone: a quest's item, a
+gift they like (one a day each, for rapport), or something they buy
+(`DISCUSS WANTS`): creatures drop claws, pelts and tusks, and people pay for
+them, a little more the better your Presence. Anything else, they won't
+take. Quest items
 are your own: two players on the same quest each find their own. A
 **priority** quest (being marooned) holds you: leaving its place any other
 way than finishing it (dying, a teleport) fails it, but logging out doesn't.
@@ -649,7 +679,9 @@ items are, who is where, NPC health) is never overwritten.
 - **`terrain_ground`** maps terrains to `open` or `rough` for walking pace
   (rooms without a terrain, and indoor rooms, are road).
 - **Items** can be `"quest": true` (each player gets their own; with no
-  `room`, only a quest hands it out). They can have `reveals`: a list of regions that become discovered for
+  `room`, only a quest hands it out), and can have `tags` (`pelt`, `claw`:
+  what buyers and likers look for) and a `value`. An item some creature drops
+  as `loot` needs no room. They can have `reveals`: a list of regions that become discovered for
   whoever picks the item up (a map), and `forecasts`: realms whose skies
   they can then read (a storm glass).
 - **NPCs** have a `name`, `label` (race/class), short `description`, longer
@@ -665,8 +697,21 @@ items are, who is where, NPC health) is never overwritten.
   attacks if it notices you), `xp` (default half its max HP), `drops` (gear ids given to
   whoever kills it), `coins` they drop, and `"immortal": true` for practice
   targets. `topics` maps what they'll talk about to a line, or to `{text,
-  starts, explains}`: `starts` a quest, and `explains` is guide text shown
-  after the line (what it means in game terms). `"trainer": true` lets players `RESPEC` there.
+  starts, explains, requires, while, heard_from, again, rapport}`: `starts` a
+  quest (offered, to ACCEPT), `explains` is guide text shown after the line
+  (what it means in game terms), `requires` (`rapport`, `level`, `affinity` /
+  `respect` with an optional `faction`, or a `quest` done) and `while` (a
+  `quest` active, optionally at a `step`) say when it's open to a player,
+  `heard_from` (NPC ids) opens it once they've discussed it with one of those,
+  `again` is said the second time, and `rapport` is gained the first.
+  For talk ([docs/talk-and-layout.md](docs/talk-and-layout.md)): `greet`
+  (`first`, `again`, `friendly`, `trusted`, `work`, `wants` lines), `lure`
+  (`sense`, with `{Where}` or `{where}`, and a `rumour`: how a quest giver
+  draws players, for WHAT NOW, lures as you walk and rumours), `wants`
+  (`says`, optional `requires`, and `items`: each an `item` or a `tag`, a
+  `price`, an optional daily `cap` and `thanks`), `likes` (items or tags
+  they'd take as a gift), `thanks`, `refuse` (said when they won't take
+  something), and `loot` (`{item, chance}` dropped for whoever kills them). `"trainer": true` lets players `RESPEC` there.
   A `"template": true` NPC has no room: ambushes copy it.
 - **Darkness.** A room with `"dark": true` is pitch dark at any hour without
   a light; an area (or room) with `"lit": true` is never dark at night.
@@ -713,9 +758,11 @@ items are, who is where, NPC health) is never overwritten.
   (`{room, quest}`)).
 - **`quests`** ([docs/quests.md](docs/quests.md)): a `name`, `start` step,
   optionally `"priority": true` with its `area`, a `giver` and `offer` (what
-  they say when another quest leads here), and `steps`, each with a
-  `goal`, `on` (one of `ask` + `about`, `get`, `enter`, `kill`, `use` + `on`,
-  `have`, `level`, `in`, `travel` (a route); any with `when`), `effects`
+  they ask when another quest leads here), `accepted` and `declined` (their
+  answer to yours), `"must": true` (it can't be declined), and `steps`, each with a
+  `goal`, `on` (one of `ask` + `about`, `get`, `enter`, `kill`, `use` + `on`
+  (a feature), `give` + `to` (an NPC), `have`, `level`, `in`, `travel` (a
+  route); any with `when`), `effects`
   (travel event effects, plus `give` (an item, slot gear or worn gear),
   `take`, `start`, `say` + `by`, `guide`, `teleport`, `resume_journey`,
   `leave_start`)
@@ -752,7 +799,10 @@ items are, who is where, NPC health) is never overwritten.
   `starting_coins`, `stage_seconds` (between waypoints), `event_chance` and
   `event_seconds` (travel events), `level_cap`, `respec_coins_per_level`,
   `armor_k` (armour's curve), `defend_cooldown_ms`, `defend_late_ms`,
-  `dodge_window_ms`, `block_window_ms` and `defend_perfect_ms`, and for the weather
+  `dodge_window_ms`, `block_window_ms` and `defend_perfect_ms`, for talk
+  `offer_beat_ms` (the pause before a next quest is offered), `lure_chance`
+  (a step's chance of noticing a quest giver's lure), `whatnow_steps` (how far
+  WHAT NOW looks) and `gift_cooldown` (seconds), and for the weather
   `weather_seed` (which draws every realm's sky; change it for different
   weather) and `weather_unit_minutes` (how fast it moves; default 30).
 - **Gear** has a `name`, `kind` (shown in `gear`; classes use some kinds),
@@ -812,8 +862,14 @@ state updates, without one:
 - `npc_timing`: an NPC starting, continuing or stopping a fight (`entity_id`,
   `active`, `target`, and `attacks` with `name`, `period_ms`, `damage`,
   `defend` and `next_ms`, by Redis's clock). Room cards carry the same as `fight`
-- `dispositions`: how each NPC in your room treats you, by entity id. Room
-  cards carry `disposition` (for you) and `base_disposition` (its nature)
+- `dispositions`: how each NPC in your room treats you, by entity id, and
+  `talk`: for each, the `topics` they'll discuss with you and their `rapport`
+  with you (a word). Room cards carry `disposition` (for you),
+  `base_disposition` (its nature), `topics` and `rapport`
+- `quest_update` (has text): a quest begun (`new`), a step done or a count
+  moved on, for the pinned quest line rather than the log
+- `lure` (has text): a pull towards a quest giver (WHAT NOW, or felt on a step)
+- `topics` (has text): what an NPC will discuss with you (`npc`, `topics`)
 - `kit`: the gear you own, your `slots`, the `items` you carry, `coins`, and
   `pack` / `pack_size`. Each piece of gear has its base numbers, `description`,
   `rarity`, `sensitivity` (1-5), `stagger_ms` and `bleed` if it has them,
@@ -920,6 +976,10 @@ tests/
 - [docs/zones.md](docs/zones.md): every zone after the starting realms (the
   Greyfold, the frontier, the dangerous places and the eleven realms): their
   plans, quests, enemies and mechanics, where they are and why.
+- [docs/talk-and-layout.md](docs/talk-and-layout.md): the next update's
+  design (not built yet): talking by target, greetings, giving and selling,
+  trust, quests handed over and pinned, traps, hold/wear/equip, the new
+  layout and gear cards.
 - [docs/journeys.md](docs/journeys.md): walking pace, traps, day and night,
   routes as waypoints, and travel events: checks, stranding, surprise combat
   and marooning.

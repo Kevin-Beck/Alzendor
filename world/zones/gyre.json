@@ -234,6 +234,10 @@
           "starts": "gy_roc"
         },
         "fall": "From Shearwater, a skiff goes down to the Long Fall. People jump from there. Some say they land."
+      },
+      "lure": {
+        "sense": "{Where}, the snap of kite-sails high in the wind.",
+        "rumour": "Skymaster Tavi needs flyers."
       }
     },
     "storm_hawk_1": {
@@ -674,7 +678,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Tavi: ASK TAVI ABOUT KITES.",
+          "goal": "Tell Tavi: DISCUSS KITES WITH TAVI.",
           "on": {
             "ask": "tavi",
             "about": "kites"
@@ -702,7 +706,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Tavi: ASK TAVI ABOUT ROC.",
+          "goal": "Tell Tavi: DISCUSS ROC WITH TAVI.",
           "on": {
             "ask": "tavi",
             "about": "roc"

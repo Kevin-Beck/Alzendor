@@ -169,12 +169,21 @@ quests follow.
 - **Quest items are personal.** An item marked `quest` is seen and picked up
   by each player on that quest step separately, so two players never fight
   over the one plank.
-- **Using items:** `USE <item> ON <thing>` (slots stay `USE <number>`).
+- **Using and giving items:** `USE <item> ON <thing>` for things (slots stay
+  `USE <number>`); `GIVE <item> TO <someone>` hands something over, and
+  quests wait for it with `give` + `to`.
 - **NPC topics:** NPCs get `topics` in the seed (`{"work": "The rats are at
-  it again…", "starts": "rats"}`), answered through `ASK <npc> ABOUT
-  <topic>`. People talk in their own words; a topic's `explains` follows as
-  guide text with the commands and mechanics. The target card lists an NPC's topics so talking is never a
-  guessing game.
+  it again…", "starts": "rats"}`), talked over with `DISCUSS <topic>`.
+  People talk in their own words; a topic's `explains` follows as guide text
+  with the commands and mechanics. The target card lists the topics an NPC
+  will discuss with you, so talking is never a guessing game, and some only
+  open as they get to know you or as a quest goes on
+  ([talk-and-layout.md](talk-and-layout.md)).
+- **Offers and answers:** a topic that `starts` a quest, or a quest offered
+  when the last one is handed in, waits for `ACCEPT` (or `DECLINE`, unless
+  it's `"must": true`); `PLAYER:<id>:offer` holds it. A declined quest is
+  offered again by `DISCUSS QUESTS`. Whoever gave a quest gets rapport when
+  it's done.
 - **Priority quests:** a quest marked `priority` (being marooned) is pinned
   in the panel, and it ends, failed, if you leave its area any way but by
   finishing it: death, a teleport. Logging out doesn't end it.

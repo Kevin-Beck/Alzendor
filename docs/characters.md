@@ -226,8 +226,8 @@ tutorial.
   its own mild weather and the clock. Three or four areas of 5–10 rooms each.
 - **What it teaches**, in order, through the story: first a small quest
   (moving, looking, asking, getting and using things). Then a **lesson** from
-  a local (Pell, Aunt Brisa, Maud, Nan): `ASK … ABOUT WEATHER` explains the
-  weather panel, `ASK … ABOUT SENSITIVITY` explains weather sensitivity and
+  a local (Pell, Aunt Brisa, Maud, Nan): `DISCUSS WEATHER` explains the
+  weather panel, `DISCUSS SENSITIVITY` explains weather sensitivity and
   rarity (and hands you a torch), and a first fight with something weak
   teaches the slots and blocking or dodging (7). You go back and tell them
   how it went, and that makes **level 2**: a stat point, nothing more. Then a dark room that needs the torch, the
@@ -238,15 +238,16 @@ tutorial.
   120: exactly the 300 to reach level 3 with nothing else, and a little more
   with the fights on the way.
 - **People hand you the next job.** When a quest is handed in, the person
-  says so, and a beat later (`offer_beat_ms`, 2.5 s) offers the next one out
-  loud; it starts then. A quest that ends in a fight away from them has a
+  says so, and a beat later (`offer_beat_ms`, 2.5 s) asks you to take on the
+  next one, out loud; it starts when you `ACCEPT`. The starting realms'
+  quests can't be declined. A quest that ends in a fight away from them has a
   last step to go back and tell them, so the handover happens face to face.
 - **Two voices.** People talk like people who live there ("a merchant who
   can't read the sky gets rained on with her silks out"). What that means
   in game terms (the four parts of the weather panel, the sensitivity pips,
   how travel works) follows as **guide text**, set apart in the log.
 - **Leaving:** the last quest's operator (a captain, a carter, a caravan
-  master) explains travel when you `ASK … ABOUT TRAVEL`: where routes leave
+  master) explains travel when you `DISCUSS TRAVEL`: where routes leave
   from, `TRAVEL` to list them, fares and stages, and that this one is for
   good. Only then does `TRAVEL` show the way out, and you take it yourself
   (`TRAVEL COG`, `CARAVAN`, `BARGE` or `CART`). The journey arrives in

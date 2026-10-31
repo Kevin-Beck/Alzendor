@@ -128,11 +128,21 @@ async def test_worn_gear_comes_with_the_class_and_background(world):
     await world.call("wear", "kevin", "torch")
     assert texts(await drain(kevin)) == ["You don't have anything called 'torch' to wear."]
     await world.redis.sadd("PLAYER:kevin:wardrobe", "torch", "apprentice_orb")
-    await world.call("wear", "kevin", "torch")  # one hand: the torch or the shield
-    assert texts(await drain(kevin))[0] == "You take up the Pitch Torch, and put away the Round Shield. It lights the way."
+    await world.call("hold", "kevin", "torch")  # one hand: the torch or the shield
+    assert texts(await drain(kevin))[0] == "You hold the Pitch Torch, and put away the Round Shield. It lights the way."
     assert await world.redis.hget("PLAYER:kevin:worn_stats", "armor") == "8"
     await world.call("wear", "kevin", "orb")
     assert texts(await drain(kevin)) == ["A Fighter can't use an orb like the Apprentice's Orb."]
+    # WEAR a hand item holds it, and says so; HOLD a hat doesn't; EQUIP does either.
+    await world.call("wear", "kevin", "shield")
+    assert texts(await drain(kevin))[0].endswith("(HOLD is for things in your hand.)")
+    await world.call("hold", "kevin", "cap")
+    assert texts(await drain(kevin)) == ["The Knitted Cap isn't something to hold: WEAR KNITTED CAP."]
+    await world.call("remove", "kevin", "head")
+    await world.call("equip", "kevin", "cap")
+    await world.call("equip", "kevin", "torch")
+    assert await world.redis.hgetall("PLAYER:kevin:worn") == {
+        "head": "knitted_cap", "chest": "mail_shirt", "legs": "leather_breeches", "hand": "torch"}
 
 
 async def test_worn_stats_count(world):
@@ -239,10 +249,17 @@ async def test_a_starting_realm_from_start_to_finish(world):
     await do("move", "kevin", "west")
     await do("get", "kevin", "purse")
     await do("move", "kevin", "east")
-    await do("use_item", "kevin", "purse", "nan")
-    # Nan's lesson: the sky, how weather works on gear (and a torch), and a first fight.
+    await do("give", "kevin", "purse", "nan")
+    # Nan's lesson: the sky, how weather works on gear (and a torch), and a first fight. She asks first.
     events = await drain(kevin)
-    assert 'Nan Gristle says, "Good. Before real work, you learn the sky. Ask me about the weather."' in texts(events)
+    assert any(t.startswith('Nan Gristle says, "Good. You\'ve quick hands. Before real work') for t in texts(events))
+    assert of_type(events, "guide")[-1]["text"] == "Type ACCEPT to take this on."  # no turning this one down
+    assert not any(t.startswith("New quest") for t in texts(of_type(events, "system")))  # that's for the pinned line
+    await do("decline", "kevin")
+    assert texts(await drain(kevin)) == ["This one isn't one to turn down: type ACCEPT."]
+    await do("accept", "kevin")
+    events = await drain(kevin)
+    assert of_type(events, "quest_update")[0]["text"].startswith("New quest: Gutter Weather.")
     await do("ask", "kevin", "nan", "weather")
     events = await drain(kevin)
     assert of_type(events, "say")[-1]["text"].startswith('Nan Gristle says, "Rain empties the streets.')
@@ -258,7 +275,8 @@ async def test_a_starting_realm_from_start_to_finish(world):
     events = await drain(kevin)
     assert of_type(events, "character")[-1]["level"] == 2
     assert of_type(events, "character")[-1]["talent_picks"] == 0  # level 2 is a stat point, no talent
-    assert any(t.startswith('Nan Gristle says, "Now, real work. The magistrate\'s signet ring.') for t in texts(events))
+    assert any(t.startswith('Nan Gristle says, "If you don\'t mind, I\'ve a real job for you') for t in texts(events))
+    await do("accept", "kevin")
     assert await world.redis.hget("PLAYER:kevin:quest:lw_signet", "step") == "steal"
     for nid in ("guard_dog",):
         await world.redis.srem("ROOM:magistrates_house:npcs", nid)  # the dog is dealt with
@@ -267,20 +285,21 @@ async def test_a_starting_realm_from_start_to_finish(world):
         await do("move", "kevin", direction)
     await do("move", "kevin", "north")  # the house is dark: no way up the stairs without a light
     assert await world.redis.get("PLAYER:kevin:room") == "magistrates_house"
-    await do("wear", "kevin", "torch")
+    await do("hold", "kevin", "torch")
     await do("move", "kevin", "north")
     await do("get", "kevin", "signet")
     for direction in ("south", "west", "west", "west"):
         await do("move", "kevin", direction)
-    await do("use_item", "kevin", "signet", "nan")
+    await do("give", "kevin", "signet", "nan")
+    await do("accept", "kevin")
     assert await world.redis.hget("PLAYER:kevin:quests", "lw_hot") == "active"
     await world.redis.delete("ROOM:rooftops:npcs")  # the watch looks the other way
     for direction in ("east", "east", "east", "north", "east", "south"):
         await do("move", "kevin", direction)
     events = await drain(kevin)
-    assert "Too Hot: Joss the carter owes Nan a favour: ASK JOSS ABOUT TRAVEL." in texts(events)
+    assert "Too Hot: Joss the carter owes Nan a favour: DISCUSS TRAVEL WITH JOSS." in texts(events)
 
-    await do("ask", "kevin", "joss", "travel")  # how travel works; nobody's put on the road yet
+    await do("discuss", "kevin", "joss", "travel")  # how travel works; nobody's put on the road yet
     events = await drain(kevin)
     assert of_type(events, "guide")[0]["text"].startswith("Travel: coaches, ferries, caravans and portals")
     assert await world.redis.get("PLAYER:kevin:room") == "cart_yard"
@@ -334,9 +353,15 @@ async def test_the_next_quest_is_offered_out_loud_a_beat_later(world):
     await world.redis.zadd("alz:quest_offers", {"kevin|cs_sky": 0})  # the beat has passed
     await world.call("tick")
     events = await drain(kevin)
-    assert of_type(events, "say")[0]["text"] == 'Aunt Brisa says, "Before you go meddling in that, learn the sky. Ask me about the weather."'
+    assert of_type(events, "say")[0]["text"] == ('Aunt Brisa says, "Before you go meddling in that, I want you to learn the sky. '
+                                                 'Will you let an old woman teach you?"')
     assert of_type(events, "say")[0]["entity_id"] == "npc:brisa"
+    assert await world.redis.hget("PLAYER:kevin:quests", "cs_sky") is None  # she's asked; she waits for an answer
+    await world.call("accept", "kevin")
+    events = await drain(kevin)
+    assert texts(events)[0] == 'Aunt Brisa says, "Good. Ask me about the weather, then."'
     assert any(t.startswith("New quest: Market Weather.") for t in texts(events))
+    assert await world.redis.hget("PLAYER:kevin:quest:cs_sky", "giver") == "brisa"
 
 
 async def test_copperstall_ends_with_your_aunt_and_a_caravan_you_choose_to_take(world):
@@ -346,10 +371,11 @@ async def test_copperstall_ends_with_your_aunt_and_a_caravan_you_choose_to_take(
     await world.redis.hset("PLAYER:kevin:quests", "cs_rats", "active")
     await world.redis.hset("PLAYER:kevin:quest:cs_rats", mapping={"step": "back", "count": 0})  # the Rat King is dead
     await drain(kevin)
-    await world.call("ask", "kevin", "thorne", "rats")
+    await world.call("discuss", "kevin", "thorne", "rats")
     said = texts(await drain(kevin))
     assert any(t.startswith('Guildmaster Thorne says, "You\'ve done more for this guild') for t in said)
-    assert any(t.startswith("New quest: Your Own Road. Ask Aunt Brisa") for t in said)
+    await world.call("accept", "kevin")
+    assert any(t.startswith("New quest: Your Own Road. Ask Aunt Brisa") for t in texts(await drain(kevin)))
 
     await world.call("goto", "kevin", "stall_row")
     await world.call("ask", "kevin", "brisa", "future")

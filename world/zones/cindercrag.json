@@ -251,6 +251,10 @@
         },
         "caravan": "The Ash Road caravan goes east from here, to the Emberwaste. Saffa runs it. You'd want a reason to go.",
         "shaft": "The old shaft at the Deep Face goes down into the Underdeep. The air down there kills. Don't."
+      },
+      "lure": {
+        "sense": "{Where}, the crack of stone and the shouts of quarrymen.",
+        "rumour": "Foreman Dunstan's short of men at the quarry."
       }
     },
     "slagborn_1": {
@@ -450,10 +454,10 @@
           "then": "back"
         },
         "back": {
-          "goal": "Bring it back to Foreman Dunstan: USE CASE ON DUNSTAN.",
+          "goal": "Bring it back to Foreman Dunstan: GIVE CASE TO DUNSTAN.",
           "on": {
-            "use": "survey_case",
-            "on": "dunstan"
+            "give": "survey_case",
+            "to": "dunstan"
           },
           "effects": [
             {
@@ -485,7 +489,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Dunstan: ASK DUNSTAN ABOUT RAIDERS.",
+          "goal": "Tell Dunstan: DISCUSS RAIDERS WITH DUNSTAN.",
           "on": {
             "ask": "dunstan",
             "about": "raiders"
@@ -513,7 +517,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Dunstan: ASK DUNSTAN ABOUT BRAKKA.",
+          "goal": "Tell Dunstan: DISCUSS BRAKKA WITH DUNSTAN.",
           "on": {
             "ask": "dunstan",
             "about": "brakka"

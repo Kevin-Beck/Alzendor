@@ -108,17 +108,56 @@ async def test_a_trap_springs_unless_you_pass_a_check(world):
     assert not [t for t in texts(await drain(kevin)) if "snare" in t.lower()]
 
 
-async def test_going_carefully_and_knowing_help(world):
+async def test_creeping_helps_and_reading_the_sign_as_well_gets_you_past(world):
     kevin = await enter(world, "kevin")
     await walk(world, "kevin", *TO_SNARE)
-    await world.redis.sadd("PLAYER:kevin:traps", "mossy_clearing")
-    # Base 30% (fair) + 25% careful + 25% known = 80%: a roll of 0.75 passes.
+    # Creeping without knowing: base 30% (fair) + 50% = 80%, so a roll of 0.75 passes.
     await world.redis.rpush("alz:test_rolls", 0.75)
     await drain(kevin)
     await world.call("move", "kevin", "northwest", "careful")
     events = await drain(kevin)
     assert "You spot a poacher's snare among the moss, and step over it. (Poise check)" in texts(events)
     assert "Kevin creeps northwest." in texts(events)
+
+    # Reading the sign, then creeping: always past, and the snare's still set.
+    await walk(world, "kevin", "southeast")
+    await world.redis.srem("PLAYER:kevin:traps", "mossy_clearing")
+    await world.call("look", "kevin", "wire")
+    events = await drain(kevin)
+    assert of_type(events, "guide")[0]["text"].startswith("Something is set northwest: a poacher's snare. CREEP NORTHWEST")
+    await world.redis.rpush("alz:test_rolls", 0.99)  # it wouldn't be needed
+    await world.call("move", "kevin", "northwest", "careful")
+    assert "You creep past a poacher's snare, testing every step. It is still set behind you." in texts(await drain(kevin))
+    assert await world.redis.lpop("alz:test_rolls") == "0.99"
+    assert not await world.redis.exists("ROOM:mossy_clearing:trap_sprung")
+
+    # Walking in, knowing or not, it's the usual check.
+    await walk(world, "kevin", "southeast")
+    await world.redis.rpush("alz:test_rolls", 0.5)
+    await walk(world, "kevin", "northwest")
+    assert await world.redis.exists("ROOM:mossy_clearing:trap_sprung")
+
+
+async def test_disarming_a_trap_is_a_gamble(world):
+    kevin = await enter(world, "kevin")
+    await walk(world, "kevin", *TO_SNARE)
+    await drain(kevin)
+    await world.call("disarm", "kevin", "northwest")
+    assert texts(await drain(kevin)) == ["You don't know of anything to disarm that way. LOOK around first."]
+    await world.call("look", "kevin", "wire")
+    await world.redis.rpush("alz:test_rolls", 0.1)
+    await world.call("disarm", "kevin", "northwest")
+    assert "You disarm a poacher's snare. It will be a while before anyone sets it again. (Poise check)" in texts(await drain(kevin))
+    assert await world.redis.exists("ROOM:mossy_clearing:trap_sprung")  # safe for anyone, until it rearms
+
+    await world.redis.delete("ROOM:mossy_clearing:trap_sprung")
+    await world.redis.hset("ACCOUNT:kevin", "hp", 50)
+    hp = 50
+    await world.redis.rpush("alz:test_rolls", 0.99)
+    await world.call("disarm", "kevin", "northwest")
+    said = texts(await drain(kevin))
+    assert "Your hand slips. (Poise check)" in said and "A loop of wire snaps tight around your ankle and yanks you off your feet. (8)" in said
+    assert int(await world.redis.hget("ACCOUNT:kevin", "hp")) == hp - 8
 
 
 async def test_trapsense_marks_traps_next_door(world):
@@ -365,9 +404,11 @@ async def test_npcs_talk_about_their_topics(world):
     kevin = await enter(world, "kevin")
     await world.call("goto", "kevin", "training_yard")
     holt = next(e for e in of_type(await drain(kevin), "room")[-1]["room"]["entities"] if e["id"] == "npc:holt")
-    assert holt["topics"] == ["training"]  # the card says what to ask about
-    await world.call("ask", "kevin", "holt", "training")
+    assert holt["topics"] == ["quests", "rumours", "training"]  # the card says what to discuss
+    assert holt["rapport"] == "stranger"
+    await world.call("discuss", "kevin", "holt", "training")
     assert texts(await drain(kevin))[-1].startswith('Sergeant Holt says, "Want to unlearn your talents')
-    await world.call("ask", "kevin", "holt", "dragons")
-    assert texts(await drain(kevin))[-1] == (
-        "Sergeant Holt doesn't have much to say about that. (Try asking about training, the weather, or passage.)")
+    await world.call("discuss", "kevin", "holt", "dragons")
+    assert texts(await drain(kevin))[-1] == 'Sergeant Holt says, "Can\'t help you with that, I\'m afraid."'
+    await world.call("discuss", "kevin", "holt", "")
+    assert texts(await drain(kevin)) == ["Sergeant Holt will discuss: quests, rumours, training. (DISCUSS <topic>)"]

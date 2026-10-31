@@ -192,6 +192,10 @@
         },
         "mallet": "The bell mallet. Mind you don't drop it in the nave.",
         "font": "The Font in the undercroft. When it rains, it opens onto Mirefall, they say, where the rain never stops. I've never dared."
+      },
+      "lure": {
+        "sense": "{Where}, a lamp burning in a gatehouse window.",
+        "rumour": "Brother Aldous at the abbey gate needs help with the drowned brothers."
       }
     },
     "drowned_monk_1": {
@@ -437,7 +441,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Aldous: ASK ALDOUS ABOUT BROTHERS.",
+          "goal": "Tell Aldous: DISCUSS BROTHERS WITH ALDOUS.",
           "on": {
             "ask": "aldous",
             "about": "brothers"
@@ -467,10 +471,10 @@
           "then": "back"
         },
         "back": {
-          "goal": "Bring it to Aldous: USE LEDGER ON ALDOUS.",
+          "goal": "Bring it to Aldous: GIVE LEDGER TO ALDOUS.",
           "on": {
-            "use": "abbots_ledger",
-            "on": "aldous"
+            "give": "abbots_ledger",
+            "to": "aldous"
           },
           "effects": [
             {
@@ -494,7 +498,7 @@
       "start": "mallet",
       "steps": {
         "mallet": {
-          "goal": "Ask Aldous for the bell mallet: ASK ALDOUS ABOUT MALLET.",
+          "goal": "Ask Aldous for the bell mallet: DISCUSS MALLET WITH ALDOUS.",
           "on": {
             "ask": "aldous",
             "about": "mallet"
@@ -523,7 +527,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Aldous: ASK ALDOUS ABOUT FONT.",
+          "goal": "Tell Aldous: DISCUSS FONT WITH ALDOUS.",
           "on": {
             "ask": "aldous",
             "about": "font"

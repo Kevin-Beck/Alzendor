@@ -250,7 +250,17 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [x] Eleven realms (10–20), each reached from where it belongs, with the Tempest Throne behind three relics
 - [x] Exposure and its protections and shelters; watchful NPCs to sneak past; NPCs out only at certain times; deadly tags
 
+### 17. Talk, items and layout ([docs/talk-and-layout.md](docs/talk-and-layout.md))
+- [x] DISCUSS by target, listing only the topics open to you; standard topics; GREET; people who remember you
+- [x] Rapport per NPC; topics gated by rapport, reputation, level and quests, opening, spreading and closing with the story
+- [x] Quests offered out loud and ACCEPTed (or DECLINEd, except the first ones); the pinned quest line; WHAT NOW and lures
+- [x] GIVE (quests hand things over with it), gifts once a day, creature loot and people who buy it, haggling by Presence
+- [x] HOLD, WEAR and EQUIP for worn gear; traps: read the sign and creep to sneak past, or DISARM
+- [x] Weather beside the map with the log underneath; a bigger, readable weather panel; gear cards
+
 ### Next
+- [ ] Write backgrounds, rumours, likes and wants for the people of the frontier, dangerous places and realms
+- [ ] The here-and-now panel's redesign (the combat side), on top of the new layout
 - [ ] Balance the zones with real players: XP per level, gear against NPC damage, how often the big blows land
 - [ ] Shops, so gear isn't only quest rewards and drops; more slot gear per tier for each class
 - [ ] NPCs that move between rooms (the Hollow Rider riding the moor; patrols to time)
@@ -262,7 +272,7 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [ ] More travel events, pocket areas and ambushes; travel events on foot
 - [ ] Quests: start with small state machines driven by deeds, begun by talking to NPCs (see docs/quests.md)
 - [ ] More deeds for cultures to judge: looting, sparing, arena fights, deception, witnesses (see docs/design.md)
-- [ ] NPCs that talk back (topics), and choosing between abilities at some levels
+- [ ] Choosing between abilities at some levels
 - [ ] Character creation: player race/class (cards say "Adventurer" for now)
 - [ ] NPCs that move or wander (publish room events like players do)
 - [ ] More combat: potions that run out, gear to find or buy beyond drops and levels, balancing gear and NPCs, NPCs that heal or call for help

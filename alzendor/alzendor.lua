@@ -203,7 +203,6 @@ local function npc_card(nid)
     description = npc.description or '', hp = tonumber(npc.hp) or max_hp, max_hp = max_hp,
     icon = (npc.icon or '') ~= '' and npc.icon or nil, base_disposition = npc.disposition or 'neutral',
     faction = faction or nil, attacks = attacks, immortal = npc.immortal == '1', wary = (npc.notice or '') ~= '' or nil,
-    topics = next(decode(npc.topics)) and list(sorted(list_keys(decode(npc.topics)))) or nil,
   }
 end
 
@@ -1031,10 +1030,15 @@ local function factions_of(pid)
 end
 
 -- Tells a player how each NPC in the room treats them.
+-- With them, what each will discuss with the player and how well they know
+-- them (talk: card id -> {topics, rapport}), since that's theirs alone too.
 local function dispositions_event(pid, rid)
-  local map = {}
-  for _, nid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':npcs')) do map['npc:' .. nid] = disposition_for(pid, nid) end
-  return emit('PLAYER:' .. pid, {type = 'dispositions', dispositions = map})
+  local map, talk = {}, {}
+  for _, nid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':npcs')) do
+    map['npc:' .. nid] = disposition_for(pid, nid)
+    if travel.talk_card then talk['npc:' .. nid] = travel.talk_card(pid, nid) end
+  end
+  return emit('PLAYER:' .. pid, {type = 'dispositions', dispositions = map, talk = talk})
 end
 
 -- Safe places: inns, shrines, camps. Leaving the world there is instant;
@@ -1095,6 +1099,8 @@ local function room_event(pid, rid, cause)
     if not owner or owner == pid then
       local card = npc_card(nid)
       card.disposition, card.fight = disposition_for(pid, nid), npc_fight(nid)
+      local talk = travel.talk_card and travel.talk_card(pid, nid) or {}
+      card.topics, card.rapport = talk.topics, talk.rapport
       entities[#entities + 1] = card
     end
   end
@@ -1630,6 +1636,7 @@ local function pack_count(pid)
   end
   return redis.call('SCARD', 'PLAYER:' .. pid .. ':inv') + loose
 end
+travel.pack_full = function(pid) return pack_count(pid) >= rule('pack_size', 12) end
 
 -- The gear a player owns, fastest first.
 local function owned_gear(pid)
@@ -1868,6 +1875,8 @@ local function inspect(pid, rid, word)
   local kind, id, display, description = resolve(pid, rid, word)
   if not kind then return notice(pid, "You don't see that here.") end
   emit('PLAYER:' .. pid, {type = 'inspect', target = id, text = description or ('You see nothing special about ' .. display .. '.')})
+  local trapped = kind == 'feature' and redis.call('HGET', 'ROOM:' .. rid .. ':signs', id)
+  if trapped and travel.read_sign then travel.read_sign(pid, rid, trapped) end
   if kind ~= 'self' and kind ~= 'carried' then
     emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = 'inspect', target = id, text = name_of(pid) .. ' examines ' .. display .. '.'})
   end
@@ -1916,13 +1925,18 @@ local function hurt(pid, amount)
   return false
 end
 
-function traps.spring_trap(pid, rid, careful)
+-- Walking in, it's the trap's check. Creeping, a big bonus; creeping in when
+-- you know it's there, you always get past, and it's still set behind you.
+-- `force` (a botched disarming) springs it with no check.
+function traps.spring_trap(pid, rid, careful, force)
   local trap = decode(redis.call('GET', 'ROOM:' .. rid .. ':trap'))
   if not trap.name or redis.call('EXISTS', 'ROOM:' .. rid .. ':trap_sprung') == 1 then return end
   local known = redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':traps', rid) == 1
-  local bonus = (careful and 0.25 or 0) + (known and 0.25 or 0)
+  if careful and known and not force then
+    return notice(pid, 'You creep past ' .. trap.name .. ', testing every step. It is still set behind you.')
+  end
   traps.know_trap(pid, rid)
-  if passes(pid, trap.stat or 'poise', trap.difficulty, bonus) then
+  if not force and passes(pid, trap.stat or 'poise', trap.difficulty, careful and 0.5 or 0) then
     return notice(pid, (trap.avoid or ('You spot ' .. trap.name .. ' just in time, and step around it.')) .. ' (' .. capitalize(trap.stat or 'poise') .. ' check)')
   end
   redis.call('SET', 'ROOM:' .. rid .. ':trap_sprung', '1', 'PX', math.floor((trap.rearm or 120) * 1000))
@@ -2052,11 +2066,13 @@ local function finish_move(pid, rid, dir, dest, careful)
   if redis.call('GET', 'PLAYER:' .. pid .. ':room') ~= dest then return end -- the cold (or worse) was the end of them
   aggro(pid, dest, careful)
   if travel.quest then travel.quest(pid, 'enter', {room = dest}) end
+  if travel.maybe_lure then travel.maybe_lure(pid, dest) end
 end
 
 local WADING = {
   snow = {'You take high steps, trying to clear the snow that impedes you.', ' starts wading %s through the snow.'},
   mud = {'Your boots sink into the mud with every step.', ' squelches off %s through the mud.'},
+  creep = {'You creep forward, testing every step.', ' starts creeping %s, testing every step.'},
 }
 
 -- Each step takes the time to cross the room you step into (step_ms), so a
@@ -2074,11 +2090,13 @@ redis.register_function('move', action(function(pid, rid, args)
     return notice(pid, "It's too dark to find a way " .. dir .. '. You need a light in your hand: WEAR a torch.')
   end
   local careful = args[3] == 'careful'
-  local cooldown = step_ms(pid, dest) * (careful and 2 or 1)
+  local cooldown = step_ms(pid, dest)
   if cooldown > 0 and not redis.call('SET', 'PLAYER:' .. pid .. ':moved', '1', 'NX', 'PX', cooldown) then
     return notice(pid, 'You need a moment to find your footing.')
   end
   local delay, cause = travel_delay(pid, rid, dest)
+  -- Creeping, each step takes three times as long (as well as any snow or mud).
+  if careful and step_ms(pid, dest) > 0 then delay, cause = (delay or 0) + 3 * step_ms(pid, dest), 'creep' end
   if delay == 0 then return finish_move(pid, rid, dir, dest, careful) end
   redis.call('HSET', 'PLAYER:' .. pid .. ':pending', 'dir', dir, 'from', rid, 'careful', careful and '1' or '')
   redis.call('PEXPIRE', 'PLAYER:' .. pid .. ':pending', delay + 10000)
@@ -2646,13 +2664,15 @@ local function quests_event(pid)
     local step = step_of(pid, qid, def)
     local s = (def.steps or {})[step or ''] or {}
     local on = s.on or {}
+    local state = hgetall('PLAYER:' .. pid .. ':quest:' .. qid)
     out[#out + 1] = {id = qid, name = def.name or qid, status = status, priority = def.priority or false,
-      goal = status == 'active' and s.goal or nil, count = tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':quest:' .. qid, 'count')) or 0,
-      need = on.count}
+      goal = status == 'active' and s.goal or nil, count = tonumber(state.count) or 0,
+      need = on.count, since = tonumber(state.since) or 0}
   end
   table.sort(out, function(a, b)
     if (a.status == 'active') ~= (b.status == 'active') then return a.status == 'active' end
     if a.priority ~= b.priority then return a.priority end
+    if a.since ~= b.since then return a.since > b.since end -- the latest first: the one you're on
     return a.name < b.name
   end)
   emit('PLAYER:' .. pid, {type = 'quests', quests = out})
@@ -2692,6 +2712,7 @@ local function trigger_matches(pid, on, kind, data)
   if kind == 'ask' and on.ask then return on.ask == data.npc and (not on.about or on.about == data.topic) and quest_when(pid, on.when) end
   if kind == 'get' and on.get then return on.get == data.item and quest_when(pid, on.when) end
   if kind == 'travel' and on.travel then return on.travel == data.route end
+  if kind == 'give' and on.give then return on.give == data.item and (not on.to or on.to == data.npc) and quest_when(pid, on.when) end
   if kind == 'use' and on.use then return on.use == data.item and (not on.on or on.on == data.target) and quest_when(pid, on.when) end
   if kind == 'kill' and on.kill then
     local base = string.match(data.npc, '^([^~]+)') or data.npc
@@ -2703,6 +2724,8 @@ end
 local quest_effects -- below: effects can start quests, which can finish at once
 
 local function finish_quest(pid, qid, status)
+  local giver = redis.call('HGET', 'PLAYER:' .. pid .. ':quest:' .. qid, 'giver')
+  if giver and status == 'done' and travel.add_rapport then travel.add_rapport(pid, giver, 2) end
   redis.call('HSET', 'PLAYER:' .. pid .. ':quests', qid, status)
   redis.call('DEL', 'PLAYER:' .. pid .. ':quest:' .. qid)
   local def = quest_def(qid)
@@ -2726,15 +2749,15 @@ local function quest_progress(pid, kind, data)
         moved = true
         if count >= ((step.on or {}).count or 1) then
           if step['then'] then
-            redis.call('HSET', key, 'step', step['then'], 'count', 0)
+            redis.call('HSET', key, 'step', step['then'], 'count', 0, 'since', now_ms())
             local next_step = def.steps[step['then']] or {}
-            if next_step.goal then notice(pid, (def.name or qid) .. ': ' .. next_step.goal) end
+            if next_step.goal then emit('PLAYER:' .. pid, {type = 'quest_update', quest = qid, text = (def.name or qid) .. ': ' .. next_step.goal}) end
           else
             finish_quest(pid, qid, 'done')
           end
           if quest_effects(pid, step.effects) == 'over' then break end
         elseif step.on.count then
-          notice(pid, (def.name or qid) .. ': ' .. count .. ' / ' .. step.on.count)
+          emit('PLAYER:' .. pid, {type = 'quest_update', quest = qid, text = (def.name or qid) .. ': ' .. count .. ' / ' .. step.on.count})
         end
       end
     end
@@ -2753,8 +2776,9 @@ local function start_quest(pid, qid)
   if not def.steps then return false end
   redis.call('HSET', 'PLAYER:' .. pid .. ':quests', qid, 'active')
   redis.call('DEL', 'PLAYER:' .. pid .. ':quest:' .. qid)
-  redis.call('HSET', 'PLAYER:' .. pid .. ':quest:' .. qid, 'step', def.start, 'count', 0)
-  notice(pid, 'New quest: ' .. (def.name or qid) .. '. ' .. ((def.steps[def.start] or {}).goal or ''))
+  redis.call('HSET', 'PLAYER:' .. pid .. ':quest:' .. qid, 'step', def.start, 'count', 0, 'since', now_ms())
+  emit('PLAYER:' .. pid, {type = 'quest_update', quest = qid, new = true,
+    text = 'New quest: ' .. (def.name or qid) .. '. ' .. ((def.steps[def.start] or {}).goal or '')})
   quests_event(pid)
   quest_progress(pid, 'check', {})
   return true
@@ -2806,14 +2830,15 @@ do
 
   -- A quest that follows on from another is offered by its giver, out loud, a
   -- beat after the last one is handed in (alz:quest_offers, due times), and
-  -- starts then. One with no giver starts at once.
+  -- waits for the player to ACCEPT it (travel.pend). One with no giver starts
+  -- at once.
   travel.offer = function(pid, qid)
     local def = quest_def(qid)
     if not (def.giver and def.offer) then return start_quest(pid, qid) end
     local beat = rule('offer_beat_ms', 2500)
     if beat <= 0 then
       travel.npc_says(pid, def.giver, def.offer)
-      return start_quest(pid, qid)
+      return travel.pend(pid, qid, def.giver)
     end
     redis.call('ZADD', 'alz:quest_offers', now_ms() + beat, pid .. '|' .. qid)
   end
@@ -2826,7 +2851,7 @@ do
       local def = quest_def(qid)
       if redis.call('HGET', 'ACCOUNT:' .. pid, 'created') == '1' and def.offer then
         travel.npc_says(pid, def.giver, def.offer)
-        start_quest(pid, qid)
+        travel.pend(pid, qid, def.giver)
       end
     end
   end
@@ -2889,6 +2914,8 @@ redis.register_function('use_item', action(function(pid, rid, args)
     kind, id, display = resolve(pid, rid, target)
     if not kind then return notice(pid, "You don't see that here.") end
   end
+  -- Using something on someone is giving it to them.
+  if kind == 'npc' then return travel.give_to(pid, rid, iid, id, display) end
   local touched = false
   for qid, status in pairs(hgetall('PLAYER:' .. pid .. ':quests')) do
     if status == 'active' then
@@ -2914,10 +2941,11 @@ redis.register_function('quests', action(function(pid, rid, args)
     lines[#lines + 1] = (def.name or qid) .. ' (' .. status .. ')' .. (status == 'active' and step and def.steps[step] and (': ' .. def.steps[step].goal) or '')
   end
   table.sort(lines)
-  notice(pid, #lines > 0 and ('Quests:\n  ' .. table.concat(lines, '\n  ')) or 'You have no quests yet. Talk to people: ASK <name> ABOUT <topic>.')
+  notice(pid, #lines > 0 and ('Quests:\n  ' .. table.concat(lines, '\n  ')) or 'You have no quests yet. Talk to people: GREET them, or DISCUSS QUESTS. Stuck? WHAT NOW.')
 end))
 
 travel.start_quest = start_quest
+travel.quest_def, travel.quest_status, travel.trigger_matches = quest_def, quest_status, trigger_matches
 travel.quests_event = quests_event
 end
 
@@ -3056,6 +3084,19 @@ redis.register_function('use', action(function(pid, rid, args)
   deed(pid, 'kill', id)
   if quality == 'perfect' then deed(pid, 'clean_kill', id) end
   if travel.quest then travel.quest(pid, 'kill', {npc = id, faction = npc.faction, role = npc.role}) end
+  -- Loot: claws, pelts, wings, each with a chance, into the killer's pack if there's room.
+  for _, loot in ipairs(decode(npc.loot)) do
+    if math.random() < (loot.chance or 1) then
+      local name = redis.call('HGET', 'ITEM:' .. loot.item, 'name') or loot.item
+      if travel.pack_full and travel.pack_full(pid) then
+        notice(pid, 'There was ' .. name .. ' to take, but your pack is full.')
+      else
+        redis.call('SADD', 'PLAYER:' .. pid .. ':inv', loot.item)
+        notice(pid, 'You take ' .. name .. '.')
+        kit_event(pid)
+      end
+    end
+  end
   local taken = {}
   for _, gid in ipairs(decode(npc.drops)) do
     if grant_gear(pid, gid) then taken[#taken + 1] = gear_info(gid).name end
@@ -3076,6 +3117,10 @@ end))
 -- empty one).
 redis.register_function('equip', action(function(pid, rid, args)
   local gid = match_gear(args[2])
+  -- Not slot gear: worn gear (a hat, a torch) goes where it goes.
+  if (not gid or redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':gear', gid) == 0) and travel.owns_wearable(pid, args[2]) then
+    return travel.put_on(pid, rid, args[2], 'equip')
+  end
   if not gid then return notice(pid, "There's no gear called '" .. args[2] .. "'. Type GEAR to see what you have.") end
   if redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':gear', gid) == 0 then
     return notice(pid, "You don't have " .. gear_info(gid).name .. '.')
@@ -3223,6 +3268,7 @@ redis.register_function('emote', action(function(pid, rid, args)
   local social = kind == 'npc' and SOCIAL[verb]
   if social and redis.call('SET', 'PLAYER:' .. pid .. ':social:' .. id, '1', 'NX', 'EX', rule('social_cooldown', 600)) then
     deed(pid, social, id)
+    if social == 'taunt' and travel.add_rapport then travel.add_rapport(pid, id, -1) end
   end
 end))
 
@@ -3371,6 +3417,8 @@ local function owned_wearable(pid, word)
   end
 end
 
+travel.owns_wearable = function(pid, word) return owned_wearable(pid, word) ~= nil end
+
 -- Gives a player a piece of worn gear (quest rewards). Puts it on if that place is free.
 travel.give_wearable = function(pid, wid)
   local w = wearable(wid)
@@ -3383,9 +3431,14 @@ travel.give_wearable = function(pid, wid)
   end
 end
 
-redis.register_function('wear', action(function(pid, rid, args)
-  local w = owned_wearable(pid, args[2])
-  if not w then return notice(pid, "You don't have anything called '" .. (args[2] or '') .. "' to wear.") end
+-- Wears or holds worn gear. how: 'wear' (head, chest, legs; a hand item is
+-- held, with a word about HOLD), 'hold' (hand items only) or 'equip' (either).
+travel.put_on = function(pid, rid, word, how)
+  local w = owned_wearable(pid, word)
+  if not w then return notice(pid, "You don't have anything called '" .. (word or '') .. "' to " .. how .. '.') end
+  if how == 'hold' and w.place ~= 'hand' then
+    return notice(pid, 'The ' .. w.name .. " isn't something to hold: WEAR " .. string.upper(w.name) .. '.')
+  end
   local class = catalog('classes', redis.call('HGET', 'ACCOUNT:' .. pid, 'class'))
   if not can_wear(class, w) then
     return notice(pid, 'A ' .. class.name .. " can't use " .. (TYPE_NAMES[w.type] or w.type) .. ' like the ' .. w.name .. '.')
@@ -3397,12 +3450,21 @@ redis.register_function('wear', action(function(pid, rid, args)
   local old = travel.worn(pid, w.place)
   redis.call('HSET', key, w.place, w.id)
   refresh_worn(pid)
-  notice(pid, (w.place == 'hand' and 'You take up the ' or 'You put on the ') .. w.name
-    .. (old and (', and put away the ' .. old.name) or '') .. '.' .. (w.light and ' It lights the way.' or ''))
+  notice(pid, (w.place == 'hand' and 'You hold the ' or 'You put on the ') .. w.name
+    .. (old and (', and put away the ' .. old.name) or '') .. '.' .. (w.light and ' It lights the way.' or '')
+    .. (how == 'wear' and w.place == 'hand' and ' (HOLD is for things in your hand.)' or ''))
   room_event(pid, rid, 'look') -- a light shows the ways on
   weather_event(pid)
   kit_event(pid)
   character_event(pid)
+end
+
+redis.register_function('wear', action(function(pid, rid, args)
+  travel.put_on(pid, rid, args[2], 'wear')
+end))
+
+redis.register_function('hold', action(function(pid, rid, args)
+  travel.put_on(pid, rid, args[2], 'hold')
 end))
 
 -- Takes off worn gear. args: pid, its name or its place (head, chest, legs, hand).
@@ -3702,7 +3764,7 @@ redis.register_function('weather', action(function(pid, rid, args)
         lines[#lines + 1] = '  In ' .. duration(i * unit) .. ': ' .. describe_weather(weather_in(place, now + i)) .. '.'
       end
     else
-      lines[#lines + 1] = "You can feel the weather, but you can't read these skies. Someone who knows them could teach you: ASK <name> ABOUT WEATHER."
+      lines[#lines + 1] = "You can feel the weather, but you can't read these skies. Someone who knows them could teach you: DISCUSS WEATHER."
     end
   end
   emit('PLAYER:' .. pid, {type = 'weather_report', text = table.concat(lines, '\n')})
@@ -3710,41 +3772,285 @@ redis.register_function('weather', action(function(pid, rid, args)
   kit_event(pid)
 end))
 
-local PASSAGE_WORDS = {passage = true, portal = true, travel = true, way = true, crossing = true, ferry = true, coach = true}
+-- Talk (docs/talk-and-layout.md) -----------------------------------------------
+-- DISCUSS <topic> talks with your target. An NPC's topics are listed (on its
+-- card, and by DISCUSS alone) only when they'd discuss them with you: a
+-- topic's `requires` (rapport, level, faction reputation, a quest), `while`
+-- (only during a quest, or one step of it) and `heard_from` (only once you've
+-- discussed it with one of those people). Every NPC who talks also has the
+-- standard topics: quests, wants (if they buy anything) and rumours.
+--
+-- PLAYER:<id>:rapport (NPC id -> number) is how well each NPC knows you;
+-- PLAYER:<id>:met the NPCs you've spoken with; PLAYER:<id>:discussed each
+-- "npc|topic" you've talked over; PLAYER:<id>:offer the quest someone is
+-- waiting for an answer on; PLAYER:<id>:declined (quest -> NPC) offers turned
+-- down, to be had again by DISCUSS QUESTS. (A function, not a do-block: it
+-- needs more locals than the main chunk has left.)
+;(function()
+  -- From the quests block.
+  local quest_def, quest_status, trigger_matches = travel.quest_def, travel.quest_status, travel.trigger_matches
+  local STANDARD = {work = 'quests', jobs = 'quests', job = 'quests', help = 'quests', quest = 'quests',
+    buy = 'wants', want = 'wants', selling = 'wants', yourself = 'background', family = 'background', life = 'background',
+    news = 'rumours', gossip = 'rumours', rumour = 'rumours', rumor = 'rumours', rumors = 'rumours',
+    history = 'place', here = 'place', area = 'place'}
+  local PASSAGE_WORDS = {passage = true, portal = true, travel = true, way = true, crossing = true, ferry = true, coach = true}
+  local RAPPORT = {{7, 'trusted'}, {3, 'friendly'}, {1, 'known'}, {0, 'stranger'}}
+  local DIRS8 = {'east', 'northeast', 'north', 'northwest', 'west', 'southwest', 'south', 'southeast'}
 
--- Asks an NPC about something. About the weather, an NPC who knows some skies
--- (its `forecasts`) teaches a player it's friendly with to read them. About
--- passage, it lists the routes it runs from here (see `travel`).
-redis.register_function('ask', action(function(pid, rid, args)
-  local kind, nid, display = resolve(pid, rid, args[2])
-  if not kind then return notice(pid, "You don't see them here.") end
-  if kind ~= 'npc' then return notice(pid, 'Only the locals can tell you that.') end
-  local who = capitalize(display)
-  emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = 'ask', target = 'npc:' .. nid,
-    text = name_of(pid) .. ' asks ' .. display .. ' about ' .. ((args[3] or '') ~= '' and ('the ' .. args[3]) or 'something') .. '.'})
-  -- Topics: what an NPC will talk about, and quests they start.
-  local topics = decode(redis.call('HGET', 'NPC:' .. nid, 'topics'))
-  local topic = topics[args[3] or '']
-  if not topic and PASSAGE_WORDS[args[3]] then return ask_routes(pid, rid, nid, who) end
-  if topic then
-    local text = type(topic) == 'table' and topic.text or topic
-    emit('ROOM:' .. rid, {type = 'say', entity_id = 'npc:' .. nid, target = 'pc:' .. pid, text = who .. ' says, "' .. text .. '"'})
-    -- What they mean, in game terms: NPCs talk like people who live here, and the guide explains.
-    if type(topic) == 'table' and topic.explains then emit('PLAYER:' .. pid, {type = 'guide', text = topic.explains}) end
-    if type(topic) == 'table' and topic.starts then travel.start_quest(pid, topic.starts) end
+  local function say(pid, nid, text) travel.npc_says(pid, nid, text) end
+  local function guide(pid, text) emit('PLAYER:' .. pid, {type = 'guide', text = text}) end
+  travel.guide = guide
+
+  local function rapport(pid, nid)
+    return tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':rapport', nid)) or 0
   end
-  -- The weather: an NPC who reads the sky teaches you to (as well as saying any weather topic they have).
-  local realms = args[3] == 'weather' and decode(redis.call('HGET', 'NPC:' .. nid, 'forecasts')) or {}
-  if not topic and args[3] ~= 'weather' then
-    local names = sorted(list_keys(topics))
-    return notice(pid, who .. " doesn't have much to say about that. (Try asking about "
-      .. (#names > 0 and (table.concat(names, ', ') .. ', ') or '') .. 'the weather, or passage.)')
+
+  local function rapport_word(pid, nid)
+    local n = rapport(pid, nid)
+    for _, r in ipairs(RAPPORT) do if n >= r[1] then return r[2] end end
+    return 'stranger'
   end
-  if #realms == 0 then
-    if not topic then return notice(pid, who .. " shrugs. They don't read the sky.") end
-  elseif disposition_for(pid, nid) ~= 'friendly' then
-    return notice(pid, who .. " won't share what they know with you.")
-  else
+
+  -- Whether an NPC talks at all: people do; wolves and rats don't.
+  local function speaks(npc)
+    return next(decode(npc.topics)) ~= nil or npc.proper == '1' or npc.disposition == 'friendly'
+  end
+
+  -- Changes how well an NPC knows a player (never below 0); the card and its
+  -- topics follow.
+  travel.add_rapport = function(pid, nid, n)
+    local before = rapport_word(pid, nid)
+    redis.call('HSET', 'PLAYER:' .. pid .. ':rapport', nid, math.max(0, rapport(pid, nid) + n))
+    local now = rapport_word(pid, nid)
+    if now ~= before and now ~= 'known' then -- meeting someone isn't news; being liked is
+      guide(pid, capitalize(npc_display(nid)) .. (n > 0 and ' knows you better now: ' or ' thinks less of you now: ') .. now .. '.')
+    end
+    local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+    if rid and redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then dispositions_event(pid, rid) end
+  end
+
+  -- Whether a player meets a `requires`: rapport, level, faction reputation
+  -- (the NPC's faction unless it names one), and a quest (done, unless `status` says).
+  local function meets(pid, nid, req)
+    if type(req) ~= 'table' then return true end
+    if req.rapport and rapport(pid, nid) < req.rapport then return false end
+    if req.level and level_of(pid) < req.level then return false end
+    if req.affinity or req.respect then
+      local rep = hgetall('PLAYER:' .. pid .. ':rep:' .. (req.faction or redis.call('HGET', 'NPC:' .. nid, 'faction') or ''))
+      if req.affinity and (tonumber(rep.affinity) or 0) < req.affinity then return false end
+      if req.respect and (tonumber(rep.respect) or 0) < req.respect then return false end
+    end
+    if req.quest and quest_status(pid, req.quest) ~= (req.status or 'done') then return false end
+    return true
+  end
+
+  -- Whether an NPC would discuss a topic with this player now.
+  local function open(pid, nid, name, topic)
+    if type(topic) ~= 'table' then return true end
+    if not meets(pid, nid, topic.requires) then return false end
+    local w = topic['while']
+    if w then
+      if quest_status(pid, w.quest) ~= 'active' then return false end
+      if w.step and redis.call('HGET', 'PLAYER:' .. pid .. ':quest:' .. w.quest, 'step') ~= w.step then return false end
+    end
+    if topic.heard_from then
+      for _, h in ipairs(topic.heard_from) do
+        if redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':discussed', h .. '|' .. name) == 1 then return true end
+      end
+      return false
+    end
+    return true
+  end
+
+  -- A quest an NPC could offer a player now, and how: one they're waiting on
+  -- an answer to, one the player turned down, or a topic that starts one.
+  local function work_for(pid, nid)
+    local offer = hgetall('PLAYER:' .. pid .. ':offer')
+    if offer.npc == nid then return offer.quest end
+    for qid, from in pairs(hgetall('PLAYER:' .. pid .. ':declined')) do
+      if from == nid then return qid end
+    end
+    for name, topic in pairs(decode(redis.call('HGET', 'NPC:' .. nid, 'topics'))) do
+      if type(topic) == 'table' and topic.starts and not quest_status(pid, topic.starts) and open(pid, nid, name, topic) then
+        return topic.starts
+      end
+    end
+  end
+
+  local function wants_of(pid, nid)
+    local raw = redis.call('HGET', 'NPC:' .. nid, 'wants') or ''
+    if raw == '' then return nil end
+    local wants = decode(raw)
+    if not meets(pid, nid, wants.requires) then return nil end
+    return wants
+  end
+
+  -- What an NPC will discuss with a player, sorted, or nil if they won't talk.
+  travel.topics_for = function(pid, nid)
+    local npc = hgetall('NPC:' .. nid)
+    if not speaks(npc) or disposition_for(pid, nid) == 'hostile' then return nil end
+    local out, has = {}, {}
+    for name, topic in pairs(decode(npc.topics)) do
+      if open(pid, nid, name, topic) then out[#out + 1], has[name] = name, true end
+    end
+    for _, name in ipairs({'quests', 'rumours'}) do
+      if not has[name] then out[#out + 1] = name end
+    end
+    if not has.wants and wants_of(pid, nid) then out[#out + 1] = 'wants' end
+    if not has.weather and #decode(npc.forecasts) > 0 then out[#out + 1] = 'weather' end
+    return list(sorted(out))
+  end
+
+  travel.talk_card = function(pid, nid)
+    local topics = travel.topics_for(pid, nid)
+    return {topics = topics, rapport = topics and rapport_word(pid, nid) or nil}
+  end
+
+  -- Waits for the player's answer to an offered quest.
+  travel.pend = function(pid, qid, nid)
+    redis.call('DEL', 'PLAYER:' .. pid .. ':offer')
+    redis.call('HSET', 'PLAYER:' .. pid .. ':offer', 'quest', qid, 'npc', nid)
+    redis.call('HDEL', 'PLAYER:' .. pid .. ':declined', qid)
+    guide(pid, quest_def(qid).must and 'Type ACCEPT to take this on.' or 'Type ACCEPT to take this on, or DECLINE.')
+  end
+
+  local function offer_text(qid, nid)
+    local def = quest_def(qid)
+    if def.offer then return def.offer end
+    for _, topic in pairs(decode(redis.call('HGET', 'NPC:' .. nid, 'topics'))) do
+      if type(topic) == 'table' and topic.starts == qid then return topic.text end
+    end
+    return 'I have work for you, if you want it.'
+  end
+
+  local function current_goal(pid, qid)
+    local def = quest_def(qid)
+    local step = (def.steps or {})[redis.call('HGET', 'PLAYER:' .. pid .. ':quest:' .. qid, 'step') or ''] or {}
+    return (def.name or qid) .. ': ' .. (step.goal or '')
+  end
+
+  local function discuss_quests(pid, nid)
+    local qid = work_for(pid, nid)
+    if qid then
+      say(pid, nid, offer_text(qid, nid))
+      return travel.pend(pid, qid, nid)
+    end
+    -- Already on a job of theirs: a reminder.
+    for q, status in pairs(hgetall('PLAYER:' .. pid .. ':quests')) do
+      if status == 'active' and redis.call('HGET', 'PLAYER:' .. pid .. ':quest:' .. q, 'giver') == nid then
+        say(pid, nid, "You know what I need. Get on with it.")
+        return guide(pid, current_goal(pid, q))
+      end
+    end
+    say(pid, nid, disposition_for(pid, nid) == 'friendly' and 'Nothing for you right now.' or 'Nothing for you.')
+  end
+
+  -- Which way, and how far: a compass point from the map, and a word from the walk.
+  local function whereabouts(from, to, steps)
+    local a, b = hgetall('ROOM:' .. from .. ':info'), hgetall('ROOM:' .. to .. ':info')
+    local dx, dy = (tonumber(b.x) or 0) - (tonumber(a.x) or 0), (tonumber(b.y) or 0) - (tonumber(a.y) or 0)
+    if dx == 0 and dy == 0 then return steps <= 3 and 'close by' or 'somewhere near' end -- straight up or down
+    local angle = math.atan2(-dy, dx) -- the map's y runs south
+    local dir = 'to the ' .. DIRS8[math.floor(angle / (2 * math.pi) * 8 + 0.5) % 8 + 1]
+    if steps <= 3 then return 'close by, ' .. dir end
+    if steps <= 8 then return 'off ' .. dir end
+    return 'far off ' .. dir
+  end
+
+  -- Quest givers with a lure (`sense` and `rumour` forms) within `max` steps,
+  -- with work for this player: {nid, room, steps}.
+  local function givers_near(pid, from, max, form)
+    local found, seen, frontier = {}, {[from] = true}, {from}
+    for steps = 0, max do
+      local next_ = {}
+      for _, rid in ipairs(frontier) do
+        for _, nid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':npcs')) do
+          local lure = decode(redis.call('HGET', 'NPC:' .. nid, 'lure'))
+          if lure[form] and work_for(pid, nid) then found[#found + 1] = {nid = nid, room = rid, steps = steps} end
+        end
+        for _, dest in pairs(hgetall('ROOM:' .. rid .. ':exits')) do
+          if not seen[dest] then seen[dest] = true; next_[#next_ + 1] = dest end
+        end
+      end
+      frontier = next_
+    end
+    return found
+  end
+
+  -- A lure, felt: "Far off to the west you see the light of what may be an inn."
+  local function lure_text(pid, here, giver)
+    local where = whereabouts(here, giver.room, giver.steps)
+    local text = decode(redis.call('HGET', 'NPC:' .. giver.nid, 'lure')).sense
+    text = string.gsub(text, '{Where}', function() return capitalize(where) end)
+    return (string.gsub(text, '{where}', function() return where end))
+  end
+
+  local function pick(list_)
+    return list_[math.random(#list_)]
+  end
+
+  -- Now and then on a step, a nearby quest giver's lure, felt unbidden (each
+  -- at most once a day).
+  travel.maybe_lure = function(pid, rid)
+    if math.random() >= rule('lure_chance', 0.03) then return end
+    local fresh = {}
+    for _, g in ipairs(givers_near(pid, rid, rule('whatnow_steps', 15), 'sense')) do
+      if g.steps > 0 and redis.call('EXISTS', 'PLAYER:' .. pid .. ':lured:' .. g.nid) == 0 then fresh[#fresh + 1] = g end
+    end
+    if #fresh == 0 then return end
+    local g = pick(fresh)
+    redis.call('SET', 'PLAYER:' .. pid .. ':lured:' .. g.nid, '1', 'EX', 86400)
+    emit('PLAYER:' .. pid, {type = 'lure', text = lure_text(pid, rid, g)})
+  end
+
+  -- What am I meant to be doing? An answer owed, the quest you're on, or the
+  -- pull of the nearest quest giver.
+  redis.register_function('whatnow', action(function(pid, rid, args)
+    local offer = hgetall('PLAYER:' .. pid .. ':offer')
+    if offer.quest then
+      return guide(pid, capitalize(npc_display(offer.npc)) .. ' is waiting for your answer: '
+        .. (quest_def(offer.quest).must and 'go back and ACCEPT.' or 'go back and ACCEPT or DECLINE.'))
+    end
+    local best, since
+    for qid, status in pairs(hgetall('PLAYER:' .. pid .. ':quests')) do
+      local at = tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':quest:' .. qid, 'since')) or 0
+      if status == 'active' and (quest_def(qid).priority and 1e15 or at) > (since or -1) then
+        best, since = qid, quest_def(qid).priority and 1e15 or at
+      end
+    end
+    if best then return guide(pid, current_goal(pid, best)) end
+    local givers = givers_near(pid, rid, rule('whatnow_steps', 15), 'sense')
+    if #givers == 0 then return emit('PLAYER:' .. pid, {type = 'lure', text = 'Nothing calls to you here. Towns are where work is found.'}) end
+    local nearest = givers[1].steps
+    local near = {}
+    for _, g in ipairs(givers) do if g.steps <= nearest + 1 then near[#near + 1] = g end end
+    local g = pick(near)
+    if g.steps == 0 then return guide(pid, capitalize(npc_display(g.nid)) .. ' is right here, and might have work for you: GREET them.') end
+    emit('PLAYER:' .. pid, {type = 'lure', text = lure_text(pid, rid, g)})
+  end))
+
+  -- Rumours: their own, or word of a quest giver nearby.
+  local function rumour(pid, rid, nid)
+    local heard = {}
+    for _, g in ipairs(givers_near(pid, rid, rule('whatnow_steps', 15), 'rumour')) do
+      if g.nid ~= nid then heard[#heard + 1] = g end
+    end
+    if #heard == 0 then return say(pid, nid, "Heard nothing worth repeating.") end
+    say(pid, nid, decode(redis.call('HGET', 'NPC:' .. pick(heard).nid, 'lure')).rumour)
+  end
+
+  local function deflect(pid, nid)
+    return disposition_for(pid, nid) == 'friendly' and "Can't help you with that, I'm afraid." or "Couldn't say."
+  end
+
+  -- The weather: an NPC who reads the sky teaches you to.
+  local function teach_skies(pid, nid, who, said)
+    local realms = decode(redis.call('HGET', 'NPC:' .. nid, 'forecasts'))
+    if #realms == 0 then
+      if not said then say(pid, nid, "Can't say I read the sky.") end
+      return
+    end
+    if disposition_for(pid, nid) ~= 'friendly' then return notice(pid, who .. " won't share what they know with you.") end
     local fid, names = redis.call('HGET', 'NPC:' .. nid, 'faction') or '', {}
     for _, realm in ipairs(realms) do
       if redis.call('HSETNX', 'PLAYER:' .. pid .. ':lore', realm, fid) == 1 then
@@ -3759,8 +4065,239 @@ redis.register_function('ask', action(function(pid, rid, args)
     end
     weather_event(pid)
   end
-  travel.quest(pid, 'ask', {npc = nid, topic = args[3]})
-end))
+
+  -- With no one named or targeted: the only person here who talks.
+  local function only_speaker(pid, rid)
+    local only
+    for _, nid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':npcs')) do
+      if travel.topics_for(pid, nid) then
+        if only then return nil end
+        only = nid
+      end
+    end
+    return only
+  end
+
+  local function whom(pid, rid, word)
+    if (word or '') == '' then
+      local nid = only_speaker(pid, rid)
+      if not nid then return notice(pid, 'With whom? Press Tab, or click someone.') end
+      return nid, npc_display(nid)
+    end
+    local kind, nid, display = resolve(pid, rid, word)
+    if not kind then return notice(pid, "You don't see them here.") end
+    if kind ~= 'npc' then return notice(pid, 'Only the locals can help you with that.') end
+    return nid, display
+  end
+
+  -- args: pid, who ('' for the only person here), topic ('' to list them).
+  local function discuss(pid, rid, args)
+    local nid, display = whom(pid, rid, args[2])
+    if not nid then return end
+    local who = capitalize(display)
+    local topics = travel.topics_for(pid, nid)
+    if not topics then return notice(pid, who .. ' has nothing to say to you.') end
+    local word = string.gsub(string.lower(args[3] or ''), '^the ', '')
+    if word == '' then
+      return emit('PLAYER:' .. pid, {type = 'topics', npc = 'npc:' .. nid, topics = topics,
+        text = who .. ' will discuss: ' .. table.concat(topics, ', ') .. '. (DISCUSS <topic>)'})
+    end
+    local all = decode(redis.call('HGET', 'NPC:' .. nid, 'topics'))
+    local name = all[word] and word or STANDARD[word] or word
+    emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = 'ask', target = 'npc:' .. nid,
+      text = name_of(pid) .. ' talks with ' .. display .. ' about ' .. (name == 'quests' and 'work' or word) .. '.'})
+    redis.call('SADD', 'PLAYER:' .. pid .. ':met', nid)
+    local topic = all[name]
+    if topic and not open(pid, nid, name, topic) then topic = nil end
+    if not topic and PASSAGE_WORDS[word] then return ask_routes(pid, rid, nid, who) end
+    if topic then
+      local again = redis.call('SADD', 'PLAYER:' .. pid .. ':discussed', nid .. '|' .. name) == 0
+      local t = type(topic) == 'table' and topic or {text = topic}
+      say(pid, nid, again and t.again or t.text)
+      if t.explains then guide(pid, t.explains) end
+      if t.rapport and not again then travel.add_rapport(pid, nid, t.rapport) end
+      if t.starts and not quest_status(pid, t.starts) then travel.pend(pid, t.starts, nid) end
+    elseif name == 'quests' then
+      discuss_quests(pid, nid)
+    elseif name == 'wants' and wants_of(pid, nid) then
+      say(pid, nid, wants_of(pid, nid).says or "I'm buying, if you've the right things.")
+    elseif name == 'rumours' then
+      rumour(pid, rid, nid)
+    elseif name ~= 'weather' then
+      return say(pid, nid, deflect(pid, nid))
+    end
+    if name == 'weather' then teach_skies(pid, nid, who, topic ~= nil) end
+    travel.quest(pid, 'ask', {npc = nid, topic = name})
+  end
+  redis.register_function('discuss', action(function(pid, rid, args) discuss(pid, rid, args) end))
+  redis.register_function('ask', action(function(pid, rid, args) discuss(pid, rid, args) end))
+
+  -- GREET: they answer as someone who's met you or hasn't, and say if they've
+  -- work for you. Daily, a little rapport.
+  redis.register_function('greet', action(function(pid, rid, args)
+    local nid, display = whom(pid, rid, args[2])
+    if not nid then return end
+    local who = capitalize(display)
+    emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = 'greet', target = 'npc:' .. nid, text = name_of(pid) .. ' greets ' .. display .. '.'})
+    if redis.call('SET', 'PLAYER:' .. pid .. ':social:' .. nid, '1', 'NX', 'EX', rule('social_cooldown', 600)) then deed(pid, 'greet', nid) end
+    local npc = hgetall('NPC:' .. nid)
+    if not speaks(npc) then return end
+    local friendly = disposition_for(pid, nid) == 'friendly'
+    if disposition_for(pid, nid) == 'hostile' then return notice(pid, who .. ' only glares at you.') end
+    local first = redis.call('SADD', 'PLAYER:' .. pid .. ':met', nid) == 1
+    local g, word = decode(npc.greet), rapport_word(pid, nid)
+    local line
+    if first then
+      line = g.first or (npc.proper == '1' and (npc.name .. '. ' .. (friendly and 'Good to meet you.' or 'What do you want?'))
+        or (friendly and 'Hello, stranger.' or 'What do you want?'))
+    else
+      line = (word == 'trusted' and g.trusted) or ((word == 'trusted' or word == 'friendly') and g.friendly) or g.again
+        or (friendly and 'Good to see you again.' or 'You again.')
+    end
+    say(pid, nid, line)
+    if redis.call('SET', 'PLAYER:' .. pid .. ':greeted:' .. nid, '1', 'NX', 'EX', 86400) then travel.add_rapport(pid, nid, 1) end
+    if work_for(pid, nid) then
+      say(pid, nid, g.work or 'I might have work for you, if you want it.')
+      guide(pid, 'DISCUSS QUESTS to hear it.')
+    elseif wants_of(pid, nid) then
+      say(pid, nid, g.wants or "I'm buying, if you've anything worth selling.")
+      guide(pid, 'DISCUSS WANTS to hear what.')
+    end
+  end))
+
+  redis.register_function('accept', action(function(pid, rid, args)
+    local offer = hgetall('PLAYER:' .. pid .. ':offer')
+    if not offer.quest then return notice(pid, "Nobody's waiting on an answer from you.") end
+    if redis.call('SISMEMBER', 'ROOM:' .. rid .. ':npcs', offer.npc) == 0 then
+      return notice(pid, capitalize(npc_display(offer.npc)) .. ' is waiting for your answer. Go back to them to ACCEPT.')
+    end
+    redis.call('DEL', 'PLAYER:' .. pid .. ':offer')
+    local def = quest_def(offer.quest)
+    say(pid, offer.npc, def.accepted or 'Good.')
+    if travel.start_quest(pid, offer.quest) then
+      redis.call('HSET', 'PLAYER:' .. pid .. ':quest:' .. offer.quest, 'giver', offer.npc)
+    end
+  end))
+
+  redis.register_function('decline', action(function(pid, rid, args)
+    local offer = hgetall('PLAYER:' .. pid .. ':offer')
+    if not offer.quest then return notice(pid, "Nobody's waiting on an answer from you.") end
+    local def = quest_def(offer.quest)
+    if def.must then return notice(pid, "This one isn't one to turn down: type ACCEPT.") end
+    redis.call('DEL', 'PLAYER:' .. pid .. ':offer')
+    redis.call('HSET', 'PLAYER:' .. pid .. ':declined', offer.quest, offer.npc)
+    say(pid, offer.npc, def.declined or 'Suit yourself. You know where to find me.')
+  end))
+
+  -- Giving: to a quest that wants it handed over, to someone buying it, or as
+  -- a gift someone likes (one a day each). Anything else, they won't take.
+  local function tagged(iid, tag)
+    for _, t in ipairs(decode(redis.call('HGET', 'ITEM:' .. iid, 'tags'))) do if t == tag then return true end end
+    return false
+  end
+
+  local function matches(entry, iid)
+    if type(entry) == 'string' then return entry == iid or tagged(iid, entry) end
+    return entry.item == iid or (entry.tag ~= nil and tagged(iid, entry.tag))
+  end
+
+  travel.give_to = function(pid, rid, iid, nid, display)
+    local item_name = redis.call('HGET', 'ITEM:' .. iid, 'name') or iid
+    local who = capitalize(display)
+    local function handed(verb)
+      redis.call('SREM', 'PLAYER:' .. pid .. ':inv', iid)
+      emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = 'give', target = 'npc:' .. nid,
+        text = name_of(pid) .. ' ' .. verb .. ' the ' .. item_name .. ' to ' .. display .. '.'})
+      kit_event(pid)
+    end
+    -- A quest that wants it handed over (the quest's effects take it).
+    for qid, status in pairs(hgetall('PLAYER:' .. pid .. ':quests')) do
+      local def = quest_def(qid)
+      local step = status == 'active' and (def.steps or {})[redis.call('HGET', 'PLAYER:' .. pid .. ':quest:' .. qid, 'step') or '']
+      if step and trigger_matches(pid, step.on or {}, 'give', {item = iid, npc = nid}) then
+        emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = 'give', target = 'npc:' .. nid,
+          text = name_of(pid) .. ' gives the ' .. item_name .. ' to ' .. display .. '.'})
+        return travel.quest(pid, 'give', {item = iid, npc = nid})
+      end
+    end
+    redis.call('SADD', 'PLAYER:' .. pid .. ':met', nid)
+    -- Someone buying it.
+    local wants = wants_of(pid, nid)
+    for i, want in ipairs(wants and wants.items or {}) do
+      if matches(want, iid) then
+        local sold = 'PLAYER:' .. pid .. ':sold:' .. nid .. ':' .. i
+        if want.cap and (tonumber(redis.call('GET', sold)) or 0) >= want.cap then
+          return say(pid, nid, "That's all of those I need today.")
+        end
+        redis.call('INCR', sold)
+        if redis.call('TTL', sold) < 0 then redis.call('EXPIRE', sold, 86400) end
+        -- Haggling: a little more for every point of Presence, and for a Haggler.
+        local price = math.floor((want.price or 1) * (1 + 0.05 * stat(pid, 'presence') + (has_perk(pid, 'haggler') and 0.1 or 0)) + 0.5)
+        handed('sells')
+        redis.call('HINCRBY', 'ACCOUNT:' .. pid, 'coins', price)
+        say(pid, nid, want.thanks or 'Done.')
+        notice(pid, 'You sell the ' .. item_name .. ' for ' .. price .. (price == 1 and ' coin.' or ' coins.'))
+        kit_event(pid)
+        if redis.call('SET', 'PLAYER:' .. pid .. ':sold_rapport:' .. nid, '1', 'NX', 'EX', 86400) then travel.add_rapport(pid, nid, 1) end
+        return
+      end
+    end
+    -- A gift they'd like.
+    for _, like in ipairs(decode(redis.call('HGET', 'NPC:' .. nid, 'likes'))) do
+      if matches(like, iid) then
+        if not redis.call('SET', 'PLAYER:' .. pid .. ':gift:' .. nid, '1', 'NX', 'EX', rule('gift_cooldown', 86400)) then
+          return say(pid, nid, "You've given me plenty already. Keep it.")
+        end
+        handed('gives')
+        local thanks = redis.call('HGET', 'NPC:' .. nid, 'thanks') or ''
+        say(pid, nid, thanks ~= '' and thanks or 'For me? Thank you.')
+        return travel.add_rapport(pid, nid, 2)
+      end
+    end
+    local refuse = redis.call('HGET', 'NPC:' .. nid, 'refuse') or ''
+    if refuse ~= '' then say(pid, nid, refuse) end
+    notice(pid, 'You offer the ' .. item_name .. ' to ' .. display .. ", but they won't take it.")
+  end
+
+  -- args: pid, item word, who ('' for your target, given by the command, or the only person here).
+  redis.register_function('give', action(function(pid, rid, args)
+    local iid = match_item('PLAYER:' .. pid .. ':inv', args[2] or '')
+    if not iid then return notice(pid, "You aren't carrying that.") end
+    local nid, display = whom(pid, rid, args[3])
+    if not nid then return end
+    travel.give_to(pid, rid, iid, nid, display)
+  end))
+
+  -- Reading a trap's sign: you know it's there, and how to get past.
+  travel.read_sign = function(pid, rid, trapped)
+    traps.know_trap(pid, trapped)
+    local dir
+    for d, dest in pairs(hgetall('ROOM:' .. rid .. ':exits')) do if dest == trapped then dir = string.upper(d) end end
+    if not dir then return end
+    local trap = decode(redis.call('GET', 'ROOM:' .. trapped .. ':trap'))
+    guide(pid, 'Something is set ' .. string.lower(dir) .. ': ' .. (trap.name or 'a trap') .. '. CREEP ' .. dir
+      .. ' to get past it safely: slow, but sure, and it stays set behind you. Or DISARM ' .. dir .. ': a '
+      .. capitalize(trap.disarm or trap.stat or 'poise') .. ' check, and failing springs it on you.')
+  end
+
+  -- args: pid, direction.
+  redis.register_function('disarm', action(function(pid, rid, args)
+    local dest = redis.call('HGET', 'ROOM:' .. rid .. ':exits', args[2] or '')
+    local trap = dest and decode(redis.call('GET', 'ROOM:' .. dest .. ':trap')) or {}
+    if not trap.name or redis.call('EXISTS', 'ROOM:' .. dest .. ':trap_sprung') == 1
+      or redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':traps', dest) == 0 then
+      return notice(pid, "You don't know of anything to disarm that way. LOOK around first.")
+    end
+    emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = 'disarm', text = name_of(pid) .. ' crouches and works at something to the ' .. args[2] .. '.'})
+    if passes(pid, trap.disarm or trap.stat or 'poise', trap.difficulty, has_perk(pid, 'trapsense') and 0.25 or 0) then
+      redis.call('SET', 'ROOM:' .. dest .. ':trap_sprung', '1', 'PX', math.floor((trap.rearm or 120) * 1000))
+      return notice(pid, 'You disarm ' .. trap.name .. '. It will be a while before anyone sets it again. ('
+        .. capitalize(trap.disarm or trap.stat or 'poise') .. ' check)')
+    end
+    notice(pid, 'Your hand slips. (' .. capitalize(trap.disarm or trap.stat or 'poise') .. ' check)')
+    traps.spring_trap(pid, dest, false, true)
+  end))
+end)()
 
 -- Lists the routes leaving this room (ferries, coaches, portals, gates), or
 -- takes one (args: a word naming it).
@@ -4167,6 +4704,10 @@ redis.register_function('seed', function(keys, args)
   for _, room in pairs(world.rooms) do
     if room.trap then redis.call('HSET', 'ROOM:' .. room.trap.sign.room .. ':features', room.trap.sign.name, room.trap.sign.text) end
   end
+  -- And which trap each sign warns of, so reading it tells you (ROOM:<rid>:signs).
+  for rid, room in pairs(world.rooms) do
+    if room.trap then redis.call('HSET', 'ROOM:' .. room.trap.sign.room .. ':signs', room.trap.sign.name, rid) end
+  end
   -- Each area's box covers its rooms; each region's box covers its areas.
   local region_box = {}
   for aid, b in pairs(area_box) do
@@ -4187,20 +4728,32 @@ redis.register_function('seed', function(keys, args)
     local new = redis.call('EXISTS', key) == 0
     redis.call('HSET', key, 'name', npc.name, 'label', npc.label or '', 'description', npc.description or '',
       'details', npc.details or '', 'keywords', npc.keywords or '', 'max_hp', npc.max_hp or 10,
-      'proper', npc.proper and '1' or '0', 'respawn', npc.respawn or 60, 'icon', npc.icon or '',
+      'proper', npc.proper and '1' or '0', 'respawn', npc.respawn or 300, 'icon', npc.icon or '',
       'disposition', npc.disposition or 'neutral', 'faction', npc.faction or '', 'role', npc.role or '',
       'attacks', cjson.encode(npc.attacks or {}), 'drops', cjson.encode(npc.drops or {}),
       'xp', npc.xp or math.floor((npc.max_hp or 10) / 2), 'immortal', npc.immortal and '1' or '0',
       'forecasts', cjson.encode(npc.forecasts or {}), 'active_when', npc.active_when and cjson.encode(npc.active_when) or '',
       'hide', npc.hide or '', 'emerge', npc.emerge or '', 'coins', npc.coins or 0,
-      'topics', cjson.encode(npc.topics or {}), 'trainer', npc.trainer and '1' or '0', 'notice', npc.notice or '')
+      'topics', cjson.encode(npc.topics or {}), 'trainer', npc.trainer and '1' or '0', 'notice', npc.notice or '',
+      'greet', cjson.encode(npc.greet or {}), 'lure', cjson.encode(npc.lure or {}), 'wants', npc.wants and cjson.encode(npc.wants) or '',
+      'likes', cjson.encode(npc.likes or {}), 'loot', cjson.encode(npc.loot or {}), 'refuse', npc.refuse or '',
+      'thanks', npc.thanks or '')
     if npc.active_when then redis.call('SADD', 'alz:weather_npcs', nid) else redis.call('SREM', 'alz:weather_npcs', nid) end
     if npc.template then
       -- A template for ambushers: copied when an ambush springs, never placed.
       redis.call('HSET', key, 'template', '1')
     elseif new then
-      redis.call('HSET', key, 'hp', npc.max_hp or 10, 'room', npc.room)
+      redis.call('HSET', key, 'hp', npc.max_hp or 10, 'room', npc.room, 'home', npc.room)
       redis.call('SADD', 'ROOM:' .. npc.room .. ':npcs', nid)
+    else
+      -- Moved in the seed: they move in the world too (or come back there, if down).
+      local home = redis.call('HGET', key, 'home') or redis.call('HGET', key, 'room')
+      if home ~= npc.room then
+        local was = redis.call('HGET', key, 'room') or home
+        if redis.call('SREM', 'ROOM:' .. was .. ':npcs', nid) == 1 then redis.call('SADD', 'ROOM:' .. npc.room .. ':npcs', nid) end
+        redis.call('HSET', key, 'room', npc.room)
+      end
+      redis.call('HSET', key, 'home', npc.room)
     end
   end
   -- Gear is static: the catalog is rewritten every time. Players' slots keep
@@ -4258,7 +4811,8 @@ redis.register_function('seed', function(keys, args)
     local key = 'ITEM:' .. iid
     local new = redis.call('EXISTS', key) == 0
     redis.call('HSET', key, 'name', item.name, 'keywords', item.keywords or '', 'description', item.description or '',
-      'reveals', cjson.encode(item.reveals or {}), 'forecasts', cjson.encode(item.forecasts or {}), 'quest', item.quest and '1' or '0')
+      'reveals', cjson.encode(item.reveals or {}), 'forecasts', cjson.encode(item.forecasts or {}), 'quest', item.quest and '1' or '0',
+      'tags', cjson.encode(item.tags or {}), 'value', item.value or 0)
     if item.quest then
       if item.room then redis.call('SADD', 'ROOM:' .. item.room .. ':qitems', iid) end
     elseif new and item.room then

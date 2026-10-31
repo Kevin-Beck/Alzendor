@@ -254,7 +254,7 @@ async def test_only_friends_are_taught(world):
     await world.redis.hset("PLAYER:kevin:rep:harrowfolk", mapping={"affinity": -60, "respect": 0})
     await drain(kevin)
     await world.call("ask", "kevin", "tamsin", "weather")
-    assert texts(await drain(kevin))[1] == "Old Tamsin won't share what they know with you."
+    assert texts(await drain(kevin)) == ["Old Tamsin has nothing to say to you."]  # hostile: no talk at all
     assert not await world.redis.exists("PLAYER:kevin:lore")
 
 

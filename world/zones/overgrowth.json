@@ -187,6 +187,10 @@
           "text": "The Mantis Queen ate my last guide. She's in the hollow past the river. Block the scythes, dodge the lunge.",
           "starts": "og_queen"
         }
+      },
+      "lure": {
+        "sense": "{Where}, high above, a map rustling in the wind.",
+        "rumour": "Annick Vos is charting the canopy and wants company."
       }
     },
     "canopy_cat_1": {
@@ -428,7 +432,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Annick: ASK ANNICK ABOUT CHART.",
+          "goal": "Tell Annick: DISCUSS CHART WITH ANNICK.",
           "on": {
             "ask": "annick",
             "about": "chart"
@@ -456,7 +460,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Annick: ASK ANNICK ABOUT MANTIS.",
+          "goal": "Tell Annick: DISCUSS MANTIS WITH ANNICK.",
           "on": {
             "ask": "annick",
             "about": "mantis"

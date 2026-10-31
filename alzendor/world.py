@@ -176,8 +176,10 @@ def validate_seed(data: dict) -> None:
             if back and OPPOSITE.get(direction) not in back:
                 problems.append(f"room {rid}: exit {direction} to {dest}, but the way back is {back[0]}, not {OPPOSITE.get(direction)}")
     problems += _overlap_problems(rooms, areas, regions)
+    looted = {loot.get("item") for npc in data.get("npcs", {}).values() for loot in npc.get("loot", [])}
     for iid, item in data.get("items", {}).items():
-        if item.get("room") not in rooms and not (item.get("quest") and "room" not in item):  # quests can hand items out
+        # Quests can hand items out, and creatures drop them: those have no room.
+        if item.get("room") not in rooms and not ((item.get("quest") or iid in looted) and "room" not in item):
             problems.append(f"item {iid}: unknown room {item.get('room')!r}")
         if not item.get("name"):
             problems.append(f"item {iid}: missing name")
@@ -260,6 +262,9 @@ def validate_seed(data: dict) -> None:
                 problems.append(f"npc {nid}: topic {topic!r} needs text")
             if isinstance(said, dict) and "starts" in said and said["starts"] not in data.get("quests", {}):
                 problems.append(f"npc {nid}: topic {topic!r} starts unknown quest {said.get('starts')!r}")
+            if isinstance(said, dict):
+                problems += [f"npc {nid}: topic {topic!r}: {problem}" for problem in _topic_problems(said, data)]
+        problems += [f"npc {nid}: {problem}" for problem in _talk_problems(npc, data)]
     for event_id, event in data.get("travel_events", {}).items():
         problems += [f"travel event {event_id}: {problem}" for problem in _event_problems(event, data)]
     if data.get("start_room") not in rooms:
@@ -274,6 +279,66 @@ def validate_seed(data: dict) -> None:
             problems.append(f"ambient {channel}: needs texts and a positive 'every'")
     if problems:
         raise ValueError("Invalid seed map:\n  " + "\n  ".join(problems))
+
+
+def _requires_problems(req, data: dict) -> list[str]:
+    """A topic's (or wants') `requires`: rapport, level, affinity / respect
+    (with a faction, or the NPC's), and a quest (done, or another status)."""
+    if not isinstance(req, dict):
+        return ["requires must be an object"]
+    problems = [f"requires: unknown key {k!r}" for k in req if k not in ("rapport", "level", "affinity", "respect", "faction", "quest", "status")]
+    if "faction" in req and req["faction"] not in data.get("factions", {}):
+        problems.append(f"requires: unknown faction {req['faction']!r}")
+    if "quest" in req and req["quest"] not in data.get("quests", {}):
+        problems.append(f"requires: unknown quest {req['quest']!r}")
+    return problems
+
+
+def _topic_problems(topic: dict, data: dict) -> list[str]:
+    """Talk (docs/talk-and-layout.md): when a topic is open to a player."""
+    quests, npcs = data.get("quests", {}), data.get("npcs", {})
+    problems = [f"unknown key {k!r}" for k in topic
+                if k not in ("text", "starts", "explains", "requires", "while", "heard_from", "again", "rapport")]
+    if "requires" in topic:
+        problems += _requires_problems(topic["requires"], data)
+    w = topic.get("while")
+    if w is not None:
+        if not isinstance(w, dict) or w.get("quest") not in quests:
+            problems.append("while needs a quest")
+        elif "step" in w and w["step"] not in quests[w["quest"]].get("steps", {}):
+            problems.append(f"while: {w['quest']!r} has no step {w['step']!r}")
+    problems += [f"heard_from unknown NPC {n!r}" for n in topic.get("heard_from", []) if n not in npcs]
+    return problems
+
+
+def _talk_problems(npc: dict, data: dict) -> list[str]:
+    """Greetings, lures, wants, likes and loot."""
+    items, problems = data.get("items", {}), []
+    greet = npc.get("greet", {})
+    problems += [f"greet: unknown key {k!r}" for k in greet if k not in ("first", "again", "friendly", "trusted", "work", "wants")]
+    lure = npc.get("lure")
+    if lure is not None and (not isinstance(lure, dict) or not lure.get("sense") or "{" not in lure["sense"]):
+        problems.append("lure needs a sense line with {where} or {Where} in it (and may have a rumour)")
+    wants = npc.get("wants")
+    if wants is not None:
+        if "requires" in wants:
+            problems += _requires_problems(wants["requires"], data)
+        for want in wants.get("items", []):
+            if not ("item" in want) ^ ("tag" in want) or not isinstance(want.get("price"), int) or want["price"] < 1:
+                problems.append("each want needs an item or a tag, and a price in coins")
+            elif "item" in want and want["item"] not in items:
+                problems.append(f"wants unknown item {want['item']!r}")
+    problems += [f"likes unknown item {i!r}" for i in npc.get("likes", []) if i not in items and not _is_tag(i, items)]
+    for loot in npc.get("loot", []):
+        if loot.get("item") not in items or not 0 < loot.get("chance", 1) <= 1:
+            problems.append(f"loot needs a known item and a chance from 0 to 1: {loot!r}")
+        elif items[loot["item"]].get("quest"):
+            problems.append(f"loot can't be a quest item: {loot['item']!r}")
+    return problems
+
+
+def _is_tag(word: str, items: dict) -> bool:
+    return any(word in item.get("tags", []) for item in items.values())
 
 
 def _npc_problems(npc: dict, factions: dict, gear: dict) -> list[str]:
@@ -368,7 +433,7 @@ def _event_problems(event: dict, data: dict) -> list[str]:
     return problems
 
 
-TRIGGERS = ("ask", "get", "enter", "kill", "use", "have", "level", "in", "travel")
+TRIGGERS = ("ask", "get", "enter", "kill", "use", "have", "level", "in", "travel", "give")
 QUEST_EFFECTS = EFFECTS + ("give", "take", "start", "teleport", "resume_journey", "leave_start", "say", "by", "guide")
 
 
@@ -414,6 +479,10 @@ def _quest_problems(quest: dict, data: dict) -> list[str]:
                 problems.append(f"step {step_id}: unknown item {item!r}")
         if "ask" in on and on["ask"] not in npcs:
             problems.append(f"step {step_id}: unknown NPC {on['ask']!r}")
+        if "give" in on and (on["give"] not in items or on.get("to") not in npcs):
+            problems.append(f"step {step_id}: give needs a known item and who it's given to (to: an NPC)")
+        if "use" in on and on.get("on") in npcs:
+            problems.append(f"step {step_id}: handing something to {on['on']!r} is give + to, not use + on")
         if "travel" in on and on["travel"] not in data.get("routes", {}):
             problems.append(f"step {step_id}: unknown route {on['travel']!r}")
         for effect in step.get("effects", []):

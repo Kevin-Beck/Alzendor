@@ -182,6 +182,10 @@
           "text": "When you want to go home, the way is open.",
           "explains": "TRAVEL TEMPLE STEPS to go home."
         }
+      },
+      "lure": {
+        "sense": "{Where}, a sudden, perfect calm.",
+        "rumour": "There's a witch in the eye of the storm who'll talk to anyone who gets there."
       }
     },
     "rime_lord": {
@@ -382,7 +386,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell the Weatherwitch: ASK WEATHERWITCH ABOUT WINDS.",
+          "goal": "Tell the Weatherwitch: DISCUSS WINDS WITH WEATHERWITCH.",
           "on": {
             "ask": "weatherwitch",
             "about": "winds"
@@ -407,7 +411,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell the Weatherwitch: ASK WEATHERWITCH ABOUT KING.",
+          "goal": "Tell the Weatherwitch: DISCUSS KING WITH WEATHERWITCH.",
           "on": {
             "ask": "weatherwitch",
             "about": "king"

@@ -229,7 +229,11 @@
           "starts": "rw_mind"
         }
       },
-      "faction": "wardens"
+      "faction": "wardens",
+      "lure": {
+        "sense": "{Where}, the smell of a firebreak, and voices behind masks.",
+        "rumour": "The Warden-Captain at the outpost needs help against the blight."
+      }
     },
     "pim": {
       "name": "Pim",
@@ -254,6 +258,10 @@
           "starts": "rw_bloom"
         },
         "firepots": "Throw, don't hold."
+      },
+      "lure": {
+        "sense": "{Where}, the smell of herbs boiling over a fire.",
+        "rumour": "Pim the herbalist is after something that grows in the blight."
       }
     },
     "spore_shambler_1": {
@@ -544,7 +552,7 @@
       "start": "mask",
       "steps": {
         "mask": {
-          "goal": "Ask Pim for it: ASK PIM ABOUT MASK.",
+          "goal": "Ask Pim for it: DISCUSS MASK WITH PIM.",
           "on": {
             "ask": "pim",
             "about": "mask"
@@ -568,7 +576,7 @@
       "start": "pots",
       "steps": {
         "pots": {
-          "goal": "Take Pim's fire-pots: ASK PIM ABOUT FIREPOTS.",
+          "goal": "Take Pim's fire-pots: DISCUSS FIREPOTS WITH PIM.",
           "on": {
             "ask": "pim",
             "about": "firepots"
@@ -623,7 +631,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Pim: ASK PIM ABOUT BLOOM.",
+          "goal": "Tell Pim: DISCUSS BLOOM WITH PIM.",
           "on": {
             "ask": "pim",
             "about": "bloom"
@@ -652,7 +660,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Maelis: ASK MAELIS ABOUT WARDENS.",
+          "goal": "Tell Maelis: DISCUSS WARDENS WITH MAELIS.",
           "on": {
             "ask": "maelis",
             "about": "wardens"
@@ -687,7 +695,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Maelis: ASK MAELIS ABOUT MIND.",
+          "goal": "Tell Maelis: DISCUSS MIND WITH MAELIS.",
           "on": {
             "ask": "maelis",
             "about": "mind"

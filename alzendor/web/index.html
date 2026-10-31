@@ -15,7 +15,7 @@
     --area-1: #4f7fb8; --area-2: #d9822b; --area-3: #3f9a5a; --area-4: #8e5bb5; --area-5: #c25a7c; --area-6: #2f8f8f;
     --tier-grey: #8b857b; --tier-green: #3f9a5a; --tier-blue: #3d7cc9; --tier-purple: #8e5bb5; --tier-orange: #d9822b;
     --up: #3f8a33; --down: #b8402e; --wet: #3d7cc9; --route: #b07a1f;
-    --day: #f2cf6b; --dusk: #e39a52; --night: #2c3566; --spot: #b07a1f;
+    --day: #f2cf6b; --dusk: #e39a52; --night: #2c3566; --spot: #3d8a46;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -28,7 +28,7 @@
       --area-1: #6f9fd8; --area-2: #f0a050; --area-3: #5fbf7a; --area-4: #b48ae0; --area-5: #e07fa0; --area-6: #5fc0c0;
       --tier-grey: #9a958c; --tier-green: #5fbf7a; --tier-blue: #6fa6e8; --tier-purple: #b48ae0; --tier-orange: #f0a050;
       --up: #6fbf5a; --down: #ef6a55; --wet: #6fa6e8; --route: #e0a845;
-      --day: #d9b450; --dusk: #c97f3c; --night: #1d2350; --spot: #e0a845;
+      --day: #d9b450; --dusk: #c97f3c; --night: #1d2350; --spot: #7cc785;
     }
   }
   :root[data-theme="dark"] {
@@ -41,7 +41,7 @@
     --area-1: #6f9fd8; --area-2: #f0a050; --area-3: #5fbf7a; --area-4: #b48ae0; --area-5: #e07fa0; --area-6: #5fc0c0;
       --tier-grey: #9a958c; --tier-green: #5fbf7a; --tier-blue: #6fa6e8; --tier-purple: #b48ae0; --tier-orange: #f0a050;
       --up: #6fbf5a; --down: #ef6a55; --wet: #6fa6e8; --route: #e0a845;
-      --day: #d9b450; --dusk: #c97f3c; --night: #1d2350; --spot: #e0a845;
+      --day: #d9b450; --dusk: #c97f3c; --night: #1d2350; --spot: #7cc785;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
@@ -80,7 +80,10 @@
   #split-side { width: 1px; cursor: col-resize; }
   #split-map { height: 1px; cursor: row-resize; }
   #left { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  #map-wrap { position: relative; flex: 58 1 0; min-height: 120px; background: var(--map-bg); }
+  /* The top: the weather and the map side by side, the same width. */
+  #top { display: flex; flex: 58 1 0; min-height: 120px; }
+  #map-wrap { position: relative; flex: 1 1 0; min-width: 0; background: var(--map-bg); }
+  #weather-panel { flex: 1 1 0; min-width: 0; overflow-y: auto; padding: 12px 16px; background: var(--panel); border-right: 1px solid var(--border); }
   #map { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; user-select: none; }
   #map.dragging { cursor: grabbing; }
   #map .node { cursor: pointer; }
@@ -120,11 +123,11 @@
 
   aside { background: var(--panel); overflow-y: auto; min-height: 0; }
   aside section { padding: 12px 16px; border-bottom: 1px solid var(--border); }
-  aside h2 {
+  aside h2, #weather-panel h2 {
     display: flex; justify-content: space-between; align-items: baseline;
     font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px;
   }
-  aside h2 .hint { text-transform: none; letter-spacing: 0; font-weight: normal; text-align: right; padding-left: 8px; }
+  aside h2 .hint, #weather-panel h2 .hint { text-transform: none; letter-spacing: 0; font-weight: normal; text-align: right; padding-left: 8px; }
   #room-name { color: var(--accent); font-weight: bold; font-size: 15px; }
   #room-area { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
   #exits { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -273,26 +276,42 @@
   #log .tevent .choices button.trade { border-color: var(--accent); color: var(--accent); }
   #log .tevent .sub { color: var(--muted); font-size: 12px; }
   .riding { color: var(--move); font-style: italic; font-size: 12px; }
-  #quest-goal { font-size: 13px; }
+  /* The pinned quest line. */
+  #quest-bar { display: flex; align-items: flex-start; gap: 6px; padding: 6px 12px; border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--accent) 8%, var(--panel)); }
+  #quest-bar button { border: 0; background: none; padding: 2px 4px; color: var(--muted); }
+  #quest-line { flex: 1; min-width: 0; text-align: left; color: var(--text) !important; font: inherit; }
+  #quest-name { color: var(--accent); }
+  #quest-bar.collapsed #quest-goal { display: none; }
+  #quest-bar.flash { animation: questflash 1.6s ease-out; }
+  @keyframes questflash { 0% { background: color-mix(in srgb, var(--accent) 35%, var(--panel)); } }
+  .t-lure { color: var(--ambient); font-style: italic; }
+  .t-topics { color: var(--muted); }
+  .topics { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; align-items: center; }
+  .topics .lead { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-right: 2px; }
+  .topics button { font-size: 12px; padding: 1px 8px; border-radius: 10px; }
+  .rapport { font-size: 11px; color: var(--muted); }
   #exits button.route { border-style: dashed; } .t-weather_change { color: var(--wet); }
   .t-weather_report { white-space: pre-wrap; color: var(--wet); }
   #exits .hidden-ways { font-size: 12px; color: var(--muted); font-style: italic; align-self: center; }
   .boon.off { opacity: .6; }
 
   /* The weather panel: four columns, always in the same order. */
-  .wxcols { display: flex; gap: 10px; align-items: flex-start; }
-  .wxcol { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; }
-  .wxcol:last-child { flex: 1; align-items: flex-start; }
-  .wxhead { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-  .wxval { font-size: 11px; color: var(--text); text-align: center; max-width: 76px; line-height: 1.25; }
-  .wxcol:last-child .wxval { text-align: left; max-width: none; }
-  #wx-grid { width: 96px; height: 96px; border: 1px solid var(--border); border-radius: 6px; background: var(--map-bg); }
+  #weather-panel { --wx-size: clamp(150px, 17vw, 230px); }
+  .wxcols { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+  .wxcol { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+  .wxstack { display: flex; flex-direction: column; gap: 12px; min-width: 0; flex: 1; }
+  .wxstack .wxcol { align-items: flex-start; }
+  .wxhead { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .wxval { font-size: 12px; color: var(--text); text-align: center; max-width: 90px; line-height: 1.3; }
+  .wxstack .wxval { text-align: left; max-width: none; }
+  #wx-grid { width: var(--wx-size); height: var(--wx-size); border: 1px solid var(--border); border-radius: 6px; background: var(--map-bg); }
   #wx-grid text { font-family: system-ui, sans-serif; fill: var(--muted); }
-  #wx-precip-bar { width: 12px; height: 72px; border: 1px solid var(--border); border-radius: 6px; background: var(--hp-track); position: relative; overflow: hidden; }
+  #wx-precip-bar { width: 14px; height: var(--wx-size); border: 1px solid var(--border); border-radius: 7px; background: var(--hp-track); position: relative; overflow: hidden; }
   #wx-precip-bar .fill { position: absolute; left: 0; right: 0; bottom: 0; background: var(--wet); transition: height .6s; }
-  #wx-wheel { width: 64px; height: 64px; }
-  .ground-icon { font-size: 26px; line-height: 1; height: 34px; display: grid; place-items: center; }
-  #weather-panel .about { margin-top: 8px; font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
+  #wx-wheel { width: 84px; height: 84px; }
+  .ground-icon { font-size: 30px; line-height: 1; height: 38px; display: grid; place-items: center; }
+  #weather-panel .about { margin-top: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 3px; }
   #weather-panel .about .main { color: var(--text); }
   #weather-panel .about .sub { color: var(--muted); }
   #weather-panel .about .warn { color: var(--system); }
@@ -335,7 +354,7 @@
   .attack .marker { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
     background: var(--hp-low); box-shadow: 0 0 0 2px var(--panel); left: 0; }
   .attack.mine .row b { color: var(--hp-low); font-weight: bold; }
-  .attack .how { font-size: 10px; }
+  .attack .how { font-size: 11px; }
   #defend-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 11px; color: var(--muted); }
   #defend-row .key { min-width: 18px; padding: 0 4px; font-weight: bold; font-size: 11px; }
   #defend-row .key.listening { border-color: var(--accent); color: var(--accent); }
@@ -349,8 +368,35 @@
   .r-common { color: var(--tier-grey); } .r-uncommon { color: var(--tier-green); } .r-rare { color: var(--tier-blue); }
   .r-epic { color: var(--tier-purple); } .r-legendary { color: var(--tier-orange); }
   .pips { letter-spacing: 1px; color: var(--accent); white-space: nowrap; }
-  #tip .tagline { color: var(--muted); margin: 1px 0 4px; }
-  #tip .stats-line { margin-top: 4px; }
+  /* Gear cards. */
+  #tip:has(.gcard) { padding: 0; border: 0; background: none; box-shadow: none; width: min(310px, calc(100vw - 16px)); }
+  .gcard { border: 2px solid var(--rf, var(--border)); border-radius: 10px; background: var(--panel); overflow: hidden;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .22); font-size: 12px; line-height: 1.4; }
+  .gcard.rf-common { --rf: var(--tier-grey); } .gcard.rf-uncommon { --rf: var(--tier-green); } .gcard.rf-rare { --rf: var(--tier-blue); }
+  .gcard.rf-epic { --rf: var(--tier-purple); } .gcard.rf-legendary { --rf: var(--tier-orange); }
+  .gcard .gtop { display: flex; gap: 10px; align-items: center; padding: 10px 12px;
+    background: color-mix(in srgb, var(--rf) 12%, var(--panel)); border-bottom: 1px solid color-mix(in srgb, var(--rf) 45%, var(--border)); }
+  .gcard .gicon { flex: none; width: 40px; height: 40px; padding: 4px; border-radius: 8px; background: var(--panel);
+    border: 1px solid color-mix(in srgb, var(--rf) 45%, var(--border)); }
+  .gcard .gwords { flex: 1; min-width: 0; }
+  .gcard .ghead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .gcard .ghead .name { font-weight: bold; font-size: 14px; }
+  .gcard .gkey { flex: none; font-size: 11px; font-weight: bold; padding: 0 6px; border: 1px solid var(--border); border-radius: 4px; color: var(--muted); }
+  .gcard .gtype { color: var(--muted); font-size: 12px; }
+  .gcard .gsec { padding: 8px 12px; border-top: 1px solid var(--border); }
+  .gcard .gtop + .gsec { border-top: 0; }
+  .gcard h4 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .gcard h4 .split { display: flex; justify-content: space-between; align-items: center; }
+  .gcard .kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0; }
+  .gcard .kv dt { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; align-self: center; }
+  .gcard .kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .gcard .kv dt:empty + dd { color: var(--muted); font-size: 11px; margin-top: -2px; }
+  .gcard .wx { margin: 0; gap: 10px; }
+  .gcard .wx svg { width: 140px; height: 140px; }
+  .gcard .wx .about { font-size: 12px; }
+  .gcard .wx .rain { color: var(--wet); }
+  .gcard .flavour { font-style: italic; color: var(--muted); }
+  .gcard .warn { color: var(--system); }
 
   /* Inventory and character panels. */
   dialog {
@@ -412,7 +458,15 @@
     #panel-buttons { flex-wrap: wrap; }
     main { display: flex; flex-direction: column; overflow-y: auto; }
     #left { flex: none; }
+    #top { flex: none !important; flex-direction: column; }
     #map-wrap { flex: none !important; height: 42vh; border-bottom: 1px solid var(--border); }
+    /* The weather is a slim strip until you open it. */
+    #weather-panel { --wx-size: 72px; flex: none; border-right: 0; border-bottom: 1px solid var(--border); padding: 8px 16px; }
+    #wx-head { cursor: pointer; }
+    #weather-panel:not(.open) .about, #weather-panel:not(.open) .wxval { display: none; }
+    #weather-panel:not(.open) #wx-wheel { width: 52px; height: 52px; }
+    #weather-panel:not(.open) #wx-grid text { display: none; } /* too small to read until it's opened */
+    #weather-panel:not(.open) .wxstack { flex-direction: row; }
     .splitter { display: none; }
     #log-wrap { flex: none !important; height: 34vh; }
     aside { overflow: visible; }
@@ -459,16 +513,42 @@
 
 <main id="world" class="hidden">
   <section id="left">
-    <div id="map-wrap">
-      <svg id="map" role="img" aria-label="Map of explored rooms"></svg>
-      <div id="map-tools">
-        <button id="map-area" type="button" aria-pressed="true" title="Focus on the area you're in">Area</button>
-        <button id="map-all" type="button" aria-pressed="false" title="Show the regions you know">All</button>
-        <div id="map-realms" class="hidden" role="group" aria-label="Realms you've been to"></div>
+    <div id="top">
+      <!-- Weather, left to right: the sky (temperature across, energy up), what's
+           falling, the time of day, and the ground underfoot. -->
+      <section id="weather-panel" class="hidden">
+        <h2 id="wx-head" title="On a phone, tap to open or close">Weather <span class="hint" id="wx-place"></span></h2>
+        <div class="wxcols">
+          <div class="wxcol"><div class="wxhead">Sky</div><svg id="wx-grid" role="img" aria-label="The weather: temperature across, energy up"></svg></div>
+          <div class="wxcol"><div class="wxhead">Rain</div><div class="precip" id="wx-precip-bar"><div class="fill" id="wx-precip"></div></div>
+            <div class="wxval" id="wx-precip-text"></div></div>
+          <div class="wxstack">
+            <div class="wxcol"><div class="wxhead">Time</div><svg id="wx-wheel" role="img" aria-label="Time of day"></svg>
+              <div class="wxval" id="wx-time-text"></div></div>
+            <div class="wxcol"><div class="wxhead">Ground</div><div class="ground-icon" id="wx-ground-icon"></div>
+              <div class="wxval" id="wx-ground-text"></div></div>
+          </div>
+        </div>
+        <div class="about" id="wx-about"></div>
+      </section>
+      <div id="map-wrap">
+        <svg id="map" role="img" aria-label="Map of explored rooms"></svg>
+        <div id="map-tools">
+          <button id="map-area" type="button" aria-pressed="true" title="Focus on the area you're in">Area</button>
+          <button id="map-all" type="button" aria-pressed="false" title="Show the regions you know">All</button>
+          <div id="map-realms" class="hidden" role="group" aria-label="Realms you've been to"></div>
+        </div>
+        <div id="map-hint">Click a room to walk there · drag to pan · scroll to zoom</div>
       </div>
-      <div id="map-hint">Click a room to walk there · drag to pan · scroll to zoom</div>
     </div>
     <div class="splitter" id="split-map" role="separator" aria-orientation="horizontal" tabindex="0" title="Drag to resize the map and log · double-click to reset"></div>
+    <!-- The quest you're on, pinned above the log: collapse or hide it; a new
+         quest, or a step done, opens it again. Click it for all your quests. -->
+    <div id="quest-bar" class="hidden" role="status">
+      <button id="quest-toggle" type="button" aria-expanded="true" title="Collapse or expand">▾</button>
+      <button id="quest-line" type="button" title="Your quests"><b id="quest-name"></b> <span id="quest-goal"></span></button>
+      <button id="quest-hide" type="button" aria-label="Hide the quest line" title="Hide it (a new quest shows it again)">×</button>
+    </div>
     <div id="log-wrap">
       <div id="log" aria-live="polite"></div>
       <button id="latest" class="hidden" type="button">↓ Latest</button>
@@ -490,21 +570,6 @@
       <div id="exposure" class="hidden" role="status"></div>
       <div id="exits"></div>
     </section>
-    <!-- Weather, left to right: the sky (temperature across, energy up), what's
-         falling, the time of day, and the ground underfoot. -->
-    <section id="weather-panel" class="hidden">
-      <h2>Weather <span class="hint" id="wx-place"></span></h2>
-      <div class="wxcols">
-        <div class="wxcol"><div class="wxhead">Sky</div><svg id="wx-grid" role="img" aria-label="The weather: temperature across, energy up"></svg></div>
-        <div class="wxcol"><div class="wxhead">Rain</div><div class="precip" id="wx-precip-bar"><div class="fill" id="wx-precip"></div></div>
-          <div class="wxval" id="wx-precip-text"></div></div>
-        <div class="wxcol"><div class="wxhead">Time</div><svg id="wx-wheel" role="img" aria-label="Time of day"></svg>
-          <div class="wxval" id="wx-time-text"></div></div>
-        <div class="wxcol"><div class="wxhead">Ground</div><div class="ground-icon" id="wx-ground-icon"></div>
-          <div class="wxval" id="wx-ground-text"></div></div>
-      </div>
-      <div class="about" id="wx-about"></div>
-    </section>
     <!-- Combat, top to bottom: who's here, your target, your slots and defence.
          Your health fills the panel from the bottom, faintly, behind it all. -->
     <section id="combat-panel">
@@ -520,10 +585,6 @@
         <div class="cool"><div class="fill" id="defend-cool"></div></div>
         <span class="result" id="defend-result"></span>
       </div>
-    </section>
-    <section id="quest-panel" class="hidden">
-      <h2>Quest <span class="hint" id="quest-name"></span></h2>
-      <div id="quest-goal"></div>
     </section>
     <section>
       <h2>On the ground</h2>
@@ -788,7 +849,8 @@ function show(event) {
   if (event.type === "intro") return line(event.text, "intro");
   if (event.type === "character") { character = event; renderCharacter(); renderDefend(); return renderTarget(); }
   if (event.type === "npc_timing") return applyNpcTiming(event);
-  if (event.type === "dispositions") return applyDispositions(event.dispositions);
+  if (event.type === "dispositions") return applyDispositions(event.dispositions, event.talk || {});
+  if (event.type === "quest_update") return questUpdate(event);
   if (event.type === "defend") return showDefend(event);
   if (event.type === "exposure") { exposure = event.kind ? event : null; return renderExposure(); }
   if (event.type === "combat" && event.entity_id && event.target === "pc:" + me) {
@@ -942,14 +1004,40 @@ function showTravelEvent(event) {
   travelEvent = { ...event, card };
 }
 
-// Quests: the Quests panel lists them all; the side panel shows what your
-// top quest needs next.
+// Quests: the Quests panel lists them all; the pinned quest line shows what
+// the one you're on needs next.
+// The pinned quest line: open, collapsed (just the name) or hidden, remembered
+// per browser. A new quest or a step done opens it again, and flashes it once.
+let questBar = store.get("questbar") || "open";
+
+function setQuestBar(state) {
+  questBar = state;
+  store.set("questbar", state);
+  renderQuests();
+}
+
+function questUpdate(event) {
+  setQuestBar("open");
+  const bar = $("quest-bar");
+  bar.classList.remove("flash");
+  void bar.offsetWidth; // restart the animation
+  bar.classList.add("flash");
+}
+
+$("quest-toggle").addEventListener("click", () => setQuestBar(questBar === "open" ? "collapsed" : "open"));
+$("quest-hide").addEventListener("click", () => setQuestBar("hidden"));
+$("quest-line").addEventListener("click", () => { renderQuests(); $("quests-dialog").showModal(); });
+
 function renderQuests() {
   const active = quests.filter((q) => q.status === "active");
-  const top = active[0];
-  $("quest-panel").classList.toggle("hidden", !top);
+  const top = active[0]; // the server sorts the one you're on first
+  const bar = $("quest-bar");
+  bar.classList.toggle("hidden", !top || questBar === "hidden");
+  bar.classList.toggle("collapsed", questBar === "collapsed");
+  $("quest-toggle").textContent = questBar === "collapsed" ? "▸" : "▾";
+  $("quest-toggle").setAttribute("aria-expanded", String(questBar !== "collapsed"));
   if (top) {
-    $("quest-name").textContent = top.name + (top.priority ? " · urgent" : "");
+    $("quest-name").textContent = top.name + (top.priority ? " · urgent" : "") + (questBar === "collapsed" ? "" : " —");
     $("quest-goal").textContent = top.goal + (top.need ? ` (${top.count} / ${top.need})` : "");
   }
   $("quests-badge").textContent = active.length || "";
@@ -962,7 +1050,7 @@ function renderQuests() {
     li.append(info);
     rows.append(li);
   }
-  if (!quests.length) rows.append(el("li", "empty", "No quests yet. Talk to people: ASK <name> ABOUT <topic>."));
+  if (!quests.length) rows.append(el("li", "empty", "No quests yet. Talk to people: GREET them, or DISCUSS QUESTS. Stuck? WHAT NOW."));
   $("quests-body").replaceChildren(rows);
 }
 
@@ -1139,7 +1227,7 @@ function slotRow(n) {
   bar.append(lane);
   row.append(status, bar);
   row.addEventListener("click", () => { useSlot(n); $("input").focus(); });
-  row.addEventListener("mouseenter", () => { if (slots[n].gear) showTip(row, gearTip(slots[n].gear)); });
+  row.addEventListener("mouseenter", () => { if (slots[n].gear) showTip(row, gearTip(slots[n].gear, [], SLOT_KEYS[n])); });
   row.addEventListener("mouseleave", hideTip);
   // Keep the slots in order however their first events arrive.
   const after = Object.keys(slots).map(Number).filter((m) => m > n).sort((a, b) => a - b)[0];
@@ -1294,10 +1382,11 @@ function applyNpcTiming(event) {
   if (!timingFrame) timingFrame = requestAnimationFrame(drawTiming);
 }
 
-function applyDispositions(map) {
+function applyDispositions(map, talk) {
   if (!room) return;
-  room.entities = room.entities.map((c) => (map[c.id] ? { ...c, disposition: map[c.id] } : c));
+  room.entities = room.entities.map((c) => (map[c.id] ? { ...c, disposition: map[c.id], ...(talk[c.id] || {}) } : c));
   renderEntities();
+  renderTarget();
 }
 
 function portrait(card) {
@@ -1358,7 +1447,20 @@ function renderTarget() {
       ? `${card.faction}: ${known.affinity_label}, ${known.respect_label}`
       : `${card.faction}: they don't know you yet`));
   }
-  if (card.topics) rest.push(el("div", "standing", `Ask about: ${card.topics.join(", ")} (ASK ${card.name.split(" ").pop().toUpperCase()} ABOUT …)`));
+  if (card.topics) {
+    // What they'll discuss with you: click one to DISCUSS it.
+    const row = el("div", "topics");
+    row.append(el("span", "lead", "Discuss"));
+    for (const topic of card.topics) {
+      const b = el("button", "", topic);
+      b.type = "button";
+      b.title = `DISCUSS ${topic.toUpperCase()}`;
+      b.addEventListener("click", () => sendCmd(`discuss ${topic}`));
+      row.append(b);
+    }
+    if (card.rapport) row.append(el("span", "rapport", `· ${card.rapport}`));
+    rest.push(row);
+  }
   if (card.kind === "npc" && card.attacks && card.attacks.length) {
     // Each attack: a marker sliding to the end of its bar, where the blow lands.
     // The shaded end is your window to block or dodge it (DEFEND).
@@ -1720,6 +1822,7 @@ function renderReputation() {
 $("open-inventory").addEventListener("click", () => { renderInventory(); $("inventory-dialog").showModal(); });
 $("open-character").addEventListener("click", () => { renderCharacter(); $("character-dialog").showModal(); });
 $("open-reputation").addEventListener("click", () => { renderReputation(); $("reputation-dialog").showModal(); });
+$("wx-head").addEventListener("click", () => $("weather-panel").classList.toggle("open"));
 $("open-quests").addEventListener("click", () => { renderQuests(); $("quests-dialog").showModal(); });
 for (const dialog of document.querySelectorAll("dialog")) {
   dialog.querySelector("[data-close]").addEventListener("click", () => dialog.close());
@@ -1732,7 +1835,15 @@ for (const dialog of document.querySelectorAll("dialog")) {
 // Precipitation is the bar beside it. The same grid shows where a piece of gear
 // works best (its spot, shaded in its tier's colour) against today's weather.
 
-const TIER_RADIUS = { grey: 2.0, green: 1.5, blue: 1.1, purple: 0.8, orange: 0.5 }; // as in alzendor.lua
+// How the weather moves gear, by tier, as in alzendor.lua: +peak at its spot, falling off evenly to −far at
+// `radius` away. In between is the ring where it's no better or worse than usual.
+const TIERS = { grey: { radius: 2.0, peak: 0.15, far: 0.15 }, green: { radius: 1.5, peak: 0.25, far: 0.20 },
+  blue: { radius: 1.1, peak: 0.40, far: 0.30 }, purple: { radius: 0.8, peak: 0.60, far: 0.45 }, orange: { radius: 0.5, peak: 1.00, far: 1.00 } };
+
+function evenRadius(tier) {
+  const t = TIERS[tier] || TIERS.grey;
+  return t.radius * t.peak / (t.peak + t.far);
+}
 const ZONES = [["Gale", -0.95, -0.82, "start"], ["Tempest", 0.95, -0.82, "end"], ["Rime", -0.95, 0.93, "start"], ["Scorch", 0.95, 0.93, "end"]];
 let gradients = 0;
 
@@ -1756,7 +1867,7 @@ function spotName({ temperature: x, energy: y }) {
   return `${t}, with ${e}`;
 }
 
-function drawWeatherGrid(svg, { here = null, exact = true, trail = [], spot = null, tier = "grey" }) {
+function drawWeatherGrid(svg, { here = null, exact = true, trail = [], spot = null, tier = "grey", label = 0.15 }) {
   svg.setAttribute("viewBox", "-1 -1 2 2");
   svg.replaceChildren();
   const thin = { "vector-effect": "non-scaling-stroke" };
@@ -1766,19 +1877,18 @@ function drawWeatherGrid(svg, { here = null, exact = true, trail = [], spot = nu
     svgEl("line", { x1: -1, y1: v, x2: 1, y2: v, stroke: "var(--box-line)", "stroke-dasharray": "2 3", ...thin }, svg);
   }
   for (const [name, x, y, anchor] of ZONES) {
-    svgEl("text", { x, y, "font-size": 0.14, "text-anchor": anchor }, svg).textContent = name;
+    svgEl("text", { x, y, "font-size": label, "text-anchor": anchor }, svg).textContent = name;
   }
-  svgEl("text", { x: -0.97, y: 0.06, "font-size": 0.13 }, svg).textContent = "cold";
-  svgEl("text", { x: 0.97, y: 0.06, "font-size": 0.13, "text-anchor": "end" }, svg).textContent = "hot";
+  svgEl("text", { x: -0.97, y: 0.06, "font-size": label * 0.95 }, svg).textContent = "cold";
+  svgEl("text", { x: 0.97, y: 0.06, "font-size": label * 0.95, "text-anchor": "end" }, svg).textContent = "hot";
   if (spot) {
-    const id = `spot-${++gradients}`;
-    const color = "var(--spot)";
-    const defs = svgEl("defs", {}, svg);
-    const grad = svgEl("radialGradient", { id }, defs);
-    svgEl("stop", { offset: "0%", "stop-color": color, "stop-opacity": 0.55 }, grad);
-    svgEl("stop", { offset: "100%", "stop-color": color, "stop-opacity": 0 }, grad);
-    svgEl("circle", { cx: spot.temperature, cy: -spot.energy, r: TIER_RADIUS[tier] || 2, fill: `url(#${id})` }, svg);
-    svgEl("circle", { cx: spot.temperature, cy: -spot.energy, r: 0.08, fill: color, stroke: "var(--panel)", "stroke-width": 1.5, ...thin }, svg);
+    // Inside the ring the gear is stronger than usual, outside it weaker; the dot is where it's best.
+    const id = `grid-clip-${++gradients}`;
+    const clip = svgEl("clipPath", { id }, svgEl("defs", {}, svg));
+    svgEl("rect", { x: -1, y: -1, width: 2, height: 2 }, clip);
+    const ring = { cx: spot.temperature, cy: -spot.energy, r: evenRadius(tier), "clip-path": `url(#${id})` };
+    svgEl("circle", { ...ring, fill: "var(--spot)", "fill-opacity": 0.22, stroke: "var(--spot)", "stroke-dasharray": "3 2", ...thin }, svg);
+    svgEl("circle", { cx: spot.temperature, cy: -spot.energy, r: 0.08, fill: "var(--spot)", stroke: "var(--panel)", "stroke-width": 1.5, ...thin }, svg);
   }
   if (here && trail.length) {
     const points = [here, ...trail].map((p) => `${p.temperature},${-p.energy}`).join(" ");
@@ -1834,7 +1944,7 @@ function renderWeather() {
   if (wx.visibility === "poor") about.push(el("div", "warn", (room && room.dark) || !wx.falling
     ? "Too dark to see the ways on: hold a light (WEAR TORCH)." : `You can't see far in the ${wx.falling}.`));
   if (!wx.indoor) {
-    if (!wx.exact) about.push(el("div", "sub", "Roughly: you can't read these skies. Someone local could teach you (ASK <name> ABOUT WEATHER)."));
+    if (!wx.exact) about.push(el("div", "sub", "Roughly: you can't read these skies. Someone local could teach you (DISCUSS WEATHER)."));
     else if (wx.forecast) about.push(el("div", "sub", `Forecast ${duration(wx.forecast[wx.forecast.length - 1].minutes)} ahead (dotted). Hover the grid.`));
   }
   $("wx-about").replaceChildren(...about);
@@ -1930,69 +2040,143 @@ function pips(n) {
   return span;
 }
 
+// What the ring on the tooltip's grid means, with the tier's numbers.
+function ringText(tier) {
+  const t = TIERS[tier] || TIERS.grey;
+  return `Up to +${Math.round(t.peak * 100)}% at the dot. Inside the ring it's stronger than usual; outside, weaker (down to −${Math.round(t.far * 100)}%).`;
+}
+
 function rarityName(thing, tag = "span") {
   return el(tag, `name r-${thing.rarity || "common"}`, thing.name);
 }
 
 // What a piece of gear (or a talent) is and does, how much the weather moves
 // it, and what today's weather does to it.
-function gearTip(g, extra = []) {
-  const parts = [rarityName(g, "div"),
-    el("div", "tagline", [capital(g.rarity || "common"), g.kind, ...extra].filter(Boolean).join(" · "))];
-  if (g.description) parts.push(el("div", "", g.description));
-  parts.push(el("div", "stats-line", `${amountsText(g, g.amounts)} (opener / hit / perfect) · every ${(g.period_ms / 1000).toFixed(1)} s`
-    + (g.targets === "ally" ? " · you or an ally" : "")),
-  el("div", "sub", `Timing: ±${g.grace_ms} ms to hit, ±${g.perfect_ms} ms for perfect`
-    + (g.stagger_ms ? ` · staggers ${g.stagger_ms} ms` : "")
-    + (g.bleed ? ` · bleeds ${g.bleed.damage} a blow for ${g.bleed.beats}` : "")));
+// Gear cards: every tooltip for gear, talents and worn gear is laid out the
+// same way, so you learn where to look. A frame in its rarity's colour; then
+// its name (and key), what it is, a drawn icon, and ruled sections: what it
+// does, the weather, what the weather's doing to it right now, and its story.
+// Sections that don't apply are left out.
+
+// Icons, drawn on a 24-unit square, by gear kind and by worn place or type.
+const ICONS = {
+  Weapon: "M14.5 4.5 L19.5 4.5 L19.5 9.5 L9 20 L4 15 Z M7 13 L11 17 M3 21 L5.5 18.5",
+  Melee: "M4 20 L11 13 M10 9 C10 5 14 3 17 4 C20 5 21 9 19 12 C17 14 14 15 12 14 Z",
+  Spell: "M12 3 L13.8 10.2 L21 12 L13.8 13.8 L12 21 L10.2 13.8 L3 12 L10.2 10.2 Z",
+  Potion: "M9.5 3 H14.5 M10.5 3 V9 L5.5 18 C4.8 19.5 5.8 21 7.3 21 H16.7 C18.2 21 19.2 19.5 18.5 18 L13.5 9 V3 M7.6 15 H16.4",
+  Light: "M16 3 L21 8 L10 19 L7 16 Z M7 16 L4.5 18.5 M3 21 L5.5 18.5 M9 14 L12 17", // light blades: a knife
+  Trick: "M8 7 H16 M9 7 C5 10 4 14 6 18 C7.5 20.5 16.5 20.5 18 18 C20 14 19 10 15 7 M10 4 L12 6 L14 4",
+  head: "M4 16 H20 M6 16 C6 10 8.5 6.5 12 6.5 C15.5 6.5 18 10 18 16 M11 6.5 V4.5 H13 V6.5",
+  legs: "M7 3 H17 L18 21 H13.5 L12 10 L10.5 21 H6 Z",
+  cloth: "M8 3 L4 6 L6 10 L8 9 V21 H16 V9 L18 10 L20 6 L16 3 C15 5 9 5 8 3 Z",
+  leather: "M8 3 L4 6 L6 10 L8 9 V21 H16 V9 L18 10 L20 6 L16 3 C15 5 9 5 8 3 Z M10 12 H14 M10 16 H14",
+  mail: "M8 3 L4 6 L6 10 L8 9 V21 H16 V9 L18 10 L20 6 L16 3 C15 5 9 5 8 3 Z M9 11 L15 17 M15 11 L9 17 M9 14 L12 11 M15 14 L12 17",
+  shield: "M12 3 L20 6 V12 C20 16.5 16.5 19.5 12 21 C7.5 19.5 4 16.5 4 12 V6 Z",
+  orb: "M12 4 C16.4 4 20 7.6 20 12 C20 16.4 16.4 20 12 20 C7.6 20 4 16.4 4 12 C4 7.6 7.6 4 12 4 Z M8.5 10 C9 8.5 10.3 7.5 12 7.5",
+  light: "M12 3 C15 7 18 9.5 18 14 C18 17.5 15.3 20 12 20 C8.7 20 6 17.5 6 14 C6 11 8 9.5 9 7.5 C10 9 11 10 12 10.5 C12 8 11.5 5.5 12 3 Z",
+};
+
+function icon(key, rarity) {
+  const svg = document.createElementNS(SVG, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", `gicon r-${rarity || "common"}`);
+  svg.setAttribute("aria-hidden", "true");
+  svgEl("path", { d: ICONS[key] || ICONS.Trick, fill: "none", stroke: "currentColor", "stroke-width": 1.5,
+    "stroke-linecap": "round", "stroke-linejoin": "round" }, svg);
+  return svg;
+}
+
+function gcard(thing, typeLine, iconKey, key) {
+  const card = el("div", `gcard rf-${thing.rarity || "common"}`);
+  const head = el("div", "ghead");
+  head.append(rarityName(thing, "div"));
+  if (key) head.append(el("span", "gkey", key));
+  const top = el("div", "gtop");
+  const words = el("div", "gwords");
+  words.append(head, el("div", "gtype", typeLine));
+  top.append(icon(iconKey, thing.rarity), words);
+  card.append(top);
+  return card;
+}
+
+function gsec(title, ...nodes) {
+  const sec = el("section", "gsec");
+  if (title) {
+    const h = el("h4", "");
+    h.append(...[].concat(title));
+    sec.append(h);
+  }
+  sec.append(...nodes);
+  return sec;
+}
+
+// Label and value rows, two columns, so nothing wraps mid-number.
+function kv(rows) {
+  const dl = el("dl", "kv");
+  for (const [k, v] of rows) if (v != null) dl.append(el("dt", "", k), el("dd", "", v));
+  return dl;
+}
+
+const RAIN_WORDS = { wet: "💧 Wants rain", dry: "🚫💧 Wants it dry" };
+
+function gearTip(g, extra = [], key = null) {
+  const card = gcard(g, [capital(g.rarity || "common"), g.kind, ...extra].filter(Boolean).join(" · "), g.kind, key);
+  const heal = g.effect === "heal";
+  card.append(gsec("What it does", kv([
+    [heal ? "Heals" : "Damage", `${g.amounts.join(" / ")}`],
+    ["", "opener / hit / perfect"],
+    ["Beat", `every ${(g.period_ms / 1000).toFixed(1)} s`],
+    ["Timing", `±${g.grace_ms} ms · ±${g.perfect_ms} perfect`],
+    ["Staggers", g.stagger_ms ? `${g.stagger_ms} ms` : null],
+    ["Bleeds", g.bleed ? `${g.bleed.damage} a blow, ${g.bleed.beats} blows` : null],
+    ["Targets", g.targets === "ally" ? "you or an ally" : null],
+  ])));
   if (g.weather) {
     const n = g.sensitivity || 1;
-    const head = el("h4", "");
-    head.append("Weather sensitivity ", pips(n));
-    parts.push(head);
+    const head = el("span", "split");
+    head.append(el("span", "", "Weather"), pips(n));
     const row = el("div", "wx");
     const svg = document.createElementNS(SVG, "svg");
-    drawWeatherGrid(svg, { here: wx, exact: wx ? wx.exact : true, spot: g.weather, tier: g.weather.tier });
-    const bar = el("div", "precip");
-    const fill = el("div", "fill");
-    fill.style.height = { wet: "100%", dry: "0%", any: "50%" }[g.weather.precipitation];
-    bar.append(fill);
+    drawWeatherGrid(svg, { here: wx, exact: wx ? wx.exact : true, spot: g.weather, tier: g.weather.tier, label: 0.17 });
     const about = el("div", "about");
-    about.append(el("div", "", `Best: ${spotName(g.weather)}`),
-      el("div", "sub", { wet: "Wants it wet.", dry: "Wants it dry.", any: "Doesn't mind rain." }[g.weather.precipitation]),
-      el("div", "sub", capital(SENSITIVITY[n]) + "."));
-    row.append(svg, bar, about);
-    parts.push(row);
+    about.append(el("div", "", `Best: ${spotName(g.weather)}`));
+    if (RAIN_WORDS[g.weather.precipitation]) about.append(el("div", "rain", RAIN_WORDS[g.weather.precipitation]));
+    about.append(el("div", "sub", capital(SENSITIVITY[n]) + "."), el("div", "sub", ringText(g.weather.tier)));
+    row.append(svg, about);
+    card.append(gsec(head, row));
   }
   if (g.now && wx) {
-    parts.push(el("h4", "", `Right now · ${wx.place}`));
+    const rows = [];
     for (const m of g.now.mods) {
       const row = el("div", "mod");
       const good = m.on === "resilience" || (m.on === "period" ? m.pct < 0 : m.pct > 0);
       const value = m.on === "resilience" ? `${m.pct}% softer` : m.on === "period" ? `${signed(m.pct)}% beat`
         : m.on ? `${signed(m.pct)}% window` : `${signed(m.pct)}%`;
       row.append(el("span", "", m.label), el("span", m.pct === 0 ? "" : good ? "up" : "down", value));
-      parts.push(row);
+      rows.push(row);
     }
-    parts.push(el("div", "result", `→ ${amountsText(g, g.now.amounts)} · every ${(g.now.period_ms / 1000).toFixed(1)} s`));
+    rows.push(el("div", "result", `→ ${g.now.amounts.join(" / ")} · every ${(g.now.period_ms / 1000).toFixed(1)} s`));
+    card.append(gsec(`Right now · ${wx.place}`, ...rows));
   }
-  return parts;
+  if (g.description) card.append(gsec(null, el("div", "flavour", g.description)));
+  return [card];
 }
 
 const PLACE_NAMES = { head: "Head", chest: "Chest", legs: "Legs", hand: "Hand" };
 
 // Worn gear: what it is, its armour and stats, and what holding it does.
 function wearTip(w) {
-  const parts = [rarityName(w, "div"), el("div", "tagline", `${capital(w.rarity || "common")} · ${capital(w.type)} · ${PLACE_NAMES[w.place]}`)];
-  if (w.description) parts.push(el("div", "", w.description));
-  const bits = [];
-  if (w.armor) bits.push(`Armour ${w.armor}`);
-  for (const [stat, n] of Object.entries(w.stats || {})) bits.push(`${signed(n)} ${capital(stat)}`);
-  if (w.light) bits.push("Lights the way in the dark");
-  if (w.type === "shield") bits.push("DEFEND blocks instead of dodging");
-  if (bits.length) parts.push(el("div", "stats-line", bits.join(" · ")));
-  if (w.usable === false) parts.push(el("div", "sub", "Your class can't use this."));
-  return parts;
+  const iconKey = w.place === "head" || w.place === "legs" ? w.place : w.type;
+  const card = gcard(w, `${capital(w.rarity || "common")} · ${capital(w.type)} · ${PLACE_NAMES[w.place]}`, iconKey);
+  const rows = [];
+  if (w.armor) rows.push(["Armour", String(w.armor)]);
+  for (const [stat, n] of Object.entries(w.stats || {})) rows.push([capital(stat), signed(n)]);
+  if (w.light) rows.push(["Light", "lights the way in the dark"]);
+  if (w.type === "shield") rows.push(["Defend", "blocks instead of dodging"]);
+  if (rows.length) card.append(gsec("What it does", kv(rows)));
+  if (w.usable === false) card.append(gsec(null, el("div", "warn", "Your class can't use this.")));
+  if (w.description) card.append(gsec(null, el("div", "flavour", w.description)));
+  return [card];
 }
 
 // Map -------------------------------------------------------------------------------
@@ -2448,7 +2632,7 @@ function applyLayout(save) {
   sideWidth = Math.round(Math.min(Math.max(sideWidth, SIDE.min), SIDE.max, Math.max(room, SIDE.min)));
   mapShare = Math.min(Math.max(mapShare, MAP.min), MAP.max);
   $("world").style.setProperty("--side-width", `${sideWidth}px`);
-  $("map-wrap").style.flexGrow = Math.round(mapShare * 100);
+  $("top").style.flexGrow = Math.round(mapShare * 100);
   $("log-wrap").style.flexGrow = 100 - Math.round(mapShare * 100);
   $("split-side").setAttribute("aria-valuenow", sideWidth);
   $("split-map").setAttribute("aria-valuenow", Math.round(mapShare * 100));
@@ -2479,7 +2663,7 @@ function dragBar(bar, onMove) {
 
 dragBar($("split-side"), (e) => { sideWidth = $("world").getBoundingClientRect().right - e.clientX; });
 dragBar($("split-map"), (e) => {
-  const map = $("map-wrap").getBoundingClientRect(), log = $("log-wrap").getBoundingClientRect();
+  const map = $("top").getBoundingClientRect(), log = $("log-wrap").getBoundingClientRect();
   mapShare = (e.clientY - map.top) / (log.bottom - map.top);
 });
 $("split-side").addEventListener("dblclick", () => { sideWidth = SIDE.initial; applyLayout(true); });

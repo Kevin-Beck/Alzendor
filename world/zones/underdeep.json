@@ -265,6 +265,10 @@
           "starts": "ud_worm"
         },
         "lake": "The Black Lake shows a sky that isn't ours. A moon. Miners who looked too long walked in."
+      },
+      "lure": {
+        "sense": "{Where}, the wheeze of a pump and the glow of a lamp.",
+        "rumour": "Ketta at the lamp station keeps the miners alive, just."
       }
     },
     "deep_crawler_1": {
@@ -515,7 +519,7 @@
       "start": "mask",
       "steps": {
         "mask": {
-          "goal": "Ask Ketta Lampwright for it: ASK KETTA ABOUT MASK.",
+          "goal": "Ask Ketta Lampwright for it: DISCUSS MASK WITH KETTA.",
           "on": {
             "ask": "ketta",
             "about": "mask"
@@ -539,7 +543,7 @@
       "start": "oil",
       "steps": {
         "oil": {
-          "goal": "Take Ketta's oil: ASK KETTA ABOUT OIL.",
+          "goal": "Take Ketta's oil: DISCUSS OIL WITH KETTA.",
           "on": {
             "ask": "ketta",
             "about": "oil"
@@ -594,7 +598,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Ketta: ASK KETTA ABOUT LAMPS.",
+          "goal": "Tell Ketta: DISCUSS LAMPS WITH KETTA.",
           "on": {
             "ask": "ketta",
             "about": "lamps"
@@ -624,10 +628,10 @@
           "then": "back"
         },
         "back": {
-          "goal": "Bring it to Ketta: USE BOARD ON KETTA.",
+          "goal": "Bring it to Ketta: GIVE BOARD TO KETTA.",
           "on": {
-            "use": "tally_board",
-            "on": "ketta"
+            "give": "tally_board",
+            "to": "ketta"
           },
           "effects": [
             {
@@ -658,7 +662,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Ketta: ASK KETTA ABOUT WORM.",
+          "goal": "Tell Ketta: DISCUSS WORM WITH KETTA.",
           "on": {
             "ask": "ketta",
             "about": "worm"

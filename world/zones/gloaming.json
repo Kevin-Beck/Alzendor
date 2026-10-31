@@ -199,7 +199,11 @@
           "starts": "gl_hunt"
         }
       },
-      "faction": "fey_court"
+      "faction": "fey_court",
+      "lure": {
+        "sense": "{Where}, the rustle of a market under rose-thorn awnings.",
+        "rumour": "The Thorn Herald trades in riddles and favours."
+      }
     },
     "tallow": {
       "name": "Tallow",
@@ -450,7 +454,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell the Herald: ASK HERALD ABOUT RIDDLES.",
+          "goal": "Tell the Herald: DISCUSS RIDDLES WITH HERALD.",
           "on": {
             "ask": "herald",
             "about": "riddles"
@@ -485,7 +489,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell the Herald: ASK HERALD ABOUT HUNT.",
+          "goal": "Tell the Herald: DISCUSS HUNT WITH HERALD.",
           "on": {
             "ask": "herald",
             "about": "hunt"

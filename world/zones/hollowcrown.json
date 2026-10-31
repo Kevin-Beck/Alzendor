@@ -228,6 +228,10 @@
           "text": "The hollow knights still guard a king who's dead. Six of them, laid to rest, and the streets would be quieter. Block their blows: they're slow.",
           "starts": "hc_knights"
         }
+      },
+      "lure": {
+        "sense": "{Where}, candles, and pilgrims praying.",
+        "rumour": "Mother Aveline at Pilgrim Landing needs someone brave."
       }
     },
     "corvin": {
@@ -255,7 +259,11 @@
       },
       "forecasts": [
         "alzendor"
-      ]
+      ],
+      "lure": {
+        "sense": "{Where}, a voice reading names aloud in an empty street.",
+        "rumour": "The last herald of the drowned city still keeps the roll."
+      }
     },
     "ghost_baker": {
       "name": "the Ghost Baker",
@@ -561,7 +569,7 @@
       "start": "hood",
       "steps": {
         "hood": {
-          "goal": "Ask Mother Aveline for it: ASK AVELINE ABOUT HOOD.",
+          "goal": "Ask Mother Aveline for it: DISCUSS HOOD WITH AVELINE.",
           "on": {
             "ask": "aveline",
             "about": "hood"
@@ -585,7 +593,7 @@
       "start": "baker",
       "steps": {
         "baker": {
-          "goal": "Ask the baker in the Ghost Market his name: ASK BAKER ABOUT NAME.",
+          "goal": "Ask the baker in the Ghost Market his name: DISCUSS NAME WITH BAKER.",
           "on": {
             "ask": "ghost_baker",
             "about": "name"
@@ -593,7 +601,7 @@
           "then": "guard"
         },
         "guard": {
-          "goal": "Ask the guard at the keep gate: ASK GUARD ABOUT NAME.",
+          "goal": "Ask the guard at the keep gate: DISCUSS NAME WITH GUARD.",
           "on": {
             "ask": "ghost_guard",
             "about": "name"
@@ -601,7 +609,7 @@
           "then": "lady"
         },
         "lady": {
-          "goal": "Ask the lady in the Hall of Banners: ASK LADY ABOUT NAME.",
+          "goal": "Ask the lady in the Hall of Banners: DISCUSS NAME WITH LADY.",
           "on": {
             "ask": "ghost_lady",
             "about": "name"
@@ -609,7 +617,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Corvin: ASK CORVIN ABOUT ROLL.",
+          "goal": "Tell Corvin: DISCUSS ROLL WITH CORVIN.",
           "on": {
             "ask": "corvin",
             "about": "roll"
@@ -641,7 +649,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Aveline: ASK AVELINE ABOUT KNIGHTS.",
+          "goal": "Tell Aveline: DISCUSS KNIGHTS WITH AVELINE.",
           "on": {
             "ask": "aveline",
             "about": "knights"

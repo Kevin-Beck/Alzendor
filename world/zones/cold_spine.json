@@ -373,6 +373,10 @@
         },
         "gyre": "Halvard swore he saw islands in the sky from the summit, in a gale. He was always swearing something.",
         "flint": "Mind your fingers."
+      },
+      "lure": {
+        "sense": "{Where}, a thread of smoke from a fire that never goes out.",
+        "rumour": "Bergen up on the Spine is looking for climbers."
       }
     },
     "hulda": {
@@ -393,6 +397,10 @@
           "text": "The White Hunger sleeps on the Knife-Edge. Big as a house. Nothing I have has scratched it. You want to cross the ridge, you creep past it. You want to kill it, you're mad, and I'll pay.",
           "starts": "cs_hunger"
         }
+      },
+      "lure": {
+        "sense": "{Where}, prayer flags snapping in the wind.",
+        "rumour": "Hulda at the trailhead is hunting something big."
       }
     },
     "ice_troll_1": {
@@ -616,7 +624,7 @@
       "start": "cloak",
       "steps": {
         "cloak": {
-          "goal": "Ask Bergen for it: ASK BERGEN ABOUT CLOAK.",
+          "goal": "Ask Bergen for it: DISCUSS CLOAK WITH BERGEN.",
           "on": {
             "ask": "bergen",
             "about": "cloak"
@@ -633,7 +641,8 @@
             }
           ]
         }
-      }
+      },
+      "must": true
     },
     "cs_expedition": {
       "name": "The Lost Expedition",
@@ -651,7 +660,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Bring them to Bergen: ASK BERGEN ABOUT EXPEDITION.",
+          "goal": "Bring them to Bergen: DISCUSS EXPEDITION WITH BERGEN.",
           "on": {
             "ask": "bergen",
             "about": "expedition"
@@ -677,14 +686,15 @@
             }
           ]
         }
-      }
+      },
+      "must": true
     },
     "cs_fire": {
       "name": "Fire on the Mountain",
       "start": "flint",
       "steps": {
         "flint": {
-          "goal": "Take Bergen's flint: ASK BERGEN ABOUT FLINT.",
+          "goal": "Take Bergen's flint: DISCUSS FLINT WITH BERGEN.",
           "on": {
             "ask": "bergen",
             "about": "flint"
@@ -726,7 +736,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Bergen: ASK BERGEN ABOUT CAIRNS.",
+          "goal": "Tell Bergen: DISCUSS CAIRNS WITH BERGEN.",
           "on": {
             "ask": "bergen",
             "about": "cairns"
@@ -740,7 +750,8 @@
             }
           ]
         }
-      }
+      },
+      "must": true
     },
     "cs_hunger": {
       "name": "The White Hunger",
@@ -754,7 +765,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Hulda: ASK HULDA ABOUT HUNGER.",
+          "goal": "Tell Hulda: DISCUSS HUNGER WITH HULDA.",
           "on": {
             "ask": "hulda",
             "about": "hunger"
@@ -771,7 +782,8 @@
             }
           ]
         }
-      }
+      },
+      "must": true
     }
   }
 }

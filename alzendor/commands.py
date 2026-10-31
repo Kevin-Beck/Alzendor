@@ -182,14 +182,57 @@ async def weather(ctx: Context, rest: str) -> None:
     await ctx.call("weather")
 
 
-@command("ask", "ASK <someone> [ABOUT] <topic>", "Ask someone about something, e.g. ASK TAMSIN ABOUT WEATHER.")
-async def ask(ctx: Context, rest: str) -> None:
-    words = [w for w in _thing(rest).split() if w != "about"]
-    if not words:
-        raise Usage("Ask whom, about what? e.g. ASK TAMSIN ABOUT WEATHER.")
-    topic = words.pop()
-    whom = " ".join(words) or ctx.target
-    await ctx.call("ask", _require(whom, "Ask whom? Name them, or press Tab to pick someone."), topic)
+def _talk_to(ctx: Context, rest: str) -> tuple[str, str]:
+    """(whom, topic) from 'weather', 'the signet with nan', 'nan about signet' or
+    ''. Whom is your target if not named, or '' for the only person here."""
+    text = _thing(rest)
+    whom = ""
+    if " with " in f" {text} ":
+        text, _, whom = f" {text} ".partition(" with ")
+    words = [w for w in text.split() if w != "about"]
+    topic = words.pop() if words else ""
+    return (whom.strip() or " ".join(words) or ctx.target), topic
+
+
+@command("discuss", "DISCUSS [topic] [WITH someone]",
+         "Talk something over with your target, e.g. DISCUSS WEATHER, or DISCUSS SIGNET WITH NAN. "
+         "DISCUSS alone lists what they'll talk about with you.", aliases=("ask", "talk"))
+async def discuss(ctx: Context, rest: str) -> None:
+    await ctx.call("discuss", *_talk_to(ctx, rest))
+
+
+@command("greet", "GREET [someone]", "Greet your target. People who have work for you will say so.", aliases=("hello", "hi"))
+async def greet(ctx: Context, rest: str) -> None:
+    await ctx.call("greet", _thing(rest) or ctx.target)
+
+
+@command("accept", "ACCEPT", "Take on the quest you've just been offered.", aliases=("yes",))
+async def accept(ctx: Context, rest: str) -> None:
+    await ctx.call("accept")
+
+
+@command("decline", "DECLINE", "Turn down the quest you've just been offered (ask them again later).", aliases=("no",))
+async def decline(ctx: Context, rest: str) -> None:
+    await ctx.call("decline")
+
+
+@command("whatnow", "WHATNOW (or WHAT NOW)", "What you're meant to be doing: your quest, or a pull towards someone with work.",
+         aliases=("hint",))
+async def whatnow(ctx: Context, rest: str) -> None:
+    await ctx.call("whatnow")
+
+
+@command("what", "WHAT NOW", "What you're meant to be doing.")
+async def what(ctx: Context, rest: str) -> None:
+    if rest.lower().strip(" ?") != "now":
+        raise Usage("What? Try WHAT NOW.")
+    await ctx.call("whatnow")
+
+
+@command("give", "GIVE <item> [TO someone]", "Hand something to your target (or whoever you name), e.g. GIVE SIGNET TO NAN.")
+async def give(ctx: Context, rest: str) -> None:
+    item, _, whom = f" {rest.lower()} ".partition(" to ")
+    await ctx.call("give", _require(_thing(item), "Give what? e.g. GIVE SIGNET TO NAN."), _thing(whom) or ctx.target)
 
 
 # Moving -----------------------------------------------------------------------
@@ -223,13 +266,23 @@ async def move(ctx: Context, rest: str) -> None:
     await ctx.call("move", direction)
 
 
-@command("creep", "CREEP <direction>", "Step somewhere carefully: slower, but likelier to spot a trap.", aliases=("careful", "sneak"))
+@command("creep", "CREEP <direction>", "Step somewhere carefully: three times as slow, but much likelier to get past a trap "
+         "(and sure to, if you've read its sign).", aliases=("careful", "sneak"))
 async def creep(ctx: Context, rest: str) -> None:
     direction = rest.lower()
     direction = SHORT_DIRECTIONS.get(direction, direction)
     if direction not in DIRECTIONS:
         raise Usage("Creep where? Directions are " + ", ".join(DIRECTIONS) + ".")
     await ctx.call("move", direction, "careful")
+
+
+@command("disarm", "DISARM <direction>", "Try to disarm a trap you know of next door: a check, and failing springs it on you.")
+async def disarm(ctx: Context, rest: str) -> None:
+    direction = rest.lower()
+    direction = SHORT_DIRECTIONS.get(direction, direction)
+    if direction not in DIRECTIONS:
+        raise Usage("Disarm which way? e.g. DISARM NORTH.")
+    await ctx.call("disarm", direction)
 
 
 # Acting in the room -----------------------------------------------------------
@@ -338,7 +391,8 @@ async def quests(ctx: Context, rest: str) -> None:
     await ctx.call("quests")
 
 
-@command("equip", "EQUIP <gear> [slot]", "Put gear in a slot, e.g. EQUIP SWORD 2. GEAR lists it all.", aliases=("wield",))
+@command("equip", "EQUIP <gear> [slot]", "Put gear in a slot (EQUIP SWORD 2), or put on anything worn or held (EQUIP TORCH). "
+         "GEAR lists it all.", aliases=("wield",))
 async def equip(ctx: Context, rest: str) -> None:
     words = rest.lower().split()
     slot = ""
@@ -364,10 +418,14 @@ async def gear(ctx: Context, rest: str) -> None:
     await ctx.call("gear")
 
 
-@command("wear", "WEAR <item>", "Put on worn gear (head, chest, legs) or take something in your hand, e.g. WEAR TORCH.",
-         aliases=("hold", "don"))
+@command("wear", "WEAR <item>", "Put on worn gear (head, chest, legs), e.g. WEAR HAT.", aliases=("don",))
 async def wear(ctx: Context, rest: str) -> None:
     await ctx.call("wear", _require(_thing(rest), "Wear what? The Character panel lists your worn gear."))
+
+
+@command("hold", "HOLD <item>", "Take something in your hand: a torch, a shield, an orb, e.g. HOLD TORCH.")
+async def hold(ctx: Context, rest: str) -> None:
+    await ctx.call("hold", _require(_thing(rest), "Hold what? A torch, a shield, an orb."))
 
 
 @command("remove", "REMOVE <item or place>", "Take off worn gear, or empty your hand, e.g. REMOVE HAND.", aliases=("doff",))

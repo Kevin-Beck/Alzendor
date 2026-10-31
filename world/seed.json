@@ -2104,6 +2104,73 @@
       "room": "magistrates_study",
       "quest": true,
       "description": "The magistrate's seal, in gold."
+    },
+    "rat_tail": {
+      "name": "rat tail",
+      "keywords": "tail rat",
+      "tags": [
+        "tail",
+        "vermin"
+      ],
+      "value": 1,
+      "description": "A long, bald rat tail. Somebody pays a bounty on these."
+    },
+    "crab_shell": {
+      "name": "crab shell",
+      "keywords": "shell crab",
+      "tags": [
+        "shell"
+      ],
+      "value": 2,
+      "description": "A rock crab's shell, hard as slate."
+    },
+    "wisp_dust": {
+      "name": "wisp dust",
+      "keywords": "dust wisp",
+      "tags": [
+        "dust",
+        "reagent"
+      ],
+      "value": 3,
+      "description": "A pinch of dust that still glows faintly."
+    },
+    "wolf_pelt": {
+      "name": "wolf pelt",
+      "keywords": "pelt wolf",
+      "tags": [
+        "pelt",
+        "hide"
+      ],
+      "value": 3,
+      "description": "A grey wolf pelt, a little ragged at the edges."
+    },
+    "boar_tusk": {
+      "name": "boar tusk",
+      "keywords": "tusk boar",
+      "tags": [
+        "tusk",
+        "bone"
+      ],
+      "value": 2,
+      "description": "A curved yellow tusk."
+    },
+    "boar_haunch": {
+      "name": "boar haunch",
+      "keywords": "haunch boar meat",
+      "tags": [
+        "meat"
+      ],
+      "value": 2,
+      "description": "A haunch of wild boar. It wants a pot."
+    },
+    "redcap_hat": {
+      "name": "Redcap's cap",
+      "keywords": "cap redcap hat",
+      "tags": [
+        "trophy"
+      ],
+      "value": 2,
+      "description": "A filthy red cap. The Redcaps dye them in something you'd rather not know about."
     }
   },
   "npcs": {
@@ -2126,8 +2193,30 @@
           "text": "Millbrook's east, out of the new East Gate past the back alley, then south-east at the crossroads. Ask Reeve Halden why the ale stopped, and come and tell me.",
           "starts": "gf_word"
         },
-        "redcaps": "Redcaps. Of course it's the Redcaps."
-      }
+        "redcaps": "Redcaps. Of course it's the Redcaps.",
+        "background": {
+          "text": "My mother kept this inn before me, and her father before her. Nobody's ever left owing.",
+          "requires": {
+            "rapport": 3
+          },
+          "rapport": 1
+        },
+        "place": "Harrowgate. Every road in the lake country runs through it, and every traveller drinks here.",
+        "rumours": "They say the Redcaps north of the crossroads have grown bold. And there's a ranger out in the woods who knows more than she says."
+      },
+      "lure": {
+        "sense": "{Where} you see the warm light of what may be an inn.",
+        "rumour": "Marta at the Gilded Tankard always knows who's hiring."
+      },
+      "greet": {
+        "first": "Welcome to the Gilded Tankard! I'm Marta. Sit anywhere.",
+        "again": "Back again! The usual?",
+        "friendly": "There's my favourite customer."
+      },
+      "likes": [
+        "meat"
+      ],
+      "thanks": "Oh, that'll go in tonight's stew. Thank you!"
     },
     "brannoc": {
       "name": "Brannoc",
@@ -2147,8 +2236,38 @@
         "iron": {
           "text": "Bog iron, from the ditch in the Fallow Fields east of the city. Bring me a lump and I'll make you something worth carrying.",
           "starts": "gf_iron"
-        }
-      }
+        },
+        "background": {
+          "text": "I learned the hammer under the mountain. Came up for the air, stayed for the ale.",
+          "requires": {
+            "rapport": 3
+          },
+          "rapport": 1
+        },
+        "place": "Harrowgate's smiths all bought their first hammer from me. Most of them still owe me for it."
+      },
+      "lure": {
+        "sense": "{Where}, the ring of a hammer on an anvil.",
+        "rumour": "Brannoc the smith is short of iron again, I hear."
+      },
+      "greet": {
+        "first": "Brannoc. Smith. Don't touch the anvil.",
+        "again": "Mm. You."
+      },
+      "wants": {
+        "says": "Boar tusks make good knife handles. Two apiece.",
+        "items": [
+          {
+            "tag": "tusk",
+            "price": 2,
+            "cap": 6
+          }
+        ]
+      },
+      "likes": [
+        "trophy"
+      ],
+      "thanks": "Ha! A Redcap's cap. I'll hang it over the forge."
     },
     "orc-1": {
       "name": "Orc Warrior",
@@ -2201,7 +2320,13 @@
           "hit": "{actor} nips at {target}."
         }
       ],
-      "coins": 1
+      "coins": 1,
+      "loot": [
+        {
+          "item": "rat_tail",
+          "chance": 0.6
+        }
+      ]
     },
     "rat-2": {
       "name": "Dock Rat",
@@ -2221,7 +2346,13 @@
           "hit": "{actor} nips at {target}."
         }
       ],
-      "coins": 1
+      "coins": 1,
+      "loot": [
+        {
+          "item": "rat_tail",
+          "chance": 0.6
+        }
+      ]
     },
     "tamsin": {
       "name": "Old Tamsin",
@@ -2325,6 +2456,10 @@
           "starts": "dw_intel"
         },
         "deepwood": "So it's a new queen. Then the Barkmother will want her dead, and so do I."
+      },
+      "lure": {
+        "sense": "{Where}, woodsmoke, and pelts drying on a line.",
+        "rumour": "There's a ranger camped out in the woods, Wren. Knows things."
       }
     },
     "spider-1": {
@@ -2679,6 +2814,12 @@
           "damage": 3,
           "hit": "{actor} snaps at {target}."
         }
+      ],
+      "loot": [
+        {
+          "item": "wolf_pelt",
+          "chance": 0.5
+        }
       ]
     },
     "ness": {
@@ -2721,6 +2862,12 @@
           "damage": 3,
           "hit": "{actor} nips {target} with a huge claw."
         }
+      ],
+      "loot": [
+        {
+          "item": "crab_shell",
+          "chance": 0.6
+        }
       ]
     },
     "holt": {
@@ -2753,8 +2900,45 @@
       "icon": "🔨",
       "topics": {
         "ship": "She'll float again, with tar in her seams. But she'll never cross an ocean. Not this season, not ever.",
-        "chain": "We lost the anchor chain off Seal Rocks in the storm. Bring it back and I can sell it, at least.",
-        "lights": "Lights in the cove at night. Wreckers. The harbourmaster ought to know."
+        "chain": {
+          "text": "We lost the anchor chain off Seal Rocks in the storm. Bring it back and I can sell it, at least.",
+          "while": {
+            "quest": "gh_chain"
+          }
+        },
+        "lights": {
+          "text": "Lights in the cove at night. Wreckers. The harbourmaster ought to know.",
+          "while": {
+            "quest": "gh_wreckers"
+          }
+        },
+        "background": {
+          "text": "I built the Kittiwake with my own hands, twenty years ago. I'll not build another like her.",
+          "requires": {
+            "rapport": 3
+          },
+          "rapport": 1
+        },
+        "place": "Gullhaven. A harbour, a tavern and a lot of wet rope. It's home."
+      },
+      "lure": {
+        "sense": "{Where}, the smell of hot tar and sawn timber.",
+        "rumour": "Hedda the shipwright could use a hand, they say."
+      },
+      "greet": {
+        "first": "You're off the Kittiwake. Good. I need hands.",
+        "again": "Back again."
+      },
+      "wants": {
+        "says": "Crab shells. Ground fine, they go in the caulk. Two coins a shell.",
+        "items": [
+          {
+            "tag": "shell",
+            "price": 2,
+            "cap": 6,
+            "thanks": "That'll do nicely."
+          }
+        ]
       }
     },
     "pell": {
@@ -2787,8 +2971,28 @@
           "text": "Rare and fussy aren't the same thing. Though your fussiest gear is mostly rare.",
           "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: ASK about SENSITIVITY."
         },
-        "crabs": "Crabs, eh? Nasty pinchers. You got one and kept your fingers. That'll do."
-      }
+        "crabs": {
+          "text": "Crabs, eh? Nasty pinchers. You got one and kept your fingers. That'll do.",
+          "while": {
+            "quest": "gh_sky",
+            "step": "back"
+          }
+        },
+        "place": "The Salted Gull. Best stew on the coast, if you like fish. Worst beer anywhere.",
+        "rumours": "They say there's a city on the lake country's shore, Harrowgate, where a sailor can find work without a ship."
+      },
+      "lure": {
+        "sense": "{Where}, old sailors arguing about the weather.",
+        "rumour": "Old Pell in the Salted Gull reads the sky better than anyone."
+      },
+      "greet": {
+        "first": "Sit down, sit down. Nobody listens to old Pell.",
+        "again": "Back for more sky-lore?"
+      },
+      "likes": [
+        "shell"
+      ],
+      "thanks": "A fine one. I'll put it on the shelf with the others."
     },
     "vane": {
       "name": "Harbourmaster Vane",
@@ -2802,7 +3006,16 @@
       "proper": true,
       "icon": "📜",
       "topics": {
-        "wreckers": "Wreckers? Bring me proof and I will hang them."
+        "wreckers": {
+          "text": "Wreckers? Bring me proof and I will hang them.",
+          "while": {
+            "quest": "gh_wreckers"
+          }
+        }
+      },
+      "lure": {
+        "sense": "{Where}, a bell rings the hour over the harbour.",
+        "rumour": "The harbourmaster's been asking questions about the cove."
       }
     },
     "ardith": {
@@ -2819,7 +3032,10 @@
       "topics": {
         "travel": {
           "text": "Never crossed open water? The cog sails from here, out past the strait and over to the lake country. A few days, if the weather holds, and it won't. Ride it and you're done with Gullhaven: there's nothing here to come back for. Tell me when you're ready.",
-          "explains": "Travel: coaches, ferries, caravans and portals leave from particular places. Standing in one, type TRAVEL to see every route out: where it goes, the fare, and how many stages the journey takes. Type TRAVEL and a route's name to take it. On the road you go a stage at a time, and things can happen: you'll be given choices when they do.\nThis one leaves Gullhaven for good: there's no coming back. When you're ready, type TRAVEL to see it, then TRAVEL COG."
+          "explains": "Travel: coaches, ferries, caravans and portals leave from particular places. Standing in one, type TRAVEL to see every route out: where it goes, the fare, and how many stages the journey takes. Type TRAVEL and a route's name to take it. On the road you go a stage at a time, and things can happen: you'll be given choices when they do.\nThis one leaves Gullhaven for good: there's no coming back. When you're ready, type TRAVEL to see it, then TRAVEL COG.",
+          "while": {
+            "quest": "gh_leave"
+          }
         },
         "passage": "The Kittiwake's done, and so's my money. But I've a berth for you on a cog to the lake country. Ask me about travel, if you've never crossed.",
         "kittiwake": "Six years. She deserved better."
@@ -2845,7 +3061,13 @@
           "hit": "{actor} pinches {target}."
         }
       ],
-      "role": "crab"
+      "role": "crab",
+      "loot": [
+        {
+          "item": "crab_shell",
+          "chance": 0.6
+        }
+      ]
     },
     "rock_crab_2": {
       "name": "Rock Crab",
@@ -2867,7 +3089,13 @@
           "hit": "{actor} pinches {target}."
         }
       ],
-      "role": "crab"
+      "role": "crab",
+      "loot": [
+        {
+          "item": "crab_shell",
+          "chance": 0.6
+        }
+      ]
     },
     "wrecker": {
       "name": "Wrecker",
@@ -2927,9 +3155,17 @@
       "topics": {
         "stall": {
           "text": "Crates. By the fountain. Go on, then. They won't carry themselves.",
-          "explains": "GET CRATES at the fountain (WEST), then come back and USE CRATES ON STALL."
+          "explains": "GET CRATES at the fountain (WEST), then come back and USE CRATES ON STALL.",
+          "while": {
+            "quest": "cs_stall"
+          }
         },
-        "quarrel": "Okur and Selene, at it again. The whole market is choosing sides.",
+        "quarrel": {
+          "text": "Okur and Selene, at it again. The whole market is choosing sides.",
+          "while": {
+            "quest": "cs_weight"
+          }
+        },
         "weather": {
           "text": "A merchant who can't read the sky gets rained on with her silks out. Feel how cold it is and how hard the wind blows. Watch what's coming down, and whether it's day or dark, and what the road's like underfoot. Get it wrong and you've lost a week's takings. Get it right and you're selling umbrellas at a crown apiece.",
           "explains": "Your weather panel, left to right:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
@@ -2942,12 +3178,38 @@
           "text": "Rare's not the same as fussy, love. Plenty of rare things don't care about the weather, and plenty of cheap ones do. Though the fussiest are mostly rare, I'll grant you.",
           "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: ASK about SENSITIVITY."
         },
-        "rats": "Got one, did you? Good. They're bold this year, with the oats spilt all over the yard.",
-        "future": "What I want? This. The stall, the noise, Wenna and Hob shouting the prices over each other. We do well, the three of us, and we'll go on doing well. But you? In one week you've caught the guild's own weights being filed and cleared out its granary. You don't want to stand here all day selling pepper, and I won't have you do it. Go and see the world while you're young. Dace is taking a caravan to Harrowgate. Go and talk to him."
+        "rats": {
+          "text": "Got one, did you? Good. They're bold this year, with the oats spilt all over the yard.",
+          "while": {
+            "quest": "cs_sky",
+            "step": "back"
+          }
+        },
+        "future": {
+          "text": "What I want? This. The stall, the noise, Wenna and Hob shouting the prices over each other. We do well, the three of us, and we'll go on doing well. But you? In one week you've caught the guild's own weights being filed and cleared out its granary. You don't want to stand here all day selling pepper, and I won't have you do it. Go and see the world while you're young. Dace is taking a caravan to Harrowgate. Go and talk to him.",
+          "while": {
+            "quest": "cs_leave",
+            "step": "aunt"
+          }
+        },
+        "background": {
+          "text": "Forty years on Stall Row. I sold pepper to your grandmother, and she haggled worse than you do.",
+          "rapport": 1
+        },
+        "place": "Copperstall. Every merchant on the coast comes through this square sooner or later."
       },
       "forecasts": [
         "copperstall"
-      ]
+      ],
+      "lure": {
+        "sense": "{Where}, a woman's voice calling prices over the market noise.",
+        "rumour": "Brisa on Stall Row always needs a hand."
+      },
+      "greet": {
+        "first": "There you are. Don't just stand there.",
+        "again": "Back already?",
+        "friendly": "There's my favourite."
+      }
     },
     "okur": {
       "name": "Okur",
@@ -2961,7 +3223,12 @@
       "proper": true,
       "icon": "🌶️",
       "topics": {
-        "scales": "\"My scales are true! It is HER scales. Short measure on every ell of silk!\""
+        "scales": {
+          "text": "\"My scales are true! It is HER scales. Short measure on every ell of silk!\"",
+          "while": {
+            "quest": "cs_weight"
+          }
+        }
       }
     },
     "selene": {
@@ -2976,7 +3243,12 @@
       "proper": true,
       "icon": "🧵",
       "topics": {
-        "scales": "\"Short weight on every ounce of saffron in this market! Someone swapped the guild's weights. Look in the counting house, if you don't believe me.\""
+        "scales": {
+          "text": "\"Short weight on every ounce of saffron in this market! Someone swapped the guild's weights. Look in the counting house, if you don't believe me.\"",
+          "while": {
+            "quest": "cs_weight"
+          }
+        }
       }
     },
     "thorne": {
@@ -2991,8 +3263,44 @@
       "proper": true,
       "icon": "🎩",
       "topics": {
-        "granary": "Rats in the guild granary. Clear them out and I will see you right.",
-        "rats": "Rats? The granary was full of them. Or it was, I'm told."
+        "granary": {
+          "text": "Rats in the guild granary. Clear them out and I will see you right.",
+          "while": {
+            "quest": "cs_rats"
+          }
+        },
+        "rats": {
+          "text": "Rats? The granary was full of them. Or it was, I'm told.",
+          "while": {
+            "quest": "cs_rats",
+            "step": "back"
+          }
+        },
+        "background": {
+          "text": "I came to Copperstall with a cart and a lie. The cart's long gone.",
+          "requires": {
+            "rapport": 3
+          }
+        },
+        "place": "The Merchants' Guild. Every weight and measure in Copperstall answers to this desk."
+      },
+      "lure": {
+        "sense": "{Where}, the tap of a seal on wax, and an important voice.",
+        "rumour": "The guildmaster has work for anyone with sense."
+      },
+      "greet": {
+        "first": "Guildmaster Thorne. You'll be Brisa's young relation. Well?",
+        "again": "Ah. You again."
+      },
+      "wants": {
+        "says": "The guild pays a bounty on rat tails. A copper each. Bring them here.",
+        "items": [
+          {
+            "tag": "tail",
+            "price": 1,
+            "cap": 10
+          }
+        ]
       }
     },
     "dace": {
@@ -3009,7 +3317,10 @@
       "topics": {
         "travel": {
           "text": "First time on the road? Wagons, barges, ships: they all leave from somewhere, and they all cost something, coin or work. Mine's free if you ride guard. It's the hill road and then the woods to Harrowgate, in the lake country, and there's bandits in those woods. And once you're out of Copperstall, you're out: nobody comes back this way for a stall. Say the word when you're ready.",
-          "explains": "Travel: coaches, ferries, caravans and portals leave from particular places. Standing in one, type TRAVEL to see every route out: where it goes, the fare, and how many stages the journey takes. Type TRAVEL and a route's name to take it. On the road you go a stage at a time, and things can happen: you'll be given choices when they do.\nThis one leaves Copperstall for good: there's no coming back. When you're ready, type TRAVEL to see it, then TRAVEL CARAVAN."
+          "explains": "Travel: coaches, ferries, caravans and portals leave from particular places. Standing in one, type TRAVEL to see every route out: where it goes, the fare, and how many stages the journey takes. Type TRAVEL and a route's name to take it. On the road you go a stage at a time, and things can happen: you'll be given choices when they do.\nThis one leaves Copperstall for good: there's no coming back. When you're ready, type TRAVEL to see it, then TRAVEL CARAVAN.",
+          "while": {
+            "quest": "cs_leave"
+          }
         },
         "passage": "Harrowgate, in the lake country. Ask me about travel, if you've never been on the road."
       }
@@ -3033,6 +3344,12 @@
           "damage": 2,
           "hit": "{actor} bites {target}."
         }
+      ],
+      "loot": [
+        {
+          "item": "rat_tail",
+          "chance": 0.6
+        }
       ]
     },
     "granary_rat_2": {
@@ -3053,6 +3370,12 @@
           "period": 2500,
           "damage": 2,
           "hit": "{actor} bites {target}."
+        }
+      ],
+      "loot": [
+        {
+          "item": "rat_tail",
+          "chance": 0.6
         }
       ]
     },
@@ -3076,6 +3399,12 @@
           "hit": "{actor} swarms over {target}.",
           "defend": "none"
         }
+      ],
+      "loot": [
+        {
+          "item": "rat_tail",
+          "chance": 1
+        }
       ]
     },
     "maud": {
@@ -3095,7 +3424,10 @@
       "topics": {
         "moonbloom": {
           "text": "There's a fever in the hamlet, and moonbloom is the cure. It grows in the mist pool in Fernhollow, and only opens when the air is still and damp.",
-          "explains": "Moonbloom opens when there's little wind and something is falling: the dot low on the sky square, and rain in the rain bar."
+          "explains": "Moonbloom opens when there's little wind and something is falling: the dot low on the sky square, and rain in the rain bar.",
+          "while": {
+            "quest": "tw_bloom"
+          }
         },
         "wood": "Someone's been poaching in the deep oaks. Watch your step.",
         "weather": {
@@ -3110,8 +3442,43 @@
           "text": "Rare isn't the same as fussy. A rare herb might grow anywhere. But the fussiest ones are mostly rare.",
           "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: ASK about SENSITIVITY."
         },
-        "wisps": "Bog wisps. Pretty things, and they'd burn the eyes out of your head. You did well."
-      }
+        "wisps": {
+          "text": "Bog wisps. Pretty things, and they'd burn the eyes out of your head. You did well.",
+          "while": {
+            "quest": "tw_sky",
+            "step": "back"
+          }
+        },
+        "background": {
+          "text": "I came to Thornwick to nurse a fever, forty years ago. Nobody ever let me leave.",
+          "rapport": 1
+        },
+        "place": "Thornwick. The old wood's been here longer than any of us. Mind it."
+      },
+      "lure": {
+        "sense": "{Where}, the sharp green smell of drying herbs.",
+        "rumour": "Maud the healer's been looking for help."
+      },
+      "greet": {
+        "first": "Come in, come in. Mind the herbs.",
+        "again": "Welcome back, dear.",
+        "friendly": "There you are, dear."
+      },
+      "wants": {
+        "says": "Wisp dust, if you've the nerve to get it. It makes my salves glow. Three coins a pinch.",
+        "items": [
+          {
+            "tag": "dust",
+            "price": 3,
+            "cap": 5,
+            "thanks": "Careful, it stains."
+          }
+        ]
+      },
+      "likes": [
+        "pelt"
+      ],
+      "thanks": "Oh, that'll keep my old bones warm. Thank you, dear."
     },
     "tobin": {
       "name": "Tobin",
@@ -3127,9 +3494,22 @@
       "topics": {
         "travel": {
           "text": "Barge goes downriver, round the bend and through the rapids, to the big woods. Sit on the timber and hold on. Once you're off it, you're a long way from Thornwick. Say when.",
-          "explains": "Travel: coaches, ferries, caravans and portals leave from particular places. Standing in one, type TRAVEL to see every route out: where it goes, the fare, and how many stages the journey takes. Type TRAVEL and a route's name to take it. On the road you go a stage at a time, and things can happen: you'll be given choices when they do.\nThis one leaves Thornwick for good: there's no coming back. When you're ready, type TRAVEL to see it, then TRAVEL BARGE."
+          "explains": "Travel: coaches, ferries, caravans and portals leave from particular places. Standing in one, type TRAVEL to see every route out: where it goes, the fare, and how many stages the journey takes. Type TRAVEL and a route's name to take it. On the road you go a stage at a time, and things can happen: you'll be given choices when they do.\nThis one leaves Thornwick for good: there's no coming back. When you're ready, type TRAVEL to see it, then TRAVEL BARGE.",
+          "while": {
+            "quest": "tw_leave"
+          }
         },
         "passage": "Downriver? The Spiderwood's where the money is, for a hunter. Ask me about travel, if you've never ridden a barge."
+      },
+      "wants": {
+        "says": "Pelts sell downriver. I'll give you three apiece.",
+        "items": [
+          {
+            "tag": "pelt",
+            "price": 3,
+            "cap": 6
+          }
+        ]
       }
     },
     "bog_wisp": {
@@ -3152,6 +3532,12 @@
           "hit": "{actor} stings {target} with cold light.",
           "defend": "dodge"
         }
+      ],
+      "loot": [
+        {
+          "item": "wisp_dust",
+          "chance": 0.6
+        }
       ]
     },
     "rise_wolf": {
@@ -3173,6 +3559,12 @@
           "damage": 3,
           "hit": "{actor} bites {target}."
         }
+      ],
+      "loot": [
+        {
+          "item": "wolf_pelt",
+          "chance": 0.5
+        }
       ]
     },
     "rise_wolf_2": {
@@ -3193,6 +3585,12 @@
           "period": 2500,
           "damage": 3,
           "hit": "{actor} bites {target}."
+        }
+      ],
+      "loot": [
+        {
+          "item": "wolf_pelt",
+          "chance": 0.5
         }
       ]
     },
@@ -3229,8 +3627,18 @@
       "proper": true,
       "icon": "👵",
       "topics": {
-        "work": "A purse first. The drunk in Tipsy Lane. Then we talk about real work.",
-        "signet": "The magistrate's signet ring. With it, I can seal any order I like. Watch the stairs; he's not stupid.",
+        "work": {
+          "text": "A purse first. The drunk in Tipsy Lane. Then we talk about real work.",
+          "while": {
+            "quest": "lw_lift"
+          }
+        },
+        "signet": {
+          "text": "The magistrate's signet ring. With it, I can seal any order I like. Watch the stairs; he's not stupid.",
+          "while": {
+            "quest": "lw_signet"
+          }
+        },
         "weather": {
           "text": "Rain empties the streets. Fog hides you. Cold keeps the watch indoors, and the dark's your friend. Learn the sky, the rain, the hour and the cobbles, and you'll never get caught out on a roof in a storm.",
           "explains": "Your weather panel, left to right:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
@@ -3243,11 +3651,48 @@
           "text": "Rare's what it fetches. Fussy's how it works. Not the same thing, though the fussiest stuff's usually rare.",
           "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: ASK about SENSITIVITY."
         },
-        "rats": "Bread's safe, then. Quick hands and quicker feet. You'll do."
+        "rats": {
+          "text": "Bread's safe, then. Quick hands and quicker feet. You'll do.",
+          "while": {
+            "quest": "lw_sky",
+            "step": "back"
+          }
+        },
+        "background": {
+          "text": "I ran these gutters when I was smaller than you. Then I ran the ones who ran them. Now I just run.",
+          "requires": {
+            "rapport": 3
+          },
+          "rapport": 1
+        },
+        "place": "Low Wick. Small town, smaller minds, and a magistrate who thinks he owns it."
       },
       "forecasts": [
         "lowwick"
-      ]
+      ],
+      "lure": {
+        "sense": "{Where}, the smell of baking bread, and children laughing somewhere under it.",
+        "rumour": "Nan Gristle's always got work for quick hands."
+      },
+      "greet": {
+        "first": "Nan Gristle. Don't stare at the teeth.",
+        "again": "Back, are you? Good.",
+        "friendly": "There's my quick hands."
+      },
+      "wants": {
+        "says": "Rat tails. The baker upstairs pays me a copper a tail, and I pay you the same. Don't ask why.",
+        "requires": {
+          "quest": "lw_lift"
+        },
+        "items": [
+          {
+            "tag": "tail",
+            "price": 1,
+            "cap": 10,
+            "thanks": "Lovely."
+          }
+        ]
+      }
     },
     "joss": {
       "name": "Joss",
@@ -3263,7 +3708,10 @@
       "topics": {
         "travel": {
           "text": "Under the tarp, not a sound, down the low road and through the tollgate. The watch checks carts there, so lie still. Once you're in the city, you don't come back to Low Wick. Not with your face. Say when.",
-          "explains": "Travel: coaches, ferries, caravans and portals leave from particular places. Standing in one, type TRAVEL to see every route out: where it goes, the fare, and how many stages the journey takes. Type TRAVEL and a route's name to take it. On the road you go a stage at a time, and things can happen: you'll be given choices when they do.\nThis one leaves Low Wick for good: there's no coming back. When you're ready, type TRAVEL to see it, then TRAVEL CART."
+          "explains": "Travel: coaches, ferries, caravans and portals leave from particular places. Standing in one, type TRAVEL to see every route out: where it goes, the fare, and how many stages the journey takes. Type TRAVEL and a route's name to take it. On the road you go a stage at a time, and things can happen: you'll be given choices when they do.\nThis one leaves Low Wick for good: there's no coming back. When you're ready, type TRAVEL to see it, then TRAVEL CART.",
+          "while": {
+            "quest": "lw_hot"
+          }
         },
         "passage": "Nan's favour, is it? Ask me about travel, and I'll tell you how it goes."
       }
@@ -3350,6 +3798,12 @@
           "damage": 2,
           "hit": "{actor} bites {target}."
         }
+      ],
+      "loot": [
+        {
+          "item": "rat_tail",
+          "chance": 0.6
+        }
       ]
     },
     "alley_rat": {
@@ -3370,6 +3824,12 @@
           "period": 2800,
           "damage": 2,
           "hit": "{actor} bites {target}."
+        }
+      ],
+      "loot": [
+        {
+          "item": "rat_tail",
+          "chance": 0.6
         }
       ]
     },
@@ -5467,7 +5927,11 @@
     "defend_late_ms": 400,
     "dodge_window_ms": 200,
     "block_window_ms": 300,
-    "defend_perfect_ms": 60
+    "defend_perfect_ms": 60,
+    "offer_beat_ms": 2500,
+    "lure_chance": 0.03,
+    "whatnow_steps": 15,
+    "gift_cooldown": 86400
   },
   "channels": [
     "general"
@@ -6970,7 +7434,8 @@
             }
           ]
         }
-      }
+      },
+      "must": true
     },
     "gh_chain": {
       "name": "Lost Chain",
@@ -6986,10 +7451,10 @@
           "then": "return"
         },
         "return": {
-          "goal": "Bring the chain back to Hedda on the slipway: USE CHAIN ON HEDDA.",
+          "goal": "Bring the chain back to Hedda on the slipway: GIVE CHAIN TO HEDDA.",
           "on": {
-            "use": "chain-g",
-            "on": "hedda"
+            "give": "chain-g",
+            "to": "hedda"
           },
           "effects": [
             {
@@ -7009,7 +7474,9 @@
         }
       },
       "giver": "pell",
-      "offer": "Hedda was in here asking after you. Her anchor chain went over at Seal Rocks in the storm, and she could sell it, if someone fetched it back."
+      "offer": "Hedda was in here asking after you. Her anchor chain went over at Seal Rocks in the storm. Would you fetch it back for her? She could sell it.",
+      "must": true,
+      "accepted": "Off you go. Mind the crabs."
     },
     "gh_wreckers": {
       "name": "Wreckers",
@@ -7023,10 +7490,10 @@
           "then": "proof"
         },
         "proof": {
-          "goal": "GET the false lantern from the cove and show the harbourmaster: USE LANTERN ON VANE.",
+          "goal": "GET the false lantern from the cove and show the harbourmaster: GIVE LANTERN TO VANE.",
           "on": {
-            "use": "lantern-g",
-            "on": "vane"
+            "give": "lantern-g",
+            "to": "vane"
           },
           "effects": [
             {
@@ -7055,14 +7522,16 @@
         }
       },
       "giver": "hedda",
-      "offer": "Listen. I've seen lights down in Wreckers' Cove at night, south of Seal Rocks. False lights, to draw ships onto the rocks. I'd not be surprised if that's what did for the Kittiwake. Find out who."
+      "offer": "I need to ask you something. I've seen lights down in Wreckers' Cove at night, south of Seal Rocks. False lights, to draw ships onto the rocks. I'd not be surprised if that's what did for the Kittiwake. Will you find out who?",
+      "must": true,
+      "accepted": "Be careful down there."
     },
     "gh_leave": {
       "name": "Paid Off",
       "start": "ask",
       "steps": {
         "ask": {
-          "goal": "Captain Ardith is waiting at Quay End. Ask her about the crossing: ASK ARDITH ABOUT TRAVEL.",
+          "goal": "Captain Ardith is waiting at Quay End. Ask her about the crossing: DISCUSS TRAVEL WITH ARDITH.",
           "on": {
             "ask": "ardith",
             "about": "travel"
@@ -7082,7 +7551,9 @@
         }
       },
       "giver": "vane",
-      "offer": "Captain Ardith was asking after you. She's at Quay End, and she says she's found you a berth off this rock."
+      "offer": "Captain Ardith was asking after you. She says she's found you a berth off this rock. Will you go and see her, at Quay End?",
+      "must": true,
+      "accepted": "Fair winds, then."
     },
     "cs_stall": {
       "name": "Opening the Stall",
@@ -7119,14 +7590,15 @@
             }
           ]
         }
-      }
+      },
+      "must": true
     },
     "cs_weight": {
       "name": "Short Weight",
       "start": "okur",
       "steps": {
         "okur": {
-          "goal": "The spicers and clothiers accuse each other of crooked scales. Hear Okur out, NORTH: ASK OKUR ABOUT SCALES.",
+          "goal": "The spicers and clothiers accuse each other of crooked scales. Hear Okur out, NORTH: DISCUSS SCALES WITH OKUR.",
           "on": {
             "ask": "okur",
             "about": "scales"
@@ -7134,7 +7606,7 @@
           "then": "selene"
         },
         "selene": {
-          "goal": "Now hear Selene, at the cloth stalls: ASK SELENE ABOUT SCALES.",
+          "goal": "Now hear Selene, at the cloth stalls: DISCUSS SCALES WITH SELENE.",
           "on": {
             "ask": "selene",
             "about": "scales"
@@ -7151,10 +7623,10 @@
           "then": "show"
         },
         "show": {
-          "goal": "Show the guildmaster, in the guild hall: USE WEIGHT ON THORNE.",
+          "goal": "Show the guildmaster, in the guild hall: GIVE WEIGHT TO THORNE.",
           "on": {
-            "use": "weight-m",
-            "on": "thorne"
+            "give": "weight-m",
+            "to": "thorne"
           },
           "effects": [
             {
@@ -7177,7 +7649,9 @@
         }
       },
       "giver": "brisa",
-      "offer": "Now, that shouting. Okur and Selene each swear the other's scales are crooked, and the whole market's choosing sides. Go and hear Okur out, at the spice stalls."
+      "offer": "Now, that shouting. Okur and Selene each swear the other's scales are crooked, and the whole market's choosing sides. Would you go and hear Okur out, at the spice stalls? Somebody sensible should.",
+      "must": true,
+      "accepted": "Good. Go on, then."
     },
     "cs_rats": {
       "name": "Rats in the Granary",
@@ -7196,7 +7670,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Thorne, in the Guild Hall: ASK THORNE ABOUT RATS.",
+          "goal": "Tell Thorne, in the Guild Hall: DISCUSS RATS WITH THORNE.",
           "on": {
             "ask": "thorne",
             "about": "rats"
@@ -7219,14 +7693,16 @@
         }
       },
       "giver": "thorne",
-      "offer": "While you're here. Rats have got into the guild granary, east of the counting house and down the steps. Clear them out, their king most of all, and I'll see you right."
+      "offer": "While you're here, I've a job, if you want it. Rats have got into the guild granary, east of the counting house and down the steps. Clear them out, their king most of all, and I'll see you right.",
+      "must": true,
+      "accepted": "Good. Take a light."
     },
     "cs_leave": {
       "name": "Your Own Road",
       "start": "aunt",
       "steps": {
         "aunt": {
-          "goal": "Ask Aunt Brisa what she really wants, at Stall Row: ASK BRISA ABOUT FUTURE.",
+          "goal": "Ask Aunt Brisa what she really wants, at Stall Row: DISCUSS FUTURE WITH BRISA.",
           "on": {
             "ask": "brisa",
             "about": "future"
@@ -7234,7 +7710,7 @@
           "then": "dace"
         },
         "dace": {
-          "goal": "Dace's caravan loads at the coach stand, south of the caravan yard. Ask him how it works: ASK DACE ABOUT TRAVEL.",
+          "goal": "Dace's caravan loads at the coach stand, south of the caravan yard. Ask him how it works: DISCUSS TRAVEL WITH DACE.",
           "on": {
             "ask": "dace",
             "about": "travel"
@@ -7254,7 +7730,9 @@
         }
       },
       "giver": "thorne",
-      "offer": "You've done more for this guild in a week than half my members do in a year. But you're wasted behind a stall, and I think your aunt knows it. Go and ask her what she really wants."
+      "offer": "You've done more for this guild in a week than half my members do in a year. But you're wasted behind a stall, and I think your aunt knows it. Will you do one last thing for me? Go and ask her what she really wants.",
+      "must": true,
+      "accepted": "Go on. She's waiting, I'd wager."
     },
     "tw_snares": {
       "name": "Checking the Snares",
@@ -7284,7 +7762,8 @@
             }
           ]
         }
-      }
+      },
+      "must": true
     },
     "tw_bloom": {
       "name": "Moonbloom",
@@ -7316,10 +7795,10 @@
           "then": "deliver"
         },
         "deliver": {
-          "goal": "Take the moonbloom to Maud: USE MOONBLOOM ON MAUD.",
+          "goal": "Take the moonbloom to Maud: GIVE MOONBLOOM TO MAUD.",
           "on": {
-            "use": "moonbloom-t",
-            "on": "maud"
+            "give": "moonbloom-t",
+            "to": "maud"
           },
           "effects": [
             {
@@ -7342,7 +7821,9 @@
         }
       },
       "giver": "maud",
-      "offer": "There's a fever in the hamlet, and moonbloom is the cure. It grows in the mist pool in Fernhollow, and only opens when the air is still and damp. Will you fetch me one?"
+      "offer": "There's a fever in the hamlet, and moonbloom is the cure. It grows in the mist pool in Fernhollow, and only opens when the air is still and damp. Will you fetch me one?",
+      "must": true,
+      "accepted": "Bless you. Watch the sky."
     },
     "tw_hart": {
       "name": "The White Hart",
@@ -7370,14 +7851,16 @@
         }
       },
       "giver": "maud",
-      "offer": "Now, there's talk of a white hart on Stag's Rise, through the deep oaks and north. Its hide would set you up for a year. The wolves are after it too, so don't dawdle."
+      "offer": "I've one more thing to ask. There's talk of a white hart on Stag's Rise, through the deep oaks and north. Its hide would set you up for a year. The wolves are after it too. Will you hunt it before they do?",
+      "must": true,
+      "accepted": "Then don't dawdle."
     },
     "tw_leave": {
       "name": "Downriver",
       "start": "ask",
       "steps": {
         "ask": {
-          "goal": "Sell the hide in the big woods. Tobin, at the smokehouse, takes his barge downriver: ASK TOBIN ABOUT TRAVEL.",
+          "goal": "Sell the hide in the big woods. Tobin, at the smokehouse, takes his barge downriver: DISCUSS TRAVEL WITH TOBIN.",
           "on": {
             "ask": "tobin",
             "about": "travel"
@@ -7395,7 +7878,8 @@
             }
           ]
         }
-      }
+      },
+      "must": true
     },
     "lw_lift": {
       "name": "Lifting",
@@ -7409,10 +7893,10 @@
           "then": "nan"
         },
         "nan": {
-          "goal": "Back to the den (EAST): USE PURSE ON NAN.",
+          "goal": "Back to the den (EAST): GIVE PURSE TO NAN.",
           "on": {
-            "use": "purse-u",
-            "on": "nan"
+            "give": "purse-u",
+            "to": "nan"
           },
           "effects": [
             {
@@ -7429,14 +7913,15 @@
             }
           ]
         }
-      }
+      },
+      "must": true
     },
     "lw_signet": {
       "name": "The Signet",
       "start": "steal",
       "steps": {
         "steal": {
-          "goal": "Steal the magistrate's signet. His house is east of Wick Square, dark inside (WEAR TORCH), the study up the stairs (NORTH). Deal with the dog, and LOOK at the stairs before you climb.",
+          "goal": "Steal the magistrate's signet. His house is east of Wick Square, dark inside (HOLD TORCH), the study up the stairs (NORTH). Deal with the dog, and LOOK at the stairs before you climb: then CREEP NORTH, or DISARM NORTH.",
           "on": {
             "have": [
               "signet-u"
@@ -7445,10 +7930,10 @@
           "then": "back"
         },
         "back": {
-          "goal": "Get the signet back to Nan in the den: USE SIGNET ON NAN.",
+          "goal": "Get the signet back to Nan in the den: GIVE SIGNET TO NAN.",
           "on": {
-            "use": "signet-u",
-            "on": "nan"
+            "give": "signet-u",
+            "to": "nan"
           },
           "effects": [
             {
@@ -7474,7 +7959,9 @@
         }
       },
       "giver": "nan",
-      "offer": "Now, real work. The magistrate's signet ring. With it, I can seal any order I like. Watch the stairs; he's not stupid."
+      "offer": "If you don't mind, I've a real job for you, and it's a big one. The magistrate's signet ring. With it, I can seal any order I like. Will you get it for me? Watch the stairs; he's not stupid.",
+      "must": true,
+      "accepted": "Good. Look before you climb."
     },
     "lw_hot": {
       "name": "Too Hot",
@@ -7488,7 +7975,7 @@
           "then": "joss"
         },
         "joss": {
-          "goal": "Joss the carter owes Nan a favour: ASK JOSS ABOUT TRAVEL.",
+          "goal": "Joss the carter owes Nan a favour: DISCUSS TRAVEL WITH JOSS.",
           "on": {
             "ask": "joss",
             "about": "travel"
@@ -7511,14 +7998,16 @@
         }
       },
       "giver": "nan",
-      "offer": "Over the rooftops: through the magistrate's study and east, and down to the cart yard. Joss the carter owes me a favour. Go!"
+      "offer": "The watch is in the streets, and they're looking for you. Will you do as I say, for once? Over the rooftops: through the magistrate's study and east, and down to the cart yard. Joss the carter owes me a favour.",
+      "must": true,
+      "accepted": "Go! Now!"
     },
     "gh_sky": {
       "name": "Reading the Sky",
       "start": "sky",
       "steps": {
         "sky": {
-          "goal": "Learn to read the sky: ASK PELL ABOUT WEATHER (in the Salted Gull: EAST through the sail loft, EAST, then NORTH).",
+          "goal": "Learn to read the sky: DISCUSS WEATHER WITH PELL (in the Salted Gull: EAST through the sail loft, EAST, then NORTH).",
           "on": {
             "ask": "pell",
             "about": "weather"
@@ -7526,7 +8015,7 @@
           "then": "touchy"
         },
         "touchy": {
-          "goal": "Ask how the weather works on your gear: ASK PELL ABOUT SENSITIVITY.",
+          "goal": "Ask how the weather works on your gear: DISCUSS SENSITIVITY WITH PELL.",
           "on": {
             "ask": "pell",
             "about": "sensitivity"
@@ -7541,7 +8030,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Back to Old Pell in the Salted Gull: ASK PELL ABOUT CRABS.",
+          "goal": "Back to Old Pell in the Salted Gull: DISCUSS CRABS WITH PELL.",
           "on": {
             "ask": "pell",
             "about": "crabs"
@@ -7560,14 +8049,16 @@
         }
       },
       "giver": "hedda",
-      "offer": "Now go and see Old Pell, in the Salted Gull, east through the sail loft. Nobody reads the sky better, and you'll need to, where you're going."
+      "offer": "Will you do something for me? Go and see Old Pell, in the Salted Gull, east through the sail loft. Nobody reads the sky better, and you'll need to, where you're going.",
+      "must": true,
+      "accepted": "Good. Mind the dark in the loft."
     },
     "cs_sky": {
       "name": "Market Weather",
       "start": "sky",
       "steps": {
         "sky": {
-          "goal": "Learn to read the sky: ASK BRISA ABOUT WEATHER (here at Stall Row).",
+          "goal": "Learn to read the sky: DISCUSS WEATHER WITH BRISA (here at Stall Row).",
           "on": {
             "ask": "brisa",
             "about": "weather"
@@ -7575,7 +8066,7 @@
           "then": "touchy"
         },
         "touchy": {
-          "goal": "Ask how the weather works on your gear: ASK BRISA ABOUT SENSITIVITY.",
+          "goal": "Ask how the weather works on your gear: DISCUSS SENSITIVITY WITH BRISA.",
           "on": {
             "ask": "brisa",
             "about": "sensitivity"
@@ -7599,7 +8090,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Back to Aunt Brisa at Stall Row (NORTH, WEST twice): ASK BRISA ABOUT RATS.",
+          "goal": "Back to Aunt Brisa at Stall Row (NORTH, WEST twice): DISCUSS RATS WITH BRISA.",
           "on": {
             "ask": "brisa",
             "about": "rats"
@@ -7618,14 +8109,16 @@
         }
       },
       "giver": "brisa",
-      "offer": "Before you go meddling in that, learn the sky. Ask me about the weather."
+      "offer": "Before you go meddling in that, I want you to learn the sky. Will you let an old woman teach you?",
+      "must": true,
+      "accepted": "Good. Ask me about the weather, then."
     },
     "tw_sky": {
       "name": "Signs in the Sky",
       "start": "sky",
       "steps": {
         "sky": {
-          "goal": "Learn to read the sky: ASK MAUD ABOUT WEATHER (in her hut, NORTH of the lodge).",
+          "goal": "Learn to read the sky: DISCUSS WEATHER WITH MAUD (in her hut, NORTH of the lodge).",
           "on": {
             "ask": "maud",
             "about": "weather"
@@ -7633,7 +8126,7 @@
           "then": "touchy"
         },
         "touchy": {
-          "goal": "Ask how the weather works on your gear: ASK MAUD ABOUT SENSITIVITY.",
+          "goal": "Ask how the weather works on your gear: DISCUSS SENSITIVITY WITH MAUD.",
           "on": {
             "ask": "maud",
             "about": "sensitivity"
@@ -7660,7 +8153,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Back to Maud, in her hut: ASK MAUD ABOUT WISPS.",
+          "goal": "Back to Maud, in her hut: DISCUSS WISPS WITH MAUD.",
           "on": {
             "ask": "maud",
             "about": "wisps"
@@ -7677,14 +8170,15 @@
             }
           ]
         }
-      }
+      },
+      "must": true
     },
     "lw_sky": {
       "name": "Gutter Weather",
       "start": "sky",
       "steps": {
         "sky": {
-          "goal": "Learn to read the sky: ASK NAN ABOUT WEATHER (here in the den).",
+          "goal": "Learn to read the sky: DISCUSS WEATHER WITH NAN (here in the den).",
           "on": {
             "ask": "nan",
             "about": "weather"
@@ -7692,7 +8186,7 @@
           "then": "touchy"
         },
         "touchy": {
-          "goal": "Ask how the weather works on your gear: ASK NAN ABOUT SENSITIVITY.",
+          "goal": "Ask how the weather works on your gear: DISCUSS SENSITIVITY WITH NAN.",
           "on": {
             "ask": "nan",
             "about": "sensitivity"
@@ -7716,7 +8210,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Back to Nan in the den (WEST): ASK NAN ABOUT RATS.",
+          "goal": "Back to Nan in the den (WEST): DISCUSS RATS WITH NAN.",
           "on": {
             "ask": "nan",
             "about": "rats"
@@ -7735,7 +8229,9 @@
         }
       },
       "giver": "nan",
-      "offer": "Good. Before real work, you learn the sky. Ask me about the weather."
+      "offer": "Good. You've quick hands. Before real work, though, you learn the sky. Will you let me teach you?",
+      "must": true,
+      "accepted": "Sit down, then. Ask me about the weather."
     }
   },
   "classes": {
@@ -7914,7 +8410,7 @@
       "start": "slipway",
       "arrive": "ferry_dock",
       "quest": "gh_tar",
-      "intro": "The storm nearly drowned you all. Now your ship, the Kittiwake, sits on the slipway at Gullhaven with her hull sprung, and Hedda the shipwright says she'll never cross an ocean again. Your old life is ending. Hedda needs a hand first, though. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)",
+      "intro": "The storm nearly drowned you all. Now your ship, the Kittiwake, sits on the slipway at Gullhaven with her hull sprung, and Hedda the shipwright says she'll never cross an ocean again. Your old life is ending. Hedda needs a hand first, though. (Your quest is pinned above the log. Type LOOK to look around, move with NORTH, SOUTH, EAST and WEST, and DISCUSS things with people. Stuck? Type WHAT NOW.)",
       "outfit": [
         "knitted_cap"
       ]
@@ -7942,7 +8438,7 @@
       "start": "stall_row",
       "arrive": "market_square",
       "quest": "cs_stall",
-      "intro": "Your first day running the family stall in Copperstall Market, alone. Aunt Brisa is watching, the market is loud, and across the square two merchants are about to come to blows. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)",
+      "intro": "Your first day running the family stall in Copperstall Market, alone. Aunt Brisa is watching, the market is loud, and across the square two merchants are about to come to blows. (Your quest is pinned above the log. Type LOOK to look around, move with NORTH, SOUTH, EAST and WEST, and DISCUSS things with people. Stuck? Type WHAT NOW.)",
       "outfit": [
         "velvet_hat"
       ]
@@ -7966,7 +8462,7 @@
       "start": "hunters_lodge",
       "arrive": "woodland_path",
       "quest": "tw_snares",
-      "intro": "Your last season in Thornwick. The game is thin, the old wood is quiet, and this morning you found your snares cut. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)",
+      "intro": "Your last season in Thornwick. The game is thin, the old wood is quiet, and this morning you found your snares cut. (Your quest is pinned above the log. Type LOOK to look around, move with NORTH, SOUTH, EAST and WEST, and DISCUSS things with people. Stuck? Type WHAT NOW.)",
       "outfit": [
         "hunters_hood"
       ]
@@ -7994,7 +8490,7 @@
       "start": "gutter_den",
       "arrive": "back_alley",
       "quest": "lw_lift",
-      "intro": "Low Wick is a small town, and you've run out of pockets to pick in it. Nan Gristle, who runs the gutter kids, has a job for you. One more, she says. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)",
+      "intro": "Low Wick is a small town, and you've run out of pockets to pick in it. Nan Gristle, who runs the gutter kids, has a job for you. One more, she says. (Your quest is pinned above the log. Type LOOK to look around, move with NORTH, SOUTH, EAST and WEST, and DISCUSS things with people. Stuck? Type WHAT NOW.)",
       "outfit": [
         "patched_breeches"
       ]

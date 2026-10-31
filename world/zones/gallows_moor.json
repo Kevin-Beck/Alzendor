@@ -232,7 +232,11 @@
       "faction": "wardens",
       "forecasts": [
         "alzendor"
-      ]
+      ],
+      "lure": {
+        "sense": "{Where}, a fire's glow between standing stones.",
+        "rumour": "The Wardens at the stone circle want help on the moor."
+      }
     },
     "highwayman_1": {
       "name": "Highwayman",
@@ -579,7 +583,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Ysolde what you heard: ASK YSOLDE ABOUT STONES.",
+          "goal": "Tell Ysolde what you heard: DISCUSS STONES WITH YSOLDE.",
           "on": {
             "ask": "ysolde",
             "about": "stones"
@@ -622,7 +626,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Ysolde: ASK YSOLDE ABOUT HIGHWAYMEN.",
+          "goal": "Tell Ysolde: DISCUSS HIGHWAYMEN WITH YSOLDE.",
           "on": {
             "ask": "ysolde",
             "about": "highwaymen"
@@ -652,10 +656,10 @@
           "then": "back"
         },
         "back": {
-          "goal": "Bring it to Ysolde: USE LANTERN ON YSOLDE.",
+          "goal": "Bring it to Ysolde: GIVE LANTERN TO YSOLDE.",
           "on": {
-            "use": "riders_lantern_item",
-            "on": "ysolde"
+            "give": "riders_lantern_item",
+            "to": "ysolde"
           },
           "effects": [
             {

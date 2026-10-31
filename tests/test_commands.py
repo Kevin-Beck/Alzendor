@@ -169,8 +169,9 @@ async def test_help_lists_every_command(ctx):
 
 
 @pytest.mark.parametrize("text, call", [
-    ("ask tamsin about weather", ("ask", "kevin", "tamsin", "weather")),
-    ("ask old tamsin weather", ("ask", "kevin", "old tamsin", "weather")),
+    ("ask tamsin about weather", ("discuss", "kevin", "tamsin", "weather")),
+    ("ask old tamsin weather", ("discuss", "kevin", "old tamsin", "weather")),
+    ("discuss the weather with old tamsin", ("discuss", "kevin", "old tamsin", "weather")),
     ("weather", ("weather", "kevin")),
     ("forecast", ("weather", "kevin")),
     ("train resilience", ("train", "kevin", "resilience")),
@@ -183,7 +184,18 @@ async def test_weather_commands(ctx, text, call):
 async def test_asking_without_a_name_uses_the_target(ctx):
     ctx.target = "npc:tamsin"
     await dispatch(ctx, "ask about weather")
-    assert ctx.world.calls == [("ask", "kevin", "npc:tamsin", "weather")]
+    await dispatch(ctx, "discuss weather")
+    await dispatch(ctx, "discuss")  # what they'll talk about
+    assert ctx.world.calls == [("discuss", "kevin", "npc:tamsin", "weather")] * 2 + [("discuss", "kevin", "npc:tamsin", "")]
+
+
+async def test_giving_and_greeting_use_the_target(ctx):
+    ctx.target = "npc:nan"
+    for text in ("give signet", "give the signet to nan", "greet", "what now", "whatnow", "accept", "decline"):
+        await dispatch(ctx, text)
+    assert ctx.world.calls == [("give", "kevin", "signet", "npc:nan"), ("give", "kevin", "signet", "nan"),
+                               ("greet", "kevin", "npc:nan"), ("whatnow", "kevin"), ("whatnow", "kevin"),
+                               ("accept", "kevin"), ("decline", "kevin")]
 
 
 async def test_setweather_is_for_admins(ctx):

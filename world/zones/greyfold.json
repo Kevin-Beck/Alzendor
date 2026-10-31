@@ -522,7 +522,36 @@
         },
         "mags": "Mags was a drover once. Now she's the worst of them.",
         "fen": "South of here the land goes to fen. Sister Odile keeps a chapel out there. Mad, or holy, or both.",
-        "moor": "North of the Hollow the land goes up onto Gallows Moor. The Wardens have a camp at the stone circle. Don't cross it at night."
+        "moor": "North of the Hollow the land goes up onto Gallows Moor. The Wardens have a camp at the stone circle. Don't cross it at night.",
+        "place": "Millbrook's a small place with large ledgers. Somebody has to keep them.",
+        "background": {
+          "text": "Reeve for twelve years. Before that, a clerk. Before that, a soldier, if you'll believe it.",
+          "requires": {
+            "rapport": 3
+          }
+        }
+      },
+      "lure": {
+        "sense": "{Where}, the scratch of a pen, and someone sighing over a ledger.",
+        "rumour": "Reeve Halden in Millbrook has trouble with the Redcaps."
+      },
+      "greet": {
+        "first": "Reeve Halden. Do you have business with Millbrook?",
+        "again": "Ah, you again."
+      },
+      "wants": {
+        "says": "Bring me their caps, and the village pays a bounty. Three apiece.",
+        "requires": {
+          "rapport": 1
+        },
+        "items": [
+          {
+            "item": "redcap_hat",
+            "price": 3,
+            "cap": 6,
+            "thanks": "One less Redcap. Thank you."
+          }
+        ]
       }
     },
     "ama": {
@@ -543,7 +572,28 @@
           "text": "Pale lights on the knoll after dark, and the Partridge boy came back white as milk. Take a torch into that barrow and see what's woken. Bring me something to show it's done.",
           "starts": "gf_barrow"
         },
-        "knoll": "South-west of the green. The barrow's on top. Nobody goes in."
+        "knoll": "South-west of the green. The barrow's on top. Nobody goes in.",
+        "place": "The Stoat & Barrel. Ale, stew and a bed. What more is there?",
+        "rumours": "There are lights on Barrow Knoll at night. Nobody goes up there any more. Nobody sensible."
+      },
+      "lure": {
+        "sense": "{Where}, woodsmoke and stew from a busy inn.",
+        "rumour": "Goodwife Ama at the Stoat & Barrel has seen lights on the knoll."
+      },
+      "greet": {
+        "first": "Welcome to the Stoat & Barrel, love.",
+        "again": "Back again, love?"
+      },
+      "wants": {
+        "says": "Boar, for the pot. Three a haunch.",
+        "items": [
+          {
+            "tag": "meat",
+            "price": 3,
+            "cap": 4,
+            "thanks": "That'll feed the house."
+          }
+        ]
       }
     },
     "cobb": {
@@ -564,7 +614,27 @@
           "text": "Five good pelts from the Bramblewood wolves, north past the Fallow Fields. Bring me five and I'll make you something warm.",
           "starts": "gf_pelts"
         },
-        "mother": "The old she-wolf in the den. Bigger than a pony, and clever. Kill her and the pack scatters."
+        "mother": "The old she-wolf in the den. Bigger than a pony, and clever. Kill her and the pack scatters.",
+        "place": "Millbrook. Quiet, mostly. The wolves are the only noise."
+      },
+      "lure": {
+        "sense": "{Where}, the sour reek of tanning pits.",
+        "rumour": "Cobb the tanner pays well for pelts."
+      },
+      "greet": {
+        "first": "Cobb. Tanner. You'll get used to the smell.",
+        "again": "Got anything for me?"
+      },
+      "wants": {
+        "says": "Wolf pelts, always. Four a pelt. More if they're whole, which they never are.",
+        "items": [
+          {
+            "tag": "pelt",
+            "price": 4,
+            "cap": 8,
+            "thanks": "Not bad. Not bad at all."
+          }
+        ]
       }
     },
     "fenwick": {
@@ -584,7 +654,16 @@
         "orchard": {
           "text": "Four wild boars, rooting up the orchard east of the Fallow Fields. Mind their charge: you can't stop it, only get out of the way.",
           "starts": "gf_boars"
-        }
+        },
+        "place": "Millbrook mill. My grandfather built the wheel, and it's never stopped."
+      },
+      "lure": {
+        "sense": "{Where}, the creak and splash of a mill wheel.",
+        "rumour": "Fenwick the miller's at his wits' end with the boars."
+      },
+      "greet": {
+        "first": "Fenwick, the miller. Mind the flour.",
+        "again": "Hello again!"
       }
     },
     "bramble_wolf": {
@@ -607,7 +686,13 @@
       "xp": 8,
       "icon": "🐺",
       "role": "bramble_wolf",
-      "respawn": 300
+      "respawn": 300,
+      "loot": [
+        {
+          "item": "wolf_pelt",
+          "chance": 0.5
+        }
+      ]
     },
     "bramble_wolf_2": {
       "name": "Bramble Wolf",
@@ -629,7 +714,13 @@
       "xp": 8,
       "icon": "🐺",
       "role": "bramble_wolf",
-      "respawn": 300
+      "respawn": 300,
+      "loot": [
+        {
+          "item": "wolf_pelt",
+          "chance": 0.5
+        }
+      ]
     },
     "bramble_wolf_3": {
       "name": "Bramble Wolf",
@@ -651,7 +742,13 @@
       "xp": 8,
       "icon": "🐺",
       "role": "bramble_wolf",
-      "respawn": 300
+      "respawn": 300,
+      "loot": [
+        {
+          "item": "wolf_pelt",
+          "chance": 0.5
+        }
+      ]
     },
     "wolf_mother": {
       "name": "the Wolf Mother",
@@ -679,7 +776,13 @@
       ],
       "xp": 40,
       "icon": "🐺",
-      "respawn": 600
+      "respawn": 600,
+      "loot": [
+        {
+          "item": "wolf_pelt",
+          "chance": 1
+        }
+      ]
     },
     "wild_boar_1": {
       "name": "Wild Boar",
@@ -708,7 +811,17 @@
       "xp": 10,
       "icon": "🐗",
       "role": "boar",
-      "respawn": 300
+      "respawn": 300,
+      "loot": [
+        {
+          "item": "boar_tusk",
+          "chance": 0.5
+        },
+        {
+          "item": "boar_haunch",
+          "chance": 0.4
+        }
+      ]
     },
     "wild_boar_2": {
       "name": "Wild Boar",
@@ -737,7 +850,17 @@
       "xp": 10,
       "icon": "🐗",
       "role": "boar",
-      "respawn": 300
+      "respawn": 300,
+      "loot": [
+        {
+          "item": "boar_tusk",
+          "chance": 0.5
+        },
+        {
+          "item": "boar_haunch",
+          "chance": 0.4
+        }
+      ]
     },
     "wild_boar_3": {
       "name": "Wild Boar",
@@ -766,7 +889,17 @@
       "xp": 10,
       "icon": "🐗",
       "role": "boar",
-      "respawn": 300
+      "respawn": 300,
+      "loot": [
+        {
+          "item": "boar_tusk",
+          "chance": 0.5
+        },
+        {
+          "item": "boar_haunch",
+          "chance": 0.4
+        }
+      ]
     },
     "redcap_1": {
       "name": "Redcap Cutthroat",
@@ -789,7 +922,13 @@
       "icon": "🧢",
       "role": "redcap",
       "faction": "outlaws",
-      "respawn": 300
+      "respawn": 300,
+      "loot": [
+        {
+          "item": "redcap_hat",
+          "chance": 0.4
+        }
+      ]
     },
     "redcap_2": {
       "name": "Redcap Cutthroat",
@@ -812,7 +951,13 @@
       "icon": "🧢",
       "role": "redcap",
       "faction": "outlaws",
-      "respawn": 300
+      "respawn": 300,
+      "loot": [
+        {
+          "item": "redcap_hat",
+          "chance": 0.4
+        }
+      ]
     },
     "redcap_3": {
       "name": "Redcap Cutthroat",
@@ -835,7 +980,13 @@
       "icon": "🧢",
       "role": "redcap",
       "faction": "outlaws",
-      "respawn": 300
+      "respawn": 300,
+      "loot": [
+        {
+          "item": "redcap_hat",
+          "chance": 0.4
+        }
+      ]
     },
     "mags_redcap": {
       "name": "Mags Redcap",
@@ -867,7 +1018,13 @@
       "role": "redcap_chief",
       "proper": true,
       "respawn": 600,
-      "coins": 20
+      "coins": 20,
+      "loot": [
+        {
+          "item": "redcap_hat",
+          "chance": 1
+        }
+      ]
     },
     "barrow_ghoul_1": {
       "name": "Barrow Ghoul",
@@ -1058,7 +1215,7 @@
           "then": "ask"
         },
         "ask": {
-          "goal": "Ask the innkeeper about work: ASK MARTA ABOUT WORK.",
+          "goal": "Ask the innkeeper about work: DISCUSS WORK WITH MARTA.",
           "on": {
             "ask": "marta",
             "about": "work"
@@ -1076,7 +1233,7 @@
       "start": "ask",
       "steps": {
         "ask": {
-          "goal": "Millbrook's ale has stopped coming. Go east out of the East Gate to Millbrook (south-east at the crossroads) and ASK HALDEN ABOUT ALE.",
+          "goal": "Millbrook's ale has stopped coming. Go east out of the East Gate to Millbrook (south-east at the crossroads) and DISCUSS ALE WITH HALDEN.",
           "on": {
             "ask": "halden",
             "about": "ale"
@@ -1084,7 +1241,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Take the news back to Marta: ASK MARTA ABOUT REDCAPS.",
+          "goal": "Take the news back to Marta: DISCUSS REDCAPS WITH MARTA.",
           "on": {
             "ask": "marta",
             "about": "redcaps"
@@ -1098,7 +1255,8 @@
             }
           ]
         }
-      }
+      },
+      "must": true
     },
     "gf_iron": {
       "name": "Bog Iron",
@@ -1114,10 +1272,10 @@
           "then": "give"
         },
         "give": {
-          "goal": "Bring it to Brannoc in his smithy: USE IRON ON BRANNOC.",
+          "goal": "Bring it to Brannoc in his smithy: GIVE IRON TO BRANNOC.",
           "on": {
-            "use": "bog_iron",
-            "on": "brannoc"
+            "give": "bog_iron",
+            "to": "brannoc"
           },
           "effects": [
             {
@@ -1134,7 +1292,8 @@
             }
           ]
         }
-      }
+      },
+      "must": true
     },
     "gf_pelts": {
       "name": "Wolf Pelts",
@@ -1149,7 +1308,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Back to Cobb's tannery in Millbrook: ASK COBB ABOUT PELTS.",
+          "goal": "Back to Cobb's tannery in Millbrook: DISCUSS PELTS WITH COBB.",
           "on": {
             "ask": "cobb",
             "about": "pelts"
@@ -1173,7 +1332,8 @@
             }
           ]
         }
-      }
+      },
+      "must": true
     },
     "gf_wolfmother": {
       "name": "The Wolf Mother",
@@ -1187,7 +1347,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Cobb: ASK COBB ABOUT MOTHER.",
+          "goal": "Tell Cobb: DISCUSS MOTHER WITH COBB.",
           "on": {
             "ask": "cobb",
             "about": "mother"
@@ -1203,7 +1363,8 @@
         }
       },
       "giver": "cobb",
-      "offer": "But the pack'll be back while the Wolf Mother lives. She dens at the far end of Bramblewood. Kill her and they'll scatter."
+      "offer": "But the pack'll be back while the Wolf Mother lives. She dens at the far end of Bramblewood. Would you kill her for me? Then they'll scatter.",
+      "accepted": "Watch her maul. It'll break a shield arm."
     },
     "gf_boars": {
       "name": "Rooting Boars",
@@ -1218,7 +1379,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Fenwick at the mill: ASK FENWICK ABOUT ORCHARD.",
+          "goal": "Tell Fenwick at the mill: DISCUSS ORCHARD WITH FENWICK.",
           "on": {
             "ask": "fenwick",
             "about": "orchard"
@@ -1254,7 +1415,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Reeve Halden: ASK HALDEN ABOUT MAGS.",
+          "goal": "Tell Reeve Halden: DISCUSS MAGS WITH HALDEN.",
           "on": {
             "ask": "halden",
             "about": "mags"
@@ -1304,10 +1465,10 @@
           "then": "back"
         },
         "back": {
-          "goal": "Bring it to Goodwife Ama at the inn: USE LANTERN ON AMA.",
+          "goal": "Bring it to Goodwife Ama at the inn: GIVE LANTERN TO AMA.",
           "on": {
-            "use": "grave_lantern",
-            "on": "ama"
+            "give": "grave_lantern",
+            "to": "ama"
           },
           "effects": [
             {

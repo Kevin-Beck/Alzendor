@@ -239,7 +239,11 @@
           "starts": "ec_hounds"
         }
       },
-      "faction": "ember_court"
+      "faction": "ember_court",
+      "lure": {
+        "sense": "{Where}, a blast of heat, and a glint of gold armour.",
+        "rumour": "The salamander at the Ash Gate is hiring blades."
+      }
     },
     "aszh": {
       "name": "Vizier Aszh",
@@ -260,7 +264,11 @@
           "starts": "ec_crown"
         }
       },
-      "faction": "ember_court"
+      "faction": "ember_court",
+      "lure": {
+        "sense": "{Where}, whispers behind fans, and the crackle of fire.",
+        "rumour": "The Vizier of the Ember Court has errands for outsiders."
+      }
     },
     "kalimar": {
       "name": "the Ashen Duchess Kalimar",
@@ -281,7 +289,11 @@
           "starts": "ec_duel"
         }
       },
-      "faction": "ember_court"
+      "faction": "ember_court",
+      "lure": {
+        "sense": "{Where}, the smell of perfume and hot stone.",
+        "rumour": "The Ashen Duchess is said to want a champion."
+      }
     },
     "calder": {
       "name": "Sir Calder Ash",
@@ -573,7 +585,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Ruuk: ASK RUUK ABOUT HOUNDS.",
+          "goal": "Tell Ruuk: DISCUSS HOUNDS WITH RUUK.",
           "on": {
             "ask": "ruuk",
             "about": "hounds"
@@ -601,7 +613,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell the Duchess: ASK KALIMAR ABOUT DUEL.",
+          "goal": "Tell the Duchess: DISCUSS DUEL WITH KALIMAR.",
           "on": {
             "ask": "kalimar",
             "about": "duel"
@@ -638,7 +650,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Show the Vizier: ASK ASZH ABOUT CROWN.",
+          "goal": "Show the Vizier: DISCUSS CROWN WITH ASZH.",
           "on": {
             "ask": "aszh",
             "about": "crown"

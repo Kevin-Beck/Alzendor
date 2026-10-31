@@ -93,6 +93,7 @@ async def test_quests_can_give_gear(world):
     kevin = await create(world, "kevin")
     await world.call("goto", "kevin", "smithy")
     await world.call("ask", "kevin", "brannoc", "iron")
+    await world.call("accept", "kevin")
     await world.call("goto", "kevin", "ff_ditch")
     await world.call("get", "kevin", "iron")
     await world.call("goto", "kevin", "smithy")

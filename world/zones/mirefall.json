@@ -237,7 +237,11 @@
         },
         "whirlpool": "The whirlpool in the groves goes down to the Pale Deep, where the merrow live. Don't."
       },
-      "faction": "mirefolk"
+      "faction": "mirefolk",
+      "lure": {
+        "sense": "{Where}, smoke and the smell of eel from a hall on stilts.",
+        "rumour": "The Reedmother wants help for her people."
+      }
     },
     "dav": {
       "name": "Fen-captain Dav",
@@ -258,7 +262,11 @@
           "starts": "mf_nets"
         }
       },
-      "faction": "mirefolk"
+      "faction": "mirefolk",
+      "lure": {
+        "sense": "{Where}, wet nets slapping against wood.",
+        "rumour": "Fen-captain Dav has lost too many nets."
+      }
     },
     "bog_hag_1": {
       "name": "Bog Hag",
@@ -568,7 +576,7 @@
       "start": "spade",
       "steps": {
         "spade": {
-          "goal": "Take Ossa's spade: ASK OSSA ABOUT SPADE.",
+          "goal": "Take Ossa's spade: DISCUSS SPADE WITH OSSA.",
           "on": {
             "ask": "ossa",
             "about": "spade"
@@ -623,7 +631,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Ossa: ASK OSSA ABOUT WATER.",
+          "goal": "Tell Ossa: DISCUSS WATER WITH OSSA.",
           "on": {
             "ask": "ossa",
             "about": "water"
@@ -658,7 +666,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Ossa: ASK OSSA ABOUT KING.",
+          "goal": "Tell Ossa: DISCUSS KING WITH OSSA.",
           "on": {
             "ask": "ossa",
             "about": "king"
@@ -687,7 +695,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Dav: ASK DAV ABOUT NETS.",
+          "goal": "Tell Dav: DISCUSS NETS WITH DAV.",
           "on": {
             "ask": "dav",
             "about": "nets"

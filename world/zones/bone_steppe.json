@@ -202,7 +202,11 @@
           "explains": "TRAVEL TEMPLE STEPS to take it."
         }
       },
-      "faction": "steppe_clans"
+      "faction": "steppe_clans",
+      "lure": {
+        "sense": "{Where}, drums, and the smoke of many fires.",
+        "rumour": "The Khagan of the yurts wants riders."
+      }
     },
     "bone_drake_1": {
       "name": "Bone Drake",
@@ -490,7 +494,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Temur: ASK TEMUR ABOUT DRAKES.",
+          "goal": "Tell Temur: DISCUSS DRAKES WITH TEMUR.",
           "on": {
             "ask": "temur",
             "about": "drakes"
@@ -526,7 +530,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Temur: ASK TEMUR ABOUT TITAN.",
+          "goal": "Tell Temur: DISCUSS TITAN WITH TEMUR.",
           "on": {
             "ask": "temur",
             "about": "titan"

@@ -177,6 +177,10 @@
           "text": "Spider-engines. They eat everything. Five of them, scrapped.",
           "starts": "bm_scrap"
         }
+      },
+      "lure": {
+        "sense": "{Where}, the tick and clank of a great machine.",
+        "rumour": "The old engineer in the Gearworks talks to anyone who'll listen."
       }
     },
     "arbiter": {
@@ -195,6 +199,10 @@
           "text": "THE GRAND ENGINE HAS GONE MAD. IT MUST BE STOPPED. YOU WILL STOP IT.",
           "starts": "bm_engine"
         }
+      },
+      "lure": {
+        "sense": "{Where}, a slow brass heartbeat.",
+        "rumour": "They say the brass Arbiter still speaks, to those it chooses."
       }
     },
     "spider_engine_1": {
@@ -414,7 +422,7 @@
       "start": "key",
       "steps": {
         "key": {
-          "goal": "Take Odo's great key: ASK ODO ABOUT KEY.",
+          "goal": "Take Odo's great key: DISCUSS KEY WITH ODO.",
           "on": {
             "ask": "odo",
             "about": "key"
@@ -427,10 +435,10 @@
           "then": "wind"
         },
         "wind": {
-          "goal": "Wind the Arbiter, at its seat on the plain: USE KEY ON ARBITER.",
+          "goal": "Wind the Arbiter, at its seat on the plain: GIVE KEY TO ARBITER.",
           "on": {
-            "use": "great_key",
-            "on": "arbiter"
+            "give": "great_key",
+            "to": "arbiter"
           },
           "effects": [
             {
@@ -443,7 +451,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Odo: ASK ODO ABOUT ARBITER.",
+          "goal": "Tell Odo: DISCUSS ARBITER WITH ODO.",
           "on": {
             "ask": "odo",
             "about": "arbiter"
@@ -472,7 +480,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Odo: ASK ODO ABOUT SCRAP.",
+          "goal": "Tell Odo: DISCUSS SCRAP WITH ODO.",
           "on": {
             "ask": "odo",
             "about": "scrap"
@@ -500,7 +508,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell the Arbiter: ASK ARBITER ABOUT ENGINE.",
+          "goal": "Tell the Arbiter: DISCUSS ENGINE WITH ARBITER.",
           "on": {
             "ask": "arbiter",
             "about": "engine"

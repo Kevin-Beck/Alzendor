@@ -212,6 +212,10 @@
           "text": "The Angler Queen swallowed the Drowned Pearl. Kill her and it's yours: it opens something, in your world.",
           "starts": "pd_pearl"
         }
+      },
+      "lure": {
+        "sense": "{Where}, the deep note of a great bell under water.",
+        "rumour": "The Merrow Queen asks favours of air-breathers."
       }
     },
     "glass_eel_1": {
@@ -414,7 +418,7 @@
       "start": "helm",
       "steps": {
         "helm": {
-          "goal": "Ask Ysse for a helm: ASK YSSE ABOUT HELM.",
+          "goal": "Ask Ysse for a helm: DISCUSS HELM WITH YSSE.",
           "on": {
             "ask": "ysse",
             "about": "helm"
@@ -438,7 +442,7 @@
       "start": "bellows",
       "steps": {
         "bellows": {
-          "goal": "Take the bellows: ASK YSSE ABOUT BELLOWS.",
+          "goal": "Take the bellows: DISCUSS BELLOWS WITH YSSE.",
           "on": {
             "ask": "ysse",
             "about": "bellows"
@@ -480,7 +484,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Tell Ysse: ASK YSSE ABOUT BELLS.",
+          "goal": "Tell Ysse: DISCUSS BELLS WITH YSSE.",
           "on": {
             "ask": "ysse",
             "about": "bells"
@@ -517,7 +521,7 @@
           "then": "back"
         },
         "back": {
-          "goal": "Show Ysse: ASK YSSE ABOUT PEARL.",
+          "goal": "Show Ysse: DISCUSS PEARL WITH YSSE.",
           "on": {
             "ask": "ysse",
             "about": "pearl"
