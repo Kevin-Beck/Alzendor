@@ -109,13 +109,8 @@ in a safe place. That needs trading and item ownership first.
 
 ## Practical concerns
 
-- **Quest log UI:** a third header panel next to Inventory and Character:
-  active quests, current step, and hints. Driven by a `quests` event, like
-  `kit` and `character`.
-- **Progress events:** emit a private `quest` event with text on each step
-  ("Brannoc's horseshoe: 1 / 1"). Keep them rarer than reputation notes.
-- **Respawning targets:** kill counts should count kills that happen while
-  the quest is active, not the NPC's identity, since NPCs respawn.
+- *(Built: the quest panel and pinned line, progress events as
+  `quest_update`, and kill counts that count kills while a step is active.)*
 - **Shared credit:** for group play, credit everyone fighting the NPC (its
   `foes` set already lists them) rather than only the killing blow.
 - **Abandoning and repeating:** `quest abandon <name>`; repeatable faction
@@ -188,8 +183,8 @@ quests follow.
   in the panel, and it ends, failed, if you leave its area any way but by
   finishing it: death, a teleport. Logging out doesn't end it.
 - **The quest panel:** a **Quests** header button lists active and finished
-  quests; the current goal of your top quest also shows in a small section
-  of the side panel, above the Loadout. Driven by a `quests` event, like
-  `kit` and `character`.
+  quests; the one you're on (the latest begun or moved on) is pinned above
+  the log with its current goal. Driven by a `quests` event, like `kit` and
+  `character`, and `quest_update` for each change.
 - **The validator** checks every step is reachable and every quest can end.
 

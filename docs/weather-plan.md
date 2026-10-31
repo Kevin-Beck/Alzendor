@@ -3,8 +3,7 @@
 How [weather.md](weather.md) gets built, in stages. Each stage is usable on
 its own and has tests (in [tests/test_weather.py](../tests/test_weather.py)).
 A box is ticked when its stage is built and tested. Everything here is built;
-what's left for later is in [todo.md](../todo.md) under "Weather and
-elements".
+what's left for later is in [todo.md](../todo.md) under "Next".
 
 Since this was built, the weather became **realm-wide** (one sky, ground and
 forecast per realm, not per region) and **indoors became neutral** (`indoor:

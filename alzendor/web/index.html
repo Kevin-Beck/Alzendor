@@ -398,6 +398,14 @@
   .gcard .flavour { font-style: italic; color: var(--muted); }
   .gcard .warn { color: var(--system); }
 
+  /* Settings: key bindings. */
+  #settings-body .keys { list-style: none; margin: 8px 0; padding: 0; }
+  #settings-body .keys li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0;
+    border-bottom: 1px solid var(--border); }
+  #settings-body .keycap { min-width: 44px; font-weight: bold; font-variant-numeric: tabular-nums; }
+  #settings-body .keycap.listening { border-color: var(--accent); color: var(--accent); }
+  #settings-body .note { color: var(--muted); font-size: 12px; }
+
   /* Inventory and character panels. */
   dialog {
     width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 64px); padding: 0;
@@ -484,6 +492,7 @@
     <button id="open-character" type="button">Character<span id="points-badge" class="badge hidden"></span></button>
     <button id="open-reputation" type="button">Reputation</button>
     <button id="open-quests" type="button">Quests<span id="quests-badge" class="badge hidden"></span></button>
+    <button id="open-settings" type="button">Settings</button>
   </span>
   <span id="status" class="down">offline</span>
   <button id="reconnect" class="hidden" type="button">Reconnect</button>
@@ -580,7 +589,7 @@
       <h2>Slots <span class="hint" id="slot-hint">4 3 2 use your slots · hover for details</span></h2>
       <div id="timings" role="group" aria-label="Your slots"></div>
       <div id="defend-row" title="Block (with a shield in hand) or dodge the next blow: press as the enemy's marker reaches the end of its bar.">
-        <button type="button" class="key" id="defend-key" title="Change the key">7</button>
+        <button type="button" class="key" id="defend-key" title="Change your keys in Settings">7</button>
         <span class="label" id="defend-label">Dodge</span>
         <div class="cool"><div class="fill" id="defend-cool"></div></div>
         <span class="result" id="defend-result"></span>
@@ -606,6 +615,10 @@
 <dialog id="quests-dialog" aria-labelledby="quests-title">
   <div class="dhead"><h2 id="quests-title">Quests</h2><button type="button" data-close>Close</button></div>
   <div class="dbody" id="quests-body"></div>
+</dialog>
+<dialog id="settings-dialog" aria-labelledby="settings-title">
+  <div class="dhead"><h2 id="settings-title">Settings</h2><button type="button" data-close>Close</button></div>
+  <div class="dbody" id="settings-body"></div>
 </dialog>
 <dialog id="reputation-dialog" aria-labelledby="reputation-title">
   <div class="dhead"><h2 id="reputation-title">Reputation</h2><button type="button" data-close>Close</button></div>
@@ -1218,16 +1231,16 @@ function useSlot(n) {
 function slotRow(n) {
   if (slots[n]) return slots[n];
   const row = el("div", "rhythm idle");
-  row.title = `Press ${SLOT_KEYS[n]} (or click) to use this slot`;
+  row.title = `Press ${keyLabel(SLOT_KEYS[n])} (or click) to use this slot`;
   const status = el("div", "status");
-  status.append(el("span", "key", SLOT_KEYS[n]), el("span", "label"), el("span", "wxbadge"), el("span", "note"), el("span", "result"));
+  status.append(el("span", "key", keyLabel(SLOT_KEYS[n])), el("span", "label"), el("span", "wxbadge"), el("span", "note"), el("span", "result"));
   const lane = el("div", "lane");
   lane.append(el("div", "zone"), el("div", "sweet"), el("div", "ball"));
   const bar = el("div", "bar");
   bar.append(lane);
   row.append(status, bar);
   row.addEventListener("click", () => { useSlot(n); $("input").focus(); });
-  row.addEventListener("mouseenter", () => { if (slots[n].gear) showTip(row, gearTip(slots[n].gear, [], SLOT_KEYS[n])); });
+  row.addEventListener("mouseenter", () => { if (slots[n].gear) showTip(row, gearTip(slots[n].gear, [], keyLabel(SLOT_KEYS[n]))); });
   row.addEventListener("mouseleave", hideTip);
   // Keep the slots in order however their first events arrive.
   const after = Object.keys(slots).map(Number).filter((m) => m > n).sort((a, b) => a - b)[0];
@@ -1509,15 +1522,65 @@ function drawNpcTimers() {
   }
 }
 
+// Key bindings: a key for each slot and one for DEFEND, chosen in Settings and
+// remembered per browser (alz.keys). A key is one character (letters are kept
+// lowercase) or F1 to F12. Choosing a key that's in use swaps the two.
+const KEY_DEFAULTS = { 1: "4", 2: "3", 3: "2", defend: "7" };
+const KEY_NAMES = { 1: "Slot 1", 2: "Slot 2", 3: "Slot 3", defend: "Defend (block or dodge)" };
+
+function loadKeys() {
+  let saved = {};
+  try { saved = JSON.parse(store.get("alz.keys") || "{}") || {}; } catch {}
+  const old = store.get("alz.key.defend"); // the defend key, from before there were Settings
+  if (old && !saved.defend) saved.defend = old;
+  return { ...KEY_DEFAULTS, ...saved };
+}
+
+const keys = loadKeys();
+const SLOT_KEYS = keys; // slot n's key is keys[n]
+
+function keyOf(e) {
+  return e.key.length === 1 ? e.key.toLowerCase() : e.key;
+}
+
+function keyLabel(k) {
+  return k.length === 1 ? k.toUpperCase() : k;
+}
+
+function bindable(k) {
+  return (k.length === 1 && k.trim() !== "") || /^F([1-9]|1[0-2])$/.test(k);
+}
+
+// Binds a key to an action, swapping with whatever had it, and shows it everywhere.
+function bindKey(action, k) {
+  const other = Object.keys(keys).find((a) => a !== action && keys[a] === k);
+  if (other) keys[other] = keys[action];
+  keys[action] = k;
+  store.set("alz.keys", JSON.stringify(keys));
+  store.remove("alz.key.defend");
+  showKeys();
+}
+
+function showKeys() {
+  for (const n of [1, 2, 3]) {
+    const row = slots[n];
+    if (!row) continue;
+    row.row.title = `Press ${keyLabel(keys[n])} (or click) to use this slot`;
+    row.row.querySelector(".status .key").textContent = keyLabel(keys[n]);
+  }
+  $("input").placeholder = `Type a command — Tab picks a target, ${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} use your slots, `
+    + `${keyLabel(keys.defend)} blocks or dodges`;
+  renderDefend();
+}
+
 // Defence: DEFEND (the 7 key, or one you choose) blocks with a shield in hand,
 // or dodges without. Then it needs a moment before it's ready again.
-const keys = { defend: store.get("alz.key.defend") || "7" };
-
 function renderDefend() {
   const d = character && character.defence;
-  $("defend-key").textContent = keys.defend;
+  $("defend-key").textContent = keyLabel(keys.defend);
   $("defend-label").textContent = d && d.mode === "block" ? "Block" : "Dodge";
-  $("slot-hint").textContent = `4 3 2 use your slots · ${keys.defend} ${d && d.mode === "block" ? "blocks" : "dodges"} · hover for details`;
+  $("slot-hint").textContent = `${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} use your slots · `
+    + `${keyLabel(keys.defend)} ${d && d.mode === "block" ? "blocks" : "dodges"} · hover for details`;
 }
 
 function defend() {
@@ -1543,26 +1606,61 @@ function showDefend(event) {
   fill.style.width = "100%";
 }
 
-$("defend-key").addEventListener("click", () => {
-  $("defend-key").classList.add("listening");
-  $("defend-key").textContent = "…";
-  $("defend-row").title = "Press the key you want for DEFEND (Esc to keep the old one).";
-});
+$("defend-key").addEventListener("click", openSettings);
 
-// While choosing a new key for DEFEND, the next key pressed is it.
-function chooseDefendKey(e) {
-  if (!$("defend-key").classList.contains("listening")) return false;
-  e.preventDefault();
-  e.stopPropagation();
-  const k = e.key;
-  if (k !== "Escape" && k.length === 1 && k !== " " && !Object.values(SLOT_KEYS).includes(k)) {
-    keys.defend = k;
-    store.set("alz.key.defend", k);
+// Settings ----------------------------------------------------------------------------
+// Key bindings: click a key, then press the one you want (Esc keeps the old one).
+let choosing = null; // the action whose key is being chosen
+
+function renderSettings() {
+  const body = $("settings-body");
+  const list = el("ul", "keys");
+  for (const action of [1, 2, 3, "defend"]) {
+    const li = el("li");
+    const b = el("button", "keycap" + (choosing === String(action) ? " listening" : ""),
+      choosing === String(action) ? "Press a key…" : keyLabel(keys[action]));
+    b.type = "button";
+    b.dataset.action = String(action);
+    b.addEventListener("click", () => { choosing = String(action); renderSettings(); });
+    li.append(el("span", "", KEY_NAMES[action]), b);
+    list.append(li);
   }
-  $("defend-key").classList.remove("listening");
-  renderDefend();
-  return true;
+  const reset = el("button", "", "Reset to 4, 3, 2 and 7");
+  reset.type = "button";
+  reset.addEventListener("click", () => {
+    for (const [action, k] of Object.entries(KEY_DEFAULTS)) keys[action] = k;
+    store.remove("alz.keys");
+    store.remove("alz.key.defend");
+    choosing = null;
+    showKeys();
+    renderSettings();
+  });
+  body.replaceChildren(el("h3", "", "Keys"),
+    el("p", "note", "Click a key, then press the one you want; Esc keeps the old one. A key that's already in use swaps over. "
+      + "Keys work when the command line is empty (or in a fight), so a letter can't start a command."),
+    list, reset);
+  const focus = body.querySelector(`.keycap[data-action="${choosing}"]`);
+  if (focus) focus.focus();
 }
+
+function openSettings() {
+  choosing = null;
+  renderSettings();
+  $("settings-dialog").showModal();
+}
+
+// Listening on the whole page, first, so the key reaches us wherever focus is.
+document.addEventListener("keydown", (e) => {
+  if (!choosing || !$("settings-dialog").open) return;
+  e.preventDefault(); // Esc cancels the choice, not the dialog
+  e.stopPropagation();
+  const k = keyOf(e);
+  if (k !== "Escape" && bindable(k)) bindKey(choosing, k);
+  else if (k !== "Escape") return; // Shift and the like: keep listening
+  choosing = null;
+  renderSettings();
+}, true);
+$("settings-dialog").addEventListener("close", () => { choosing = null; });
 
 // Inventory and character panels -----------------------------------------------------------
 
@@ -1822,6 +1920,7 @@ function renderReputation() {
 $("open-inventory").addEventListener("click", () => { renderInventory(); $("inventory-dialog").showModal(); });
 $("open-character").addEventListener("click", () => { renderCharacter(); $("character-dialog").showModal(); });
 $("open-reputation").addEventListener("click", () => { renderReputation(); $("reputation-dialog").showModal(); });
+$("open-settings").addEventListener("click", openSettings);
 $("wx-head").addEventListener("click", () => $("weather-panel").classList.toggle("open"));
 $("open-quests").addEventListener("click", () => { renderQuests(); $("quests-dialog").showModal(); });
 for (const dialog of document.querySelectorAll("dialog")) {
@@ -2807,16 +2906,14 @@ $("command").addEventListener("submit", (e) => {
   else $("input").value = "";
 });
 
-// The keys that use each slot: 4, 3 and 2, so a resting finger sits on the
-// first slot. They work straight away, without Enter, unless you're typing
-// something: on an empty command line, or in a fight when the kept command
-// is all selected.
-const SLOT_KEYS = { 1: "4", 2: "3", 3: "2" };
-
+// The keys that use each slot (4, 3 and 2 unless you've chosen others in
+// Settings, so a resting finger sits on the first slot) and DEFEND. They work
+// straight away, without Enter, unless you're typing something: on an empty
+// command line, or in a fight when the kept command is all selected.
 function slotKey(e) {
-  if (chooseDefendKey(e)) return true;
-  const n = Number(Object.keys(SLOT_KEYS).find((slot) => SLOT_KEYS[slot] === e.key));
-  const guard = e.key === keys.defend;
+  const k = keyOf(e);
+  const n = Number([1, 2, 3].find((slot) => keys[slot] === k));
+  const guard = k === keys.defend;
   if ((!n && !guard) || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return false;
   if ($("world").classList.contains("hidden") || document.querySelector("dialog[open]")) return false;
   const field = e.target;
@@ -2851,6 +2948,7 @@ $("input").addEventListener("keydown", (e) => {
 $("reconnect").addEventListener("click", resume);
 
 renderPanels();
+showKeys();
 if (store.get("alz.token")) {
   $("login").classList.add("hidden");
   $("world").classList.remove("hidden");

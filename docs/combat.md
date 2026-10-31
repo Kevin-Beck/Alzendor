@@ -8,7 +8,7 @@ gear) are in the README's Combat section and [weather.md](weather.md).
 
 NPCs never miss, but a player can meet a blow:
 
-- **DEFEND** (the **7** key by default, or `DEFEND` / `BLOCK` / `DODGE`)
+- **DEFEND** (the **7** key by default, changed in Settings, or `DEFEND` / `BLOCK` / `DODGE`)
   braces for the next blow. With a **shield** in your hand it's a **block**;
   without one, a **dodge**.
 - **Timing:** the press counts if it's within the window of when the blow

@@ -118,6 +118,9 @@ The web client is built around the map:
   ruled sections for what it does, the weather (where on the grid it works
   best, and whether it wants rain or dry), what today's weather does to it,
   and its story.
+- **Settings** (header button): choose the keys for your three slots and
+  for DEFEND (4, 3, 2 and 7 by default). Click one and press the key you
+  want; a key that's in use swaps over. Remembered per browser.
 - **Inventory**, **Character**, **Reputation** and **Quests** (header
   buttons). Your gear and what it does in today's weather, with buttons to
   put any piece in slot 1, 2 or 3, and how full your pack is; your class,
@@ -976,10 +979,9 @@ tests/
 - [docs/zones.md](docs/zones.md): every zone after the starting realms (the
   Greyfold, the frontier, the dangerous places and the eleven realms): their
   plans, quests, enemies and mechanics, where they are and why.
-- [docs/talk-and-layout.md](docs/talk-and-layout.md): the next update's
-  design (not built yet): talking by target, greetings, giving and selling,
-  trust, quests handed over and pinned, traps, hold/wear/equip, the new
-  layout and gear cards.
+- [docs/talk-and-layout.md](docs/talk-and-layout.md): talking by target,
+  greetings, rapport, giving and selling, quests offered and pinned, WHAT
+  NOW and lures, traps, hold/wear/equip, the layout and gear cards.
 - [docs/journeys.md](docs/journeys.md): walking pace, traps, day and night,
   routes as waypoints, and travel events: checks, stranding, surprise combat
   and marooning.

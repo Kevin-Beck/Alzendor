@@ -257,6 +257,7 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [x] GIVE (quests hand things over with it), gifts once a day, creature loot and people who buy it, haggling by Presence
 - [x] HOLD, WEAR and EQUIP for worn gear; traps: read the sign and creep to sneak past, or DISARM
 - [x] Weather beside the map with the log underneath; a bigger, readable weather panel; gear cards
+- [x] Settings: choose the keys for the slots and DEFEND
 
 ### Next
 - [ ] Write backgrounds, rumours, likes and wants for the people of the frontier, dangerous places and realms
@@ -264,19 +265,14 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [ ] Balance the zones with real players: XP per level, gear against NPC damage, how often the big blows land
 - [ ] Shops, so gear isn't only quest rewards and drops; more slot gear per tier for each class
 - [ ] NPCs that move between rooms (the Hollow Rider riding the moor; patrols to time)
-- [ ] Map floors for up and down (the Underdeep is drawn beside the quarry for now)
+- [ ] Map floors for up and down (the Underdeep is drawn beside the quarry, the cellar beside the tavern), and keyboard navigation of the map
 - [ ] Worn gear from loot and shops, and more of it to find; balancing armour against NPC damage
-- [ ] Key bindings for the slots too (only DEFEND's key can be changed now)
 - [ ] Starting realms' own factions, NPCs that walk rounds, and timetables on the clock
 - [ ] The walkable mountain way between Harrowgate and Harrowlake (50+ rooms, see docs/places.md)
 - [ ] More travel events, pocket areas and ambushes; travel events on foot
-- [ ] Quests: start with small state machines driven by deeds, begun by talking to NPCs (see docs/quests.md)
 - [ ] More deeds for cultures to judge: looting, sparing, arena fights, deception, witnesses (see docs/design.md)
 - [ ] Choosing between abilities at some levels
-- [ ] Character creation: player race/class (cards say "Adventurer" for now)
-- [ ] NPCs that move or wander (publish room events like players do)
 - [ ] More combat: potions that run out, gear to find or buy beyond drops and levels, balancing gear and NPCs, NPCs that heal or call for help
-- [ ] Map: separate floors for up/down (the cellar sits next to the tavern for now), and keyboard navigation of the map
 - [ ] Password change and reset (changing a password should revoke the account's other tokens)
 - [ ] Resume edge case: if a player's last command moved them and the connection dropped before they saw it, a resume skips the old room's events from that gap (they get a fresh room view instead)
 - [ ] Each connection holds one blocking Redis connection for its feed; past a few thousand players per server, switch to one multiplexed reader per server
@@ -284,6 +280,5 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [ ] Rooms/items for players to build in-game (admin `create room`, `dig <dir>`), instead of only the seed file
 
 ### Later
-- [ ] NPCs as non-player actors that publish room events
 - [ ] Areas or regions divided across servers / Redis Cluster (the global sequence counter and multi-key Lua functions assume one Redis primary; a cluster would need one sequence per shard, e.g. per region)
 - [ ] Regional routing (the latency issue noted in the README)
