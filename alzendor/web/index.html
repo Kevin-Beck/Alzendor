@@ -2737,23 +2737,34 @@ window.addEventListener("resize", () => applyLayout(false));
 
 const SIDE = { min: 260, max: 640, initial: 360 };
 const MAP = { min: 0.2, max: 0.8, initial: 0.58 };
-const WEATHER = { min: 0.15, max: 0.75, initial: 0.5 };
+// The weather pane: by default (null) just wide enough for its four boxes to sit
+// two by two (about 420px inside, short of where a wide, short pane puts them in
+// a row), whatever the screen; dragging its bar sets a share of the top instead.
+const WEATHER = { min: 0.15, max: 0.75, initial: null, twoByTwo: 420 };
 let sideWidth = SIDE.initial, mapShare = MAP.initial, weatherShare = WEATHER.initial;
+
+function weatherDefault() {
+  const top = $("top").getBoundingClientRect().width;
+  const pane = $("weather-panel");
+  const padding = pane.offsetWidth - pane.clientWidth + parseFloat(getComputedStyle(pane).paddingLeft) * 2;
+  return top > 0 ? (WEATHER.twoByTwo + padding) / top : 0.5;
+}
 
 function applyLayout(save) {
   const room = innerWidth - 320; // always leave the map and log some width
   sideWidth = Math.round(Math.min(Math.max(sideWidth, SIDE.min), SIDE.max, Math.max(room, SIDE.min)));
   mapShare = Math.min(Math.max(mapShare, MAP.min), MAP.max);
-  weatherShare = Math.min(Math.max(weatherShare, WEATHER.min), WEATHER.max);
-  $("weather-panel").style.flexGrow = Math.round(weatherShare * 100);
-  $("map-wrap").style.flexGrow = 100 - Math.round(weatherShare * 100);
-  $("split-weather").setAttribute("aria-valuenow", Math.round(weatherShare * 100));
+  if (weatherShare != null) weatherShare = Math.min(Math.max(weatherShare, WEATHER.min), WEATHER.max);
+  const share = weatherShare ?? Math.min(Math.max(weatherDefault(), WEATHER.min), WEATHER.max);
+  $("weather-panel").style.flexGrow = Math.round(share * 1000);
+  $("map-wrap").style.flexGrow = 1000 - Math.round(share * 1000);
+  $("split-weather").setAttribute("aria-valuenow", Math.round(share * 100));
   $("world").style.setProperty("--side-width", `${sideWidth}px`);
   $("top").style.flexGrow = Math.round(mapShare * 100);
   $("log-wrap").style.flexGrow = 100 - Math.round(mapShare * 100);
   $("split-side").setAttribute("aria-valuenow", sideWidth);
   $("split-map").setAttribute("aria-valuenow", Math.round(mapShare * 100));
-  if (save) store.set("layout", JSON.stringify({ side: sideWidth, map: mapShare, weather: weatherShare }));
+  if (save) store.set("layout", JSON.stringify({ side: sideWidth, map: mapShare, wx: weatherShare }));
   renderMap();
   if (following) scrollToLatest();
 }
@@ -2790,7 +2801,7 @@ dragBar($("split-weather"), (e) => {
 $("split-weather").addEventListener("dblclick", () => { weatherShare = WEATHER.initial; applyLayout(true); });
 $("split-weather").addEventListener("keydown", (e) => {
   const step = { ArrowLeft: -0.04, ArrowRight: 0.04 }[e.key];
-  if (step) { e.preventDefault(); weatherShare += step; applyLayout(true); }
+  if (step) { e.preventDefault(); weatherShare = (weatherShare ?? weatherDefault()) + step; applyLayout(true); }
 });
 $("split-side").addEventListener("dblclick", () => { sideWidth = SIDE.initial; applyLayout(true); });
 $("split-map").addEventListener("dblclick", () => { mapShare = MAP.initial; applyLayout(true); });
@@ -2806,7 +2817,7 @@ try {
   const saved = JSON.parse(store.get("layout") || "{}");
   if (Number.isFinite(saved.side)) sideWidth = saved.side;
   if (Number.isFinite(saved.map)) mapShare = saved.map;
-  if (Number.isFinite(saved.weather)) weatherShare = saved.weather;
+  if (Number.isFinite(saved.wx)) weatherShare = saved.wx; // (an older "weather" share is ignored: the default changed)
 } catch {}
 applyLayout(false);
 

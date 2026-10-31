@@ -100,8 +100,10 @@ The web client is built around the map:
 
   Picking up a map (for example the sea chart in the Drowned Lantern, which
   reveals Saltmere Isle) makes the regions it shows discovered.
-- **Weather.** Beside the map. Four boxes, always in the same order, that sit
-  in a row, two by two, or one above another as the pane's shape allows: **Sky** (a grid of
+- **Weather.** Beside the map, wide enough by default for two rows of two
+  (drag its bar to change that; double-click to go back). Four boxes, always
+  in the same order, that sit in a row, two by two, or one above another as
+  the pane's shape allows: **Sky** (a grid of
   temperature across and energy up, with today's weather as a dot, a blurred
   patch if you can't read these skies, and the forecast as a dotted trail if
   you can), **Rain** (what's falling, and how hard), **Time** (a day/night
