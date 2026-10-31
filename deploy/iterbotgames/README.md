@@ -32,7 +32,9 @@ limits), and only accepts browsers from `https://iterbotgames.com`.
 aws sso login --profile admin-dev --use-device-code
 cd deploy/iterbotgames
 terraform init
-terraform apply            # the server, its name, the bucket (a few minutes to boot)
+terraform plan -out=tfplan # the server, its name, the bucket, CloudFront's request policy
+terraform apply tfplan     # (a few minutes to boot)
+./cloudfront.sh --dryrun   # see the change to the distribution first
 ./cloudfront.sh            # the /alzendor/* route (CloudFront takes a few minutes)
 ALZ_ADMINS=kev ./deploy.sh # the game itself
 ```

@@ -7,6 +7,7 @@
 # them; everything else in the distribution is left as it is. The existing
 # index-rewrite function already redirects /alzendor to /alzendor/.
 #
+# Usage: ./cloudfront.sh [--dryrun]   (--dryrun shows the change without making it)
 # Needs: terraform apply done here, and an AWS session (see deploy.sh).
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -45,6 +46,10 @@ jq --arg origin "$ORIGIN" --arg cache "$CACHE" --arg request "$REQUEST" '
   | .CacheBehaviors.Quantity = (.CacheBehaviors.Items | length)
 ' "$WORK/current.json" > "$WORK/new.json"
 
+if [ "${1:-}" = "--dryrun" ]; then # show what would change, and stop
+  diff <(jq -S .DistributionConfig "$WORK/current.json") <(jq -S . "$WORK/new.json") || true
+  exit 0
+fi
 aws_ cloudfront update-distribution --id "$DISTRIBUTION" --if-match "$ETAG" \
   --distribution-config "file://$WORK/new.json" --query Distribution.Status --output text
 echo "CloudFront is rolling out /alzendor/* to $ORIGIN (a few minutes)."
