@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Adds Alzendor to the iterbotgames.com CloudFront distribution: an origin
 # (the server's DNS name, HTTPS only) and a behavior sending /alzendor/* to it,
-# uncached, with every viewer header but Host (so the origin's certificate
-# matches) plus CloudFront's, for the client's address. Run it again to update
+# uncached, with main.tf's origin request policy: the websocket handshake,
+# Origin and the viewer's address, but not Host (so the origin's certificate
+# matches). Run it again to update
 # them; everything else in the distribution is left as it is. The existing
 # index-rewrite function already redirects /alzendor to /alzendor/.
 #
@@ -17,8 +18,7 @@ aws_() { aws --profile "$PROFILE" "$@"; }
 ORIGIN=$(terraform output -raw origin_domain)
 CACHE=$(aws_ cloudfront list-cache-policies --type managed \
   --query "CachePolicyList.Items[?CachePolicy.CachePolicyConfig.Name=='Managed-CachingDisabled'].CachePolicy.Id" --output text)
-REQUEST=$(aws_ cloudfront list-origin-request-policies --type managed \
-  --query "OriginRequestPolicyList.Items[?OriginRequestPolicy.OriginRequestPolicyConfig.Name=='Managed-AllViewerExceptHostHeader'].OriginRequestPolicy.Id" --output text)
+REQUEST=$(terraform output -raw origin_request_policy) # main.tf: the handshake, Origin, the viewer's address
 [ -n "$CACHE" ] && [ -n "$REQUEST" ] || { echo "Couldn't find the managed CloudFront policies." >&2; exit 1; }
 
 WORK=$(mktemp -d)

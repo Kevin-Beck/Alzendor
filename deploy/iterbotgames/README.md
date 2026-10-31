@@ -18,7 +18,7 @@ browser ── https ──▶ CloudFront (iterbotgames.com)
 | Name | Elastic IP, `alzendor-origin.iterbotgames.com` (Route 53) for CloudFront's origin; Caddy gets its certificate |
 | Access | no SSH: commands go over SSM (the instance role has `AmazonSSMManagedInstanceCore`) |
 | Releases | a private S3 bucket (`alzendor-releases-…`), kept 30 days |
-| CloudFront | distribution `E1HHTSHZV5KSH8`: an `alzendor` origin and a `/alzendor/*` behavior (no caching, viewer headers but Host, plus CloudFront's) |
+| CloudFront | distribution `E1HHTSHZV5KSH8`: an `alzendor` origin and a `/alzendor/*` behavior (no caching; the `alzendor-origin` request policy from main.tf passes the websocket handshake, Origin and `CloudFront-Viewer-Address`, not Host) |
 | Data | Redis in a Docker volume on the instance's disk. It survives deploys and reboots; it doesn't survive destroying the instance |
 
 Players register in the game itself (a name and a password), so there's

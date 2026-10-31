@@ -171,6 +171,31 @@ resource "aws_s3_bucket_lifecycle_configuration" "releases" {
   }
 }
 
+# What CloudFront passes on to the origin for /alzendor/*: the websocket
+# handshake, the page's Origin (the server checks it), and the player's address.
+# Not Host: CloudFront sends the origin's own name, which Caddy's certificate is for.
+resource "aws_cloudfront_origin_request_policy" "alzendor" {
+  name    = "alzendor-origin"
+  comment = "Alzendor: websocket handshake, Origin, and the viewer's address"
+  headers_config {
+    header_behavior = "whitelist"
+    headers {
+      items = ["Origin", "User-Agent", "Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions",
+      "Sec-WebSocket-Protocol", "CloudFront-Viewer-Address"]
+    }
+  }
+  cookies_config {
+    cookie_behavior = "none"
+  }
+  query_strings_config {
+    query_string_behavior = "none"
+  }
+}
+
+output "origin_request_policy" {
+  value = aws_cloudfront_origin_request_policy.alzendor.id
+}
+
 output "instance_id" {
   value = aws_instance.alzendor.id
 }
