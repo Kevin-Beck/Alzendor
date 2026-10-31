@@ -1,8 +1,10 @@
 # Quests: options for Alzendor
 
-Nothing here is built yet. These are ways quests could work in Alzendor, with
+These were the ways quests could work in Alzendor, with
 what each one costs and how it fits the architecture we already have. The
-recommendation is at the end.
+recommendation is at the end, followed by **the decided design**, which the
+marooned islands ([journeys.md](journeys.md)) and the starting realms
+([characters.md](characters.md)) are the first to use.
 
 ## What we already have to build on
 
@@ -129,3 +131,45 @@ few other hooks (`say` to an NPC, `get`, entering a room), with **option 2
 gating)** for the first real content: one quest per faction that shows off
 its culture. Add **option 4 (world-state quests)** once there are enough
 players for shared goals to feel alive.
+
+## Decided: the quest engine
+
+Option 5, small state machines, started mostly by talking to NPCs (option 2).
+The first quests are the starting realms' and the marooned island's; faction
+quests follow.
+
+- **Seed:** `quests: {id: {name, priority, steps: {id: {goal, on, then,
+  effects}}, start}}`. `goal` is the line the quest panel shows ("Find a
+  plank, pitch and rope"). `on` is what moves the step on; `then` is the
+  next step, or `done`.
+- **Triggers (`on`):** `ask` an NPC (`about` a topic); `get` an item; `enter`
+  a room; `kill` an NPC (by id, template, faction or role, counted while the
+  step is active, since NPCs respawn); `use` an item (`on` a feature or NPC);
+  `have` all of a list of items; `level`; and `in` a room. Any of them can
+  add `when` (weather ranges and time phases); states (`have`, `level`, `in`)
+  are checked after anything happens and on every weather tick, so a quest
+  that waits on the weather moves on when it turns.
+- **Effects:** experience, coins, items, reputation, discover a region,
+  start another quest, teleport (end of a starting realm), resume a
+  journey (end of a marooning).
+- **State:** `PLAYER:<id>:quest:<qid>` holds the step and counters;
+  `PLAYER:<id>:quests` lists active and finished quests. Progress is checked
+  in the same atomic Lua call as the action that triggered it, from `deed()`
+  and the `ask`, `get`, `move` and `use` functions.
+- **Quest items are personal.** An item marked `quest` is seen and picked up
+  by each player on that quest step separately, so two players never fight
+  over the one plank.
+- **Using items:** `USE <item> ON <thing>` (slots stay `USE <number>`).
+- **NPC topics:** NPCs get `topics` in the seed (`{"work": "The rats are at
+  it again…", "starts": "rats"}`), answered through `ASK <npc> ABOUT
+  <topic>`. The target card lists an NPC's topics so talking is never a
+  guessing game.
+- **Priority quests:** a quest marked `priority` (being marooned) is pinned
+  in the panel, and it ends, failed, if you leave its area any way but by
+  finishing it: death, a teleport. Logging out doesn't end it.
+- **The quest panel:** a **Quests** header button lists active and finished
+  quests; the current goal of your top quest also shows in a small section
+  of the side panel, above the Loadout. Driven by a `quests` event, like
+  `kit` and `character`.
+- **The validator** checks every step is reachable and every quest can end.
+

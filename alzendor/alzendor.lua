@@ -44,6 +44,12 @@ local function hgetall(key)
   return t
 end
 
+local function list_keys(t)
+  local out = {}
+  for k in pairs(t or {}) do out[#out + 1] = k end
+  return out
+end
+
 local function sorted(t)
   table.sort(t)
   return t
@@ -94,6 +100,10 @@ local function decode(json)
   return cjson.decode(json)
 end
 
+-- Hooks filled in further down, by travel events and quests, for code that
+-- has to come earlier in the file (moving, dying) to call.
+local travel = {}
+
 -- A tunable number from the seed's "rules" (alz:rules), or the default.
 local function rule(name, default)
   return tonumber(redis.call('HGET', 'alz:rules', name)) or default
@@ -140,7 +150,9 @@ end
 
 -- A stat as it counts everywhere: trained points plus active boons.
 local function stat(pid, name)
-  local value = trained(pid, name)
+  -- Trained points, an ancestry's bonus, short-lived buffs (PLAYER:<id>:buff:<stat>), and boons.
+  local value = trained(pid, name) + (tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':bonus', name)) or 0)
+    + (tonumber(redis.call('GET', 'PLAYER:' .. pid .. ':buff:' .. name)) or 0)
   for _, b in ipairs(boons_for(pid, name)) do
     if b.active then value = value + (b.amount or 1) end
   end
@@ -163,7 +175,7 @@ local function player_card(pid)
   local account = hgetall('ACCOUNT:' .. pid)
   local max_hp = max_hp_of(pid)
   return {
-    id = 'pc:' .. pid, kind = 'pc', name = account.name or pid, label = 'Adventurer',
+    id = 'pc:' .. pid, kind = 'pc', name = account.name or pid, label = (account.label or '') ~= '' and account.label or 'Adventurer',
     description = account.description or 'An ordinary traveller.',
     hp = math.min(tonumber(account.hp) or max_hp, max_hp), max_hp = max_hp,
     level = tonumber(account.level) or 1, asleep = account.asleep == '1',
@@ -189,6 +201,7 @@ local function npc_card(nid)
     description = npc.description or '', hp = tonumber(npc.hp) or max_hp, max_hp = max_hp,
     icon = (npc.icon or '') ~= '' and npc.icon or nil, base_disposition = npc.disposition or 'neutral',
     faction = faction or nil, attacks = attacks, immortal = npc.immortal == '1',
+    topics = next(decode(npc.topics)) and list(sorted(list_keys(decode(npc.topics)))) or nil,
   }
 end
 
@@ -289,6 +302,31 @@ local function place_of(rid)
   return place
 end
 
+-- The clock: one game day every day_minutes of real time (alz:clock_override
+-- pins the hour, for admins and tests). A realm can have its own sky:
+-- 'always_day' or 'always_night'.
+local function clock(realm)
+  local sky = realm and redis.call('HGET', 'REALM:' .. realm .. ':info', 'sky') or ''
+  local hour
+  if sky == 'always_day' then
+    hour = 12
+  elseif sky == 'always_night' then
+    hour = 0
+  else
+    local pinned = tonumber(redis.call('GET', 'alz:clock_override') or '')
+    hour = pinned or math.floor((now_ms() / 60000 / rule('day_minutes', 60) % 1) * 24)
+  end
+  local phase = (hour >= 5 and hour < 7 and 'dawn') or (hour >= 7 and hour < 18 and 'day')
+    or (hour >= 18 and hour < 20 and 'dusk') or 'night'
+  return {hour = hour, phase = phase}
+end
+
+-- Perks are what a character has that isn't gear: ancestry passives, and the
+-- old level perks.
+local function has_perk(pid, perk)
+  return pid ~= nil and redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':perks', perk) == 1
+end
+
 -- The weather in a place at weather time t (default now).
 local function weather_in(place, t)
   local w
@@ -312,6 +350,7 @@ local function weather_in(place, t)
     for _, axis in ipairs(AXES) do w[axis] = clamp(w[axis] + (tonumber(place.nudge[axis]) or 0), -1, 1) end
   end
   w.region, w.realm = place.region, place.realm
+  if not w.indoor and clock(place.realm).phase == 'night' then w.night = true end
   return w
 end
 
@@ -331,9 +370,17 @@ local function falling(w)
   return 'rain'
 end
 
--- In heavy rain or snow you can't see far: no new exits, glimpses or regions.
-local function can_see(w)
-  return w.indoor or intensity(w) < 0.5
+-- In heavy rain or snow, or outdoors at night, you can't see far: no new
+-- exits, glimpses or regions. Starsight sees at night as by day.
+local function can_see(w, pid)
+  if w.indoor then return true end
+  if intensity(w) >= 0.5 then return false end
+  return not w.night or has_perk(pid, 'starsight')
+end
+
+-- What's stopping you seeing: the rain, the snow, or the dark.
+local function obscured_by(w)
+  return intensity(w) >= 0.5 and falling(w) or 'darkness'
 end
 
 -- The named corner of the temperature/energy grid, or 'Temperate', or nil.
@@ -407,12 +454,57 @@ end
 
 -- Resilience softens weather penalties: 10% a point, up to half.
 local function resilience(pid)
-  return math.min(0.5, 0.1 * stat(pid, 'resilience'))
+  local r = math.min(0.5, 0.1 * stat(pid, 'resilience'))
+  if has_perk(pid, 'thick_hide') then r = 1 - (1 - r) * 0.5 end -- weather penalties halved again
+  return r
 end
 
 local function soften(factor, r)
   if factor >= 1 then return factor end
   return 1 - (1 - factor) * (1 - r)
+end
+
+-- Walking pace: how long it takes to cross a room, by its ground: roads, towns
+-- and indoors are quick, open country slower, rough ground slowest
+-- (alz:terrain_ground maps terrains onto 'open' or 'rough'). The rule `pace`
+-- scales them all (0 turns it off, for tests). Feather Step makes rough ground
+-- no worse than open.
+local STEP_MS = {road = 600, open = 900, rough = 1500}
+
+local function ground_kind(rid)
+  local info = hgetall('ROOM:' .. rid .. ':info')
+  if info.indoor == '1' or (info.terrain or '') == '' then return 'road' end
+  return redis.call('HGET', 'alz:terrain_ground', info.terrain) or 'open'
+end
+
+local function step_ms(pid, rid)
+  local ground = ground_kind(rid)
+  if ground == 'rough' and has_perk(pid, 'feather_step') then ground = 'open' end
+  local slowed = redis.call('EXISTS', 'PLAYER:' .. pid .. ':slowed') == 1 and 2 or 1
+  return math.floor(rule('step_' .. ground .. '_ms', STEP_MS[ground] or 900) * rule('pace', 1) * slowed)
+end
+
+-- A random number in [0, 1). Tests can queue the rolls they want in
+-- alz:test_rolls.
+local function roll()
+  local queued = redis.call('LPOP', 'alz:test_rolls')
+  if queued then return tonumber(queued) end
+  return math.random()
+end
+
+-- Checks: one rule for traps, travel events and anything else that tests a
+-- stat (docs/journeys.md, "Checks"). The chance is the difficulty's base plus
+-- 12% a point in the stat, plus any bonus (a background that suits it, going
+-- carefully), between 5% and 95%. Players see which stat, never the odds.
+local DIFFICULTY = {easy = 0.5, fair = 0.3, hard = 0.1}
+
+local function check_chance(pid, stat_name, difficulty, bonus)
+  local chance = (DIFFICULTY[difficulty or 'fair'] or 0.3) + 0.12 * stat(pid, stat_name) + (bonus or 0)
+  return clamp(chance, 0.05, 0.95)
+end
+
+local function passes(pid, stat_name, difficulty, bonus)
+  return roll() < check_chance(pid, stat_name, difficulty, bonus)
 end
 
 -- How long deep ground holds up a move between two rooms, and what's doing it.
@@ -525,7 +617,7 @@ local function weather_event(pid)
   local units = not w.indoor and forecast_units(pid, w.realm) or nil
   local exact = w.indoor or units ~= nil
   local event = {type = 'weather', indoor = w.indoor or false, exact = exact, zone = zone(w), falling = falling(w),
-    intensity = intensity(w), summary = describe_weather(w), visibility = can_see(w) and 'clear' or 'poor',
+    intensity = intensity(w), summary = describe_weather(w), visibility = can_see(w, pid) and 'clear' or 'poor', clock = clock(w.realm),
     place = w.indoor and place.name or (w.region and redis.call('HGET', 'REGION:' .. w.region .. ':info', 'name')) or place.name,
     realm = w.realm and redis.call('HGET', 'REALM:' .. w.realm .. ':info', 'name') or nil}
   for _, axis in ipairs(AXES) do event[axis] = exact and w[axis] or round_to(w[axis], 0.5) end
@@ -538,6 +630,17 @@ local function weather_event(pid)
         precipitation = f.precipitation, summary = describe_weather(f)}
     end
     event.forecast = forecast
+  elseif not w.indoor and has_perk(pid, 'skyreading') then
+    -- Skyreading: no forecast, just which way it's heading in the next 10 minutes.
+    local later = weather_in(place, weather_time() + 10 / rule('weather_unit_minutes', 30))
+    local function way(d, up, down) return d > 0.05 and up or (d < -0.05 and down or nil) end
+    local words = {}
+    words[#words + 1] = way(later.temperature - w.temperature, 'warmer', 'colder')
+    words[#words + 1] = way(later.energy - w.energy, 'wilder', 'stiller')
+    words[#words + 1] = way(later.precipitation - w.precipitation, 'wetter', 'drier')
+    event.heading = {temperature = later.temperature - w.temperature, energy = later.energy - w.energy,
+      precipitation = later.precipitation - w.precipitation,
+      text = #words > 0 and ('Turning ' .. table.concat(words, ', ') .. '.') or 'Holding steady.'}
   end
   return emit('PLAYER:' .. pid, event)
 end
@@ -599,6 +702,7 @@ end
 -- Routes (ferries, coaches, portals, gates) to a hidden region are only
 -- offered once the player knows the region is there.
 local function route_offered(pid, route)
+  if route.hidden == '1' then return false end -- only a quest can put you on it
   local area = redis.call('HGET', 'ROOM:' .. (route.to or '') .. ':info', 'area')
   local region = area and redis.call('HGET', 'AREA:' .. area .. ':info', 'region')
   if not region or redis.call('HGET', 'REGION:' .. region .. ':info', 'hidden') ~= '1' then return true end
@@ -688,13 +792,14 @@ local function map_event(pid, rids, full)
     local info = hgetall('ROOM:' .. rid .. ':info')
     local exits = hgetall('ROOM:' .. rid .. ':exits')
     rooms[#rooms + 1] = {id = rid, name = info.name, area = info.area, realm = area_realm(info.area), pos = room_pos(info),
-      exits = exits, explored = true}
+      exits = exits, explored = true, trap = redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':traps', rid) == 1 or nil}
     for _, dest in pairs(exits) do
       if not seen[dest] and redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':explored', dest) == 0
         and redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':glimpsed', dest) == 1 and region_state(pid, region_of(dest)) then
         seen[dest] = true
         local other = hgetall('ROOM:' .. dest .. ':info')
-        rooms[#rooms + 1] = {id = dest, area = other.area, realm = area_realm(other.area), pos = room_pos(other), explored = false}
+        rooms[#rooms + 1] = {id = dest, area = other.area, realm = area_realm(other.area), pos = room_pos(other), explored = false,
+          trap = redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':traps', dest) == 1 or nil}
       end
     end
     if info.area and not seen_area[info.area] then
@@ -715,12 +820,21 @@ local function map_event(pid, rids, full)
   for _, id in ipairs(sorted(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':realms'))) do
     realms[#realms + 1] = {id = id, name = redis.call('HGET', 'REALM:' .. id .. ':info', 'name') or id}
   end
+  -- And the ones they've only heard of.
+  for _, id in ipairs(sorted(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':rumours'))) do
+    if redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':realms', id) == 0 then
+      realms[#realms + 1] = {id = id, name = redis.call('HGET', 'REALM:' .. id .. ':info', 'name') or id, rumour = true}
+    end
+  end
   -- Routes leaving rooms they've explored, drawn as dashed lines when both ends are known.
   local routes = list()
   for _, id in ipairs(sorted(redis.call('SMEMBERS', 'alz:routes'))) do
     local route = hgetall('ROUTE:' .. id)
     if redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':explored', route.from) == 1 and route_offered(pid, route) then
-      routes[#routes + 1] = {id = id, name = route.name, from = route.from, to = route.to}
+      local path = list()
+      for i, wp in ipairs(decode(route.path)) do path[i] = room_pos(hgetall('ROOM:' .. wp .. ':info')) end
+      routes[#routes + 1] = {id = id, name = route.name, from = route.from, to = route.to, path = path, kind = route.kind,
+        fare = tonumber(route.fare) or 0, command = route_command(route)}
     end
   end
   local here = redis.call('GET', 'PLAYER:' .. pid .. ':room')
@@ -759,8 +873,25 @@ end
 -- Subscriptions ---------------------------------------------------------------
 
 -- The channels a player in this room is subscribed to, besides chat channels.
+-- Waypoints are the rooms a route passes through (see docs/journeys.md). You
+-- can't walk into one, and a ride is private: riders aren't in the room's
+-- player set or on its channel, so nobody sees anyone else on the road.
+local function is_waypoint(rid)
+  return rid ~= nil and redis.call('HGET', 'ROOM:' .. rid .. ':info', 'waypoint') == '1'
+end
+
+-- Where something a player says or does in a room is heard: the room, or,
+-- for a rider alone on the road, only themselves.
+local function here_channel(pid, rid)
+  if is_waypoint(rid) and redis.call('SISMEMBER', 'ROOM:' .. rid .. ':players', pid) == 0 then return 'PLAYER:' .. pid end
+  return 'ROOM:' .. rid
+end
+
 local function place_channels(pid, rid)
-  local channels = {'PLAYER:' .. pid, 'ROOM:' .. rid}
+  local channels = {'PLAYER:' .. pid}
+  if not is_waypoint(rid) or redis.call('SISMEMBER', 'ROOM:' .. rid .. ':players', pid) == 1 then
+    channels[#channels + 1] = 'ROOM:' .. rid
+  end
   local area = redis.call('HGET', 'ROOM:' .. rid .. ':info', 'area')
   if area then
     channels[#channels + 1] = 'AREA:' .. area
@@ -867,7 +998,7 @@ end
 -- make a kind of terrain (forest, coast) safe for you.
 local function is_safe(pid, rid)
   local info = hgetall('ROOM:' .. rid .. ':info')
-  if info.safe == '1' then return true end
+  if info.safe == '1' or info.waypoint == '1' then return true end
   if (info.terrain or '') == '' then return false end
   for _, perk in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':perks')) do
     if redis.call('HGET', 'PERK:' .. perk, 'safe_terrain') == info.terrain then return true end
@@ -878,6 +1009,16 @@ end
 -- World views -----------------------------------------------------------------
 
 -- cause: 'look', 'move', 'enter' or 'resume' (a reconnecting client's refresh).
+-- Quest items are personal: each player sees and takes their own copy
+-- (ROOM:<rid>:qitems lists them; PLAYER:<id>:taken the ones a player has had).
+local function quest_items_here(pid, rid)
+  local out = {}
+  for _, iid in ipairs(sorted(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':qitems'))) do
+    if redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':taken', iid) == 0 then out[#out + 1] = iid end
+  end
+  return out
+end
+
 local function room_event(pid, rid, cause)
   local info = hgetall('ROOM:' .. rid .. ':info')
   -- In heavy rain or snow, only the ways you already know show.
@@ -885,7 +1026,7 @@ local function room_event(pid, rid, cause)
   local exits, hidden = list(), false
   for _, dir in ipairs(sorted(redis.call('HKEYS', 'ROOM:' .. rid .. ':exits'))) do
     local dest = redis.call('HGET', 'ROOM:' .. rid .. ':exits', dir)
-    if can_see(w) or redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':explored', dest) == 1 then
+    if can_see(w, pid) or redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':explored', dest) == 1 then
       exits[#exits + 1] = dir
     else
       hidden = true
@@ -895,17 +1036,23 @@ local function room_event(pid, rid, cause)
   for _, iid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':items')) do
     items[#items + 1] = {id = iid, name = redis.call('HGET', 'ITEM:' .. iid, 'name') or iid}
   end
+  for _, iid in ipairs(quest_items_here(pid, rid)) do
+    items[#items + 1] = {id = iid, name = redis.call('HGET', 'ITEM:' .. iid, 'name') or iid, quest = true}
+  end
   table.sort(items, function(a, b) return a.name < b.name or (a.name == b.name and a.id < b.id) end)
   for i, item in ipairs(items) do item_names[i] = item.name end
   local features = sorted(list(redis.call('HKEYS', 'ROOM:' .. rid .. ':features')))
   local entities, entity_names = list(), {}
   for _, p in ipairs(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':players')) do
-    if p ~= pid then entities[#entities + 1] = player_card(p) end
+    if p ~= pid and info.waypoint ~= '1' then entities[#entities + 1] = player_card(p) end -- rides are private
   end
   for _, nid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':npcs')) do
-    local card = npc_card(nid)
-    card.disposition, card.fight = disposition_for(pid, nid), npc_fight(nid)
-    entities[#entities + 1] = card
+    local owner = redis.call('HGET', 'NPC:' .. nid, 'owner')
+    if not owner or owner == pid then
+      local card = npc_card(nid)
+      card.disposition, card.fight = disposition_for(pid, nid), npc_fight(nid)
+      entities[#entities + 1] = card
+    end
   end
   table.sort(entities, by_card_order)
   for i, card in ipairs(entities) do entity_names[i] = card.name end
@@ -913,7 +1060,8 @@ local function room_event(pid, rid, cause)
 
   local lines = {info.name or rid, info.description or ''}
   lines[#lines + 1] = 'Exits: ' .. (#exits > 0 and table.concat(exits, ', ') or 'none')
-    .. (hidden and (' (the ' .. falling(w) .. ' hides any other ways on)') or '')
+    .. (hidden and (' (the ' .. obscured_by(w) .. ' hides any other ways on)') or '')
+  if w.night then lines[#lines + 1] = 'It is night.' end
   local routes = list()
   for _, id in ipairs(sorted(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':routes'))) do
     local route = hgetall('ROUTE:' .. id)
@@ -929,6 +1077,20 @@ local function room_event(pid, rid, cause)
   end
   if #items > 0 then lines[#lines + 1] = 'You see: ' .. table.concat(item_names, ', ') end
   if #entities > 0 then lines[#lines + 1] = 'Also here: ' .. table.concat(entity_names, ', ') end
+  -- Hunter's Nose: creatures in the rooms next door.
+  local scents = list()
+  if has_perk(pid, 'hunters_nose') then
+    for _, dir in ipairs(exits) do
+      local dest = redis.call('HGET', 'ROOM:' .. rid .. ':exits', dir)
+      for _, nid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. dest .. ':npcs')) do
+        if redis.call('HGET', 'NPC:' .. nid, 'disposition') == 'hostile' and not redis.call('HGET', 'NPC:' .. nid, 'owner') then
+          scents[#scents + 1] = dir
+          break
+        end
+      end
+    end
+    if #scents > 0 then lines[#lines + 1] = 'You smell something to the ' .. table.concat(scents, ', ') .. '.' end
+  end
 
   return emit('PLAYER:' .. pid, {
     type = 'room',
@@ -936,18 +1098,24 @@ local function room_event(pid, rid, cause)
     room = {
       id = rid, name = info.name, description = info.description, area = area or nil,
       exits = exits, exits_hidden = hidden, routes = routes, items = items, features = features, entities = entities,
-      self = player_card(pid), safe = is_safe(pid, rid), indoor = w.indoor or false,
+      self = player_card(pid), safe = is_safe(pid, rid), indoor = w.indoor or false, step_ms = step_ms(pid, rid),
+      waypoint = info.waypoint == '1' or nil, pos = info.waypoint == '1' and room_pos(info) or nil,
+      scents = #scents > 0 and scents or nil,
     },
     text = table.concat(lines, '\n'),
   })
 end
 
-local function match_item(set_key, word)
-  for _, iid in ipairs(redis.call('SMEMBERS', set_key)) do
+local function match_ids(ids, word)
+  for _, iid in ipairs(ids) do
     local item = hgetall('ITEM:' .. iid)
     local words = ' ' .. (item.keywords or '') .. ' ' .. string.lower(item.name or '') .. ' '
     if iid == word or string.find(words, ' ' .. word .. ' ', 1, true) then return iid, item end
   end
+end
+
+local function match_item(set_key, word)
+  return match_ids(redis.call('SMEMBERS', set_key), word)
 end
 
 local function describe_player(pid)
@@ -986,6 +1154,7 @@ local function resolve(pid, rid, word)
   local feature = redis.call('HGET', 'ROOM:' .. rid .. ':features', word)
   if feature then return 'feature', word, 'the ' .. word, feature end
   local iid, item = match_item('ROOM:' .. rid .. ':items', word)
+  if not iid then iid, item = match_ids(quest_items_here(pid, rid), word) end
   if iid then return 'item', iid, 'the ' .. item.name, item.description end
   iid, item = match_item('PLAYER:' .. pid .. ':inv', word)
   if iid then return 'carried', iid, 'the ' .. item.name, item.description end
@@ -1097,7 +1266,7 @@ end
 local function take_beat(pid, n, gear, wx)
   local now = now_ms()
   local state = live_slot(pid, n, now)
-  local quality, offset
+  local quality, offset, previous
   if not state then
     local period = wx.period
     local window = math.min(wx.window + 15 * stat(pid, 'poise'), math.ceil(period / 2) - 1)
@@ -1109,9 +1278,16 @@ local function take_beat(pid, n, gear, wx)
     local beat = math.max(math.floor((now - start) / period + 0.5), tonumber(state.beat) + 1)
     offset = now - (start + beat * period)
     state.beat = beat
-    if math.abs(offset) <= tonumber(state.perfect_window) then
+    previous = tonumber(state.last)
+    -- Long Breath: a perfect hit on another slot widens this one's next window.
+    local breath, wider = redis.call('GET', 'PLAYER:' .. pid .. ':breath'), 0
+    if breath and tonumber(breath) ~= n then
+      wider = 120
+      redis.call('DEL', 'PLAYER:' .. pid .. ':breath')
+    end
+    if math.abs(offset) <= tonumber(state.perfect_window) + wider / 2 then
       quality = 'perfect'
-    elseif math.abs(offset) <= tonumber(state.window) then
+    elseif math.abs(offset) <= tonumber(state.window) + wider then
       quality = 'good'
     else
       quality = offset < 0 and 'early' or 'late'
@@ -1122,7 +1298,101 @@ local function take_beat(pid, n, gear, wx)
   redis.call('HSET', key, 'gear', state.gear, 'start', state.start, 'period', state.period, 'window', state.window,
     'perfect_window', state.perfect_window, 'beat', state.beat, 'last', state.last)
   redis.call('PEXPIRE', key, timeout_for(tonumber(state.period)) * 3)
-  return quality, offset, state
+  return quality, offset, state, previous
+end
+
+local passive = {}
+
+-- Passives that play with the slot ball (docs/characters.md). Each slot's
+-- ball swings out to the right edge and back through the centre (a beat),
+-- then to the left edge and back: the right edge at (k + 1/2) periods after
+-- the rhythm starts for even k, the left for odd k. Passives attuned to a slot
+-- (PLAYER:<id>:attuned maps passive -> slot) count the edge touches between
+-- one use and the next. PLAYER:<id>:charge:<n> holds a slot's stacked bonus;
+-- PLAYER:<id>:sealed the slots sealed for the rest of a fight.
+
+function passive.edges_between(start, period, t0, t1)
+  local first = math.ceil((t0 - start) / period - 0.5)
+  local last = math.floor((t1 - start) / period - 0.5)
+  local out = {left = 0, right = 0}
+  for k = math.max(first, 0), last do
+    if (start + (k + 0.5) * period) > t0 then
+      if k % 2 == 0 then out.right = out.right + 1 else out.left = out.left + 1 end
+    end
+  end
+  return out
+end
+
+function passive.attuned(pid, n)
+  local out = {}
+  for perk, slot in pairs(hgetall('PLAYER:' .. pid .. ':attuned')) do
+    if tonumber(slot) == n and has_perk(pid, perk) then out[perk] = true end
+  end
+  return out
+end
+
+-- Out of a fight, seals and Steady Hands reset.
+function passive.slot_sealed(pid, n)
+  if redis.call('SCARD', 'PLAYER:' .. pid .. ':foes') == 0 then
+    redis.call('DEL', 'PLAYER:' .. pid .. ':sealed', 'PLAYER:' .. pid .. ':steadied')
+    return false
+  end
+  if redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':sealed', n) == 1 then return true end
+  local state = live_slot(pid, n, now_ms())
+  if state and passive.attuned(pid, n).berserk_seal then
+    local start = tonumber(state.start)
+    if passive.edges_between(start, tonumber(state.period), start, now_ms()).left > 0 then
+      redis.call('SADD', 'PLAYER:' .. pid .. ':sealed', n)
+      return true
+    end
+  end
+  return false
+end
+
+function passive.add_charge(pid, n, by)
+  local key = 'PLAYER:' .. pid .. ':charge:' .. n
+  redis.call('SET', key, math.min(3, (tonumber(redis.call('GET', key)) or 0) + by), 'EX', 60)
+end
+
+-- Applies passives to a use that just took its beat: amount is what it would
+-- land (nil for a miss). Returns the amount, changed.
+function passive.empower(pid, rid, n, gear, quality, state, previous, amount)
+  local att, now = passive.attuned(pid, n), tonumber(state.last)
+  local edges = previous and passive.edges_between(tonumber(state.start), tonumber(state.period), previous, now) or {left = 0, right = 0}
+  if att.second_wind and edges.left > 0 then
+    local card = player_card(pid)
+    local healed = math.min(edges.left, card.max_hp - card.hp)
+    if healed > 0 then
+      redis.call('HSET', 'ACCOUNT:' .. pid, 'hp', card.hp + healed)
+      emit('ROOM:' .. rid, {type = 'entity', entity = player_card(pid)})
+      notice(pid, 'Second Wind: +' .. healed .. ' health.')
+    end
+  end
+  if att.moonlit_edge and edges.right > 0 and clock(realm_of(rid)).phase == 'night' then passive.add_charge(pid, n, edges.right) end
+  if not amount then
+    if att.bloodrhythm then passive.add_charge(pid, n, 1) end
+    -- Steady Hands: the first miss in a fight gives the beat back.
+    if has_perk(pid, 'steady_hands') and redis.call('SCARD', 'PLAYER:' .. pid .. ':foes') > 0
+      and redis.call('SET', 'PLAYER:' .. pid .. ':steadied', '1', 'NX', 'EX', 600) then
+      redis.call('HINCRBY', slot_key(pid, n), 'beat', -1)
+      notice(pid, "Steady Hands: that miss doesn't cost you the beat.")
+    end
+    return nil
+  end
+  local mult = 1
+  local charge = tonumber(redis.call('GET', 'PLAYER:' .. pid .. ':charge:' .. n)) or 0
+  if charge > 0 then
+    mult = mult + 0.1 * charge
+    redis.call('DEL', 'PLAYER:' .. pid .. ':charge:' .. n)
+  end
+  if att.berserk_seal then mult = mult + 0.5 end
+  local card = player_card(pid)
+  if has_perk(pid, 'last_stand') and card.hp < card.max_hp / 4 then mult = mult + 0.2 end
+  if has_perk(pid, 'iron_gut') and gear.kind == 'Potion' then mult = mult + 0.25 end
+  if quality == 'perfect' and has_perk(pid, 'long_breath') then
+    redis.call('SET', 'PLAYER:' .. pid .. ':breath', n, 'PX', 10000)
+  end
+  return math.max(1, round(amount * mult))
 end
 
 -- What a use lands, after the weather: nil for a mistimed one.
@@ -1251,7 +1521,8 @@ end
 -- Hostile NPCs in the room turn on a player (who is awake and in it).
 local function aggro(pid, rid)
   for _, nid in ipairs(sorted(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':npcs'))) do
-    if #npc_attacks(nid) > 0 and not fighting(nid, pid) and disposition_for(pid, nid) == 'hostile' then
+    local owner = redis.call('HGET', 'NPC:' .. nid, 'owner')
+    if #npc_attacks(nid) > 0 and not fighting(nid, pid) and disposition_for(pid, nid) == 'hostile' and (not owner or owner == pid) then
       engage(nid, pid)
       emit('ROOM:' .. rid, {type = 'emote', verb = 'aggro', entity_id = 'npc:' .. nid, target = 'pc:' .. pid,
         text = capitalize(npc_display(nid)) .. ' turns on ' .. name_of(pid) .. '!'})
@@ -1335,13 +1606,16 @@ local function character_event(pid)
   local perks = list()
   for _, id in ipairs(sorted(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':perks'))) do
     local perk = hgetall('PERK:' .. id)
-    perks[#perks + 1] = {id = id, name = perk.name or id, description = perk.description or ''}
+    perks[#perks + 1] = {id = id, name = perk.name or id, description = perk.description or '', slot = perk.slot == '1',
+      attuned = tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':attuned', id))}
   end
   local card = player_card(pid)
-  return emit('PLAYER:' .. pid, {type = 'character', level = level, xp = tonumber(account.xp) or 0,
+  local event = {type = 'character', level = level, xp = tonumber(account.xp) or 0,
     xp_next = xp_needed(level), points = tonumber(account.points) or 0, stats = stats, trained = trained_stats, boons = boons,
     stat_order = list(STATS), stat_info = STAT_INFO, perks = perks,
-    factions = factions_of(pid), hp = card.hp, max_hp = card.max_hp})
+    factions = factions_of(pid), hp = card.hp, max_hp = card.max_hp, level_cap = rule('level_cap', 20)}
+  if travel.choices then travel.choices(pid, account, event) end
+  return emit('PLAYER:' .. pid, event)
 end
 
 -- Adds gear to a player's inventory; true if they didn't have it.
@@ -1352,28 +1626,27 @@ end
 local function gain_xp(pid, amount)
   if amount <= 0 then return end
   local key = 'ACCOUNT:' .. pid
+  local cap = rule('level_cap', 20)
+  if level_of(pid) >= cap then return end
+  if has_perk(pid, 'quick_study') then amount = math.ceil(amount * 1.1) end
   local xp, level = redis.call('HINCRBY', key, 'xp', amount), level_of(pid)
   notice(pid, 'You gain ' .. amount .. ' experience.')
   local leveled = false
-  while xp >= xp_needed(level) do
+  while xp >= xp_needed(level) and level < cap do
     xp, level, leveled = xp - xp_needed(level), level + 1, true
     redis.call('HSET', key, 'xp', xp, 'level', level)
     redis.call('HINCRBY', key, 'points', 1)
-    local reward, new = hgetall('LEVEL:' .. level), {}
-    for _, gid in ipairs(decode(reward.gear)) do
-      if grant_gear(pid, gid) then new[#new + 1] = gear_info(gid).name end
-    end
-    for _, perk in ipairs(decode(reward.perks)) do
-      if redis.call('SADD', 'PLAYER:' .. pid .. ':perks', perk) == 1 then
-        new[#new + 1] = redis.call('HGET', 'PERK:' .. perk, 'name') or perk
-      end
-    end
-    notice(pid, 'You reach level ' .. level .. "! You have a stat point to spend: TRAIN <stat>."
-      .. (#new > 0 and (' You gain: ' .. table.concat(new, ', ') .. '.') or ''))
+    local also = {}
+    if level % 2 == 0 then also[#also + 1] = 'a talent to learn' end
+    if level % 5 == 0 then also[#also + 1] = 'an ancestry passive to choose' end
+    notice(pid, 'You reach level ' .. level .. '! You have a stat point to spend (TRAIN <stat>)'
+      .. (#also > 0 and (', and ' .. table.concat(also, ' and ') .. ' (LEARN <name>, or the Character panel)') or '') .. '.')
   end
+  if level >= cap then redis.call('HSET', key, 'xp', 0) end
   if leveled then
     emit('ROOM:' .. redis.call('GET', 'PLAYER:' .. pid .. ':room'), {type = 'entity', entity = player_card(pid)})
     kit_event(pid)
+    if travel.quest then travel.quest(pid, 'check', {}) end
   end
   character_event(pid)
 end
@@ -1382,10 +1655,40 @@ end
 -- Deeds: kill, clean_kill (a perfect killing blow), ambush (striking an NPC
 -- that wasn't fighting you), flee (leaving a fight), defeated (falling to
 -- one), heal (healing one), greet and taunt (bow, wave… / laugh, poke…).
+-- Moves a faction's opinion of a player (scaled by Presence unless `flat`),
+-- and tells them why. Returns true if it moved.
+local function shift_rep(pid, fid, da, dr, notes, flat)
+  local faction = hgetall('FACTION:' .. fid)
+  if not faction.name then return false end
+  local scale = flat and 1 or (1 + 0.15 * stat(pid, 'presence'))
+  local a, r = rep_of(pid, fid)
+  local na = math.max(-100, math.min(100, a + round(da * scale)))
+  local nr = math.max(-100, math.min(100, r + round(dr * scale)))
+  if na == a and nr == r then return false end
+  redis.call('HSET', 'PLAYER:' .. pid .. ':rep:' .. fid, 'affinity', na, 'respect', nr)
+  local moved = {}
+  if na ~= a then moved[#moved + 1] = 'affinity ' .. signed(na - a) end
+  if nr ~= r then moved[#moved + 1] = 'respect ' .. signed(nr - r) end
+  emit('PLAYER:' .. pid, {type = 'reputation', faction = fid, faction_name = faction.name, affinity = na, respect = nr,
+    text = faction.name .. ': ' .. (#notes > 0 and (table.concat(notes, ' ') .. ' ') or '') .. '(' .. table.concat(moved, ', ') .. ')'})
+  return true
+end
+
+-- What follows any change in reputation: the character sheet, regions it
+-- reveals, and how the NPCs here now treat the player.
+local function after_rep(pid)
+  character_event(pid)
+  reveal_by_reputation(pid)
+  local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+  if rid and redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then
+    dispositions_event(pid, rid)
+    aggro(pid, rid)
+  end
+end
+
 local function deed(pid, name, nid)
   local subject = hgetall('NPC:' .. nid)
   local of, role = subject.faction or '', subject.role or ''
-  local scale = 1 + 0.15 * stat(pid, 'presence')
   local changed = false
   for _, fid in ipairs(sorted(redis.call('SMEMBERS', 'alz:factions'))) do
     local faction = hgetall('FACTION:' .. fid)
@@ -1396,27 +1699,9 @@ local function deed(pid, name, nid)
         if r.note then notes[#notes + 1] = r.note end
       end
     end
-    local a, r = rep_of(pid, fid)
-    local na = math.max(-100, math.min(100, a + round(da * scale)))
-    local nr = math.max(-100, math.min(100, r + round(dr * scale)))
-    if na ~= a or nr ~= r then
-      redis.call('HSET', 'PLAYER:' .. pid .. ':rep:' .. fid, 'affinity', na, 'respect', nr)
-      local moved = {}
-      if na ~= a then moved[#moved + 1] = 'affinity ' .. signed(na - a) end
-      if nr ~= r then moved[#moved + 1] = 'respect ' .. signed(nr - r) end
-      emit('PLAYER:' .. pid, {type = 'reputation', faction = fid, faction_name = faction.name, affinity = na, respect = nr,
-        text = faction.name .. ': ' .. (#notes > 0 and (table.concat(notes, ' ') .. ' ') or '') .. '(' .. table.concat(moved, ', ') .. ')'})
-      changed = true
-    end
+    if shift_rep(pid, fid, da, dr, notes) then changed = true end
   end
-  if not changed then return end
-  character_event(pid)
-  reveal_by_reputation(pid)
-  local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
-  if rid and redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then
-    dispositions_event(pid, rid)
-    aggro(pid, rid)
-  end
+  if changed then after_rep(pid) end
 end
 
 -- Whether moving between two rooms changes the weather a player is in (a new
@@ -1429,14 +1714,19 @@ end
 -- Moves an awake player between rooms: leave and arrive events, subscriptions
 -- and the map. The caller sends the new room's view, then the weather.
 local function relocate(pid, rid, dest, verb, target, leave, arrive)
-  emit('ROOM:' .. rid, {type = 'leave', actor = pid, verb = verb, target = target, entity_id = 'pc:' .. pid, text = leave})
-  redis.call('SREM', 'ROOM:' .. rid .. ':players', pid)
+  local old = place_channels(pid, rid)
+  if redis.call('SREM', 'ROOM:' .. rid .. ':players', pid) == 1 then
+    emit('ROOM:' .. rid, {type = 'leave', actor = pid, verb = verb, target = target, entity_id = 'pc:' .. pid, text = leave})
+  end
   redis.call('SET', 'PLAYER:' .. pid .. ':room', dest)
-  redis.call('SADD', 'ROOM:' .. dest .. ':players', pid)
-  emit('ROOM:' .. dest, {type = 'arrive', actor = pid, verb = verb, target = target, entity = player_card(pid), text = arrive})
-  local old, new = place_channels(pid, rid), place_channels(pid, dest)
+  if not is_waypoint(dest) then
+    redis.call('SADD', 'ROOM:' .. dest .. ':players', pid)
+    emit('ROOM:' .. dest, {type = 'arrive', actor = pid, verb = verb, target = target, entity = player_card(pid), text = arrive})
+  end
+  local new = place_channels(pid, dest)
   resubscribe(pid, minus(new, old), minus(old, new))
-  local visible = can_see(weather_at(dest))
+  if is_waypoint(dest) then return end
+  local visible = can_see(weather_at(dest), pid)
   visit_realm(pid, dest)
   local new_room = explore(pid, dest)
   local glimpsed = visible and glimpse(pid, dest)
@@ -1451,19 +1741,29 @@ end
 -- experience poorer (never a level). A sleeping body is struck from the field
 -- and wakes there next time.
 local function defeat(pid, nid)
+  -- Beaten on the road: thrown off it, not killed.
+  if redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'ambush') and travel.strand then
+    return travel.strand(pid, 'You go down under the blows, and the world goes dark. You come to far below the road, battered and alone. The ride, and your fare, are long gone.')
+  end
   local key, me = 'ACCOUNT:' .. pid, name_of(pid)
   local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+  if travel.check_priority then travel.check_priority(pid, rid, true) end
+  -- Death ends any journey (a marooning included): you wake at home.
+  redis.call('DEL', 'PLAYER:' .. pid .. ':journey')
+  redis.call('ZREM', 'alz:journeys', pid)
   for _, other in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':foes')) do drop_foe(other, pid) end
   local lost = math.min(tonumber(redis.call('HGET', key, 'xp')) or 0, math.floor(xp_needed(level_of(pid)) / 10))
   redis.call('HSET', key, 'hp', math.floor(max_hp_of(pid) / 2), 'xp', (tonumber(redis.call('HGET', key, 'xp')) or 0) - lost)
-  local shrine = redis.call('HGET', 'alz:rules', 'shrine_room') or redis.call('GET', 'alz:start_room')
+  -- Home to the shrine; a realm can have its own (a starting realm's is where you began).
+  local shrine = redis.call('HGET', 'REALM:' .. (realm_of(rid) or '') .. ':info', 'shrine')
+  if (shrine or '') == '' then shrine = redis.call('HGET', 'alz:rules', 'shrine_room') or redis.call('GET', 'alz:start_room') end
   emit('ROOM:' .. rid, {type = 'death', entity_id = 'pc:' .. pid, text = me .. ' collapses.'})
   if redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then
     relocate(pid, rid, shrine, 'defeat', nil, me .. "'s body fades away.", me .. ' stumbles out of the shrine, pale and shaken.')
     room_event(pid, shrine, 'move')
     weather_event(pid)
     notice(pid, 'You were defeated, and wake at the shrine' .. (lost > 0 and (', ' .. lost .. ' experience poorer') or '') .. '.')
-    deed(pid, 'defeated', nid)
+    if nid then deed(pid, 'defeated', nid) end
     character_event(pid)
   else
     redis.call('SREM', 'ROOM:' .. rid .. ':players', pid)
@@ -1471,7 +1771,7 @@ local function defeat(pid, nid)
     redis.call('HDEL', key, 'asleep')
     redis.call('SET', 'PLAYER:' .. pid .. ':room', shrine)
     emit('ROOM:' .. rid, {type = 'leave', verb = 'defeat', entity_id = 'pc:' .. pid, text = me .. "'s body fades away."})
-    deed(pid, 'defeated', nid)
+    if nid then deed(pid, 'defeated', nid) end
   end
 end
 
@@ -1503,7 +1803,7 @@ end
 
 redis.register_function('look', action(function(pid, rid, args)
   if (args[2] or '') == '' then
-    if can_see(weather_at(rid)) and glimpse(pid, rid) then map_event(pid, {rid}, false) end
+    if can_see(weather_at(rid), pid) and glimpse(pid, rid) then map_event(pid, {rid}, false) end
     return room_event(pid, rid, 'look')
   end
   inspect(pid, rid, args[2])
@@ -1513,20 +1813,86 @@ redis.register_function('inspect', action(function(pid, rid, args)
   inspect(pid, rid, args[2])
 end))
 
+local traps = {}
+
+-- Traps -------------------------------------------------------------------------
+-- A room can hold a trap (ROOM:<rid>:trap): walking in springs it unless you
+-- pass a check. Every trap has a sign in a neighbouring room for those who
+-- look, and Trapsense marks traps next door on the map. PLAYER:<id>:traps
+-- remembers the traps a player has found, for their map. A sprung trap is
+-- disarmed for everyone until it rearms (ROOM:<rid>:trap_sprung expires).
+
+function traps.know_trap(pid, rid)
+  if redis.call('SADD', 'PLAYER:' .. pid .. ':traps', rid) == 1 then
+    map_event(pid, {rid}, false)
+  end
+end
+
+-- Hurts a player outside a fight (a trap, a fall, a travel event). Returns
+-- true if it was the end of them.
+local function hurt(pid, amount)
+  local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+  local hp = math.max(player_card(pid).hp - amount, 0)
+  redis.call('HSET', 'ACCOUNT:' .. pid, 'hp', hp)
+  redis.call('SADD', 'alz:wounded', pid)
+  if hp <= 0 then
+    defeat(pid, nil)
+    return true
+  end
+  emit('ROOM:' .. rid, {type = 'entity', entity = player_card(pid)})
+  if is_waypoint(rid) then emit('PLAYER:' .. pid, {type = 'entity', entity = player_card(pid)}) end
+  return false
+end
+
+function traps.spring_trap(pid, rid, careful)
+  local trap = decode(redis.call('GET', 'ROOM:' .. rid .. ':trap'))
+  if not trap.name or redis.call('EXISTS', 'ROOM:' .. rid .. ':trap_sprung') == 1 then return end
+  local known = redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':traps', rid) == 1
+  local bonus = (careful and 0.25 or 0) + (known and 0.25 or 0)
+  traps.know_trap(pid, rid)
+  if passes(pid, trap.stat or 'poise', trap.difficulty, bonus) then
+    return notice(pid, (trap.avoid or ('You spot ' .. trap.name .. ' just in time, and step around it.')) .. ' (' .. capitalize(trap.stat or 'poise') .. ' check)')
+  end
+  redis.call('SET', 'ROOM:' .. rid .. ':trap_sprung', '1', 'PX', math.floor((trap.rearm or 120) * 1000))
+  emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = 'trap', text = fill(trap.sprung or '{actor} springs ' .. trap.name .. '!', name_of(pid))})
+  local damage = tonumber(trap.damage) or 5
+  notice(pid, (trap.hit or ('You spring ' .. trap.name .. '.')) .. ' (' .. damage .. ')')
+  if trap.slows then
+    redis.call('SET', 'PLAYER:' .. pid .. ':slowed', '1', 'PX', math.floor(trap.slows * 1000))
+    notice(pid, 'You limp on, slowed.')
+  end
+  hurt(pid, damage)
+end
+
+-- Trapsense: a prickle at the back of your neck about the room next door.
+function traps.sense_traps(pid, rid)
+  if not has_perk(pid, 'trapsense') then return end
+  for dir, dest in pairs(hgetall('ROOM:' .. rid .. ':exits')) do
+    if redis.call('EXISTS', 'ROOM:' .. dest .. ':trap') == 1 and redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':traps', dest) == 0 then
+      traps.know_trap(pid, dest)
+      notice(pid, 'Your trapsense prickles: something is set to the ' .. dir .. '.')
+    end
+  end
+end
+
 -- The movement steps from todo.md, in order. Leaving a fight is fleeing it,
 -- and some cultures judge that.
-local function finish_move(pid, rid, dir, dest)
+local function finish_move(pid, rid, dir, dest, careful)
   local fled = redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':foes')
   for _, nid in ipairs(fled) do drop_foe(nid, pid) end
   local me, from = name_of(pid), ARRIVE_FROM[dir]
-  relocate(pid, rid, dest, 'move', dir, me .. ' heads ' .. dir .. '.', me .. (from and (' arrives from ' .. from .. '.') or ' arrives.'))
+  relocate(pid, rid, dest, 'move', dir, me .. (careful and ' creeps ' or ' heads ') .. dir .. '.', me .. (from and (' arrives from ' .. from .. '.') or ' arrives.'))
   room_event(pid, dest, 'move')
   if weather_changes(rid, dest) then
     weather_event(pid)
     kit_event(pid)
   end
   for _, nid in ipairs(fled) do deed(pid, 'flee', nid) end
+  if redis.call('EXISTS', 'ROOM:' .. dest .. ':trap') == 1 then traps.spring_trap(pid, dest, careful) end
+  if redis.call('GET', 'PLAYER:' .. pid .. ':room') ~= dest then return end -- the trap was the end of them
+  traps.sense_traps(pid, dest)
   aggro(pid, dest)
+  if travel.quest then travel.quest(pid, 'enter', {room = dest}) end
 end
 
 local WADING = {
@@ -1534,8 +1900,8 @@ local WADING = {
   mud = {'Your boots sink into the mud with every step.', ' squelches off %s through the mud.'},
 }
 
--- A short cooldown between moves (move_cooldown_ms) stops a client from
--- sending a whole journey at once. Deep snow or mud holds a move up: the
+-- Each step takes the time to cross the room you step into (step_ms), so a
+-- client can't send a whole journey at once. Deep snow or mud holds a move up: the
 -- player is told why at once, and `tick` finishes the move when it's due
 -- (PLAYER:<id>:pending holds it, alz:pending_moves schedules it).
 redis.register_function('move', action(function(pid, rid, args)
@@ -1543,13 +1909,14 @@ redis.register_function('move', action(function(pid, rid, args)
   local dest = redis.call('HGET', 'ROOM:' .. rid .. ':exits', dir)
   if not dest then return notice(pid, "You can't go that way.") end
   if redis.call('EXISTS', 'PLAYER:' .. pid .. ':pending') == 1 then return notice(pid, "You're still making your way.") end
-  local cooldown = rule('move_cooldown_ms', 250)
+  local careful = args[3] == 'careful'
+  local cooldown = step_ms(pid, dest) * (careful and 2 or 1)
   if cooldown > 0 and not redis.call('SET', 'PLAYER:' .. pid .. ':moved', '1', 'NX', 'PX', cooldown) then
     return notice(pid, 'You need a moment to find your footing.')
   end
   local delay, cause = travel_delay(pid, rid, dest)
-  if delay == 0 then return finish_move(pid, rid, dir, dest) end
-  redis.call('HSET', 'PLAYER:' .. pid .. ':pending', 'dir', dir, 'from', rid)
+  if delay == 0 then return finish_move(pid, rid, dir, dest, careful) end
+  redis.call('HSET', 'PLAYER:' .. pid .. ':pending', 'dir', dir, 'from', rid, 'careful', careful and '1' or '')
   redis.call('PEXPIRE', 'PLAYER:' .. pid .. ':pending', delay + 10000)
   redis.call('ZADD', 'alz:pending_moves', now_ms() + delay, pid)
   emit('PLAYER:' .. pid, {type = 'travel', delay_ms = delay, cause = cause, target = dir, text = WADING[cause][1]})
@@ -1566,29 +1933,37 @@ local function teleport(pid, dest, leave, arrive)
   redis.call('DEL', 'PLAYER:' .. pid .. ':pending')
   redis.call('ZREM', 'alz:pending_moves', pid)
   local me = name_of(pid)
+  if travel.check_priority and not is_waypoint(dest) then travel.check_priority(pid, dest) end
   relocate(pid, rid, dest, 'teleport', nil, fill(leave, me), fill(arrive, me))
   room_event(pid, dest, 'move')
   full_map_event(pid)
   weather_event(pid)
   kit_event(pid)
   aggro(pid, dest)
+  if travel.quest and not is_waypoint(dest) then travel.quest(pid, 'enter', {room = dest}) end
 end
 
 -- Routes ----------------------------------------------------------------------
 -- A route is every jump from one room to another: a ferry, a coach, a portal
 -- mage, a rift (ROUTE:<id>; ROOM:<rid>:routes lists those leaving a room). It
 -- can need its operator (`by`, an NPC here and friendly to you), a fare in
--- coins, weather (`when`) and a clear room (`clear`). A route with `stages`
--- is a journey: the player travels in its `via` room, each stage shows its
--- line and waits for them to `continue`, then stage_seconds pass before the
--- next (alz:journeys schedules it for `tick`), and after the last they
--- arrive. PLAYER:<id>:journey holds the route, the stage (0 = setting off)
--- and whether it's moving. A journey only moves on while the player is here
--- to continue it: log out on the road and you're still aboard when you
--- come back.
+-- coins, weather (`when`) and a clear room (`clear`). A route with a `path`
+-- is a journey through its waypoint rooms, one every stage_seconds, playing
+-- itself; one without is instant. PLAYER:<id>:journey holds the route and the
+-- stage (the waypoint you're at), and alz:journeys schedules the next stage
+-- for `tick`. A journey only moves on while the player is online: log out on
+-- the road and you're still aboard when you come back. Travel events
+-- (below) can pause it for a choice, delay it, or end it early.
 
 local function coins_of(pid)
   return tonumber(redis.call('HGET', 'ACCOUNT:' .. pid, 'coins')) or 0
+end
+
+-- A route's fare for this player (a Haggler pays 15% less).
+local function fare_for(pid, route)
+  local fare = tonumber(route.fare) or 0
+  if fare > 0 and has_perk(pid, 'haggler') then fare = math.max(1, math.floor(fare * 0.85)) end
+  return fare
 end
 
 -- Why a route won't take a player right now, or nil if it will.
@@ -1612,51 +1987,107 @@ local function route_refusal(pid, rid, route)
       end
     end
   end
-  local fare, coins = tonumber(route.fare) or 0, coins_of(pid)
+  local fare, coins = fare_for(pid, route), coins_of(pid)
   if coins < fare then return 'It costs ' .. fare .. ' coins, and you have ' .. coins .. '.' end
 end
 
--- The space for travel events: challenges, choices, skill checks, ambushes,
--- tolls and delays, still to be designed. It's called as each stage begins,
--- with the route, the stage number and the stage's `event` name from the seed
--- (or nil), and does nothing yet. Whatever it becomes, it can hurt the player,
--- take coins, add stages or end the journey early, and it should say so with
--- events on the player's channel like everything else.
-local function journey_event(pid, route, stage, event)
+local function stage_ms()
+  return math.floor(rule('stage_seconds', 4) * 1000)
 end
 
--- Shows the current stage of a player's journey and waits for them to
--- continue, or, past the last stage, brings them to its end.
+-- Shows the waypoint a player's journey has reached, and maybe starts a
+-- travel event there.
 local function journey_stage(pid)
   local key = 'PLAYER:' .. pid .. ':journey'
   local journey = hgetall(key)
   local route = hgetall('ROUTE:' .. (journey.route or ''))
+  local path, n = decode(route.path), tonumber(journey.stage) or 1
+  local here = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+  if not route.to or path[n] ~= here then return redis.call('DEL', key) end
+  local info = hgetall('ROOM:' .. here .. ':info')
+  emit('PLAYER:' .. pid, {type = 'journey', route = journey.route, kind = route.kind, stage = n, stages = #path,
+    at = here, pos = room_pos(info), name = info.name, text = info.description})
+  if travel.maybe_event then travel.maybe_event(pid, route, journey, n) end
+end
+
+-- Moves a rider from one waypoint (or the room they set off from) to another.
+local function ride_to(pid, dest, leave)
   local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
-  if not route.to or rid ~= route.via then return redis.call('DEL', key) end
-  local stages, n = decode(route.stages), tonumber(journey.stage)
-  if n > #stages then
-    redis.call('DEL', key)
-    return teleport(pid, route.to, '{actor} gets off.', route.arrive)
+  local changes = weather_changes(rid, dest)
+  relocate(pid, rid, dest, 'travel', nil, fill(leave or '{actor} is gone.', name_of(pid)), nil)
+  room_event(pid, dest, 'travel')
+  if changes then
+    weather_event(pid)
+    kit_event(pid)
   end
-  local stage = stages[n]
-  local text = type(stage) == 'table' and stage.text or stage
-  journey_event(pid, route, n, type(stage) == 'table' and stage.event or nil)
-  emit('PLAYER:' .. pid, {type = 'journey', route = journey.route, stage = n, stages = #stages, waiting = true,
-    text = text .. (n == #stages and ' (Enter to arrive)' or ' (Enter to go on)')})
+end
+
+-- Ends a journey at its destination, or (stranded) somewhere else.
+local function end_journey(pid, dest, arrive)
+  redis.call('DEL', 'PLAYER:' .. pid .. ':journey')
+  redis.call('ZREM', 'alz:journeys', pid)
+  emit('PLAYER:' .. pid, {type = 'journey', done = true})
+  teleport(pid, dest, '{actor} is gone.', arrive)
+end
+
+-- Schedules the next stage after stage_seconds (or `ms`).
+local function journey_next(pid, ms)
+  redis.call('ZADD', 'alz:journeys', now_ms() + (ms or stage_ms()), pid)
+end
+
+-- Moves a journey on to its next waypoint, or to its end.
+local function journey_advance(pid)
+  local key = 'PLAYER:' .. pid .. ':journey'
+  local journey = hgetall(key)
+  local route = hgetall('ROUTE:' .. (journey.route or ''))
+  local path = decode(route.path)
+  -- Delays hold the journey at a waypoint for a stage or more.
+  if (tonumber(journey.delay) or 0) > 0 then
+    redis.call('HINCRBY', key, 'delay', -1)
+    notice(pid, 'The delay drags on.')
+    return journey_next(pid)
+  end
+  local n = (tonumber(journey.stage) or 1) + 1 + (tonumber(journey.skip) or 0)
+  redis.call('HDEL', key, 'skip')
+  if n > #path then return end_journey(pid, route.to, route.arrive) end
+  redis.call('HSET', key, 'stage', n)
+  ride_to(pid, path[n])
+  journey_stage(pid)
+  if redis.call('EXISTS', key) == 1 and not redis.call('HGET', key, 'event') then journey_next(pid) end
 end
 
 local function take_route(pid, rid, id)
   local route = hgetall('ROUTE:' .. id)
   local refusal = route_refusal(pid, rid, route)
   if refusal then return notice(pid, refusal) end
-  local fare = tonumber(route.fare) or 0
+  local fare = fare_for(pid, route)
   if fare > 0 then redis.call('HINCRBY', 'ACCOUNT:' .. pid, 'coins', -fare) end
   if route.depart ~= '' then notice(pid, route.depart) end
-  if #decode(route.stages) == 0 then return teleport(pid, route.to, route.leave, route.arrive) end
-  teleport(pid, route.via, route.leave, '{actor} climbs aboard.')
+  return travel.begin(pid, id)
+end
+
+-- Sets a player off on a route they've paid for (or been given).
+travel.begin = function(pid, id)
+  local route = hgetall('ROUTE:' .. id)
+  local path = decode(route.path)
+  if #path == 0 then return teleport(pid, route.to, route.leave, route.arrive) end
+  for _, nid in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':foes')) do drop_foe(nid, pid) end
   redis.call('DEL', 'PLAYER:' .. pid .. ':journey')
-  redis.call('HSET', 'PLAYER:' .. pid .. ':journey', 'route', id, 'stage', 1, 'moving', '0')
+  redis.call('HSET', 'PLAYER:' .. pid .. ':journey', 'route', id, 'stage', 1)
+  ride_to(pid, path[1], route.leave)
   journey_stage(pid)
+  if redis.call('EXISTS', 'PLAYER:' .. pid .. ':journey') == 1 and not redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'event') then
+    journey_next(pid)
+  end
+end
+
+-- The end of a starting realm: the journey out, for free, and the realm is
+-- gone from the player's map for good.
+travel.leave_start = function(pid, id)
+  local route = hgetall('ROUTE:' .. id)
+  redis.call('SREM', 'PLAYER:' .. pid .. ':realms', realm_of(route.from) or '')
+  if (route.depart or '') ~= '' then notice(pid, route.depart) end
+  travel.begin(pid, id)
 end
 
 -- The routes leaving a room that a player can see (and maybe take), by id.
@@ -1686,17 +2117,576 @@ local function ask_routes(pid, rid, nid, who)
   notice(pid, who .. ' can take you several ways: ' .. table.concat(names, ' or ') .. '.')
 end
 
--- Moves due journeys on a stage, or to their end. Called by `tick`.
+-- Moves due journeys on, or resolves events left waiting too long. Called by
+-- `tick`. Journeys of players who've gone offline wait for them to come back.
 local function journeys_due(now)
   for _, pid in ipairs(redis.call('ZRANGEBYSCORE', 'alz:journeys', '-inf', now)) do
     redis.call('ZREM', 'alz:journeys', pid)
     local key = 'PLAYER:' .. pid .. ':journey'
-    if redis.call('EXISTS', key) == 1 then
-      redis.call('HINCRBY', key, 'stage', 1)
-      redis.call('HSET', key, 'moving', '0')
-      journey_stage(pid)
+    if redis.call('EXISTS', key) == 1 and redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then
+      if redis.call('HGET', key, 'marooned') then
+        -- Held at its waypoint until the quest ashore is done.
+      elseif redis.call('HGET', key, 'event') then
+        if travel.event_due then travel.event_due(pid, now) end
+      elseif redis.call('HGET', key, 'ambush') then
+        if travel.ambush_due then travel.ambush_due(pid) end
+      else
+        journey_advance(pid)
+      end
     end
   end
+end
+
+do -- travel events and quests, in a block of their own (Lua allows 200 top-level locals)
+
+-- Travel events ------------------------------------------------------------------
+-- Rare things that happen on a journey (docs/journeys.md). At each waypoint
+-- there's an event_chance (plus the route's `risk`) of one, at most one a
+-- journey. Bad weather doesn't make them likelier; it decides which can
+-- happen, and the severe ones are worse. An event is a situation and two to
+-- four choices, which can test a stat, cost coins, belong to a background, or
+-- answer a question; each has outcomes (a list of effects) for success and
+-- failure. The journey waits for a choice, or takes the last one after
+-- event_seconds. alz:travel_events holds the events; PLAYER:<id>:events the
+-- ones that only happen once and have.
+
+-- How rough the going is, 0..1: wind, what's coming down, snow on the ground.
+local function severity(w)
+  if w.indoor then return 0 end
+  local ground = w.realm and ground_of(w.realm) or {}
+  return math.max(0, w.energy, intensity(w), tonumber(ground.snow) or 0)
+end
+
+local function background_of(pid)
+  return redis.call('HGET', 'ACCOUNT:' .. pid, 'background') or ''
+end
+
+-- Whether an event can happen to this player here, now.
+local function event_fits(pid, event, route, w, phase)
+  if event.once and redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':events', event.id) == 1 then return false end
+  local pools, fits = event.pools or {'any'}, false
+  for _, pool in ipairs(pools) do
+    if pool == 'any' or pool == route.id or pool == route.kind or pool == w.realm then fits = true end
+  end
+  if not fits then return false end
+  for axis, range in pairs(event.when or {}) do
+    if axis == 'time' then
+      local ok = false
+      for _, p in ipairs(range) do if p == phase then ok = true end end
+      if not ok then return false end
+    else
+      local v = axis == 'severity' and severity(w) or w[axis]
+      if v == nil or v < range[1] or v > range[2] then return false end
+    end
+  end
+  return true
+end
+
+-- The choices this player sees: background choices only for that background.
+local function visible_choices(pid, event)
+  local out, bg = {}, background_of(pid)
+  for i, choice in ipairs(event.choices or {}) do
+    if not choice.background or choice.background == bg then
+      out[#out + 1] = {n = #out + 1, index = i, choice = choice}
+    end
+  end
+  return out
+end
+
+local function current_event(pid)
+  local id = redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'event')
+  return id and decode(redis.call('HGET', 'alz:travel_events', id)) or nil, id
+end
+
+travel.show_event = function(pid)
+  local event, id = current_event(pid)
+  if not event then return end
+  local choices = list()
+  for _, c in ipairs(visible_choices(pid, event)) do
+    local choice = c.choice
+    local tags = list()
+    if choice.background then tags[#tags + 1] = capitalize(choice.background:gsub('_', ' ')) end
+    if choice.check then tags[#tags + 1] = capitalize(choice.check.stat) .. ' check' end
+    if choice.cost then tags[#tags + 1] = choice.cost .. ' coins' end
+    choices[#choices + 1] = {n = c.n, label = choice.label, check = choice.check and choice.check.stat or nil,
+      background = choice.background or (choice.bonus == background_of(pid) and choice.bonus) or nil,
+      cost = choice.cost, tags = tags}
+  end
+  local lines = {event.text}
+  for _, c in ipairs(choices) do
+    lines[#lines + 1] = '  CHOOSE ' .. c.n .. ': ' .. c.label .. (#c.tags > 0 and (' (' .. table.concat(c.tags, ', ') .. ')') or '')
+  end
+  emit('PLAYER:' .. pid, {type = 'travel_event', id = id, choices = choices,
+    until_ms = tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'event_until')), text = table.concat(lines, '\n')})
+end
+
+travel.maybe_event = function(pid, route, journey, n)
+  if journey.evented == '1' then return end
+  if roll() >= rule('event_chance', 0.05) + (tonumber(route.risk) or 0) then return end
+  local here = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+  local w, phase = weather_at(here), clock(realm_of(here)).phase
+  route.id = journey.route
+  local fitting, total, only = {}, 0, {}
+  for _, id in ipairs(decode(route.events)) do only[id] = true end
+  for _, id in ipairs(sorted(redis.call('HKEYS', 'alz:travel_events'))) do
+    local event = decode(redis.call('HGET', 'alz:travel_events', id))
+    event.id = id
+    if (next(only) == nil or only[id]) and event_fits(pid, event, route, w, phase) then
+      fitting[#fitting + 1] = event
+      total = total + (event.weight or 1)
+    end
+  end
+  if total == 0 then return end
+  local pick, event = roll() * total, nil
+  for _, e in ipairs(fitting) do
+    pick = pick - (e.weight or 1)
+    if pick < 0 then event = e break end
+  end
+  event = event or fitting[#fitting]
+  local key = 'PLAYER:' .. pid .. ':journey'
+  redis.call('HSET', key, 'event', event.id, 'evented', '1', 'event_until', now_ms() + rule('event_seconds', 60) * 1000)
+  if event.once then redis.call('SADD', 'PLAYER:' .. pid .. ':events', event.id) end
+  redis.call('ZADD', 'alz:journeys', tonumber(redis.call('HGET', key, 'event_until')), pid)
+  travel.show_event(pid)
+end
+
+-- Ambushes: attackers appear at the waypoint, the rider's alone. They're
+-- copies of template NPCs owned by the rider (NPC:<template>~<pid>~<n>),
+-- which nobody else sees and which never come back.
+local function spawn_ambushers(pid, rid, templates)
+  local key = 'PLAYER:' .. pid .. ':journey'
+  redis.call('HSET', key, 'ambush', '1')
+  redis.call('SADD', 'ROOM:' .. rid .. ':players', pid)
+  resubscribe(pid, {'ROOM:' .. rid}, {})
+  for i, template in ipairs(templates) do
+    local nid = template .. '~' .. pid .. '~' .. i
+    local npc = hgetall('NPC:' .. template)
+    redis.call('DEL', 'NPC:' .. nid, 'NPC:' .. nid .. ':next', 'NPC:' .. nid .. ':foes')
+    for field, value in pairs(npc) do redis.call('HSET', 'NPC:' .. nid, field, value) end
+    redis.call('HSET', 'NPC:' .. nid, 'room', rid, 'hp', npc.max_hp or 10, 'owner', pid, 'respawn', 0)
+    redis.call('SADD', 'ROOM:' .. rid .. ':npcs', nid)
+    redis.call('SADD', 'PLAYER:' .. pid .. ':ambushers', nid)
+  end
+  room_event(pid, rid, 'ambush')
+  aggro(pid, rid)
+  redis.call('ZADD', 'alz:journeys', now_ms() + 1000, pid)
+end
+
+-- Clears a rider's ambushers away and takes them off the waypoint's floor.
+local function clear_ambush(pid)
+  local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+  for _, nid in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':ambushers')) do
+    stop_fighting(nid)
+    redis.call('SREM', 'ROOM:' .. rid .. ':npcs', nid)
+    redis.call('ZREM', 'alz:respawns', nid)
+    redis.call('DEL', 'NPC:' .. nid, 'NPC:' .. nid .. ':next', 'NPC:' .. nid .. ':foes')
+  end
+  for _, nid in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':foes')) do drop_foe(nid, pid) end
+  redis.call('DEL', 'PLAYER:' .. pid .. ':ambushers')
+  redis.call('SREM', 'ROOM:' .. rid .. ':players', pid)
+  resubscribe(pid, {}, {'ROOM:' .. rid})
+  redis.call('HDEL', 'PLAYER:' .. pid .. ':journey', 'ambush')
+end
+
+-- Thrown off the route: you wake in the wilds, battered, the fare gone.
+local function strand(pid, text)
+  local journey = hgetall('PLAYER:' .. pid .. ':journey')
+  local route = hgetall('ROUTE:' .. (journey.route or ''))
+  if journey.ambush then clear_ambush(pid) end
+  -- Roughed up: a third of your health (less if you had less, unless you were beaten senseless).
+  local card, third = player_card(pid), math.max(1, math.floor(player_card(pid).max_hp / 3))
+  redis.call('HSET', 'ACCOUNT:' .. pid, 'hp', card.hp > 0 and math.min(card.hp, third) or third)
+  redis.call('SADD', 'alz:wounded', pid)
+  notice(pid, text or "You're left behind in the wilds, battered and alone. The ride is gone, and your fare with it.")
+  end_journey(pid, (route.strand or '') ~= '' and route.strand or route.from, '{actor} staggers in, battered and filthy.')
+end
+travel.strand = strand
+
+travel.ambush_due = function(pid)
+  for _, nid in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':ambushers')) do
+    local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+    if redis.call('SISMEMBER', 'ROOM:' .. rid .. ':npcs', nid) == 1 then
+      return redis.call('ZADD', 'alz:journeys', now_ms() + 1000, pid)
+    end
+  end
+  clear_ambush(pid)
+  notice(pid, 'The last of them is down. You climb back aboard, and the journey goes on.')
+  room_event(pid, redis.call('GET', 'PLAYER:' .. pid .. ':room'), 'travel')
+  journey_next(pid)
+end
+
+-- Applies an outcome: a list of effects, each {name = value}.
+local function apply_effects(pid, effects)
+  local key = 'PLAYER:' .. pid .. ':journey'
+  local rep_changed, map_changed = false, false
+  for _, effect in ipairs(effects or {}) do
+    if effect.text then notice(pid, effect.text) end
+    if effect.delay then
+      redis.call('HINCRBY', key, 'delay', effect.delay)
+      notice(pid, 'It costs you time.')
+    end
+    if effect.hasten then redis.call('HINCRBY', key, 'skip', effect.hasten) end
+    if effect.coins then
+      local coins = math.max(0, coins_of(pid) + effect.coins)
+      redis.call('HSET', 'ACCOUNT:' .. pid, 'coins', coins)
+      notice(pid, effect.coins > 0 and ('You gain ' .. effect.coins .. ' coins.') or ('You lose ' .. -effect.coins .. ' coins.'))
+      kit_event(pid)
+    end
+    if effect.xp then gain_xp(pid, effect.xp) end
+    if effect.reputation then
+      local r = effect.reputation
+      if shift_rep(pid, r.faction, r.affinity or 0, r.respect or 0, {r.note}) then rep_changed = true end
+    end
+    if effect.discover then
+      local names = discover_regions(pid, {effect.discover})
+      if #names > 0 then
+        notice(pid, 'You hear of ' .. names[1] .. '. It is marked on your map.')
+        map_changed = true
+      end
+    end
+    if effect.rumour then
+      if redis.call('SADD', 'PLAYER:' .. pid .. ':rumours', effect.rumour) == 1 then
+        notice(pid, 'You hear talk of ' .. (redis.call('HGET', 'REALM:' .. effect.rumour .. ':info', 'name') or effect.rumour) .. ', another world entirely.')
+        map_changed = true
+      end
+    end
+    if effect.boon then
+      local b = effect.boon
+      redis.call('SET', 'PLAYER:' .. pid .. ':buff:' .. b.stat, b.amount or 1, 'PX', math.floor((b.minutes or 20) * 60000))
+      notice(pid, (b.name or 'Heartened') .. ': ' .. signed(b.amount or 1) .. ' ' .. capitalize(b.stat) .. ' for ' .. (b.minutes or 20) .. ' minutes.')
+      character_event(pid)
+    end
+    if effect.hp then
+      if effect.hp > 0 then
+        local card = player_card(pid)
+        redis.call('HSET', 'ACCOUNT:' .. pid, 'hp', math.min(card.max_hp, card.hp + effect.hp))
+        emit('PLAYER:' .. pid, {type = 'entity', entity = player_card(pid)})
+      elseif hurt(pid, -effect.hp) then
+        return 'over'
+      end
+    end
+    if effect.death then
+      -- Drowned, or worse: a real death, home to the shrine.
+      notice(pid, effect.death)
+      redis.call('DEL', key)
+      redis.call('ZREM', 'alz:journeys', pid)
+      redis.call('HSET', 'ACCOUNT:' .. pid, 'hp', 0)
+      defeat(pid, nil)
+      return 'over'
+    end
+    if effect.strand then
+      strand(pid, type(effect.strand) == 'string' and effect.strand or nil)
+      return 'over'
+    end
+    if effect.ambush then
+      spawn_ambushers(pid, redis.call('GET', 'PLAYER:' .. pid .. ':room'), effect.ambush)
+      return 'ambush'
+    end
+    if effect.maroon and travel.maroon then
+      travel.maroon(pid, effect.maroon)
+      return 'over'
+    end
+  end
+  if rep_changed then after_rep(pid) end
+  if map_changed then full_map_event(pid) end
+end
+
+-- Resolves the player's choice (n among the choices they see), or the last
+-- one if `n` is nil (they let the moment pass).
+local function resolve_event(pid, n)
+  local event, id = current_event(pid)
+  if not event then return notice(pid, "There's nothing to choose right now.") end
+  local choices = visible_choices(pid, event)
+  local picked = n and choices[n] or (not n and choices[#choices]) or nil
+  if not picked then return notice(pid, 'Choose one of 1 to ' .. #choices .. '.') end
+  local choice = picked.choice
+  if choice.cost and coins_of(pid) < choice.cost then
+    return notice(pid, 'It costs ' .. choice.cost .. ' coins, and you have ' .. coins_of(pid) .. '.')
+  end
+  redis.call('HDEL', 'PLAYER:' .. pid .. ':journey', 'event', 'event_until')
+  emit('PLAYER:' .. pid, {type = 'travel_event', id = id, done = true, text = '> ' .. choice.label})
+  if choice.cost then
+    redis.call('HINCRBY', 'ACCOUNT:' .. pid, 'coins', -choice.cost)
+    kit_event(pid)
+  end
+  local ok = true
+  if choice.check then
+    local bonus = (choice.bonus and choice.bonus == background_of(pid)) and 0.35 or 0
+    ok = passes(pid, choice.check.stat, choice.check.difficulty, bonus)
+  end
+  local outcome = ok and choice.success or (choice.failure or choice.success)
+  if apply_effects(pid, outcome) then return end
+  if redis.call('EXISTS', 'PLAYER:' .. pid .. ':journey') == 1 then journey_next(pid) end
+end
+
+travel.event_due = function(pid, now)
+  local until_ms = tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'event_until')) or 0
+  if now < until_ms then return redis.call('ZADD', 'alz:journeys', until_ms, pid) end
+  notice(pid, 'The moment passes.')
+  resolve_event(pid, nil)
+end
+
+redis.register_function('choose', action(function(pid, rid, args)
+  resolve_event(pid, tonumber(args[2]))
+end))
+
+redis.register_function('flee', action(function(pid, rid, args)
+  if redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'ambush') then
+    return strand(pid, 'You run, and keep running, and the road is lost behind you. You come to your senses somewhere in the wilds, bruised and alone.')
+  end
+  notice(pid, 'There is nothing here to flee from. To leave a fight, just walk away.')
+end))
+
+-- Quests ---------------------------------------------------------------------------
+-- Small state machines (docs/quests.md). A quest has steps; each step has a
+-- `goal` (what the quest panel shows), `on` (what moves it on), `effects`
+-- when it's done, and `then` (the next step, or none to finish). Triggers:
+-- ask (an NPC about a topic), get (an item), enter (a room), kill (an NPC, or
+-- one of a faction or role, counted while the step is active), use (an item
+-- on a feature or NPC), have (all of some items), level; any of them can add
+-- `when` (weather ranges and time phases where the player is). A `priority`
+-- quest (being marooned) belongs to its `area`: leaving it any other way
+-- than finishing, or dying, fails it. PLAYER:<id>:quests maps quests onto
+-- active / done / failed; PLAYER:<id>:quest:<qid> holds the step and count.
+
+local function quest_def(qid)
+  return decode(redis.call('HGET', 'alz:quests', qid))
+end
+
+local function quest_status(pid, qid)
+  return redis.call('HGET', 'PLAYER:' .. pid .. ':quests', qid)
+end
+
+-- The quest panel: active quests (priority first) with their goals, then the rest.
+local function quests_event(pid)
+  local out = list()
+  for qid, status in pairs(hgetall('PLAYER:' .. pid .. ':quests')) do
+    local def = quest_def(qid)
+    local step = redis.call('HGET', 'PLAYER:' .. pid .. ':quest:' .. qid, 'step')
+    local s = (def.steps or {})[step or ''] or {}
+    local on = s.on or {}
+    out[#out + 1] = {id = qid, name = def.name or qid, status = status, priority = def.priority or false,
+      goal = status == 'active' and s.goal or nil, count = tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':quest:' .. qid, 'count')) or 0,
+      need = on.count}
+  end
+  table.sort(out, function(a, b)
+    if (a.status == 'active') ~= (b.status == 'active') then return a.status == 'active' end
+    if a.priority ~= b.priority then return a.priority end
+    return a.name < b.name
+  end)
+  emit('PLAYER:' .. pid, {type = 'quests', quests = out})
+end
+
+local function has_items(pid, items)
+  for _, iid in ipairs(items or {}) do
+    if redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':inv', iid) == 0 then return false end
+  end
+  return true
+end
+
+-- Whether weather and time where the player is suit a trigger's `when`.
+local function quest_when(pid, when)
+  if not when then return true end
+  local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+  local w = weather_at(rid)
+  for axis, range in pairs(when) do
+    if axis == 'time' then
+      local phase, ok = clock(realm_of(rid)).phase, false
+      for _, p in ipairs(range) do if p == phase then ok = true end end
+      if not ok then return false end
+    elseif w[axis] == nil or w[axis] < range[1] or w[axis] > range[2] then
+      return false
+    end
+  end
+  return true
+end
+
+-- Whether something that just happened (kind, data) moves a step on.
+local function trigger_matches(pid, on, kind, data)
+  -- States: checked whenever anything happens that might have changed them.
+  if on.have then return has_items(pid, on.have) and quest_when(pid, on.when) end
+  if on.level then return level_of(pid) >= on.level end
+  if on['in'] then return redis.call('GET', 'PLAYER:' .. pid .. ':room') == on['in'] and quest_when(pid, on.when) end
+  if kind == 'enter' and on.enter then return on.enter == data.room and quest_when(pid, on.when) end
+  if kind == 'ask' and on.ask then return on.ask == data.npc and (not on.about or on.about == data.topic) and quest_when(pid, on.when) end
+  if kind == 'get' and on.get then return on.get == data.item and quest_when(pid, on.when) end
+  if kind == 'use' and on.use then return on.use == data.item and (not on.on or on.on == data.target) and quest_when(pid, on.when) end
+  if kind == 'kill' and on.kill then
+    local base = string.match(data.npc, '^([^~]+)') or data.npc
+    return (on.kill == data.npc or on.kill == base or on.kill == data.faction or on.kill == data.role) and quest_when(pid, on.when)
+  end
+  return false
+end
+
+local quest_effects -- below: effects can start quests, which can finish at once
+
+local function finish_quest(pid, qid, status)
+  redis.call('HSET', 'PLAYER:' .. pid .. ':quests', qid, status)
+  redis.call('DEL', 'PLAYER:' .. pid .. ':quest:' .. qid)
+  local def = quest_def(qid)
+  if status == 'done' then
+    notice(pid, 'Quest complete: ' .. (def.name or qid) .. '.')
+  else
+    notice(pid, 'Quest failed: ' .. (def.name or qid) .. '.')
+  end
+end
+
+-- Checks every active quest against something that happened.
+local function quest_progress(pid, kind, data)
+  local moved = false
+  for qid, status in pairs(hgetall('PLAYER:' .. pid .. ':quests')) do
+    if status == 'active' then
+      local key = 'PLAYER:' .. pid .. ':quest:' .. qid
+      local def = quest_def(qid)
+      local step_id = redis.call('HGET', key, 'step')
+      local step = (def.steps or {})[step_id or '']
+      if step and trigger_matches(pid, step.on or {}, kind, data) then
+        local count = redis.call('HINCRBY', key, 'count', 1)
+        moved = true
+        if count >= ((step.on or {}).count or 1) then
+          if step['then'] then
+            redis.call('HSET', key, 'step', step['then'], 'count', 0)
+            local next_step = def.steps[step['then']] or {}
+            if next_step.goal then notice(pid, (def.name or qid) .. ': ' .. next_step.goal) end
+          else
+            finish_quest(pid, qid, 'done')
+          end
+          if quest_effects(pid, step.effects) == 'over' then break end
+        elseif step.on.count then
+          notice(pid, (def.name or qid) .. ': ' .. count .. ' / ' .. step.on.count)
+        end
+      end
+    end
+  end
+  if moved then
+    quests_event(pid)
+    -- A step finished can make the next one already true (you hold the items).
+    if kind ~= 'check' then quest_progress(pid, 'check', {}) end
+  end
+end
+travel.quest = quest_progress
+
+local function start_quest(pid, qid)
+  if quest_status(pid, qid) == 'active' or quest_status(pid, qid) == 'done' then return false end
+  local def = quest_def(qid)
+  if not def.steps then return false end
+  redis.call('HSET', 'PLAYER:' .. pid .. ':quests', qid, 'active')
+  redis.call('DEL', 'PLAYER:' .. pid .. ':quest:' .. qid)
+  redis.call('HSET', 'PLAYER:' .. pid .. ':quest:' .. qid, 'step', def.start, 'count', 0)
+  notice(pid, 'New quest: ' .. (def.name or qid) .. '. ' .. ((def.steps[def.start] or {}).goal or ''))
+  quests_event(pid)
+  quest_progress(pid, 'check', {})
+  return true
+end
+
+-- The priority quest a player is in the middle of, if any.
+local function priority_quest(pid)
+  for qid, status in pairs(hgetall('PLAYER:' .. pid .. ':quests')) do
+    if status == 'active' and quest_def(qid).priority then return qid end
+  end
+end
+
+-- Leaving a priority quest's area (except by finishing it) fails it, and
+-- with it any journey it was holding.
+local function check_priority(pid, dest, dying)
+  local qid = priority_quest(pid)
+  if not qid then return end
+  local area = redis.call('HGET', 'ROOM:' .. dest .. ':info', 'area')
+  if dying or area ~= quest_def(qid).area then
+    finish_quest(pid, qid, 'failed')
+    if redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'marooned') then
+      redis.call('DEL', 'PLAYER:' .. pid .. ':journey')
+      redis.call('ZREM', 'alz:journeys', pid)
+    end
+    quests_event(pid)
+  end
+end
+travel.check_priority = check_priority
+
+-- Marooned: the journey waits at its waypoint while the player is stuck in a
+-- pocket area with a priority quest.
+travel.maroon = function(pid, spec)
+  redis.call('HSET', 'PLAYER:' .. pid .. ':journey', 'marooned', '1')
+  redis.call('ZREM', 'alz:journeys', pid)
+  teleport(pid, spec.room, '{actor} is gone.', '{actor} staggers ashore, soaked.')
+  redis.call('HDEL', 'PLAYER:' .. pid .. ':quests', spec.quest)
+  start_quest(pid, spec.quest)
+end
+
+quest_effects = function(pid, effects)
+  for _, effect in ipairs(effects or {}) do
+    if effect.give then
+      redis.call('SADD', 'PLAYER:' .. pid .. ':inv', effect.give)
+      notice(pid, 'You receive the ' .. (redis.call('HGET', 'ITEM:' .. effect.give, 'name') or effect.give) .. '.')
+      kit_event(pid)
+    elseif effect.take then
+      redis.call('SREM', 'PLAYER:' .. pid .. ':inv', effect.take)
+      kit_event(pid)
+    elseif effect.start then
+      start_quest(pid, effect.start)
+    elseif effect.teleport then
+      teleport(pid, effect.teleport, '{actor} is gone.', '{actor} arrives.')
+    elseif effect.resume_journey then
+      -- Back to the waypoint the journey was held at, and on.
+      local key = 'PLAYER:' .. pid .. ':journey'
+      local journey = hgetall(key)
+      local path = decode(redis.call('HGET', 'ROUTE:' .. (journey.route or ''), 'path'))
+      local at = path[tonumber(journey.stage) or 1]
+      if at then
+        redis.call('HDEL', key, 'marooned')
+        teleport(pid, at, '{actor} sets off.', '{actor} climbs aboard.')
+        journey_next(pid)
+      end
+    elseif effect.leave_start and travel.leave_start then
+      travel.leave_start(pid, effect.leave_start)
+      return 'over'
+    else
+      local result = apply_effects(pid, {effect})
+      if result then return result end
+    end
+  end
+end
+
+-- Uses a carried item on something here (args: item word, target word).
+redis.register_function('use_item', action(function(pid, rid, args)
+  local iid, item = match_item('PLAYER:' .. pid .. ':inv', args[2])
+  if not iid then return notice(pid, "You aren't carrying that.") end
+  local target = args[3] or ''
+  local kind, id, display = nil, nil, nil
+  if target ~= '' then
+    kind, id, display = resolve(pid, rid, target)
+    if not kind then return notice(pid, "You don't see that here.") end
+  end
+  local touched = false
+  for qid, status in pairs(hgetall('PLAYER:' .. pid .. ':quests')) do
+    if status == 'active' then
+      local def = quest_def(qid)
+      local step = (def.steps or {})[redis.call('HGET', 'PLAYER:' .. pid .. ':quest:' .. qid, 'step') or '']
+      if step and trigger_matches(pid, step.on or {}, 'use', {item = iid, target = id}) then touched = true end
+    end
+  end
+  if not touched then
+    return notice(pid, 'You try the ' .. item.name .. (display and (' on ' .. display) or '') .. '. Nothing happens.')
+  end
+  emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = 'use', target = id,
+    text = name_of(pid) .. ' uses the ' .. item.name .. (display and (' on ' .. display) or '') .. '.'})
+  quest_progress(pid, 'use', {item = iid, target = id})
+end))
+
+redis.register_function('quests', action(function(pid, rid, args)
+  quests_event(pid)
+  local lines = {}
+  for qid, status in pairs(hgetall('PLAYER:' .. pid .. ':quests')) do
+    local def = quest_def(qid)
+    local step = redis.call('HGET', 'PLAYER:' .. pid .. ':quest:' .. qid, 'step')
+    lines[#lines + 1] = (def.name or qid) .. ' (' .. status .. ')' .. (status == 'active' and step and def.steps[step] and (': ' .. def.steps[step].goal) or '')
+  end
+  table.sort(lines)
+  notice(pid, #lines > 0 and ('Quests:\n  ' .. table.concat(lines, '\n  ')) or 'You have no quests yet. Talk to people: ASK <name> ABOUT <topic>.')
+end))
+
+travel.start_quest = start_quest
+travel.quests_event = quests_event
 end
 
 -- Finishes held-up moves that are due. Called by `tick`.
@@ -1709,7 +2699,7 @@ local function pending_moves_due(now)
     local dest = rid and pending.dir and redis.call('HGET', 'ROOM:' .. rid .. ':exits', pending.dir)
     -- Only if they're still in the world, awake, and where they set off from.
     if dest and rid == pending.from and redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then
-      finish_move(pid, rid, pending.dir, dest)
+      finish_move(pid, rid, pending.dir, dest, pending.careful == '1')
     end
   end
 end
@@ -1727,8 +2717,8 @@ local function heal(pid, rid, n, gear, word)
     end
   end
   local wx = weathered(pid, gear, weather_at(rid))
-  local quality, offset, state = take_beat(pid, n, gear, wx)
-  local amount = amount_for(wx, quality)
+  local quality, offset, state, previous = take_beat(pid, n, gear, wx)
+  local amount = passive.empower(pid, rid, n, gear, quality, state, previous, amount_for(wx, quality))
   if not amount then
     whiff(pid, rid, n, gear, quality, offset, whom, display)
     return timing_event(pid, n, state)
@@ -1757,7 +2747,23 @@ redis.register_function('use', action(function(pid, rid, args)
   local gear = slot_gear(pid, n)
   if not gear then return notice(pid, 'Slot ' .. n .. " is empty. Try EQUIP <gear> " .. n .. ", or GEAR to see what you have.") end
   local word = args[3] or ''
+  if passive.slot_sealed(pid, n) then return notice(pid, 'Slot ' .. n .. ' is sealed until the fight ends.') end
   if gear.effect == 'heal' then return heal(pid, rid, n, gear, word) end
+  if gear.effect == 'guard' then
+    -- A guard soaks up the next blows that land on you (PLAYER:<id>:guard).
+    local wx = weathered(pid, gear, weather_at(rid))
+    local quality, offset, state, previous = take_beat(pid, n, gear, wx)
+    local amount = passive.empower(pid, rid, n, gear, quality, state, previous, amount_for(wx, quality))
+    if not amount then
+      whiff(pid, rid, n, gear, quality, offset, nil, nil)
+      return timing_event(pid, n, state)
+    end
+    local guard = math.min(40, (tonumber(redis.call('GET', 'PLAYER:' .. pid .. ':guard')) or 0) + amount)
+    redis.call('SET', 'PLAYER:' .. pid .. ':guard', guard, 'EX', 30)
+    emit('ROOM:' .. rid, {type = 'heal', actor = pid, verb = gear.id, slot = n, result = quality, guard = guard, offset_ms = offset,
+      text = fill(quality == 'perfect' and gear.perfect_hit or gear.hit, name_of(pid), 'themself') .. ' (guard ' .. guard .. ')'})
+    return timing_event(pid, n, state)
+  end
 
   if word == '' then return notice(pid, gear.name .. ' what? Name a target, or press Tab to pick one.') end
   local kind, id, display = resolve(pid, rid, word)
@@ -1769,8 +2775,8 @@ redis.register_function('use', action(function(pid, rid, args)
 
   local first = not fighting(id, pid)
   local wx = weathered(pid, gear, weather_at(rid))
-  local quality, offset, state = take_beat(pid, n, gear, wx)
-  local damage = amount_for(wx, quality)
+  local quality, offset, state, previous = take_beat(pid, n, gear, wx)
+  local damage = passive.empower(pid, rid, n, gear, quality, state, previous, amount_for(wx, quality))
   if not damage then
     whiff(pid, rid, n, gear, quality, offset, 'npc:' .. id, display)
     engage(id, pid)
@@ -1790,6 +2796,17 @@ redis.register_function('use', action(function(pid, rid, args)
     end
     emit('ROOM:' .. rid, {type = 'entity', entity = npc_card(id)})
     engage(id, pid)
+    -- Stagger pushes its next blows back; bleed and burn hurt it on each of its next beats.
+    local stagger = tonumber(gear.stagger_ms) or 0
+    if stagger > 0 then
+      for k, at in pairs(hgetall('NPC:' .. id .. ':next')) do
+        redis.call('HSET', 'NPC:' .. id .. ':next', k, tonumber(at) + stagger)
+        redis.call('ZADD', 'alz:npc_attacks', tonumber(at) + stagger, id .. '#' .. k)
+      end
+      npc_timing_event(id)
+    end
+    local bleed = decode(gear.bleed)
+    if bleed.damage then redis.call('HSET', 'NPC:' .. id .. ':bleed', 'damage', bleed.damage, 'beats', bleed.beats or 3) end
     timing_event(pid, n, state)
     if first then deed(pid, 'ambush', id) end
     return
@@ -1806,6 +2823,7 @@ redis.register_function('use', action(function(pid, rid, args)
   if first then deed(pid, 'ambush', id) end
   deed(pid, 'kill', id)
   if quality == 'perfect' then deed(pid, 'clean_kill', id) end
+  if travel.quest then travel.quest(pid, 'kill', {npc = id, faction = npc.faction, role = npc.role}) end
   local taken = {}
   for _, gid in ipairs(decode(npc.drops)) do
     if grant_gear(pid, gid) then taken[#taken + 1] = gear_info(gid).name end
@@ -1842,6 +2860,12 @@ redis.register_function('equip', action(function(pid, rid, args)
     if not n then return notice(pid, 'Your slots are 1, 2 and 3.') end
   end
   local gear = gear_info(gid)
+  local class = decode(redis.call('HGET', 'alz:classes', redis.call('HGET', 'ACCOUNT:' .. pid, 'class') or '-'))
+  if class.kinds then
+    local allowed = false
+    for _, kind in ipairs(class.kinds) do if kind == gear.kind then allowed = true end end
+    if not allowed then return notice(pid, 'A ' .. class.name .. " can't use " .. string.lower(gear.kind) .. ' gear like ' .. gear.name .. '.') end
+  end
   if redis.call('HGET', slots, n) == gid then return notice(pid, 'Slot ' .. n .. ' already holds ' .. gear.name .. '.') end
   if mid_fight(pid) or slot_busy(pid, n) then return end
   redis.call('HSET', slots, n, gid)
@@ -1933,10 +2957,10 @@ redis.register_function('say', action(function(pid, rid, args)
   local kind, id, display
   if word ~= '' then kind, id, display = resolve(pid, rid, word) end
   if kind == 'player' or kind == 'npc' then
-    return emit('ROOM:' .. rid, {type = 'say', actor = pid, verb = 'say', target = (kind == 'npc' and 'npc:' or 'pc:') .. id,
+    return emit(here_channel(pid, rid), {type = 'say', actor = pid, verb = 'say', target = (kind == 'npc' and 'npc:' or 'pc:') .. id,
       message = message, text = me .. ' says to ' .. display .. ', "' .. message .. '"'})
   end
-  emit('ROOM:' .. rid, {type = 'say', actor = pid, verb = 'say', message = message, text = me .. ' says, "' .. message .. '"'})
+  emit(here_channel(pid, rid), {type = 'say', actor = pid, verb = 'say', message = message, text = me .. ' says, "' .. message .. '"'})
 end))
 
 -- Emotes aimed at NPCs are deeds their cultures may care about, at most once
@@ -1949,10 +2973,10 @@ redis.register_function('emote', action(function(pid, rid, args)
   local verb, word, plain, targeted = args[2], args[3], args[4], args[5]
   local me = name_of(pid)
   if verb == '' then
-    return emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = 'emote', text = me .. ' ' .. plain})
+    return emit(here_channel(pid, rid), {type = 'emote', actor = pid, verb = 'emote', text = me .. ' ' .. plain})
   end
   if word == '' then
-    return emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = verb, text = fill(plain, me)})
+    return emit(here_channel(pid, rid), {type = 'emote', actor = pid, verb = verb, text = fill(plain, me)})
   end
   local kind, id, display = resolve(pid, rid, word)
   if not kind then return notice(pid, "You don't see that here.") end
@@ -1963,7 +2987,7 @@ redis.register_function('emote', action(function(pid, rid, args)
   else
     text = fill(targeted, me, kind == 'self' and 'themself' or display)
   end
-  emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = verb, target = id, text = text})
+  emit(here_channel(pid, rid), {type = 'emote', actor = pid, verb = verb, target = id, text = text})
   local social = kind == 'npc' and SOCIAL[verb]
   if social and redis.call('SET', 'PLAYER:' .. pid .. ':social:' .. id, '1', 'NX', 'EX', rule('social_cooldown', 600)) then
     deed(pid, social, id)
@@ -1978,12 +3002,22 @@ end))
 
 redis.register_function('get', action(function(pid, rid, args)
   local iid, item = match_item('ROOM:' .. rid .. ':items', args[2])
+  local personal = false
+  if not iid then
+    iid, item = match_ids(quest_items_here(pid, rid), args[2])
+    personal = iid ~= nil
+  end
   if not iid then return notice(pid, "You don't see that here.") end
   local size = rule('pack_size', 12)
   if pack_count(pid) >= size then
     return notice(pid, 'Your pack is full (' .. pack_count(pid) .. '/' .. size .. '). Drop something first.')
   end
-  redis.call('SMOVE', 'ROOM:' .. rid .. ':items', 'PLAYER:' .. pid .. ':inv', iid)
+  if personal then
+    redis.call('SADD', 'PLAYER:' .. pid .. ':taken', iid)
+    redis.call('SADD', 'PLAYER:' .. pid .. ':inv', iid)
+  else
+    redis.call('SMOVE', 'ROOM:' .. rid .. ':items', 'PLAYER:' .. pid .. ':inv', iid)
+  end
   emit('ROOM:' .. rid, {type = 'item', actor = pid, verb = 'get', target = iid, item = {id = iid, name = item.name}, text = name_of(pid) .. ' picks up the ' .. item.name .. '.'})
   kit_event(pid)
   learn_regions(pid, decode(item.reveals), 'You study the ' .. item.name .. ' and learn of')
@@ -1998,11 +3032,13 @@ redis.register_function('get', action(function(pid, rid, args)
     notice(pid, 'With the ' .. item.name .. ' you can read the skies over ' .. table.concat(taught, ' and ') .. " now (WEATHER).")
     weather_event(pid)
   end
+  if travel.quest then travel.quest(pid, 'get', {item = iid}) end
 end))
 
 redis.register_function('drop', action(function(pid, rid, args)
   local iid, item = match_item('PLAYER:' .. pid .. ':inv', args[2])
   if not iid then return notice(pid, "You aren't carrying that.") end
+  if item.quest == '1' then return notice(pid, "You'd better hold on to the " .. item.name .. '.') end
   redis.call('SMOVE', 'PLAYER:' .. pid .. ':inv', 'ROOM:' .. rid .. ':items', iid)
   emit('ROOM:' .. rid, {type = 'item', actor = pid, verb = 'drop', target = iid, item = {id = iid, name = item.name}, text = name_of(pid) .. ' drops the ' .. item.name .. '.'})
   kit_event(pid)
@@ -2036,6 +3072,219 @@ redis.register_function('tell', action(function(pid, rid, args)
   emit('PLAYER:' .. pid, {type = 'tell', actor = pid, target = target, message = message, text = 'You tell ' .. them .. ', "' .. message .. '"'})
 end))
 
+-- Characters ------------------------------------------------------------------------
+-- Class, ancestry and background (docs/characters.md), chosen once when a
+-- character is created; talents (gear learned from your class's pool) at even
+-- levels, opening rank 2 after 3 and rank 3 after 7; ancestry passives (perks
+-- from your ancestry's pool) at creation and at levels 5, 10, 15 and 20.
+-- PLAYER:<id>:talents and PLAYER:<id>:passives remember which gear and perks
+-- were learned that way, for respec.
+do
+
+local function catalog(kind, id)
+  return decode(redis.call('HGET', 'alz:' .. kind, id or '-'))
+end
+
+local function talent_picks(pid)
+  return math.floor(level_of(pid) / 2) - redis.call('SCARD', 'PLAYER:' .. pid .. ':talents')
+end
+
+local function passive_picks(pid)
+  return 1 + math.floor(level_of(pid) / 5) - redis.call('SCARD', 'PLAYER:' .. pid .. ':passives')
+end
+
+-- Why a talent can't be learned yet, or nil.
+local function talent_locked(pid, gid)
+  local gear = gear_info(gid)
+  local learned = redis.call('SCARD', 'PLAYER:' .. pid .. ':talents')
+  local rank = tonumber(gear.rank) or 1
+  if rank == 2 and learned < 3 then return 'opens after 3 talents' end
+  if rank == 3 and learned < 7 then return 'opens after 7 talents' end
+  if (gear.requires or '') ~= '' and redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':talents', gear.requires) == 0 then
+    return 'needs ' .. (gear_info(gear.requires) or {name = gear.requires}).name
+  end
+end
+
+-- Adds the class, ancestry and background, and what can be learned, to the character sheet.
+travel.choices = function(pid, account, event)
+  local class, ancestry = catalog('classes', account.class), catalog('ancestries', account.ancestry)
+  local background = catalog('backgrounds', account.background)
+  if not class.name then return end
+  event.class, event.ancestry, event.background = class.name, ancestry.name, background.name
+  event.talent_picks, event.passive_picks = talent_picks(pid), passive_picks(pid)
+  event.talents = list()
+  for _, gid in ipairs(class.talents or {}) do
+    local gear = gear_info(gid)
+    if gear then
+      event.talents[#event.talents + 1] = {id = gid, name = gear.name, rank = tonumber(gear.rank) or 1, description = gear.description,
+        kind = gear.kind, learned = redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':talents', gid) == 1, locked = talent_locked(pid, gid)}
+    end
+  end
+  event.passives = list()
+  for _, perk in ipairs(ancestry.passives or {}) do
+    local info = hgetall('PERK:' .. perk)
+    event.passives[#event.passives + 1] = {id = perk, name = info.name or perk, description = info.description or '',
+      slot = info.slot == '1', learned = has_perk(pid, perk)}
+  end
+end
+
+-- Wipes a character back to nothing, keeping the account (name, password).
+local CHARACTER_FIELDS = {'class', 'ancestry', 'background', 'label', 'created', 'intro', 'level', 'xp', 'points', 'hp', 'coins',
+  'loadout_set', 'kit_set', 'stat:vigor', 'stat:poise', 'stat:focus', 'stat:presence', 'stat:resilience', 'description', 'asleep'}
+
+local function reset_character(pid)
+  local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
+  if rid then redis.call('SREM', 'ROOM:' .. rid .. ':players', pid) end
+  for _, nid in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':foes')) do drop_foe(nid, pid) end
+  redis.call('HDEL', 'ACCOUNT:' .. pid, unpack(CHARACTER_FIELDS))
+  for _, suffix in ipairs({'room', 'gear', 'slots', 'inv', 'perks', 'passives', 'talents', 'attuned', 'bonus', 'explored',
+    'glimpsed', 'regions', 'realms', 'rumours', 'lore', 'traps', 'events', 'taken', 'quests', 'journey', 'foes', 'pending',
+    'guard', 'sealed', 'steadied', 'ambushers'}) do
+    redis.call('DEL', 'PLAYER:' .. pid .. ':' .. suffix)
+  end
+  for _, key in ipairs(redis.call('KEYS', 'PLAYER:' .. pid .. ':rep:*')) do redis.call('DEL', key) end
+  for _, key in ipairs(redis.call('KEYS', 'PLAYER:' .. pid .. ':quest:*')) do redis.call('DEL', key) end
+  for n = 1, SLOTS do redis.call('DEL', slot_key(pid, n), 'PLAYER:' .. pid .. ':charge:' .. n) end
+  redis.call('ZREM', 'alz:journeys', pid)
+  redis.call('ZREM', 'alz:pending_moves', pid)
+  redis.call('ZREM', 'alz:sleepers', pid)
+  redis.call('SREM', 'alz:wounded', pid)
+end
+
+-- Admin and deploy: wipes a character so its player creates a new one.
+redis.register_function('reset_character', function(keys, args)
+  reset_character(args[1])
+  return 1
+end)
+
+-- The two background items a class can use (of the background's four).
+local function background_items(class, background)
+  local out, usable = {}, {}
+  for _, kind in ipairs(class.kinds or {}) do usable[kind] = true end
+  for _, gid in ipairs(background.items or {}) do
+    local gear = gear_info(gid)
+    if gear and usable[gear.kind] and #out < 2 then out[#out + 1] = gid end
+  end
+  return out
+end
+
+-- Creates a character. args: pid, class, ancestry, first passive, background.
+-- Returns '' on success, or why not. Called before the player enters the world.
+redis.register_function('create_character', function(keys, args)
+  local pid, cid, aid, perk, bid = args[1], args[2], args[3], args[4], args[5]
+  local class, ancestry, background = catalog('classes', cid), catalog('ancestries', aid), catalog('backgrounds', bid)
+  if not class.name then return 'Choose a class.' end
+  if not ancestry.name then return 'Choose an ancestry.' end
+  if not background.name then return 'Choose a background.' end
+  local fits = false
+  for _, p in ipairs(ancestry.passives or {}) do if p == perk then fits = true end end
+  if not fits then return 'Choose a passive from your ancestry.' end
+  reset_character(pid)
+  local key = 'ACCOUNT:' .. pid
+  redis.call('HSET', key, 'class', cid, 'ancestry', aid, 'background', bid, 'label', ancestry.name .. ' ' .. class.name,
+    'created', '1', 'level', 1, 'xp', 0, 'points', 0, 'coins', background.coins or 0, 'loadout_set', '1', 'kit_set', '1', 'intro', '1')
+  redis.call('HSET', 'PLAYER:' .. pid .. ':bonus', ancestry.stat, 1)
+  redis.call('HSET', key, 'hp', max_hp_of(pid))
+  redis.call('SADD', 'PLAYER:' .. pid .. ':perks', perk)
+  redis.call('SADD', 'PLAYER:' .. pid .. ':passives', perk)
+  local loadout = {class.ability}
+  for _, gid in ipairs(background_items(class, background)) do loadout[#loadout + 1] = gid end
+  for n, gid in ipairs(loadout) do
+    redis.call('SADD', 'PLAYER:' .. pid .. ':gear', gid)
+    redis.call('HSET', 'PLAYER:' .. pid .. ':slots', n, gid)
+  end
+  for _, o in ipairs(background.opinions or {}) do
+    if redis.call('EXISTS', 'FACTION:' .. o.faction) == 1 then
+      redis.call('HSET', 'PLAYER:' .. pid .. ':rep:' .. o.faction, 'affinity', o.affinity or 0, 'respect', o.respect or 0)
+    end
+  end
+  redis.call('SET', 'PLAYER:' .. pid .. ':room', background.start)
+  return ''
+end)
+
+-- Learns a talent or an ancestry passive. args: pid, a word naming it.
+redis.register_function('learn', action(function(pid, rid, args)
+  local account = hgetall('ACCOUNT:' .. pid)
+  local class, ancestry = catalog('classes', account.class), catalog('ancestries', account.ancestry)
+  if not class.name then return notice(pid, 'You have no class to learn from.') end
+  local word = string.lower(args[2] or '')
+  for _, gid in ipairs(class.talents or {}) do
+    local gear = gear_info(gid)
+    if gear and (gid == word or string.lower(gear.name) == word) then
+      if redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':talents', gid) == 1 then return notice(pid, 'You already know ' .. gear.name .. '.') end
+      if talent_picks(pid) <= 0 then return notice(pid, 'You have no talent to learn yet: one comes at every even level.') end
+      local locked = talent_locked(pid, gid)
+      if locked then return notice(pid, gear.name .. ' ' .. locked .. '.') end
+      redis.call('SADD', 'PLAYER:' .. pid .. ':talents', gid)
+      redis.call('SADD', 'PLAYER:' .. pid .. ':gear', gid)
+      notice(pid, 'You learn ' .. gear.name .. '. EQUIP ' .. string.upper(gear.name) .. ' <slot> to use it.')
+      kit_event(pid)
+      return character_event(pid)
+    end
+  end
+  for _, perk in ipairs(ancestry.passives or {}) do
+    local info = hgetall('PERK:' .. perk)
+    if perk == word or string.lower(info.name or '') == word then
+      if has_perk(pid, perk) then return notice(pid, 'You already have ' .. info.name .. '.') end
+      if passive_picks(pid) <= 0 then return notice(pid, 'You have no passive to choose yet: one comes at levels 5, 10, 15 and 20.') end
+      redis.call('SADD', 'PLAYER:' .. pid .. ':perks', perk)
+      redis.call('SADD', 'PLAYER:' .. pid .. ':passives', perk)
+      notice(pid, 'You gain ' .. info.name .. ': ' .. info.description
+        .. (info.slot == '1' and ' ATTUNE ' .. string.upper(info.name) .. ' <slot> to choose its slot.' or ''))
+      room_event(pid, rid, 'look')
+      return character_event(pid)
+    end
+  end
+  notice(pid, "There's nothing called '" .. (args[2] or '') .. "' for you to learn. The Character panel lists what you can.")
+end))
+
+-- Attunes a slot passive to a slot. args: pid, passive word, slot.
+redis.register_function('attune', action(function(pid, rid, args)
+  local word, n = string.lower(args[2] or ''), slot_number(args[3])
+  if not n then return notice(pid, 'Your slots are 1, 2 and 3.') end
+  for _, perk in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':perks')) do
+    local info = hgetall('PERK:' .. perk)
+    if perk == word or string.lower(info.name or '') == word then
+      if info.slot ~= '1' then return notice(pid, info.name .. " doesn't belong to a slot.") end
+      if mid_fight(pid) then return end
+      redis.call('HSET', 'PLAYER:' .. pid .. ':attuned', perk, n)
+      notice(pid, info.name .. ' is attuned to slot ' .. n .. '.')
+      kit_event(pid)
+      return character_event(pid)
+    end
+  end
+  notice(pid, "You don't have a passive called '" .. (args[2] or '') .. "'.")
+end))
+
+-- Forgets every talent and ancestry passive, at a trainer, for coins.
+redis.register_function('respec', action(function(pid, rid, args)
+  local trainer
+  for _, nid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':npcs')) do
+    if redis.call('HGET', 'NPC:' .. nid, 'trainer') == '1' then trainer = nid end
+  end
+  if not trainer then return notice(pid, 'You need a trainer for that. Sergeant Holt, in the Harrowgate training yard, will do it.') end
+  if mid_fight(pid) then return end
+  local cost = rule('respec_coins_per_level', 10) * level_of(pid)
+  if coins_of(pid) < cost then return notice(pid, 'It costs ' .. cost .. ' coins, and you have ' .. coins_of(pid) .. '.') end
+  redis.call('HINCRBY', 'ACCOUNT:' .. pid, 'coins', -cost)
+  for _, gid in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':talents')) do
+    redis.call('SREM', 'PLAYER:' .. pid .. ':gear', gid)
+    for n, slotted in pairs(hgetall('PLAYER:' .. pid .. ':slots')) do
+      if slotted == gid then redis.call('HDEL', 'PLAYER:' .. pid .. ':slots', n) end
+    end
+  end
+  for _, perk in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':passives')) do
+    redis.call('SREM', 'PLAYER:' .. pid .. ':perks', perk)
+  end
+  redis.call('DEL', 'PLAYER:' .. pid .. ':talents', 'PLAYER:' .. pid .. ':passives', 'PLAYER:' .. pid .. ':attuned')
+  notice(pid, capitalize(npc_display(trainer)) .. ' takes ' .. cost .. ' coins. "Right. From the beginning." Your talents and passives are yours to choose again.')
+  resend_timing(pid)
+  kit_event(pid)
+  character_event(pid)
+end))
+
+end
+
 -- Weather ------------------------------------------------------------------------
 
 local function duration(minutes)
@@ -2063,7 +3312,7 @@ redis.register_function('weather', action(function(pid, rid, args)
     local g = ground_of(w.realm)
     if g.snow >= 0.05 then lines[#lines + 1] = 'There is ' .. depth_word(g.snow) .. ' snow on the ground.' end
     if g.mud >= 0.05 then lines[#lines + 1] = 'The ground is ' .. (g.mud < 0.5 and 'muddy' or 'thick with mud') .. '.' end
-    if not can_see(w) then lines[#lines + 1] = 'You can barely see past the ' .. falling(w) .. '.' end
+    if not can_see(w, pid) then lines[#lines + 1] = 'You can barely see past the ' .. obscured_by(w) .. '.' end
     local units = forecast_units(pid, w.realm)
     if units then
       local now, unit = weather_time(), rule('weather_unit_minutes', 30)
@@ -2091,9 +3340,21 @@ redis.register_function('ask', action(function(pid, rid, args)
   local who = capitalize(display)
   emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = 'ask', target = 'npc:' .. nid,
     text = name_of(pid) .. ' asks ' .. display .. ' about ' .. ((args[3] or '') ~= '' and ('the ' .. args[3]) or 'something') .. '.'})
-  if PASSAGE_WORDS[args[3]] then return ask_routes(pid, rid, nid, who) end
+  -- Topics: what an NPC will talk about, and quests they start.
+  local topics = decode(redis.call('HGET', 'NPC:' .. nid, 'topics'))
+  local topic = topics[args[3] or '']
+  if not topic and PASSAGE_WORDS[args[3]] then return ask_routes(pid, rid, nid, who) end
+  if topic then
+    local text = type(topic) == 'table' and topic.text or topic
+    emit('ROOM:' .. rid, {type = 'say', entity_id = 'npc:' .. nid, target = 'pc:' .. pid, text = who .. ' says, "' .. text .. '"'})
+    if type(topic) == 'table' and topic.starts then travel.start_quest(pid, topic.starts) end
+    travel.quest(pid, 'ask', {npc = nid, topic = args[3]})
+    return
+  end
   if args[3] ~= 'weather' then
-    return notice(pid, who .. " doesn't have much to say about that. (Try asking about the weather, or passage.)")
+    local names = sorted(list_keys(topics))
+    return notice(pid, who .. " doesn't have much to say about that. (Try asking about "
+      .. (#names > 0 and (table.concat(names, ', ') .. ', ') or '') .. 'the weather, or passage.)')
   end
   local realms = decode(redis.call('HGET', 'NPC:' .. nid, 'forecasts'))
   if #realms == 0 then return notice(pid, who .. " shrugs. They don't read the sky.") end
@@ -2113,15 +3374,6 @@ redis.register_function('ask', action(function(pid, rid, args)
   weather_event(pid)
 end))
 
--- Moves a journey on: after stage_seconds, the next stage (or the end).
-redis.register_function('continue', action(function(pid, rid, args)
-  local key = 'PLAYER:' .. pid .. ':journey'
-  if redis.call('EXISTS', key) == 0 then return notice(pid, "You aren't on a journey.") end
-  if redis.call('HGET', key, 'moving') == '1' then return end
-  redis.call('HSET', key, 'moving', '1')
-  redis.call('ZADD', 'alz:journeys', now_ms() + rule('stage_seconds', 2) * 1000, pid)
-end))
-
 -- Lists the routes leaving this room (ferries, coaches, portals, gates), or
 -- takes one (args: a word naming it).
 redis.register_function('travel', action(function(pid, rid, args)
@@ -2132,7 +3384,7 @@ redis.register_function('travel', action(function(pid, rid, args)
     local lines, listed = {'Routes from here. Type one of these to go (you have ' .. coins_of(pid) .. ' coins):'}, list()
     local here = realm_of(rid)
     for _, route in ipairs(routes) do
-      local fare, stages = tonumber(route.fare) or 0, #decode(route.stages)
+      local fare, stages = fare_for(pid, route), #decode(route.path)
       local refusal = route_refusal(pid, rid, route)
       -- Where it goes: the region (and realm, if it's another), unless you've never heard of it.
       local gid = region_of(route.to)
@@ -2174,6 +3426,32 @@ redis.register_function('set_weather', action(function(pid, rid, args)
   notice(pid, (args[2] == 'clear' and 'The weather runs free again: ' or 'The weather here is pinned: ') .. describe_weather(w) .. '.')
   weather_event(pid)
   kit_event(pid)
+end))
+
+-- Admin: jumps to any room that isn't a waypoint.
+redis.register_function('goto', action(function(pid, rid, args)
+  local dest = args[2]
+  if redis.call('EXISTS', 'ROOM:' .. dest .. ':info') == 0 or is_waypoint(dest) then
+    return notice(pid, 'There is no room ' .. dest .. '.')
+  end
+  redis.call('DEL', 'PLAYER:' .. pid .. ':journey')
+  redis.call('ZREM', 'alz:journeys', pid)
+  teleport(pid, dest, '{actor} vanishes.', '{actor} appears.')
+end))
+
+-- Admin: pins the clock at an hour (0-23), or with 'clear' lets it run.
+redis.register_function('set_clock', action(function(pid, rid, args)
+  if args[2] == 'clear' then
+    redis.call('DEL', 'alz:clock_override')
+  else
+    local hour = tonumber(args[2])
+    if not hour or hour < 0 or hour > 23 then return notice(pid, 'Usage: SETCLOCK <hour 0-23>, or SETCLOCK CLEAR.') end
+    redis.call('SET', 'alz:clock_override', math.floor(hour))
+  end
+  local c = clock(realm_of(rid))
+  notice(pid, (args[2] == 'clear' and 'The clock runs again: ' or 'The clock is pinned: ') .. c.hour .. ':00, ' .. c.phase .. '.')
+  room_event(pid, rid, 'look')
+  weather_event(pid)
 end))
 
 redis.register_function('who', action(function(pid, rid, args)
@@ -2263,6 +3541,25 @@ end))
 -- Puts a player into the world, or hands an existing presence over to a new
 -- connection. args: pid, session id, last sequence number the client saw (0 if
 -- none). Returns the sequence number the new connection should read from.
+-- Shows a rider where their journey had got to, and sets it going again.
+local function resume_journey(pid)
+  local key = 'PLAYER:' .. pid .. ':journey'
+  local journey = hgetall(key)
+  if journey.marooned then return end -- held while they're stuck ashore
+  local route = hgetall('ROUTE:' .. (journey.route or ''))
+  local path = decode(route.path)
+  local n = tonumber(journey.stage) or 1
+  local info = hgetall('ROOM:' .. (path[n] or '') .. ':info')
+  emit('PLAYER:' .. pid, {type = 'journey', route = journey.route, kind = route.kind, stage = n, stages = #path,
+    at = path[n], pos = info.x and room_pos(info) or nil, name = info.name, text = info.description, resumed = true})
+  if journey.event and travel.show_event then
+    travel.show_event(pid)
+    redis.call('ZADD', 'alz:journeys', tonumber(journey.event_until) or now_ms(), pid)
+  else
+    journey_next(pid)
+  end
+end
+
 redis.register_function('connect', function(keys, args)
   local pid, session, since = args[1], args[2], tonumber(args[3]) or 0
   local session_key = 'PLAYER:' .. pid .. ':session'
@@ -2280,7 +3577,7 @@ redis.register_function('connect', function(keys, args)
     explore(pid, rid)
     backfill_regions(pid)
     visit_realm(pid, rid)
-    local visible = can_see(weather_at(rid))
+    local visible = can_see(weather_at(rid), pid)
     if visible then glimpse(pid, rid) end
     explore_region(pid, region_of(rid), visible)
     reveal_by_reputation(pid)
@@ -2290,8 +3587,9 @@ redis.register_function('connect', function(keys, args)
     resend_timing(pid)
     kit_event(pid)
     character_event(pid)
+    travel.quests_event(pid)
     room_event(pid, rid, 'resume')
-    if redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'moving') == '0' then journey_stage(pid) end
+    if redis.call('EXISTS', 'PLAYER:' .. pid .. ':journey') == 1 then resume_journey(pid) end
     return cursor
   end
 
@@ -2302,7 +3600,9 @@ redis.register_function('connect', function(keys, args)
   redis.call('SET', 'PLAYER:' .. pid .. ':room', rid)
   local slept_here = redis.call('ZREM', 'alz:sleepers', pid) == 1 and redis.call('SISMEMBER', 'ROOM:' .. rid .. ':players', pid) == 1
   redis.call('HDEL', 'ACCOUNT:' .. pid, 'asleep')
-  if slept_here then
+  if is_waypoint(rid) and redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'ambush') == nil then
+    -- Aboard: nobody else sees a rider.
+  elseif slept_here then
     -- Their body is still lying here: they wake up.
     emit('ROOM:' .. rid, {type = 'entity', actor = pid, verb = 'wake', entity = player_card(pid), text = name_of(pid) .. ' wakes and gets up.'})
   else
@@ -2323,7 +3623,7 @@ redis.register_function('connect', function(keys, args)
   explore(pid, rid)
   backfill_regions(pid)
   visit_realm(pid, rid)
-  local visible = can_see(weather_at(rid))
+  local visible = can_see(weather_at(rid), pid)
   if visible then glimpse(pid, rid) end
   explore_region(pid, region_of(rid), visible)
   reveal_by_reputation(pid)
@@ -2333,13 +3633,17 @@ redis.register_function('connect', function(keys, args)
   resend_timing(pid)
   kit_event(pid)
   character_event(pid)
+  travel.quests_event(pid)
   room_event(pid, rid, 'enter')
-  -- Back aboard: the journey waits where it was.
-  if redis.call('EXISTS', 'PLAYER:' .. pid .. ':journey') == 1 then
-    redis.call('HSET', 'PLAYER:' .. pid .. ':journey', 'moving', '0')
-    redis.call('ZREM', 'alz:journeys', pid)
-    journey_stage(pid)
+  -- A new character's first moments: the story so far, and their first quest.
+  if redis.call('HGET', 'ACCOUNT:' .. pid, 'intro') == '1' then
+    redis.call('HDEL', 'ACCOUNT:' .. pid, 'intro')
+    local background = decode(redis.call('HGET', 'alz:backgrounds', redis.call('HGET', 'ACCOUNT:' .. pid, 'background') or '-'))
+    if background.intro then emit('PLAYER:' .. pid, {type = 'intro', text = background.intro}) end
+    if background.quest then travel.start_quest(pid, background.quest) end
   end
+  -- Back aboard: the journey carries on from where it was.
+  if redis.call('EXISTS', 'PLAYER:' .. pid .. ':journey') == 1 then resume_journey(pid) end
   aggro(pid, rid)
   return cursor
 end)
@@ -2396,7 +3700,8 @@ redis.register_function('seed', function(keys, args)
   for id, realm in pairs(world.realms or {}) do
     redis.call('DEL', 'REALM:' .. id .. ':info')
     redis.call('HSET', 'REALM:' .. id .. ':info', 'name', realm.name, 'description', realm.description or '',
-      'home', realm.home and '1' or '0', 'weather', cjson.encode(realm.weather or {}),
+      'home', realm.home and '1' or '0', 'weather', cjson.encode(realm.weather or {}), 'sky', realm.sky or '',
+      'starting', realm.starting and '1' or '0', 'shrine', realm.shrine or '',
       'waves', cjson.encode((world.weather_params or {})[id] or {}))
     redis.call('SADD', 'alz:realms', id)
     if realm.home then redis.call('SET', 'alz:home_realm', id) end
@@ -2426,6 +3731,12 @@ redis.register_function('seed', function(keys, args)
       border(world.areas[room.area].region, world.areas[world.rooms[dest].area].region)
     end
   end
+  -- A coach or ferry joins the regions at its ends as surely as a road does.
+  for _, route in pairs(world.routes or {}) do
+    if (route.kind == 'coach' or route.kind == 'ferry') and not route.hidden then
+      border(world.areas[world.rooms[route.from].area].region, world.areas[world.rooms[route.to].area].region)
+    end
+  end
   -- Areas get distinct map colours (1-6) in id order within their realm (the
   -- map shows one realm at a time), unless the seed picks one.
   local area_ids, counted = {}, {}
@@ -2446,16 +3757,25 @@ redis.register_function('seed', function(keys, args)
     redis.call('DEL', base .. ':info', base .. ':exits', base .. ':features', base .. ':flavor', base .. ':routes')
     redis.call('HSET', base .. ':info', 'name', room.name, 'description', room.description, 'area', room.area, 'x', x, 'y', y,
       'safe', room.safe and '1' or '0', 'terrain', room.terrain or '', 'climate', room.climate and cjson.encode(room.climate) or '',
-      'indoor', room.indoor and '1' or '0')
+      'indoor', room.indoor and '1' or '0', 'waypoint', room.waypoint and '1' or '0')
     local b = area_box[room.area]
-    if b then
+    if room.waypoint then
+      -- Waypoints are drawn as part of their route, not inside area boxes.
+    elseif b then
       b[1], b[2], b[3], b[4] = math.min(b[1], x), math.min(b[2], y), math.max(b[3], x), math.max(b[4], y)
     else
       area_box[room.area] = {x, y, x, y}
     end
     for dir, dest in pairs(room.exits or {}) do redis.call('HSET', base .. ':exits', dir, dest) end
     for name, text in pairs(room.features or {}) do redis.call('HSET', base .. ':features', name, text) end
+    redis.call('DEL', base .. ':trap')
+    if room.trap then redis.call('SET', base .. ':trap', cjson.encode(room.trap)) end
     for key, text in pairs(room.flavor or {}) do redis.call('HSET', base .. ':flavor', key, text) end
+  end
+  -- A trap's sign is a feature of the room next door (after every room's
+  -- features are written).
+  for _, room in pairs(world.rooms) do
+    if room.trap then redis.call('HSET', 'ROOM:' .. room.trap.sign.room .. ':features', room.trap.sign.name, room.trap.sign.text) end
   end
   -- Each area's box covers its rooms; each region's box covers its areas.
   local region_box = {}
@@ -2482,9 +3802,13 @@ redis.register_function('seed', function(keys, args)
       'attacks', cjson.encode(npc.attacks or {}), 'drops', cjson.encode(npc.drops or {}),
       'xp', npc.xp or math.floor((npc.max_hp or 10) / 2), 'immortal', npc.immortal and '1' or '0',
       'forecasts', cjson.encode(npc.forecasts or {}), 'active_when', npc.active_when and cjson.encode(npc.active_when) or '',
-      'hide', npc.hide or '', 'emerge', npc.emerge or '', 'coins', npc.coins or 0)
+      'hide', npc.hide or '', 'emerge', npc.emerge or '', 'coins', npc.coins or 0,
+      'topics', cjson.encode(npc.topics or {}), 'trainer', npc.trainer and '1' or '0')
     if npc.active_when then redis.call('SADD', 'alz:weather_npcs', nid) else redis.call('SREM', 'alz:weather_npcs', nid) end
-    if new then
+    if npc.template then
+      -- A template for ambushers: copied when an ambush springs, never placed.
+      redis.call('HSET', key, 'template', '1')
+    elseif new then
       redis.call('HSET', key, 'hp', npc.max_hp or 10, 'room', npc.room)
       redis.call('SADD', 'ROOM:' .. npc.room .. ':npcs', nid)
     end
@@ -2498,7 +3822,9 @@ redis.register_function('seed', function(keys, args)
       'effect', gear.effect, 'targets', gear.targets or 'self', 'period', gear.period, 'window', gear.window, 'perfect_window', gear.perfect_window,
       'opener', gear.amounts[1], 'good', gear.amounts[2], 'perfect', gear.amounts[3],
       'hit', gear.hit, 'perfect_hit', gear.perfect_hit, 'miss', gear.miss, 'whiff', gear.whiff,
-      'description', gear.description or '', 'weather', gear.weather and cjson.encode(gear.weather) or '')
+      'description', gear.description or '', 'weather', gear.weather and cjson.encode(gear.weather) or '',
+      'rank', gear.rank or 0, 'requires', gear.requires or '', 'stagger_ms', gear.stagger_ms or 0,
+      'bleed', gear.bleed and cjson.encode(gear.bleed) or '')
     redis.call('SADD', 'alz:gear', gid)
   end
   for _, gid in ipairs(world.loadout or {}) do redis.call('RPUSH', 'alz:default_loadout', gid) end
@@ -2521,27 +3847,32 @@ redis.register_function('seed', function(keys, args)
   end
   for name, list_ in pairs(boons) do redis.call('HSET', 'alz:boons', name, cjson.encode(list_)) end
   -- Weather: default gear profiles by kind, and how terrain nudges the sky.
-  redis.call('DEL', 'alz:kinds', 'alz:terrain_weather')
+  redis.call('DEL', 'alz:kinds', 'alz:terrain_weather', 'alz:terrain_ground')
+  for terrain, ground in pairs(world.terrain_ground or {}) do redis.call('HSET', 'alz:terrain_ground', terrain, ground) end
   for kind, profile in pairs(world.kinds or {}) do redis.call('HSET', 'alz:kinds', kind, cjson.encode(profile)) end
   for terrain, nudge in pairs(world.terrain_weather or {}) do redis.call('HSET', 'alz:terrain_weather', terrain, cjson.encode(nudge)) end
   for pid, perk in pairs(world.perks or {}) do
     redis.call('DEL', 'PERK:' .. pid)
-    redis.call('HSET', 'PERK:' .. pid, 'name', perk.name, 'description', perk.description or '', 'safe_terrain', perk.safe_terrain or '')
+    redis.call('HSET', 'PERK:' .. pid, 'name', perk.name, 'description', perk.description or '', 'safe_terrain', perk.safe_terrain or '',
+      'slot', perk.slot and '1' or '0')
   end
-  for _, level in ipairs(redis.call('SMEMBERS', 'alz:levels')) do redis.call('DEL', 'LEVEL:' .. level) end
-  redis.call('DEL', 'alz:levels')
-  for level, reward in pairs(world.levels or {}) do
-    redis.call('HSET', 'LEVEL:' .. level, 'gear', cjson.encode(reward.gear or {}), 'perks', cjson.encode(reward.perks or {}))
-    redis.call('SADD', 'alz:levels', level)
-  end
+  -- Classes, ancestries and backgrounds (docs/characters.md).
+  redis.call('DEL', 'alz:classes', 'alz:ancestries', 'alz:backgrounds')
+  for id, c in pairs(world.classes or {}) do redis.call('HSET', 'alz:classes', id, cjson.encode(c)) end
+  for id, a in pairs(world.ancestries or {}) do redis.call('HSET', 'alz:ancestries', id, cjson.encode(a)) end
+  for id, b in pairs(world.backgrounds or {}) do redis.call('HSET', 'alz:backgrounds', id, cjson.encode(b)) end
   redis.call('DEL', 'alz:rules')
   for name, value in pairs(world.rules or {}) do redis.call('HSET', 'alz:rules', name, value) end
   for iid, item in pairs(world.items or {}) do
     local key = 'ITEM:' .. iid
     local new = redis.call('EXISTS', key) == 0
     redis.call('HSET', key, 'name', item.name, 'keywords', item.keywords or '', 'description', item.description or '',
-      'reveals', cjson.encode(item.reveals or {}), 'forecasts', cjson.encode(item.forecasts or {}))
-    if new then redis.call('SADD', 'ROOM:' .. item.room .. ':items', iid) end
+      'reveals', cjson.encode(item.reveals or {}), 'forecasts', cjson.encode(item.forecasts or {}), 'quest', item.quest and '1' or '0')
+    if item.quest then
+      if item.room then redis.call('SADD', 'ROOM:' .. item.room .. ':qitems', iid) end
+    elseif new and item.room then
+      redis.call('SADD', 'ROOM:' .. item.room .. ':items', iid)
+    end
   end
   for _, ch in ipairs(world.channels or {}) do
     if redis.call('EXISTS', 'CHANNEL:' .. ch .. ':info') == 0 then
@@ -2555,12 +3886,18 @@ redis.register_function('seed', function(keys, args)
   redis.call('DEL', 'alz:routes')
   for id, route in pairs(world.routes or {}) do
     redis.call('HSET', 'ROUTE:' .. id, 'name', route.name, 'keywords', route.keywords or '', 'from', route.from, 'to', route.to,
-      'by', route.by or '', 'fare', route.fare or 0, 'via', route.via or '', 'stages', cjson.encode(route.stages or {}),
+      'by', route.by or '', 'fare', route.fare or 0, 'path', cjson.encode(route.path or {}), 'kind', route.kind or '',
+      'strand', route.strand or '', 'risk', route.risk or 0, 'hidden', route.hidden and '1' or '0',
+      'events', cjson.encode(route.events or {}),
       'when', cjson.encode(route.when or {}), 'clear', route.clear and '1' or '0', 'closed', route.closed or '',
       'depart', route.depart or '', 'leave', route.leave or '{actor} is gone.', 'arrive', route.arrive or '{actor} arrives.')
     redis.call('SADD', 'ROOM:' .. route.from .. ':routes', id)
     redis.call('SADD', 'alz:routes', id)
   end
+  redis.call('DEL', 'alz:quests')
+  for id, quest in pairs(world.quests or {}) do redis.call('HSET', 'alz:quests', id, cjson.encode(quest)) end
+  redis.call('DEL', 'alz:travel_events')
+  for id, event in pairs(world.travel_events or {}) do redis.call('HSET', 'alz:travel_events', id, cjson.encode(event)) end
   redis.call('SET', 'alz:start_room', world.start_room)
   return 1
 end)
@@ -2600,7 +3937,9 @@ local function respawn_due(now)
   for _, nid in ipairs(due) do
     redis.call('ZREM', 'alz:respawns', nid)
     local npc = hgetall('NPC:' .. nid)
-    if npc.room then
+    if npc.owner then
+      redis.call('DEL', 'NPC:' .. nid, 'NPC:' .. nid .. ':next', 'NPC:' .. nid .. ':foes') -- an ambusher: gone for good
+    elseif npc.room then
       redis.call('HSET', 'NPC:' .. nid, 'hp', npc.max_hp or 10)
       if npc_active(nid) then
         appear(nid, capitalize(npc_display(nid)) .. ' appears.')
@@ -2654,6 +3993,7 @@ redis.register_function('weather_tick', function(keys, args)
     if redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then
       weather_event(pid)
       kit_event(pid)
+      travel.quest(pid, 'check', {}) -- quests waiting on the weather
     end
   end
   return 1
@@ -2719,12 +4059,32 @@ redis.register_function('tick', function(keys, args)
       if not target then
         stop_fighting(nid)
       else
-        local hp = player_card(target).hp - attack.damage
+        local bleed = hgetall('NPC:' .. nid .. ':bleed')
+        if bleed.damage then
+          -- Bleeding wears it down, but never quite kills it: someone has to finish it.
+          local left = math.max(1, (tonumber(redis.call('HGET', 'NPC:' .. nid, 'hp')) or 1) - tonumber(bleed.damage))
+          redis.call('HSET', 'NPC:' .. nid, 'hp', left)
+          emit('ROOM:' .. npc.room, {type = 'entity', entity = npc_card(nid), text = capitalize(npc_display(nid)) .. ' bleeds. (' .. bleed.damage .. ')'})
+          if redis.call('HINCRBY', 'NPC:' .. nid .. ':bleed', 'beats', -1) <= 0 then redis.call('DEL', 'NPC:' .. nid .. ':bleed') end
+        end
+        local damage = attack.damage
+        local guard = tonumber(redis.call('GET', 'PLAYER:' .. target .. ':guard')) or 0
+        if guard > 0 then
+          local soaked = math.min(guard, damage)
+          damage = damage - soaked
+          if guard - soaked > 0 then
+            redis.call('SET', 'PLAYER:' .. target .. ':guard', guard - soaked, 'KEEPTTL')
+          else
+            redis.call('DEL', 'PLAYER:' .. target .. ':guard')
+          end
+        end
+        local hp = player_card(target).hp - damage
         redis.call('HSET', 'ACCOUNT:' .. target, 'hp', math.max(hp, 0))
         redis.call('SADD', 'alz:wounded', target)
         emit('ROOM:' .. npc.room, {type = 'combat', entity_id = 'npc:' .. nid, verb = attack.name, target = 'pc:' .. target,
-          result = 'hit', damage = attack.damage,
-          text = fill(attack.hit, capitalize(npc_display(nid)), name_of(target)) .. ' (' .. attack.damage .. ')'})
+          result = 'hit', damage = damage,
+          text = fill(attack.hit, capitalize(npc_display(nid)), name_of(target)) .. ' (' .. damage
+            .. (damage < attack.damage and (', ' .. (attack.damage - damage) .. ' guarded') or '') .. ')'})
         if hp <= 0 then
           defeat(target, nid)
         else

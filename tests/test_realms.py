@@ -9,7 +9,6 @@ from alzendor.world import validate_seed
 
 from .conftest import SEED, drain, enter, set_weather, texts
 
-TO_CHAPEL = ("north", "west", "west", "west", "west", "west", "north")
 
 
 def of_type(events, kind):
@@ -37,7 +36,7 @@ async def test_each_realm_has_its_own_weather(world):
 
 async def test_a_passage_npc_takes_you_to_another_realm_and_back(world):
     kevin = await enter(world, "kevin")
-    await walk(world, "kevin", *TO_CHAPEL)
+    await world.call("goto", "kevin", "chapel")
     await drain(kevin)
     await world.call("ask", "kevin", "ilse", "passage")
     events = await drain(kevin)
@@ -59,7 +58,7 @@ async def test_a_passage_npc_takes_you_to_another_realm_and_back(world):
 
 async def test_realm_channels_reach_the_whole_realm(world):
     kevin, mara = await enter(world, "kevin"), await enter(world, "mara")
-    await walk(world, "kevin", *TO_CHAPEL)
+    await world.call("goto", "kevin", "chapel")
     await world.call("ask", "kevin", "ilse", "passage")
     await drain(kevin), await drain(mara)
     await world.call("ambient", "REALM:rimewaste", "The ground shudders.")
@@ -69,7 +68,7 @@ async def test_realm_channels_reach_the_whole_realm(world):
 
 async def test_the_rift_is_one_way_and_the_portal_home_needs_wind_and_no_wraiths(world):
     kevin = await enter(world, "kevin")
-    await walk(world, "kevin", *TO_CHAPEL)
+    await world.call("goto", "kevin", "chapel")
     await world.call("ask", "kevin", "ilse", "passage")
     await walk(world, "kevin", "north", "north")  # past the ice wraith to the rift
     await drain(kevin)
@@ -103,7 +102,7 @@ async def test_the_rift_is_one_way_and_the_portal_home_needs_wind_and_no_wraiths
 
 async def test_a_storm_glass_teaches_the_rimewastes_skies(world):
     kevin = await enter(world, "kevin")
-    await walk(world, "kevin", *TO_CHAPEL)
+    await world.call("goto", "kevin", "chapel")
     await world.call("ask", "kevin", "ilse", "passage")
     await walk(world, "kevin", "north", "west")  # Ember Hollow, the one warm place
     await drain(kevin)
@@ -122,7 +121,8 @@ async def test_a_storm_glass_teaches_the_rimewastes_skies(world):
     (lambda d: d["rooms"]["rime_landing"]["exits"].update(south="tavern"), "leads into another realm"),
     (lambda d: d["routes"]["sun-portal"].update(to="nowhere"), "to is not a room: 'nowhere'"),
     (lambda d: d["routes"]["portal-home"].update(by="ilse"), "operator 'ilse' must be an NPC in the room it leaves from"),
-    (lambda d: d["routes"]["rift"].update(stages=["You fall."]), "needs a 'via' room"),
+    (lambda d: d["routes"]["rift"].update(path=["rift_chasm"]), "path: 'rift_chasm' is not a waypoint room"),
+    (lambda d: d["rooms"]["pier"]["exits"].update(west="switchbacks"), "leads to a waypoint"),
     (lambda d: d["routes"]["coach-to-harrowlake"].update(fare=-1), "fare must be a whole number"),
     (lambda d: d["items"]["glass-1"].update(forecasts=["nowhere"]), "forecasts unknown realm 'nowhere'"),
     (lambda d: d["routes"]["rift"].update(**{"from": "rime_landing", "to": "chapel"}), "routes from one room need different destinations"),

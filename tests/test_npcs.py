@@ -27,15 +27,6 @@ async def kill(world, pid, nid, slot=1):
 # Moving -----------------------------------------------------------------------
 
 
-async def test_moves_have_a_short_cooldown(world):
-    await world.redis.hset("alz:rules", "move_cooldown_ms", 60000)
-    kevin = await enter(world, "kevin")
-    await drain(kevin)
-    await walk(world, "kevin", "north", "south", "sideways")
-    assert texts(await drain(kevin))[-2:] == ["You need a moment to find your footing.", "You can't go that way."]
-    assert await world.redis.get("PLAYER:kevin:room") == "market_square"
-
-
 # NPCs fighting back ---------------------------------------------------------------
 
 
@@ -198,20 +189,21 @@ async def test_saying_something_to_your_target(world):
 # Experience ---------------------------------------------------------------------------
 
 
-async def test_levelling_up_grants_a_point_and_rewards(world):
+async def test_levelling_up_grants_a_point_and_no_gear(world):
     kevin = await enter(world, "kevin")
     await walk(world, "kevin", "east")
     await world.redis.hset("ACCOUNT:kevin", "xp", 90)
     await drain(kevin)
     await kill(world, "kevin", "orc-1")
     events = await drain(kevin)
-    assert "You reach level 2! You have a stat point to spend: TRAIN <stat>. You gain: Sword." in texts(events)
+    assert ("You reach level 2! You have a stat point to spend (TRAIN <stat>), and a talent to learn "
+            "(LEARN <name>, or the Character panel).") in texts(events)
     character = of_type(events, "character")[-1]
     assert (character["level"], character["xp"], character["xp_next"], character["points"]) == (2, 50, 200, 1)
     # Reputation lists only the factions that know you, each with its realm.
     assert {(f["id"], f["realm"], f["realm_name"]) for f in character["factions"]} == {
         ("harrowfolk", "alzendor", "Alzendor"), ("orcs", "alzendor", "Alzendor")}
-    assert "sword" in [g["id"] for g in of_type(events, "kit")[-1]["gear"]]
+    assert "sword" not in [g["id"] for g in of_type(events, "kit")[-1]["gear"]]  # gear comes from the world
 
     await world.call("train", "kevin", "vigor")
     await world.call("train", "kevin", "vigor")

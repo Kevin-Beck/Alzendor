@@ -32,8 +32,12 @@ async def world(redis):
     world = World(redis)
     await world.load_rules()
     await world.seed(SEED)
-    # Most tests walk several rooms in a row; the move cooldown has tests of its own.
-    await redis.hset("alz:rules", "move_cooldown_ms", 0)
+    # Most tests walk several rooms in a row; walking pace has tests of its own.
+    await redis.hset("alz:rules", "pace", 0)
+    # And it's always midday, unless a test says otherwise.
+    await redis.set("alz:clock_override", 12)
+    # Nothing happens on the road unless a test asks for it.
+    await redis.hset("alz:rules", "event_chance", 0)
     # Tests run on a mild, dry, temperate day in every realm; weather tests set their own.
     for realm in await redis.smembers("alz:realms"):
         await set_weather(redis, realm, 0, 0, -1)
@@ -52,6 +56,16 @@ async def enter(world: World, pid: str, session: str | None = None, since: int =
     session = session or f"session-{pid}"
     cursor = await world.call("connect", pid, session, since)
     return await Feed.open(world.redis, pid, session, cursor)
+
+
+async def ride(world: World, pid: str, stages: int = 100) -> None:
+    """Moves a journey on stage by stage, without the waits, to its end (or
+    for `stages` stages)."""
+    for _ in range(stages):
+        if not await world.redis.exists(f"PLAYER:{pid}:journey"):
+            return
+        await world.redis.zadd("alz:journeys", {pid: 0})
+        await world.call("tick")
 
 
 async def drain(feed: Feed) -> list[dict]:

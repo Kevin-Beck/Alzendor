@@ -197,7 +197,8 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [ ] More route conditions: items carried, reputation, quest steps, players present
 - [ ] Realm events on `REALM:` channels (storm fronts, invasions)
 - [ ] Abilities that jump (a recall stone, a planeshift spell); gear that only works in one realm
-- [ ] Scarce foresight outside the home realm (docs/weather.md, "Foresight is a resource"): a Skyreading sense (about 10 minutes ahead, a direction, any realm); a per-realm cap on forecasts; harder-won lore in harsh realms; move the storm glass somewhere hard or make it a reward
+- [x] A Skyreading sense (about 10 minutes ahead, a direction, any realm): an elf and orc passive
+- [ ] Scarce foresight outside the home realm (docs/weather.md, "Foresight is a resource"): a per-realm cap on forecasts; harder-won lore in harsh realms; move the storm glass somewhere hard or make it a reward
 
 ### 12. Places and travel ([docs/places.md](docs/places.md))
 - [x] A guide to rooms, areas, regions and realms: what each is for, how big, and how players get around
@@ -212,7 +213,29 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [ ] Spending coins elsewhere: shops, trainers, inns
 - [ ] Grow Harrowgate into a proper town region, and build wilderness between towns to the guide's sizes
 
+### 13. Journeys ([docs/journeys.md](docs/journeys.md))
+- [x] Walking pace by ground (road, open, rough), still quick for testing
+- [x] A day/night clock, read by events, visibility and the map; realms with their own sky
+- [x] Routes as waypoint rooms: journeys that play themselves, private rides, routes drawn on the map as roads you can't walk
+- [x] Remove the Lake Road walk; Harrowlake far to the west, the coach the only way
+- [x] Traps, their signs in neighbouring rooms, and careful entering
+- [x] Travel events: pools, weather and time conditions, checks, answers, background options, effects
+- [x] Stranding (with a scree trail out), surprise combat with journey-owned NPCs, death by drowning
+- [x] The first pocket island (marooned), with its priority quest
+
+### 14. Characters ([docs/characters.md](docs/characters.md))
+- [x] Class, ancestry and background; the creation screen; existing characters wiped
+- [x] Gear kinds by class (Light, Trick); class abilities and background items
+- [x] Levelling to 20: stat points, talents at even levels (ranks open after 3 and 7 picks), passives at 5/10/15/20; `LEARN`; no gear for levels
+- [x] Talent pools with stagger, guard and bleed/burn
+- [x] Ancestry passives: world ones (Trapsense, Skyreading…) and slot-ball ones, with attuning
+- [x] Respec at the trainer
+- [x] The quest engine ([docs/quests.md](docs/quests.md)), then the starting realms: Low Wick first, then Gullhaven, Copperstall and Thornwick
+
 ### Next
+- [ ] Starting realms' own factions, NPCs that walk rounds, and timetables on the clock
+- [ ] The walkable mountain way between Harrowgate and Harrowlake (50+ rooms, see docs/places.md)
+- [ ] More travel events, pocket areas and ambushes; travel events on foot
 - [ ] Quests: start with small state machines driven by deeds, begun by talking to NPCs (see docs/quests.md)
 - [ ] More deeds for cultures to judge: looting, sparing, arena fights, deception, witnesses (see docs/design.md)
 - [ ] NPCs that talk back (topics), and choosing between abilities at some levels

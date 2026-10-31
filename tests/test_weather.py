@@ -186,7 +186,7 @@ async def test_heavy_rain_hides_new_ways_and_neighbouring_regions(world):
     assert len(of_type(events, "room")[-1]["room"]["exits"]) == 5
     assert "smithy" in {r["id"] for r in of_type(events, "map")[0]["rooms"]}
     await world.call("move", "kevin", "east")
-    assert set(await world.redis.hkeys("PLAYER:kevin:regions")) == {"harrowgate", "harrowlake", "spiderwood"}
+    assert set(await world.redis.hkeys("PLAYER:kevin:regions")) == {"harrowgate", "harrowlake", "spiderwood", "harrow_mountains"}
 
 
 async def test_spiders_keep_out_of_the_rain(world):

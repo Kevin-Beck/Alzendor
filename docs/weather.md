@@ -276,7 +276,7 @@ That gives four levels of foresight, from least to most:
 | Level | What you see | Where it comes from |
 |---|---|---|
 | Feel | a blurred patch for now | everyone, everywhere |
-| Sense | the patch and a 10-minute heading | the Skyreading skill |
+| Sense | the patch and a 10-minute heading | Skyreading, an elf and orc passive (built) |
 | Lore | the exact point and a trail ahead | taught or found, per realm |
 | Deep lore | a longer trail | standing with the teacher's people; capped low in harsh realms |
 

@@ -96,9 +96,10 @@ Sizes and layout:
   **150–500 units** across. Leave **at least 40 units** of clear space between
   regions so their boxes and titles don't collide (the seed check insists).
 - **Joined by roads or routes.** Neighbouring regions are joined by one to
-  three roads (chains of rooms through an in-between area, like the Lake Road
-  between Harrowgate and Harrowlake), or by **routes** (below) when the
-  journey is long, dull, dangerous or impossible on foot.
+  three roads (chains of rooms through an in-between area, like the Cliff
+  Stair and Goat Track out of Harrowgate), or by **routes** (below) when the
+  journey is long, dull, dangerous or impossible on foot (the High Road
+  coach is the only way to Harrowlake).
 
 ## Realms
 
@@ -135,6 +136,7 @@ makes travel matter is:
 
 ### Routes: fast travel
 
+
 A **route** takes a player from one room to another: `TRAVEL` lists the
 routes from where you are, each as the exact command to type, named by its
 destination (`TRAVEL VILLAGE GREEN`), and typing it (or the route's button
@@ -151,12 +153,11 @@ A route can have:
 - **An operator**: an NPC who must be there and friendly to you (a ferryman
   won't take someone his people hate).
 - **A fare** in coins.
-- **A journey in stages**: a room you travel in (the ferry's deck, inside the
-  coach) and a list of `stages`. Each stage is a line ("The carriage rocks as
-  it goes over the cobbles") that waits for the player to press Enter, then a
-  couple of seconds pass before the next one; after the last, they arrive.
-  The room is real: others aboard are there with you, and the deck has the
-  weather. A route without stages (a portal) is instant.
+- **A journey**: a `path` of waypoint rooms (the switchbacks, the high
+  pass, the ford) that the ride passes through by itself, one every few
+  seconds. Waypoints are drawn as the route on the map, have weather and
+  terrain, and can't be walked to. Every ride is private. A route without a
+  path (a portal) is instant.
 - **Conditions**: weather ranges (a ferry that won't sail in a gale, a portal
   that only opens when the air stirs) and "clear" (no one hostile in the
   way).
@@ -164,13 +165,9 @@ A route can have:
 Routes to a **hidden region** are only offered once you know it's there: the
 ferryman won't take you to an island you've never heard of.
 
-**Travel events (not built yet).** A stage can name an `event`. Events are
-where journeys will get their challenges: choices and skill checks that
-decide how well and how fast the journey goes, with failures that cost
-health, coins or time (extra stages). The engine already calls a hook as each
-stage begins (`journey_event` in alzendor.lua); it does nothing yet. For now a
-basic journey is just its lines, a press of Enter, and a short wait between
-each.
+**Travel events** are rare choices on the road (a toll, a stuck wheel, a
+squall), worse in bad weather, sometimes an ambush or a shipwreck. They're
+designed in [journeys.md](journeys.md).
 
 **When to use a route instead of a road:** when the connection on foot would
 be more than about 15 rooms of nothing in particular; when it crosses
@@ -210,7 +207,8 @@ local ferry, more for a long voyage, nothing for a portal you had to earn.
 ## The current world against this guide
 
 - **Alzendor (home realm):** four regions. Harrowgate is a small town (two
-  areas, eleven rooms); Harrowlake a village with the Lake Road leading to it;
+  areas, eleven rooms); Harrowlake a village far to the west, over the Harrow
+  Mountains, reached only by the High Road coach;
   Spiderwood a wilderness of a forest edge and a webbed hollow; Saltmere a
   hidden island reached by the lake ferry. A coach runs from Harrowgate's
   market square to Harrowlake's village green.

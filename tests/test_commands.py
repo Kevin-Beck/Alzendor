@@ -83,7 +83,7 @@ async def test_selected_target_fills_in_for_commands_that_take_one(ctx):
 
 
 @pytest.mark.parametrize("value, expected", [
-    ("npc:rat-2", "npc:rat-2"), ("pc:mara", "pc:mara"),
+    ("npc:rat-2", "npc:rat-2"), ("pc:mara", "pc:mara"), ("npc:ford_wolf~kevin~1", "npc:ford_wolf~kevin~1"),
     ("PLAYER:mara", ""), ("npc:", ""), ("npc:a b", ""), (42, ""), (None, ""),
 ])
 def test_target_ids_are_validated(value, expected):

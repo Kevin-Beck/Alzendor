@@ -46,7 +46,8 @@ Ideas for later, if stats ever need more flavour:
 
 ## Abilities (perks)
 
-Abilities are granted by the level table in the seed. The first two are about
+Abilities are now ancestry passives, chosen at creation and at levels 5, 10,
+15 and 20 (see [characters.md](characters.md)). The first two were about
 resting: **Woodcraft** (forests are safe places for you) and
 **Shore-sleeper** (the coast is). They show the shape abilities can take:
 they change how the world treats you, not just your numbers. More ideas:

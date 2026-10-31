@@ -6,12 +6,15 @@ Client -> server
   {"type": "register", "name": ..., "password": ...}
   {"type": "login",    "name": ..., "password": ...}
   {"type": "resume",   "token": ..., "since": <last seq seen>}
+  {"type": "create",   "class": ..., "ancestry": ..., "passive": ..., "background": ...}
   {"type": "cmd",      "text": "move north", "target": "npc:orc-1"}   (target optional)
   {"type": "ping",     "t": <client clock ms>}   at most 5 a second
 
 Server -> client
   {"type": "auth_ok", "player": <id>, "name": <display name>, "token": ..., "server": <id>}
   {"type": "auth_error", "message": ...}
+  {"type": "create", "name": ..., "options": {classes, ancestries, backgrounds}}
+  {"type": "create_error", "message": ...}
   {"type": "event", "event": {"seq", "channel", "type", "actor", "verb", "target", "text", "ts", ...}}
   {"type": "error", "message": ...}
   {"type": "pong", "t": <echoed>, "server_ms": <Redis clock ms>}
@@ -21,8 +24,10 @@ Combat timing is judged by Redis's clock. A client syncs to it with ping/pong
 draw the timing bars from `timing` events (your slots) and `npc_timing` events
 (an NPC's attacks). The README's Protocol section lists the event types.
 
-After authenticating, everything the client sees arrives as events in sequence
-order. The connection closes with the reason as its close message when the
+A player without a character (a new account, or one wiped for a new version)
+is sent `create` after authenticating and must answer with its choices
+(docs/characters.md) before entering the world. After that, everything the
+client sees arrives as events in sequence order. The connection closes with the reason as its close message when the
 player quits, is disconnected, or connects from somewhere else.
 """
 
@@ -43,6 +48,7 @@ from .feed import Feed
 log = logging.getLogger(__name__)
 
 AUTH_TIMEOUT_SECONDS = 120
+CREATE_TIMEOUT_SECONDS = 1800
 COMMANDS_PER_SECOND = 4
 COMMAND_BURST = 10
 
@@ -75,6 +81,13 @@ class Session:
             return
 
         world = self.server.world
+        if await world.redis.hget(f"ACCOUNT:{self.pid}", "created") != "1":
+            try:
+                if not await asyncio.wait_for(self._create_character(), CREATE_TIMEOUT_SECONDS):
+                    return
+            except (TimeoutError, ConnectionClosed):
+                return
+            since = 0
         cursor = await world.call("connect", self.pid, self.id, since)
         feed = await Feed.open(world.redis, self.pid, self.id, cursor)
         name = await world.redis.hget(f"ACCOUNT:{self.pid}", "name")
@@ -123,6 +136,28 @@ class Session:
             except AuthError as failure:
                 await self._send(type="auth_error", message=str(failure))
         return None
+
+    async def _create_character(self) -> bool:
+        """Offers the character creation choices until the client makes valid
+        ones. Returns False if the client went away."""
+        world = self.server.world
+        name = await world.redis.hget(f"ACCOUNT:{self.pid}", "name")
+        await self._send(type="create", name=name, token=self.token, options=world.creation)
+        async for raw in self.ws:
+            message = _decode(raw)
+            if not self._take_allowance():
+                await self._send(type="create_error", message="Slow down a little.")
+                continue
+            if not message or message.get("type") != "create":
+                await self._send(type="create_error", message="Create your character first.")
+                continue
+            choices = [str(message.get(key, ""))[:40] for key in ("class", "ancestry", "passive", "background")]
+            problem = await world.call("create_character", self.pid, *choices)
+            if not problem:
+                log.info("%s created a character: %s", self.pid, " ".join(choices))
+                return True
+            await self._send(type="create_error", message=problem)
+        return False
 
     async def _handle(self, ctx: commands.Context, raw) -> None:
         message = _decode(raw)

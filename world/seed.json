@@ -40,12 +40,97 @@
           -1,
           0
         ]
-      }
+      },
+      "sky": "always_day"
+    },
+    "gullhaven": {
+      "name": "Gullhaven",
+      "description": "A shipyard town on a grey, gull-loud coast. Your ship has come in to die here.",
+      "weather": {
+        "temperature": [
+          0,
+          0.4
+        ],
+        "energy": [
+          0.1,
+          0.4
+        ],
+        "precipitation": [
+          -0.1,
+          0.6
+        ]
+      },
+      "starting": true,
+      "shrine": "slipway"
+    },
+    "copperstall": {
+      "name": "Copperstall",
+      "description": "A market town of a thousand stalls, and as many quarrels.",
+      "weather": {
+        "temperature": [
+          0.1,
+          0.4
+        ],
+        "energy": [
+          0,
+          0.5
+        ],
+        "precipitation": [
+          -0.2,
+          0.6
+        ]
+      },
+      "starting": true,
+      "shrine": "stall_row"
+    },
+    "thornwick": {
+      "name": "Thornwick",
+      "description": "A hamlet at the edge of an old, damp wood.",
+      "weather": {
+        "temperature": [
+          0.2,
+          0.2
+        ],
+        "energy": [
+          -0.4,
+          0.3
+        ],
+        "precipitation": [
+          0.1,
+          0.5
+        ]
+      },
+      "starting": true,
+      "shrine": "hunters_lodge"
+    },
+    "lowwick": {
+      "name": "Low Wick",
+      "description": "A small, damp town that has got too small for you.",
+      "weather": {
+        "temperature": [
+          -0.1,
+          0.3
+        ],
+        "energy": [
+          0,
+          0.4
+        ],
+        "precipitation": [
+          0.2,
+          0.5
+        ]
+      },
+      "starting": true,
+      "shrine": "gutter_den"
     }
   },
   "regions": {
     "harrowgate": {
       "name": "Harrowgate",
+      "realm": "alzendor"
+    },
+    "harrow_mountains": {
+      "name": "the Harrow Mountains",
       "realm": "alzendor"
     },
     "harrowlake": {
@@ -73,6 +158,27 @@
     "glass_flats": {
       "name": "the Glass Flats",
       "realm": "stillsands"
+    },
+    "skerries": {
+      "name": "the Skerries",
+      "realm": "alzendor",
+      "hidden": true
+    },
+    "gullhaven_town": {
+      "name": "Gullhaven",
+      "realm": "gullhaven"
+    },
+    "copperstall_town": {
+      "name": "Copperstall",
+      "realm": "copperstall"
+    },
+    "thornwick_wood": {
+      "name": "Thornwick",
+      "realm": "thornwick"
+    },
+    "lowwick_town": {
+      "name": "Low Wick",
+      "realm": "lowwick"
     }
   },
   "areas": {
@@ -84,9 +190,9 @@
       "name": "the Docks",
       "region": "harrowgate"
     },
-    "lake_road": {
-      "name": "the Lake Road",
-      "region": "harrowlake"
+    "high_road": {
+      "name": "the High Road",
+      "region": "harrow_mountains"
     },
     "harrowlake_village": {
       "name": "Harrowlake Village",
@@ -116,9 +222,65 @@
       "name": "the Glass Dunes",
       "region": "glass_flats"
     },
+    "scree_slopes": {
+      "name": "the Scree Slopes",
+      "region": "harrow_mountains"
+    },
     "lake_crossing": {
       "name": "the Lake Crossing",
       "region": "harrowlake"
+    },
+    "castaway_isle": {
+      "name": "Castaway Isle",
+      "region": "skerries"
+    },
+    "gh_slipway": {
+      "name": "the Slipway",
+      "region": "gullhaven_town"
+    },
+    "gh_quay": {
+      "name": "Gullhaven Quay",
+      "region": "gullhaven_town"
+    },
+    "gh_breakwater": {
+      "name": "the Breakwater",
+      "region": "gullhaven_town"
+    },
+    "cs_market": {
+      "name": "Copperstall Market",
+      "region": "copperstall_town"
+    },
+    "cs_guild": {
+      "name": "Guild Row",
+      "region": "copperstall_town"
+    },
+    "cs_granary": {
+      "name": "the Old Granary",
+      "region": "copperstall_town"
+    },
+    "tw_hamlet": {
+      "name": "Thornwick Hamlet",
+      "region": "thornwick_wood"
+    },
+    "tw_oldwood": {
+      "name": "the Old Wood",
+      "region": "thornwick_wood"
+    },
+    "tw_fern": {
+      "name": "Fernhollow",
+      "region": "thornwick_wood"
+    },
+    "lw_gutters": {
+      "name": "the Gutters",
+      "region": "lowwick_town"
+    },
+    "lw_square": {
+      "name": "Wick Square",
+      "region": "lowwick_town"
+    },
+    "lw_roofs": {
+      "name": "the Rooftops",
+      "region": "lowwick_town"
     }
   },
   "rooms": {
@@ -266,8 +428,7 @@
       "exits": {
         "east": "harbor_road",
         "north": "lighthouse",
-        "southeast": "fish_market",
-        "west": "lake_road"
+        "southeast": "fish_market"
       },
       "features": {
         "water": "Grey, choppy water that slaps against the pilings.",
@@ -305,7 +466,8 @@
       ],
       "description": "The whitewashed lighthouse towers overhead. Its door is locked, but the keeper's bench outside is free.",
       "exits": {
-        "south": "pier"
+        "south": "pier",
+        "west": "cliff_stair"
       },
       "features": {
         "bench": "A salt-bleached bench facing the sea.",
@@ -357,53 +519,15 @@
         "touch:gate": "lays a hand on the cold iron bands of the gate."
       }
     },
-    "lake_road": {
-      "name": "Lake Road",
-      "area": "lake_road",
-      "pos": [
-        -85,
-        20
-      ],
-      "description": "A rutted road follows the shoreline west, away from Harrowgate's smoke. Reeds whisper on either side.",
-      "exits": {
-        "east": "pier",
-        "west": "reed_marsh"
-      },
-      "features": {
-        "reeds": "Tall reeds, rattling in the wind."
-      }
-    },
-    "reed_marsh": {
-      "name": "Reed Marsh",
-      "area": "lake_road",
-      "pos": [
-        -115,
-        20
-      ],
-      "description": "The road sinks into a marsh of black water and reeds taller than a man. Something large has flattened a path through them.",
-      "exits": {
-        "east": "lake_road",
-        "west": "village_green"
-      },
-      "features": {
-        "water": "Black, still water. You can't see the bottom.",
-        "path": "A trail of crushed reeds, as wide as a cart."
-      },
-      "flavor": {
-        "touch:water": "dips a hand into the black water and quickly pulls it out."
-      },
-      "terrain": "marsh"
-    },
     "village_green": {
       "name": "Village Green",
       "area": "harrowlake_village",
       "pos": [
-        -170,
+        -670,
         20
       ],
       "description": "A sloping green at the heart of Harrowlake, ringed by fishing cottages. The lake glitters beyond the rooftops.",
       "exits": {
-        "east": "reed_marsh",
         "north": "chapel",
         "west": "drowned_lantern",
         "southwest": "ferry_dock"
@@ -419,7 +543,7 @@
       "name": "Lakeside Chapel",
       "area": "harrowlake_village",
       "pos": [
-        -170,
+        -670,
         0
       ],
       "description": "A whitewashed chapel with a bell tower and a single stained-glass window showing a ferryman.",
@@ -436,7 +560,7 @@
       "name": "The Drowned Lantern",
       "area": "harrowlake_village",
       "pos": [
-        -190,
+        -690,
         20
       ],
       "description": "A smoky inn with nets hung from the rafters and a lantern in a bottle over the door.",
@@ -457,12 +581,13 @@
       "name": "Ferry Dock",
       "area": "harrowlake_village",
       "pos": [
-        -190,
+        -690,
         40
       ],
       "description": "A long jetty juts into the lake. A flat-bottomed ferry is tied up, rocking gently. Far out across the water, a smudge of mist hangs over something.",
       "exits": {
-        "northeast": "village_green"
+        "northeast": "village_green",
+        "south": "drift_beach"
       },
       "features": {
         "ferry": "A broad, flat ferry with a pole and a lantern hook."
@@ -509,7 +634,23 @@
       "flavor": {
         "sit:oak": "sits on the fallen oak. It creaks."
       },
-      "terrain": "forest"
+      "terrain": "forest",
+      "trap": {
+        "name": "a poacher's snare",
+        "stat": "poise",
+        "difficulty": "fair",
+        "damage": 8,
+        "slows": 20,
+        "rearm": 90,
+        "hit": "A loop of wire snaps tight around your ankle and yanks you off your feet.",
+        "avoid": "You spot a poacher's snare among the moss, and step over it.",
+        "sprung": "{actor} yelps as a snare snaps tight around their ankle!",
+        "sign": {
+          "room": "woodland_path",
+          "name": "wire",
+          "text": "A coil of trapper's wire, half-buried in the leaves by the path. Someone sets snares around here."
+        }
+      }
     },
     "hunters_camp": {
       "name": "Hunter's Camp",
@@ -607,7 +748,7 @@
       "name": "Saltmere Landing",
       "area": "saltmere_shore",
       "pos": [
-        -280,
+        -880,
         40
       ],
       "description": "A shingle beach where the ferry grounds. Salt crusts every stone, and the mist never quite lifts.",
@@ -624,7 +765,7 @@
       "name": "Salt Flats",
       "area": "saltmere_shore",
       "pos": [
-        -310,
+        -910,
         40
       ],
       "description": "A white plain of cracked salt stretches into the mist. Your footprints fill slowly with brine.",
@@ -640,7 +781,7 @@
       "name": "Tide Shrine",
       "area": "saltmere_shore",
       "pos": [
-        -280,
+        -880,
         15
       ],
       "description": "A ring of standing stones, green with weed to the height of a man. Small offerings sit on the altar stone.",
@@ -783,33 +924,993 @@
         "portal": "An empty frame of white stone. Carved along it: 'When the still air breathes, and none stand against you, go home.'"
       }
     },
-    "ferry_deck": {
-      "name": "Aboard the Lake Ferry",
+    "switchbacks": {
+      "name": "The Switchbacks",
+      "area": "high_road",
+      "pos": [
+        -160,
+        -90
+      ],
+      "description": "The road climbs the mountain in tight switchbacks, the drop beside the wheels a little too close for comfort.",
+      "terrain": "mountain",
+      "waypoint": true
+    },
+    "high_pass": {
+      "name": "The High Pass",
+      "area": "high_road",
+      "pos": [
+        -300,
+        -140
+      ],
+      "description": "Wind howls through the pass between two snow-streaked peaks. The horses lean into it, heads down.",
+      "terrain": "mountain",
+      "waypoint": true
+    },
+    "gallows_ridge": {
+      "name": "Gallows Ridge",
+      "area": "high_road",
+      "pos": [
+        -450,
+        -110
+      ],
+      "description": "The road runs along a bare ridge under a wide sky. An old gibbet creaks beside the road.",
+      "terrain": "mountain",
+      "waypoint": true
+    },
+    "harrow_ford": {
+      "name": "The Harrow Ford",
+      "area": "high_road",
+      "pos": [
+        -590,
+        -30
+      ],
+      "description": "The road drops to a wide, stony ford, and cold water rushes around the wheels.",
+      "terrain": "field",
+      "waypoint": true
+    },
+    "open_lake": {
+      "name": "The Open Lake",
       "area": "lake_crossing",
       "pos": [
-        -235,
+        -760,
+        75
+      ],
+      "description": "Grey water in every direction. The ferry's lantern sways, and the shore is gone in the mist.",
+      "terrain": "coast",
+      "waypoint": true
+    },
+    "far_shoals": {
+      "name": "The Far Shoals",
+      "area": "lake_crossing",
+      "pos": [
+        -830,
+        75
+      ],
+      "description": "The ferry threads between shoals where the water turns pale and shallow. Osric leans hard on his pole.",
+      "terrain": "coast",
+      "waypoint": true
+    },
+    "cliff_stair": {
+      "name": "Cliff Stair",
+      "area": "scree_slopes",
+      "pos": [
+        -55,
+        0
+      ],
+      "terrain": "mountain",
+      "description": "Steps cut into the cliff climb away from the lighthouse towards the mountains. The sea wind tugs at you.",
+      "exits": {
+        "east": "lighthouse",
+        "northwest": "goat_track"
+      },
+      "features": {
+        "steps": "Worn hollow in the middle by centuries of boots."
+      }
+    },
+    "goat_track": {
+      "name": "Goat Track",
+      "area": "scree_slopes",
+      "pos": [
+        -85,
+        -30
+      ],
+      "terrain": "mountain",
+      "description": "A narrow track, more goat than road, picks along the mountainside. Far above, a carriage road winds into the clouds.",
+      "exits": {
+        "southeast": "cliff_stair",
+        "northwest": "scree_foot"
+      },
+      "features": {
+        "road": "The High Road, where the coach runs. There is no way up to it from here."
+      },
+      "trap": {
+        "name": "a rockfall",
+        "stat": "vigor",
+        "difficulty": "fair",
+        "damage": 12,
+        "rearm": 120,
+        "hit": "Stones clatter down from above, and one catches you square on the shoulder.",
+        "avoid": "Stones clatter down from above. You throw yourself against the rock face, and they miss you.",
+        "sprung": "Stones clatter down onto {actor}!",
+        "sign": {
+          "room": "cliff_stair",
+          "name": "rubble",
+          "text": "Fresh rubble lies scattered on the top steps. Something up the track brings stones down."
+        }
+      }
+    },
+    "scree_foot": {
+      "name": "Foot of the Scree",
+      "area": "scree_slopes",
+      "pos": [
+        -115,
+        -60
+      ],
+      "terrain": "scree",
+      "description": "Loose stone pours down the mountain into a fan of rubble at your feet. Splintered wood and a broken lantern lie among the rocks, fallen from the road high above.",
+      "exits": {
+        "southeast": "goat_track"
+      },
+      "features": {
+        "wood": "Pieces of a coach door. Someone came down the hard way.",
+        "scree": "Too loose to climb. The only way is down the track."
+      }
+    },
+    "drift_beach": {
+      "name": "Drift Beach",
+      "area": "harrowlake_village",
+      "pos": [
+        -690,
         70
       ],
-      "description": "The ferry's flat deck sways under you. Osric leans on his pole without a word, and the shore slips away into the mist.",
+      "terrain": "coast",
+      "description": "A strip of grey shingle where the lake gives back what it takes: driftwood, rope, a boot. The ferry dock is just along the shore.",
+      "exits": {
+        "north": "ferry_dock"
+      },
       "features": {
-        "pole": "A long ash pole, worn smooth where Osric's hands go.",
-        "water": "Dark, cold water. Something large turns over beneath the boat, then is gone."
+        "driftwood": "Bleached and smooth. Some of it was a boat once."
+      }
+    },
+    "wreck_cove": {
+      "name": "Wreck Cove",
+      "area": "castaway_isle",
+      "pos": [
+        -770,
+        160
+      ],
+      "terrain": "coast",
+      "description": "The ferry lies on its side on the shingle with a hole stove in its planking. Mist hides the lake in every direction. There is no way off this rock but the boat.",
+      "exits": {
+        "east": "tide_pools",
+        "north": "pine_stand"
+      },
+      "features": {
+        "ferry": "The hull is holed below the waterline. A sound plank, something to seal it with, and rope to lash it would see her float again.",
+        "mist": "Thick and white. Somewhere out there, a gull laughs at you."
+      }
+    },
+    "tide_pools": {
+      "name": "Tide Pools",
+      "area": "castaway_isle",
+      "pos": [
+        -740,
+        160
+      ],
+      "terrain": "coast",
+      "description": "Rock pools full of weed and scuttling things. Driftwood is jammed into every crack.",
+      "exits": {
+        "west": "wreck_cove"
+      },
+      "features": {
+        "pools": "Something with a lot of legs watches you from under the weed."
+      }
+    },
+    "pine_stand": {
+      "name": "Pine Stand",
+      "area": "castaway_isle",
+      "pos": [
+        -770,
+        130
+      ],
+      "terrain": "forest",
+      "description": "A few wind-bent pines cling to the top of the island. Resin weeps from their bark in golden beads.",
+      "exits": {
+        "south": "wreck_cove",
+        "east": "castaway_hut"
+      },
+      "features": {
+        "resin": "Sticky and sharp-smelling. Boiled down, it would seal a seam."
+      }
+    },
+    "castaway_hut": {
+      "name": "Castaway's Hut",
+      "area": "castaway_isle",
+      "pos": [
+        -740,
+        130
+      ],
+      "indoor": true,
+      "safe": true,
+      "description": "A hut of driftwood and sailcloth, smoky and warm. Someone has been here a long time.",
+      "exits": {
+        "west": "pine_stand"
+      },
+      "features": {
+        "sailcloth": "From a dozen different boats."
+      }
+    },
+    "slipway": {
+      "name": "The Slipway",
+      "area": "gh_slipway",
+      "pos": [
+        25,
+        25
+      ],
+      "description": "Your ship, the Kittiwake, sits propped on timbers on the slipway, her hull sprung from the storm. Hedda the shipwright walks round her, shaking her head. The tar pits are north, the sail loft east, timber stacks west.",
+      "exits": {
+        "north": "tar_pits",
+        "east": "sail_loft",
+        "west": "timber_stacks"
+      },
+      "features": {
+        "hull": "Planks sprung along the seams. Tar would seal them.",
+        "kittiwake": "Home, for six years. Not for much longer."
+      },
+      "safe": true
+    },
+    "tar_pits": {
+      "name": "The Tar Pits",
+      "area": "gh_slipway",
+      "pos": [
+        25,
+        0
+      ],
+      "description": "Black pools steam and stink. Buckets of tar stand ready by the fire.",
+      "exits": {
+        "south": "slipway"
+      },
+      "features": {
+        "pools": "You would not want to fall in."
+      }
+    },
+    "timber_stacks": {
+      "name": "Timber Stacks",
+      "area": "gh_slipway",
+      "pos": [
+        0,
+        25
+      ],
+      "description": "Stacks of seasoning oak, taller than you. Gulls watch from the top.",
+      "exits": {
+        "east": "slipway"
+      },
+      "features": {
+        "oak": "Good ship timber, years from ready."
+      }
+    },
+    "sail_loft": {
+      "name": "The Sail Loft",
+      "area": "gh_slipway",
+      "pos": [
+        50,
+        25
+      ],
+      "description": "Canvas hangs from the rafters. The quay is east.",
+      "exits": {
+        "west": "slipway",
+        "east": "quay_end"
+      },
+      "features": {
+        "canvas": "Patched and patched again."
+      },
+      "indoor": true
+    },
+    "quay_end": {
+      "name": "Quay End",
+      "area": "gh_quay",
+      "pos": [
+        90,
+        25
+      ],
+      "description": "The end of the quay, where the trading cogs tie up. The Salted Gull is north; the quay runs east.",
+      "exits": {
+        "west": "sail_loft",
+        "north": "salted_gull",
+        "east": "quay_steps"
+      },
+      "features": {
+        "cogs": "Fat-bellied traders, loading for the lake country."
       },
       "terrain": "coast"
     },
-    "coach": {
-      "name": "Inside the Lake Road Coach",
-      "area": "lake_road",
+    "salted_gull": {
+      "name": "The Salted Gull",
+      "area": "gh_quay",
       "pos": [
-        -50,
+        90,
+        0
+      ],
+      "description": "A low tavern that smells of fish stew and wet wool. Old sailors argue about the weather by the fire.",
+      "exits": {
+        "south": "quay_end",
+        "east": "harbourmasters"
+      },
+      "features": {
+        "fire": "The best seat goes to whoever is oldest."
+      },
+      "indoor": true,
+      "safe": true
+    },
+    "harbourmasters": {
+      "name": "The Harbourmaster's Office",
+      "area": "gh_quay",
+      "pos": [
+        115,
+        0
+      ],
+      "description": "Charts, ledgers, and a window over the whole harbour.",
+      "exits": {
+        "west": "salted_gull",
+        "south": "quay_steps"
+      },
+      "features": {
+        "charts": "The coast, and a cove marked with a skull."
+      },
+      "indoor": true
+    },
+    "quay_steps": {
+      "name": "Quay Steps",
+      "area": "gh_quay",
+      "pos": [
+        115,
+        25
+      ],
+      "description": "Stone steps down to the water. The breakwater runs out to sea to the east.",
+      "exits": {
+        "west": "quay_end",
+        "north": "harbourmasters",
+        "east": "breakwater_walk"
+      },
+      "features": {},
+      "terrain": "coast"
+    },
+    "breakwater_walk": {
+      "name": "The Breakwater",
+      "area": "gh_breakwater",
+      "pos": [
+        155,
+        25
+      ],
+      "description": "A long wall of tumbled stone with the sea slapping at both sides. Seal Rocks are east; a lookout post north.",
+      "exits": {
+        "west": "quay_steps",
+        "east": "seal_rocks",
+        "north": "lookout"
+      },
+      "features": {},
+      "terrain": "coast"
+    },
+    "lookout": {
+      "name": "The Lookout",
+      "area": "gh_breakwater",
+      "pos": [
+        155,
+        0
+      ],
+      "description": "A stone hut at the top of the breakwater, with a view of the whole bay.",
+      "exits": {
+        "south": "breakwater_walk"
+      },
+      "features": {
+        "bay": "Down the coast, in a cove, a light flickers where no light should be."
+      },
+      "terrain": "coast"
+    },
+    "seal_rocks": {
+      "name": "Seal Rocks",
+      "area": "gh_breakwater",
+      "pos": [
+        180,
+        25
+      ],
+      "description": "Slick black rocks where seals bask and crabs scuttle. A cove opens to the south.",
+      "exits": {
+        "west": "breakwater_walk",
+        "south": "wreckers_cove"
+      },
+      "features": {},
+      "terrain": "coast"
+    },
+    "wreckers_cove": {
+      "name": "Wreckers' Cove",
+      "area": "gh_breakwater",
+      "pos": [
+        180,
         50
       ],
-      "description": "A cramped, swaying box of a coach that smells of leather and wet wool. Through the window, the Lake Road jolts past.",
-      "features": {
-        "window": "Reeds, then water, then reeds again, rattling by."
+      "description": "A shingle cove under the cliffs, littered with wreckage. A lantern on a pole swings where it would lure a ship onto the rocks.",
+      "exits": {
+        "north": "seal_rocks"
       },
-      "safe": true,
+      "features": {
+        "wreckage": "Ships that trusted the light."
+      },
+      "terrain": "cave"
+    },
+    "gh_open_sea": {
+      "name": "The Open Sea",
+      "area": "gh_quay",
+      "pos": [
+        130,
+        90
+      ],
+      "description": "The cog rolls out past the breakwater into a grey, heaving sea.",
+      "terrain": "coast",
+      "waypoint": true
+    },
+    "gh_strait": {
+      "name": "The Narrow Strait",
+      "area": "gh_quay",
+      "pos": [
+        210,
+        100
+      ],
+      "description": "Cliffs close in on both sides, and the wind funnels between them.",
+      "terrain": "coast",
+      "waypoint": true
+    },
+    "stall_row": {
+      "name": "Stall Row",
+      "area": "cs_market",
+      "pos": [
+        25,
+        25
+      ],
+      "description": "Your family's stall stands bare, its awning flapping. Aunt Brisa is waiting with her arms folded. The spice stalls are north, the cloth stalls east, the fountain west.",
+      "exits": {
+        "north": "spice_stalls",
+        "east": "cloth_stalls",
+        "west": "fountain"
+      },
+      "features": {
+        "stall": "Empty boards, waiting for goods."
+      },
+      "safe": true
+    },
+    "spice_stalls": {
+      "name": "The Spice Stalls",
+      "area": "cs_market",
+      "pos": [
+        25,
+        0
+      ],
+      "description": "Sacks of saffron, pepper and cinnamon. Okur the spicer is red in the face.",
+      "exits": {
+        "south": "stall_row"
+      },
+      "features": {
+        "scales": "Brass scales. The pans hang a little uneven."
+      }
+    },
+    "fountain": {
+      "name": "The Fountain",
+      "area": "cs_market",
+      "pos": [
+        0,
+        25
+      ],
+      "description": "A green copper fountain, with crates stacked against it.",
+      "exits": {
+        "east": "stall_row"
+      },
+      "features": {
+        "fountain": "Coins glint in the water. Nobody takes them; it is bad luck."
+      }
+    },
+    "cloth_stalls": {
+      "name": "The Cloth Stalls",
+      "area": "cs_market",
+      "pos": [
+        50,
+        25
+      ],
+      "description": "Bolts of wool and silk. Selene the clothier is shouting at the spicers. Guild Row is east.",
+      "exits": {
+        "west": "stall_row",
+        "east": "guild_lane"
+      },
+      "features": {
+        "bolts": "Measured by the yard, sold by the ell."
+      }
+    },
+    "guild_lane": {
+      "name": "Guild Row",
+      "area": "cs_guild",
+      "pos": [
+        90,
+        25
+      ],
+      "description": "A street of tall stone houses with brass plates. The guild hall is north, the counting house east, the caravan yard south.",
+      "exits": {
+        "west": "cloth_stalls",
+        "north": "guild_hall",
+        "east": "counting_house",
+        "south": "caravan_yard"
+      },
+      "features": {}
+    },
+    "guild_hall": {
+      "name": "The Guild Hall",
+      "area": "cs_guild",
+      "pos": [
+        90,
+        0
+      ],
+      "description": "Oak panels and portraits of dead merchants. Guildmaster Thorne sits behind a desk the size of a bed.",
+      "exits": {
+        "south": "guild_lane"
+      },
+      "features": {
+        "portraits": "Every one of them looks like they are checking your purse."
+      },
       "indoor": true
+    },
+    "counting_house": {
+      "name": "The Counting House",
+      "area": "cs_guild",
+      "pos": [
+        115,
+        25
+      ],
+      "description": "Where the guild's weights and measures are kept. A clerk dozes. The Old Granary is east.",
+      "exits": {
+        "west": "guild_lane",
+        "east": "granary_yard"
+      },
+      "features": {
+        "weights": "Rows of brass weights, all stamped. One shelf is suspiciously dusty."
+      },
+      "indoor": true
+    },
+    "caravan_yard": {
+      "name": "The Caravan Yard",
+      "area": "cs_guild",
+      "pos": [
+        90,
+        50
+      ],
+      "description": "Wagons and mules, and Dace the caravan master shouting at both.",
+      "exits": {
+        "north": "guild_lane"
+      },
+      "features": {
+        "wagons": "One is loading for Harrowgate."
+      }
+    },
+    "granary_yard": {
+      "name": "Granary Yard",
+      "area": "cs_granary",
+      "pos": [
+        155,
+        25
+      ],
+      "description": "A cobbled yard before the old granary. Something squeaks in the dark below.",
+      "exits": {
+        "west": "counting_house",
+        "down": "granary_cellar"
+      },
+      "features": {}
+    },
+    "granary_cellar": {
+      "name": "Granary Cellar",
+      "area": "cs_granary",
+      "pos": [
+        160,
+        30
+      ],
+      "description": "A low cellar heaped with chewed grain sacks. Eyes glint in the dark.",
+      "exits": {
+        "up": "granary_yard"
+      },
+      "features": {},
+      "indoor": true
+    },
+    "cs_hill_road": {
+      "name": "The Hill Road",
+      "area": "cs_guild",
+      "pos": [
+        130,
+        90
+      ],
+      "description": "The caravan creaks up a long hill road between fields.",
+      "terrain": "field",
+      "waypoint": true
+    },
+    "cs_woods": {
+      "name": "Bandit Woods",
+      "area": "cs_guild",
+      "pos": [
+        200,
+        100
+      ],
+      "description": "The road runs through a dark stretch of woods. The guards go quiet.",
+      "terrain": "forest",
+      "waypoint": true
+    },
+    "hunters_lodge": {
+      "name": "The Hunters' Lodge",
+      "area": "tw_hamlet",
+      "pos": [
+        25,
+        25
+      ],
+      "description": "Antlers on the walls, a fire in the grate, and your bow by the door. The smokehouse is east; Maud the healer lives north.",
+      "exits": {
+        "east": "smokehouse",
+        "north": "healers_hut"
+      },
+      "features": {
+        "antlers": "Every one with a story."
+      },
+      "indoor": true,
+      "safe": true
+    },
+    "healers_hut": {
+      "name": "Maud's Hut",
+      "area": "tw_hamlet",
+      "pos": [
+        25,
+        0
+      ],
+      "description": "Bundles of herbs dry from every beam.",
+      "exits": {
+        "south": "hunters_lodge"
+      },
+      "features": {
+        "herbs": "Feverfew, comfrey, and an empty jar labelled MOONBLOOM."
+      },
+      "indoor": true
+    },
+    "smokehouse": {
+      "name": "The Smokehouse",
+      "area": "tw_hamlet",
+      "pos": [
+        50,
+        25
+      ],
+      "description": "Hams and fish hang in the smoke. Tobin the bargeman is loading timber onto his barge at the jetty. The old wood is east.",
+      "exits": {
+        "west": "hunters_lodge",
+        "east": "wood_edge"
+      },
+      "features": {
+        "barge": "Tobin's timber barge, bound downriver."
+      },
+      "terrain": "coast"
+    },
+    "wood_edge": {
+      "name": "Edge of the Old Wood",
+      "area": "tw_oldwood",
+      "pos": [
+        90,
+        25
+      ],
+      "description": "Great oaks begin here. Your snare line runs east.",
+      "exits": {
+        "west": "smokehouse",
+        "east": "snare_line"
+      },
+      "features": {},
+      "terrain": "forest"
+    },
+    "snare_line": {
+      "name": "The Snare Line",
+      "area": "tw_oldwood",
+      "pos": [
+        115,
+        25
+      ],
+      "description": "Your snares, along a game trail. Several have been cut. The deep oaks are north; Fernhollow east.",
+      "exits": {
+        "west": "wood_edge",
+        "north": "deep_oaks",
+        "east": "fern_bog"
+      },
+      "features": {
+        "snares": "Cut, with a knife. Not an animal."
+      },
+      "terrain": "forest"
+    },
+    "deep_oaks": {
+      "name": "The Deep Oaks",
+      "area": "tw_oldwood",
+      "pos": [
+        115,
+        0
+      ],
+      "description": "Old trees, and silence. A trail climbs north to Stag's Rise.",
+      "exits": {
+        "south": "snare_line",
+        "north": "stags_rise"
+      },
+      "features": {},
+      "terrain": "deep_forest",
+      "trap": {
+        "name": "a poacher's snare",
+        "stat": "poise",
+        "difficulty": "easy",
+        "damage": 5,
+        "slows": 15,
+        "rearm": 60,
+        "hit": "A poacher's snare snaps tight round your ankle.",
+        "avoid": "You spot a poacher's snare in the leaves and step over it.",
+        "sprung": "{actor} is caught in a snare!",
+        "sign": {
+          "room": "snare_line",
+          "name": "wire",
+          "text": "Trapper's wire, not yours, half-buried in the leaves by the trail north. Someone has set snares in the deep oaks."
+        }
+      }
+    },
+    "stags_rise": {
+      "name": "Stag's Rise",
+      "area": "tw_oldwood",
+      "pos": [
+        115,
+        -25
+      ],
+      "description": "A bare hill above the trees. Hoofprints, and wolf tracks over them.",
+      "exits": {
+        "south": "deep_oaks"
+      },
+      "features": {},
+      "terrain": "field"
+    },
+    "fern_bog": {
+      "name": "Fern Bog",
+      "area": "tw_fern",
+      "pos": [
+        155,
+        25
+      ],
+      "description": "Ferns taller than you, and black water between them. Something glows faintly ahead.",
+      "exits": {
+        "west": "snare_line",
+        "east": "mist_pool"
+      },
+      "features": {},
+      "terrain": "marsh"
+    },
+    "mist_pool": {
+      "name": "The Mist Pool",
+      "area": "tw_fern",
+      "pos": [
+        180,
+        25
+      ],
+      "description": "A still pool where mist gathers. Pale buds float on lily pads, closed tight.",
+      "exits": {
+        "west": "fern_bog"
+      },
+      "features": {
+        "buds": "Moonbloom. They only open when the air is still and damp."
+      },
+      "terrain": "marsh"
+    },
+    "tw_river_bend": {
+      "name": "The River Bend",
+      "area": "tw_hamlet",
+      "pos": [
+        60,
+        80
+      ],
+      "description": "The barge swings round a wide bend, between banks of willow.",
+      "terrain": "coast",
+      "waypoint": true
+    },
+    "tw_rapids": {
+      "name": "The Rapids",
+      "area": "tw_hamlet",
+      "pos": [
+        140,
+        95
+      ],
+      "description": "White water churns over rocks. Tobin leans on his pole.",
+      "terrain": "coast",
+      "waypoint": true
+    },
+    "gutter_den": {
+      "name": "The Gutter Den",
+      "area": "lw_gutters",
+      "pos": [
+        25,
+        25
+      ],
+      "description": "A cellar under a bakery where Nan Gristle's gutter kids sleep. It's warm, at least. Tipsy Lane is west, Rat Alley east.",
+      "exits": {
+        "west": "tipsy_lane",
+        "east": "rat_alley"
+      },
+      "features": {
+        "blankets": "Every one stolen."
+      },
+      "indoor": true,
+      "safe": true
+    },
+    "tipsy_lane": {
+      "name": "Tipsy Lane",
+      "area": "lw_gutters",
+      "pos": [
+        0,
+        25
+      ],
+      "description": "A lane behind the tavern, where the drunks end up. One is snoring against the wall, a fat purse at his belt.",
+      "exits": {
+        "east": "gutter_den"
+      },
+      "features": {
+        "drunk": "Snoring like a saw. He will not notice a thing."
+      }
+    },
+    "rat_alley": {
+      "name": "Rat Alley",
+      "area": "lw_gutters",
+      "pos": [
+        50,
+        25
+      ],
+      "description": "A narrow alley that comes out on Wick Square to the east.",
+      "exits": {
+        "west": "gutter_den",
+        "east": "wick_square"
+      },
+      "features": {}
+    },
+    "wick_square": {
+      "name": "Wick Square",
+      "area": "lw_square",
+      "pos": [
+        90,
+        25
+      ],
+      "description": "The town square: the stocks north, the watch house south, and the magistrate's house east.",
+      "exits": {
+        "west": "rat_alley",
+        "north": "stocks",
+        "south": "watch_house",
+        "east": "magistrates_house"
+      },
+      "features": {
+        "notice": "WANTED: anyone who knows anything about anything. The magistrate is not specific."
+      }
+    },
+    "stocks": {
+      "name": "The Stocks",
+      "area": "lw_square",
+      "pos": [
+        90,
+        0
+      ],
+      "description": "Two empty stocks, and a rotten cabbage. A reminder.",
+      "exits": {
+        "south": "wick_square"
+      },
+      "features": {}
+    },
+    "watch_house": {
+      "name": "The Watch House",
+      "area": "lw_square",
+      "pos": [
+        90,
+        50
+      ],
+      "description": "Where the town watch drinks tea and pretends to work.",
+      "exits": {
+        "north": "wick_square"
+      },
+      "features": {},
+      "indoor": true
+    },
+    "magistrates_house": {
+      "name": "The Magistrate's House",
+      "area": "lw_square",
+      "pos": [
+        115,
+        25
+      ],
+      "description": "A fine hall with a fine rug. A guard dog lies across the stairs up to the study (NORTH).",
+      "exits": {
+        "west": "wick_square",
+        "north": "magistrates_study"
+      },
+      "features": {
+        "rug": "Too fine for this town.",
+        "stairs": "Polished. A thread is stretched across the third step from the top, at ankle height."
+      },
+      "indoor": true
+    },
+    "magistrates_study": {
+      "name": "The Magistrate's Study",
+      "area": "lw_square",
+      "pos": [
+        115,
+        0
+      ],
+      "description": "Books, a desk, and a signet ring on a velvet cushion. A window opens onto the rooftops to the east.",
+      "exits": {
+        "south": "magistrates_house",
+        "east": "rooftops"
+      },
+      "features": {
+        "window": "Out onto the roofs."
+      },
+      "indoor": true,
+      "trap": {
+        "name": "a tripwire bell",
+        "stat": "poise",
+        "difficulty": "easy",
+        "damage": 3,
+        "rearm": 60,
+        "hit": "Your foot catches a thread, and a bell clangs somewhere. You fall hard on the top step.",
+        "avoid": "You step over the thread on the stairs without a sound.",
+        "sprung": "A bell clangs as {actor} trips on the stairs!",
+        "sign": {
+          "room": "magistrates_house",
+          "name": "thread",
+          "text": "A thread stretched across a step, at ankle height. It runs up to a bell."
+        }
+      }
+    },
+    "rooftops": {
+      "name": "The Rooftops",
+      "area": "lw_roofs",
+      "pos": [
+        155,
+        0
+      ],
+      "description": "Wet slates and chimney pots. Lanterns move in the streets below: the watch is out. The cart yard is below, to the south.",
+      "exits": {
+        "west": "magistrates_study",
+        "south": "cart_yard"
+      },
+      "features": {},
+      "terrain": "mountain"
+    },
+    "cart_yard": {
+      "name": "The Cart Yard",
+      "area": "lw_roofs",
+      "pos": [
+        155,
+        25
+      ],
+      "description": "Carts loading for the city. Joss the carter is tightening a tarpaulin.",
+      "exits": {
+        "north": "rooftops"
+      },
+      "features": {}
+    },
+    "lw_low_road": {
+      "name": "The Low Road",
+      "area": "lw_square",
+      "pos": [
+        120,
+        80
+      ],
+      "description": "The cart rattles out of Low Wick under its tarpaulin. You hold your breath.",
+      "terrain": "field",
+      "waypoint": true
+    },
+    "lw_tollgate": {
+      "name": "The Tollgate",
+      "area": "lw_square",
+      "pos": [
+        200,
+        90
+      ],
+      "description": "Lanterns, and voices. The watch has set up a checkpoint on the road.",
+      "terrain": "field",
+      "waypoint": true
     }
   },
   "items": {
@@ -851,7 +1952,7 @@
     "flute-1": {
       "name": "reed flute",
       "keywords": "flute reed",
-      "room": "reed_marsh",
+      "room": "drift_beach",
       "description": "A simple flute cut from a marsh reed."
     },
     "token-1": {
@@ -889,6 +1990,82 @@
       "forecasts": [
         "rimewaste"
       ]
+    },
+    "plank-1": {
+      "name": "sound plank",
+      "keywords": "plank wood driftwood",
+      "room": "tide_pools",
+      "quest": true,
+      "description": "A length of oak, salt-bleached but sound. Just the size for the hole in the ferry."
+    },
+    "pitch-1": {
+      "name": "lump of pitch",
+      "keywords": "pitch resin tar lump",
+      "room": "pine_stand",
+      "quest": true,
+      "description": "Pine resin, boiled down to a black, sticky lump."
+    },
+    "rope-1": {
+      "name": "coil of rope",
+      "keywords": "rope coil",
+      "room": "castaway_hut",
+      "quest": true,
+      "description": "Good hemp rope, salvaged and carefully coiled."
+    },
+    "tar-g": {
+      "name": "bucket of tar",
+      "keywords": "tar bucket",
+      "room": "tar_pits",
+      "quest": true,
+      "description": "Hot, black, and stinking."
+    },
+    "chain-g": {
+      "name": "anchor chain",
+      "keywords": "chain anchor",
+      "room": "seal_rocks",
+      "quest": true,
+      "description": "Heavy, rusted, worth good money."
+    },
+    "lantern-g": {
+      "name": "false lantern",
+      "keywords": "lantern false",
+      "room": "wreckers_cove",
+      "quest": true,
+      "description": "The lantern the wreckers hung to lure ships onto the rocks."
+    },
+    "crates-m": {
+      "name": "crates of goods",
+      "keywords": "crates crate goods",
+      "room": "fountain",
+      "quest": true,
+      "description": "Your family's stock: pots, pans and buttons."
+    },
+    "weight-m": {
+      "name": "false weight",
+      "keywords": "weight false",
+      "room": "counting_house",
+      "quest": true,
+      "description": "A brass weight stamped \"one pound\". It is light. Someone filed it down."
+    },
+    "moonbloom-t": {
+      "name": "moonbloom",
+      "keywords": "moonbloom bloom flower",
+      "quest": true,
+      "description": "A pale flower that glows faintly."
+    },
+    "purse-u": {
+      "name": "fat purse",
+      "keywords": "purse",
+      "room": "tipsy_lane",
+      "quest": true,
+      "description": "A drunk's purse, heavy with coppers."
+    },
+    "signet-u": {
+      "name": "signet ring",
+      "keywords": "signet ring",
+      "room": "magistrates_study",
+      "quest": true,
+      "description": "The magistrate's seal, in gold."
     }
   },
   "npcs": {
@@ -1015,7 +2192,7 @@
       "description": "dripping weed, eyes like lamps",
       "keywords": "lurker bog creature",
       "details": "A hunched shape of mud and weed. Two pale eyes follow every move you make.",
-      "room": "reed_marsh",
+      "room": "drift_beach",
       "max_hp": 45,
       "disposition": "hostile",
       "icon": "🐸",
@@ -1401,13 +2578,614 @@
       "faction": "harrowfolk",
       "role": "civilian",
       "icon": "🐴",
-      "details": "Bram drives the Lake Road coach to Harrowlake and back. 'Three coins, and I'll have you there before your boots are wet.'"
+      "details": "Bram drives the High Road coach over the mountains to Harrowlake and back. 'Three coins, and I'll have you over the pass before your boots are cold. Walk it? Nobody walks it.'"
+    },
+    "highwayman": {
+      "template": true,
+      "name": "Highwayman",
+      "label": "Highwayman",
+      "description": "masked, with a long knife",
+      "details": "A rider in a dark coat with a scarf pulled up to the eyes.",
+      "keywords": "highwayman robber bandit",
+      "max_hp": 30,
+      "disposition": "hostile",
+      "icon": "🗡️",
+      "xp": 25,
+      "coins": 4,
+      "attacks": [
+        {
+          "name": "knife",
+          "period": 3500,
+          "damage": 4,
+          "hit": "{actor} slashes at {target} with a long knife."
+        }
+      ]
+    },
+    "ford_wolf": {
+      "template": true,
+      "name": "Ford Wolf",
+      "label": "Grey Wolf",
+      "description": "lean and hungry",
+      "details": "A grey wolf, ribs showing, water streaming from its legs.",
+      "keywords": "wolf grey",
+      "max_hp": 20,
+      "disposition": "hostile",
+      "icon": "🐺",
+      "xp": 15,
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2500,
+          "damage": 3,
+          "hit": "{actor} snaps at {target}."
+        }
+      ]
+    },
+    "ness": {
+      "name": "Old Ness",
+      "label": "Castaway",
+      "description": "weathered and cheerful",
+      "keywords": "ness old castaway",
+      "details": "A woman as weathered as the driftwood, with a laugh like a gull's.",
+      "room": "castaway_hut",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "faction": "harrowfolk",
+      "icon": "🧓",
+      "topics": {
+        "ferry": "Holed, is she? You want a plank from the pools, pitch from the pines, and my rope. Take it, take it. Then go and USE the plank ON the ferry.",
+        "island": "Nine years I've been here. Boats come aground, and the clever ones mend them and go. I like it here.",
+        "crabs": "Mind the big one in the pools. He's got opinions."
+      },
+      "proper": true
+    },
+    "shore_crab": {
+      "name": "Shore Crab",
+      "label": "Crab",
+      "description": "big, with opinions",
+      "keywords": "crab shore",
+      "details": "A crab the size of a shield, one claw much bigger than the other.",
+      "room": "tide_pools",
+      "max_hp": 25,
+      "disposition": "hostile",
+      "icon": "🦀",
+      "xp": 15,
+      "respawn": 60,
+      "attacks": [
+        {
+          "name": "claw",
+          "period": 3000,
+          "damage": 3,
+          "hit": "{actor} nips {target} with a huge claw."
+        }
+      ]
+    },
+    "holt": {
+      "name": "Sergeant Holt",
+      "label": "Trainer",
+      "description": "grey-bearded, arms folded",
+      "keywords": "holt sergeant trainer",
+      "details": "A retired soldier who teaches anyone who pays. \"Forget what you learned. Ten coins a level, and we start again.\"",
+      "room": "training_yard",
+      "max_hp": 80,
+      "disposition": "friendly",
+      "faction": "harrowfolk",
+      "proper": true,
+      "icon": "🎖️",
+      "trainer": true,
+      "topics": {
+        "training": "Want to unlearn your talents and choose again? RESPEC, here, for ten coins a level."
+      }
+    },
+    "hedda": {
+      "name": "Hedda",
+      "room": "slipway",
+      "label": "Shipwright",
+      "description": "broad, tar-stained, frowning",
+      "details": "A shipwright with forearms like hawsers and tar to the elbows.",
+      "keywords": "hedda shipwright",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "proper": true,
+      "icon": "🔨",
+      "topics": {
+        "ship": "She'll float again, with tar in her seams. But she'll never cross an ocean. Not this season, not ever.",
+        "chain": "We lost the anchor chain off Seal Rocks in the storm. Bring it back and I can sell it, at least.",
+        "lights": "Lights in the cove at night. Wreckers. The harbourmaster ought to know."
+      }
+    },
+    "pell": {
+      "name": "Old Pell",
+      "room": "salted_gull",
+      "label": "Bosun",
+      "description": "ancient, squinting at the sky",
+      "details": "The oldest sailor in Gullhaven, who has never once been wrong about the weather.",
+      "keywords": "pell old bosun",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "proper": true,
+      "icon": "🧓",
+      "faction": "harrowfolk",
+      "forecasts": [
+        "gullhaven"
+      ],
+      "topics": {
+        "rocks": "Seal Rocks? Walk out along the breakwater, and mind the crabs. Go when the wind's down: they come out in the spray.",
+        "sea": "Read the sky before you read the sea, lad. Ask me about the weather."
+      }
+    },
+    "vane": {
+      "name": "Harbourmaster Vane",
+      "room": "harbourmasters",
+      "label": "Harbourmaster",
+      "description": "precise, ink-stained",
+      "details": "A thin man with a precise moustache and a ledger for everything.",
+      "keywords": "vane harbourmaster",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "proper": true,
+      "icon": "📜",
+      "topics": {
+        "wreckers": "Wreckers? Bring me proof and I will hang them."
+      }
+    },
+    "ardith": {
+      "name": "Captain Ardith",
+      "room": "quay_end",
+      "label": "Captain",
+      "description": "your captain, tired",
+      "details": "Your captain, who has had the worst week of her life and is trying not to show it.",
+      "keywords": "ardith captain",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "proper": true,
+      "icon": "⚓",
+      "topics": {
+        "passage": "The Kittiwake's done, and so's my money. I've a berth for you on a cog to the lake country. There's work there for someone who can fight. Go on.",
+        "kittiwake": "Six years. She deserved better."
+      }
+    },
+    "rock_crab": {
+      "name": "Rock Crab",
+      "room": "seal_rocks",
+      "label": "Crab",
+      "description": "a crab the size of a dinner plate",
+      "details": "A crab the size of a dinner plate.",
+      "keywords": "rock crab",
+      "max_hp": 18,
+      "disposition": "hostile",
+      "xp": 15,
+      "respawn": 45,
+      "icon": "🦀",
+      "attacks": [
+        {
+          "name": "pinch",
+          "period": 3000,
+          "damage": 2,
+          "hit": "{actor} pinches {target}."
+        }
+      ]
+    },
+    "rock_crab_2": {
+      "name": "Rock Crab",
+      "room": "seal_rocks",
+      "label": "Crab",
+      "description": "a crab the size of a dinner plate",
+      "details": "A crab the size of a dinner plate.",
+      "keywords": "rock crab",
+      "max_hp": 18,
+      "disposition": "hostile",
+      "xp": 15,
+      "respawn": 45,
+      "icon": "🦀",
+      "attacks": [
+        {
+          "name": "pinch",
+          "period": 3000,
+          "damage": 2,
+          "hit": "{actor} pinches {target}."
+        }
+      ]
+    },
+    "wrecker": {
+      "name": "Wrecker",
+      "room": "wreckers_cove",
+      "label": "Wrecker",
+      "description": "a scarred man with a boathook",
+      "details": "A scarred man with a boathook.",
+      "keywords": "wrecker",
+      "max_hp": 26,
+      "disposition": "hostile",
+      "xp": 20,
+      "respawn": 45,
+      "icon": "🏴‍☠️",
+      "attacks": [
+        {
+          "name": "boathook",
+          "period": 3500,
+          "damage": 3,
+          "hit": "{actor} jabs {target} with a boathook."
+        }
+      ]
+    },
+    "wrecker_chief": {
+      "name": "Black Annis",
+      "room": "wreckers_cove",
+      "label": "Wrecker Chief",
+      "description": "the wreckers' leader, a cutlass in each hand",
+      "details": "The wreckers' leader, a cutlass in each hand.",
+      "keywords": "black annis",
+      "max_hp": 40,
+      "disposition": "hostile",
+      "xp": 40,
+      "respawn": 60,
+      "icon": "🏴‍☠️",
+      "attacks": [
+        {
+          "name": "cutlass",
+          "period": 3000,
+          "damage": 4,
+          "hit": "{actor} slashes at {target}."
+        }
+      ],
+      "proper": true
+    },
+    "brisa": {
+      "name": "Aunt Brisa",
+      "room": "stall_row",
+      "label": "Merchant",
+      "description": "sharp-eyed, arms folded",
+      "details": "Your aunt, who taught you everything about prices and nothing about patience.",
+      "keywords": "brisa aunt",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "proper": true,
+      "icon": "👵",
+      "topics": {
+        "stall": "Crates. By the fountain. Go. Then USE them ON the stall.",
+        "quarrel": "Okur and Selene, at it again. The whole market is choosing sides."
+      }
+    },
+    "okur": {
+      "name": "Okur",
+      "room": "spice_stalls",
+      "label": "Spicer",
+      "description": "red-faced, waving a ladle",
+      "details": "A spice merchant who swears his scales are true.",
+      "keywords": "okur spicer",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "proper": true,
+      "icon": "🌶️",
+      "topics": {
+        "scales": "\"My scales are true! It is HER scales. Short measure on every ell of silk!\""
+      }
+    },
+    "selene": {
+      "name": "Selene",
+      "room": "cloth_stalls",
+      "label": "Clothier",
+      "description": "tall, icy, furious",
+      "details": "A clothier who swears her measures are true.",
+      "keywords": "selene clothier",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "proper": true,
+      "icon": "🧵",
+      "topics": {
+        "scales": "\"Short weight on every ounce of saffron in this market! Someone swapped the guild's weights. Look in the counting house, if you don't believe me.\""
+      }
+    },
+    "thorne": {
+      "name": "Guildmaster Thorne",
+      "room": "guild_hall",
+      "label": "Guildmaster",
+      "description": "heavy, patient, watching",
+      "details": "The master of the merchants' guild, who has heard every lie twice.",
+      "keywords": "thorne guildmaster",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "proper": true,
+      "icon": "🎩",
+      "topics": {
+        "granary": "Rats in the guild granary. Clear them out and I will see you right."
+      }
+    },
+    "dace": {
+      "name": "Dace",
+      "room": "caravan_yard",
+      "label": "Caravan Master",
+      "description": "loud, sunburnt",
+      "details": "A caravan master who has been robbed on every road there is.",
+      "keywords": "dace caravan master",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "proper": true,
+      "icon": "🐴",
+      "topics": {
+        "passage": "Harrowgate? I leave now. Ride guard and the ride is free. Bandits on the hill road, mind."
+      }
+    },
+    "granary_rat": {
+      "name": "Granary Rat",
+      "room": "granary_cellar",
+      "label": "Rat",
+      "description": "a fat, bold rat",
+      "details": "A fat, bold rat.",
+      "keywords": "granary rat",
+      "max_hp": 16,
+      "disposition": "hostile",
+      "xp": 15,
+      "respawn": 45,
+      "icon": "🐀",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2500,
+          "damage": 2,
+          "hit": "{actor} bites {target}."
+        }
+      ]
+    },
+    "granary_rat_2": {
+      "name": "Granary Rat",
+      "room": "granary_cellar",
+      "label": "Rat",
+      "description": "a fat, bold rat",
+      "details": "A fat, bold rat.",
+      "keywords": "granary rat",
+      "max_hp": 16,
+      "disposition": "hostile",
+      "xp": 15,
+      "respawn": 45,
+      "icon": "🐀",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2500,
+          "damage": 2,
+          "hit": "{actor} bites {target}."
+        }
+      ]
+    },
+    "rat_king": {
+      "name": "Rat King",
+      "room": "granary_cellar",
+      "label": "Rat King",
+      "description": "a knot of rats, tails tangled, moving as one",
+      "details": "A knot of rats, tails tangled, moving as one.",
+      "keywords": "rat king",
+      "max_hp": 40,
+      "disposition": "hostile",
+      "xp": 40,
+      "respawn": 60,
+      "icon": "👑",
+      "attacks": [
+        {
+          "name": "swarm",
+          "period": 3000,
+          "damage": 4,
+          "hit": "{actor} swarms over {target}."
+        }
+      ]
+    },
+    "maud": {
+      "name": "Maud",
+      "room": "healers_hut",
+      "label": "Healer",
+      "description": "small, bright-eyed, smelling of herbs",
+      "details": "The hamlet's healer, who knows the woods as well as you do.",
+      "keywords": "maud healer",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "proper": true,
+      "icon": "🌿",
+      "forecasts": [
+        "thornwick"
+      ],
+      "topics": {
+        "moonbloom": "There's a fever in the hamlet, and moonbloom is the cure. It grows in the mist pool in Fernhollow, and only opens when the air is still and damp. Ask me about the weather, and I'll show you how to tell when.",
+        "wood": "Someone's been poaching in the deep oaks. Watch your step."
+      }
+    },
+    "tobin": {
+      "name": "Tobin",
+      "room": "smokehouse",
+      "label": "Bargeman",
+      "description": "cheerful, muddy to the knees",
+      "details": "A bargeman who takes timber downriver to the big woods.",
+      "keywords": "tobin bargeman",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "proper": true,
+      "icon": "🛶",
+      "topics": {
+        "passage": "Downriver? Hop on. The Spiderwood's where the money is, for a hunter."
+      }
+    },
+    "bog_wisp": {
+      "name": "Bog Wisp",
+      "room": "fern_bog",
+      "label": "Wisp",
+      "description": "a flickering, angry light",
+      "details": "A flickering, angry light.",
+      "keywords": "bog wisp",
+      "max_hp": 16,
+      "disposition": "hostile",
+      "xp": 15,
+      "respawn": 45,
+      "icon": "✨",
+      "attacks": [
+        {
+          "name": "sting",
+          "period": 2500,
+          "damage": 2,
+          "hit": "{actor} stings {target} with cold light."
+        }
+      ]
+    },
+    "rise_wolf": {
+      "name": "Grey Wolf",
+      "room": "stags_rise",
+      "label": "Wolf",
+      "description": "a lean grey wolf",
+      "details": "A lean grey wolf.",
+      "keywords": "grey wolf",
+      "max_hp": 22,
+      "disposition": "hostile",
+      "xp": 20,
+      "respawn": 45,
+      "icon": "🐺",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2500,
+          "damage": 3,
+          "hit": "{actor} bites {target}."
+        }
+      ]
+    },
+    "rise_wolf_2": {
+      "name": "Grey Wolf",
+      "room": "stags_rise",
+      "label": "Wolf",
+      "description": "a lean grey wolf",
+      "details": "A lean grey wolf.",
+      "keywords": "grey wolf",
+      "max_hp": 22,
+      "disposition": "hostile",
+      "xp": 20,
+      "respawn": 45,
+      "icon": "🐺",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2500,
+          "damage": 3,
+          "hit": "{actor} bites {target}."
+        }
+      ]
+    },
+    "white_hart": {
+      "name": "White Hart",
+      "room": "stags_rise",
+      "label": "Hart",
+      "description": "a pale stag with silver antlers",
+      "details": "A white stag, wary and beautiful. Its hide would make your name.",
+      "keywords": "hart stag deer white",
+      "max_hp": 35,
+      "disposition": "neutral",
+      "xp": 30,
+      "respawn": 60,
+      "icon": "🦌",
+      "attacks": [
+        {
+          "name": "antlers",
+          "period": 3500,
+          "damage": 4,
+          "hit": "{actor} lowers its antlers at {target}."
+        }
+      ]
+    },
+    "nan": {
+      "name": "Nan Gristle",
+      "room": "gutter_den",
+      "label": "Gang Boss",
+      "description": "small, old and terrifying",
+      "details": "Nan runs the gutter kids of Low Wick. Nobody knows how old she is. Nobody asks.",
+      "keywords": "nan gristle",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "proper": true,
+      "icon": "👵",
+      "topics": {
+        "work": "A purse first. The drunk in Tipsy Lane. Then we talk about real work.",
+        "signet": "The magistrate's signet ring. With it, I can seal any order I like. Watch the stairs; he's not stupid."
+      }
+    },
+    "joss": {
+      "name": "Joss",
+      "room": "cart_yard",
+      "label": "Carter",
+      "description": "nervous, chewing straw",
+      "details": "A carter who owes Nan a favour and wishes he did not.",
+      "keywords": "joss carter",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "proper": true,
+      "icon": "🛒",
+      "topics": {
+        "passage": "Under the tarp. Not a sound till the city. And you never saw me."
+      }
+    },
+    "guard_dog": {
+      "name": "Guard Dog",
+      "room": "magistrates_house",
+      "label": "Dog",
+      "description": "a big brindle mastiff",
+      "details": "A big brindle mastiff.",
+      "keywords": "guard dog",
+      "max_hp": 30,
+      "disposition": "hostile",
+      "xp": 25,
+      "respawn": 60,
+      "icon": "🐕",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 3000,
+          "damage": 3,
+          "hit": "{actor} bites {target}."
+        }
+      ]
+    },
+    "watchman": {
+      "name": "Watchman",
+      "room": "rooftops",
+      "label": "Watch",
+      "description": "a watchman with a lantern and a club",
+      "details": "A watchman with a lantern and a club.",
+      "keywords": "watchman",
+      "max_hp": 24,
+      "disposition": "hostile",
+      "xp": 20,
+      "respawn": 45,
+      "icon": "🏮",
+      "attacks": [
+        {
+          "name": "club",
+          "period": 3500,
+          "damage": 3,
+          "hit": "{actor} cracks {target} with a club."
+        }
+      ]
+    },
+    "watchman_2": {
+      "name": "Watchman",
+      "room": "rooftops",
+      "label": "Watch",
+      "description": "a watchman with a lantern and a club",
+      "details": "A watchman with a lantern and a club.",
+      "keywords": "watchman",
+      "max_hp": 24,
+      "disposition": "hostile",
+      "xp": 20,
+      "respawn": 45,
+      "icon": "🏮",
+      "attacks": [
+        {
+          "name": "club",
+          "period": 3500,
+          "damage": 3,
+          "hit": "{actor} cracks {target} with a club."
+        }
+      ]
     }
   },
   "gear": {
     "dagger": {
       "name": "Dagger",
-      "kind": "Weapon",
+      "kind": "Light",
       "keywords": "knife",
       "effect": "damage",
       "period": 1200,
@@ -1510,7 +3288,8 @@
         "energy": 0.6,
         "precipitation": "dry",
         "tier": "blue"
-      }
+      },
+      "rank": 1
     },
     "greataxe": {
       "name": "Greataxe",
@@ -1599,7 +3378,8 @@
         "energy": 0.3,
         "precipitation": "wet",
         "tier": "green"
-      }
+      },
+      "rank": 1
     },
     "stormcall": {
       "name": "Stormcall",
@@ -1650,6 +3430,1489 @@
         "precipitation": "wet",
         "tier": "purple"
       }
+    },
+    "cleave": {
+      "name": "Cleave",
+      "kind": "Weapon",
+      "keywords": "cleave",
+      "effect": "damage",
+      "period": 2500,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        6,
+        7,
+        11
+      ],
+      "hit": "{actor} hits {target} with a cleaving blow.",
+      "perfect_hit": "{actor} lands a cleaving blow perfectly on {target}!",
+      "miss": "{actor} misses {target} with a cleaving blow.",
+      "whiff": "your cleaving blow finds nothing.",
+      "description": "A heavy, sweeping blow. The fighter's first lesson.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0.3,
+        "precipitation": "any",
+        "tier": "grey"
+      }
+    },
+    "flick_knife": {
+      "name": "Flick Knife",
+      "kind": "Light",
+      "keywords": "flick knife",
+      "effect": "damage",
+      "period": 1200,
+      "window": 200,
+      "perfect_window": 70,
+      "amounts": [
+        2,
+        3,
+        5
+      ],
+      "hit": "{actor} hits {target} with a flick of the knife.",
+      "perfect_hit": "{actor} lands a flick of the knife perfectly on {target}!",
+      "miss": "{actor} misses {target} with a flick of the knife.",
+      "whiff": "your flick of the knife finds nothing.",
+      "description": "Quick little cuts, over and over.",
+      "weather": {
+        "temperature": 0.2,
+        "energy": -0.2,
+        "precipitation": "any",
+        "tier": "grey"
+      }
+    },
+    "shield_bash": {
+      "name": "Shield Bash",
+      "kind": "Melee",
+      "keywords": "shield bash",
+      "effect": "damage",
+      "period": 3000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        3,
+        4,
+        6
+      ],
+      "hit": "{actor} hits {target} with a shield bash.",
+      "perfect_hit": "{actor} lands a shield bash perfectly on {target}!",
+      "miss": "{actor} misses {target} with a shield bash.",
+      "whiff": "your shield bash finds nothing.",
+      "description": "Knocks the wind out of them: their next blow comes later.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "rank": 1,
+      "stagger_ms": 1500
+    },
+    "guard_up": {
+      "name": "Guard Up",
+      "kind": "Melee",
+      "keywords": "guard up",
+      "effect": "guard",
+      "period": 4000,
+      "window": 350,
+      "perfect_window": 120,
+      "amounts": [
+        6,
+        8,
+        12
+      ],
+      "hit": "{actor} raises a guard.",
+      "perfect_hit": "{actor} raises a guard just in time!",
+      "miss": "{actor} is too slow with a guard.",
+      "whiff": "too slow.",
+      "description": "Absorbs the next blows that land on you.",
+      "weather": {
+        "temperature": 0,
+        "energy": -0.3,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "rank": 1
+    },
+    "hamstring": {
+      "name": "Hamstring",
+      "kind": "Weapon",
+      "keywords": "hamstring",
+      "effect": "damage",
+      "period": 3000,
+      "window": 280,
+      "perfect_window": 90,
+      "amounts": [
+        3,
+        4,
+        7
+      ],
+      "hit": "{actor} hits {target} with a low cut.",
+      "perfect_hit": "{actor} lands a low cut perfectly on {target}!",
+      "miss": "{actor} misses {target} with a low cut.",
+      "whiff": "your low cut finds nothing.",
+      "description": "A cut that keeps bleeding.",
+      "weather": {
+        "temperature": -0.3,
+        "energy": 0.2,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "rank": 1,
+      "bleed": {
+        "damage": 2,
+        "beats": 3
+      }
+    },
+    "second_breath": {
+      "name": "Second Breath",
+      "kind": "Melee",
+      "keywords": "second breath",
+      "effect": "heal",
+      "period": 3000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        3,
+        5,
+        8
+      ],
+      "hit": "{actor} catches a second breath.",
+      "perfect_hit": "{actor} finds a second wind!",
+      "miss": "{actor} gasps.",
+      "whiff": "you can't catch your breath.",
+      "description": "A quick, small heal.",
+      "weather": {
+        "temperature": 0.3,
+        "energy": 0.3,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "rank": 1
+    },
+    "heavy_swing": {
+      "name": "Heavy Swing",
+      "kind": "Weapon",
+      "keywords": "heavy swing",
+      "effect": "damage",
+      "period": 4500,
+      "window": 250,
+      "perfect_window": 80,
+      "amounts": [
+        10,
+        13,
+        21
+      ],
+      "hit": "{actor} hits {target} with a heavy swing.",
+      "perfect_hit": "{actor} lands a heavy swing perfectly on {target}!",
+      "miss": "{actor} misses {target} with a heavy swing.",
+      "whiff": "your heavy swing finds nothing.",
+      "description": "Slow and brutal. Best in a cold wind.",
+      "weather": {
+        "temperature": -0.5,
+        "energy": 0.5,
+        "precipitation": "any",
+        "tier": "blue"
+      },
+      "rank": 1
+    },
+    "brace": {
+      "name": "Brace",
+      "kind": "Melee",
+      "keywords": "brace",
+      "effect": "guard",
+      "period": 3500,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        5,
+        7,
+        10
+      ],
+      "hit": "{actor} raises a braced stance.",
+      "perfect_hit": "{actor} raises a braced stance just in time!",
+      "miss": "{actor} is too slow with a braced stance.",
+      "whiff": "too slow.",
+      "description": "A guard that comes into its own in a gale.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0.8,
+        "precipitation": "any",
+        "tier": "blue"
+      },
+      "rank": 1
+    },
+    "whirlwind": {
+      "name": "Whirlwind",
+      "kind": "Weapon",
+      "keywords": "whirlwind",
+      "effect": "damage",
+      "period": 3500,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        8,
+        10,
+        16
+      ],
+      "hit": "{actor} hits {target} with a whirling cut.",
+      "perfect_hit": "{actor} lands a whirling cut perfectly on {target}!",
+      "miss": "{actor} misses {target} with a whirling cut.",
+      "whiff": "your whirling cut finds nothing.",
+      "description": "A spinning blow that loves a wild wind.",
+      "weather": {
+        "temperature": 0.3,
+        "energy": 0.7,
+        "precipitation": "any",
+        "tier": "blue"
+      },
+      "rank": 2
+    },
+    "iron_wall": {
+      "name": "Iron Wall",
+      "kind": "Melee",
+      "keywords": "iron wall",
+      "effect": "guard",
+      "period": 5000,
+      "window": 350,
+      "perfect_window": 120,
+      "amounts": [
+        12,
+        15,
+        22
+      ],
+      "hit": "{actor} raises an iron wall.",
+      "perfect_hit": "{actor} raises an iron wall just in time!",
+      "miss": "{actor} is too slow with an iron wall.",
+      "whiff": "too slow.",
+      "description": "A great guard, slow to raise.",
+      "weather": {
+        "temperature": 0,
+        "energy": -0.5,
+        "precipitation": "any",
+        "tier": "blue"
+      },
+      "rank": 2
+    },
+    "rending_blow": {
+      "name": "Rending Blow",
+      "kind": "Weapon",
+      "keywords": "rending blow",
+      "effect": "damage",
+      "period": 3500,
+      "window": 280,
+      "perfect_window": 90,
+      "amounts": [
+        6,
+        8,
+        12
+      ],
+      "hit": "{actor} hits {target} with a rending blow.",
+      "perfect_hit": "{actor} lands a rending blow perfectly on {target}!",
+      "miss": "{actor} misses {target} with a rending blow.",
+      "whiff": "your rending blow finds nothing.",
+      "description": "Opens a wound that bleeds hard.",
+      "weather": {
+        "temperature": 0.5,
+        "energy": 0,
+        "precipitation": "any",
+        "tier": "blue"
+      },
+      "rank": 2,
+      "bleed": {
+        "damage": 3,
+        "beats": 4
+      }
+    },
+    "rallying_shout": {
+      "name": "Rallying Shout",
+      "kind": "Melee",
+      "keywords": "rallying shout",
+      "effect": "heal",
+      "period": 5000,
+      "window": 350,
+      "perfect_window": 120,
+      "amounts": [
+        10,
+        14,
+        22
+      ],
+      "hit": "{actor} rallies {target} with a shout.",
+      "perfect_hit": "{actor} roars, and {target} stands taller!",
+      "miss": "{actor}'s shout cracks.",
+      "whiff": "your voice fails.",
+      "description": "Heals you, or an ally you target.",
+      "weather": {
+        "temperature": 0.2,
+        "energy": 0.4,
+        "precipitation": "any",
+        "tier": "blue"
+      },
+      "rank": 2,
+      "targets": "ally"
+    },
+    "earthbreaker": {
+      "name": "Earthbreaker",
+      "kind": "Weapon",
+      "keywords": "earthbreaker",
+      "effect": "damage",
+      "period": 6000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        20,
+        26,
+        40
+      ],
+      "hit": "{actor} hits {target} with an earth-shaking blow.",
+      "perfect_hit": "{actor} lands an earth-shaking blow perfectly on {target}!",
+      "miss": "{actor} misses {target} with an earth-shaking blow.",
+      "whiff": "your earth-shaking blow finds nothing.",
+      "description": "The ground itself cracks. Needs firm, still ground.",
+      "weather": {
+        "temperature": 0,
+        "energy": -0.6,
+        "precipitation": "dry",
+        "tier": "purple"
+      },
+      "rank": 3,
+      "stagger_ms": 2500
+    },
+    "unbroken": {
+      "name": "Unbroken",
+      "kind": "Melee",
+      "keywords": "unbroken",
+      "effect": "guard",
+      "period": 5000,
+      "window": 350,
+      "perfect_window": 120,
+      "amounts": [
+        18,
+        22,
+        32
+      ],
+      "hit": "{actor} raises an unbreakable guard.",
+      "perfect_hit": "{actor} raises an unbreakable guard just in time!",
+      "miss": "{actor} is too slow with an unbreakable guard.",
+      "whiff": "too slow.",
+      "description": "Nothing gets through. Made for the cold.",
+      "weather": {
+        "temperature": -0.6,
+        "energy": 0.3,
+        "precipitation": "any",
+        "tier": "purple"
+      },
+      "rank": 3
+    },
+    "executioner": {
+      "name": "Executioner",
+      "kind": "Weapon",
+      "keywords": "executioner",
+      "effect": "damage",
+      "period": 5500,
+      "window": 220,
+      "perfect_window": 70,
+      "amounts": [
+        18,
+        26,
+        48
+      ],
+      "hit": "{actor} hits {target} with an executioner's stroke.",
+      "perfect_hit": "{actor} lands an executioner's stroke perfectly on {target}!",
+      "miss": "{actor} misses {target} with an executioner's stroke.",
+      "whiff": "your executioner's stroke finds nothing.",
+      "description": "Huge on a perfect beat.",
+      "weather": {
+        "temperature": 0.6,
+        "energy": 0.6,
+        "precipitation": "any",
+        "tier": "purple"
+      },
+      "rank": 3
+    },
+    "spark": {
+      "name": "Spark",
+      "kind": "Spell",
+      "keywords": "spark",
+      "effect": "damage",
+      "period": 1800,
+      "window": 220,
+      "perfect_window": 70,
+      "amounts": [
+        3,
+        4,
+        7
+      ],
+      "hit": "{actor} hits {target} with a spark.",
+      "perfect_hit": "{actor} lands a spark perfectly on {target}!",
+      "miss": "{actor} misses {target} with a spark.",
+      "whiff": "your spark finds nothing.",
+      "description": "Fast little jolts. Wild weather feeds it.",
+      "weather": {
+        "temperature": 0.3,
+        "energy": 0.8,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "rank": 1
+    },
+    "frost_shard": {
+      "name": "Frost Shard",
+      "kind": "Spell",
+      "keywords": "frost shard",
+      "effect": "damage",
+      "period": 3000,
+      "window": 280,
+      "perfect_window": 90,
+      "amounts": [
+        6,
+        8,
+        12
+      ],
+      "hit": "{actor} hits {target} with a frost shard.",
+      "perfect_hit": "{actor} lands a frost shard perfectly on {target}!",
+      "miss": "{actor} misses {target} with a frost shard.",
+      "whiff": "your frost shard finds nothing.",
+      "description": "A shard of ice. Strong in the cold.",
+      "weather": {
+        "temperature": -0.8,
+        "energy": 0,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "rank": 1,
+      "stagger_ms": 800
+    },
+    "gust": {
+      "name": "Gust",
+      "kind": "Spell",
+      "keywords": "gust",
+      "effect": "damage",
+      "period": 3500,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        3,
+        4,
+        6
+      ],
+      "hit": "{actor} hits {target} with a gust.",
+      "perfect_hit": "{actor} lands a gust perfectly on {target}!",
+      "miss": "{actor} misses {target} with a gust.",
+      "whiff": "your gust finds nothing.",
+      "description": "Knocks them back: their next blow comes later.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0.9,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "rank": 1,
+      "stagger_ms": 2000
+    },
+    "mist_veil": {
+      "name": "Mist Veil",
+      "kind": "Spell",
+      "keywords": "mist veil",
+      "effect": "guard",
+      "period": 4000,
+      "window": 350,
+      "perfect_window": 120,
+      "amounts": [
+        6,
+        8,
+        12
+      ],
+      "hit": "{actor} raises a veil of mist.",
+      "perfect_hit": "{actor} raises a veil of mist just in time!",
+      "miss": "{actor} is too slow with a veil of mist.",
+      "whiff": "too slow.",
+      "description": "A guard of mist. Better in the wet.",
+      "weather": {
+        "temperature": 0,
+        "energy": -0.2,
+        "precipitation": "wet",
+        "tier": "green"
+      },
+      "rank": 1
+    },
+    "cinder": {
+      "name": "Cinder",
+      "kind": "Spell",
+      "keywords": "cinder",
+      "effect": "damage",
+      "period": 2500,
+      "window": 260,
+      "perfect_window": 90,
+      "amounts": [
+        3,
+        4,
+        6
+      ],
+      "hit": "{actor} hits {target} with a cinder.",
+      "perfect_hit": "{actor} lands a cinder perfectly on {target}!",
+      "miss": "{actor} misses {target} with a cinder.",
+      "whiff": "your cinder finds nothing.",
+      "description": "A burning ember that keeps burning.",
+      "weather": {
+        "temperature": 0.8,
+        "energy": -0.2,
+        "precipitation": "dry",
+        "tier": "green"
+      },
+      "rank": 1,
+      "bleed": {
+        "damage": 2,
+        "beats": 3
+      }
+    },
+    "chain_lightning": {
+      "name": "Chain Lightning",
+      "kind": "Spell",
+      "keywords": "chain lightning",
+      "effect": "damage",
+      "period": 3000,
+      "window": 280,
+      "perfect_window": 90,
+      "amounts": [
+        9,
+        12,
+        19
+      ],
+      "hit": "{actor} hits {target} with chain lightning.",
+      "perfect_hit": "{actor} lands chain lightning perfectly on {target}!",
+      "miss": "{actor} misses {target} with chain lightning.",
+      "whiff": "your chain lightning finds nothing.",
+      "description": "Spark grown up. Needs a storm.",
+      "weather": {
+        "temperature": 0.4,
+        "energy": 0.9,
+        "precipitation": "wet",
+        "tier": "blue"
+      },
+      "rank": 2,
+      "requires": "spark"
+    },
+    "ice_lance": {
+      "name": "Ice Lance",
+      "kind": "Spell",
+      "keywords": "ice lance",
+      "effect": "damage",
+      "period": 5000,
+      "window": 260,
+      "perfect_window": 80,
+      "amounts": [
+        14,
+        18,
+        28
+      ],
+      "hit": "{actor} hits {target} with an ice lance.",
+      "perfect_hit": "{actor} lands an ice lance perfectly on {target}!",
+      "miss": "{actor} misses {target} with an ice lance.",
+      "whiff": "your ice lance finds nothing.",
+      "description": "A slow, piercing lance of ice.",
+      "weather": {
+        "temperature": -0.8,
+        "energy": -0.4,
+        "precipitation": "any",
+        "tier": "blue"
+      },
+      "rank": 2
+    },
+    "cinder_rain": {
+      "name": "Cinder Rain",
+      "kind": "Spell",
+      "keywords": "cinder rain",
+      "effect": "damage",
+      "period": 4000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        6,
+        8,
+        12
+      ],
+      "hit": "{actor} hits {target} with a rain of cinders.",
+      "perfect_hit": "{actor} lands a rain of cinders perfectly on {target}!",
+      "miss": "{actor} misses {target} with a rain of cinders.",
+      "whiff": "your rain of cinders finds nothing.",
+      "description": "Burns, and keeps burning.",
+      "weather": {
+        "temperature": 0.8,
+        "energy": 0.4,
+        "precipitation": "dry",
+        "tier": "blue"
+      },
+      "rank": 2,
+      "bleed": {
+        "damage": 3,
+        "beats": 4
+      }
+    },
+    "renewal": {
+      "name": "Renewal",
+      "kind": "Spell",
+      "keywords": "renewal",
+      "effect": "heal",
+      "period": 5000,
+      "window": 350,
+      "perfect_window": 120,
+      "amounts": [
+        12,
+        16,
+        26
+      ],
+      "hit": "{actor} renews {target}.",
+      "perfect_hit": "{actor} bathes {target} in green light!",
+      "miss": "{actor}'s renewal fizzles.",
+      "whiff": "the spell slips away.",
+      "description": "A strong heal for you or an ally.",
+      "weather": {
+        "temperature": 0.2,
+        "energy": -0.2,
+        "precipitation": "wet",
+        "tier": "blue"
+      },
+      "rank": 2,
+      "targets": "ally"
+    },
+    "tempest": {
+      "name": "Tempest",
+      "kind": "Spell",
+      "keywords": "tempest",
+      "effect": "damage",
+      "period": 5000,
+      "window": 280,
+      "perfect_window": 90,
+      "amounts": [
+        20,
+        26,
+        42
+      ],
+      "hit": "{actor} hits {target} with a tempest.",
+      "perfect_hit": "{actor} lands a tempest perfectly on {target}!",
+      "miss": "{actor} misses {target} with a tempest.",
+      "whiff": "your tempest finds nothing.",
+      "description": "The storm itself, in your hand.",
+      "weather": {
+        "temperature": 0.6,
+        "energy": 1,
+        "precipitation": "wet",
+        "tier": "purple"
+      },
+      "rank": 3
+    },
+    "absolute_zero": {
+      "name": "Absolute Zero",
+      "kind": "Spell",
+      "keywords": "absolute zero",
+      "effect": "damage",
+      "period": 6000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        22,
+        28,
+        44
+      ],
+      "hit": "{actor} hits {target} with absolute cold.",
+      "perfect_hit": "{actor} lands absolute cold perfectly on {target}!",
+      "miss": "{actor} misses {target} with absolute cold.",
+      "whiff": "your absolute cold finds nothing.",
+      "description": "Stops everything. Made for the deep cold.",
+      "weather": {
+        "temperature": -1,
+        "energy": -0.8,
+        "precipitation": "any",
+        "tier": "purple"
+      },
+      "rank": 3,
+      "stagger_ms": 3000
+    },
+    "sunlance": {
+      "name": "Sunlance",
+      "kind": "Spell",
+      "keywords": "sunlance",
+      "effect": "damage",
+      "period": 5500,
+      "window": 260,
+      "perfect_window": 80,
+      "amounts": [
+        22,
+        30,
+        50
+      ],
+      "hit": "{actor} hits {target} with a sunlance.",
+      "perfect_hit": "{actor} lands a sunlance perfectly on {target}!",
+      "miss": "{actor} misses {target} with a sunlance.",
+      "whiff": "your sunlance finds nothing.",
+      "description": "A spear of sunlight. Needs a burning, still sky.",
+      "weather": {
+        "temperature": 1,
+        "energy": -0.8,
+        "precipitation": "dry",
+        "tier": "purple"
+      },
+      "rank": 3
+    },
+    "ember_shield": {
+      "name": "Ember Shield",
+      "kind": "Spell",
+      "keywords": "ember shield",
+      "effect": "guard",
+      "period": 4500,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        10,
+        13,
+        20
+      ],
+      "hit": "{actor} raises a shield of embers.",
+      "perfect_hit": "{actor} raises a shield of embers just in time!",
+      "miss": "{actor} is too slow with a shield of embers.",
+      "whiff": "too slow.",
+      "description": "A guard of fire for hot, dry days.",
+      "weather": {
+        "temperature": 0.7,
+        "energy": 0,
+        "precipitation": "dry",
+        "tier": "blue"
+      },
+      "rank": 2
+    },
+    "caltrops": {
+      "name": "Caltrops",
+      "kind": "Trick",
+      "keywords": "caltrops",
+      "effect": "damage",
+      "period": 3000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        2,
+        3,
+        5
+      ],
+      "hit": "{actor} hits {target} with a scatter of caltrops.",
+      "perfect_hit": "{actor} lands a scatter of caltrops perfectly on {target}!",
+      "miss": "{actor} misses {target} with a scatter of caltrops.",
+      "whiff": "your scatter of caltrops finds nothing.",
+      "description": "Underfoot: their next blow comes later.",
+      "weather": {
+        "temperature": 0,
+        "energy": -0.4,
+        "precipitation": "dry",
+        "tier": "green"
+      },
+      "rank": 1,
+      "stagger_ms": 1500
+    },
+    "poisoned_edge": {
+      "name": "Poisoned Edge",
+      "kind": "Light",
+      "keywords": "poisoned edge",
+      "effect": "damage",
+      "period": 2000,
+      "window": 220,
+      "perfect_window": 70,
+      "amounts": [
+        2,
+        3,
+        5
+      ],
+      "hit": "{actor} hits {target} with a poisoned edge.",
+      "perfect_hit": "{actor} lands a poisoned edge perfectly on {target}!",
+      "miss": "{actor} misses {target} with a poisoned edge.",
+      "whiff": "your poisoned edge finds nothing.",
+      "description": "The poison does the work.",
+      "weather": {
+        "temperature": 0.3,
+        "energy": -0.3,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "rank": 1,
+      "bleed": {
+        "damage": 2,
+        "beats": 4
+      }
+    },
+    "low_blow": {
+      "name": "Low Blow",
+      "kind": "Light",
+      "keywords": "low blow",
+      "effect": "damage",
+      "period": 1500,
+      "window": 200,
+      "perfect_window": 70,
+      "amounts": [
+        3,
+        4,
+        6
+      ],
+      "hit": "{actor} hits {target} with a low blow.",
+      "perfect_hit": "{actor} lands a low blow perfectly on {target}!",
+      "miss": "{actor} misses {target} with a low blow.",
+      "whiff": "your low blow finds nothing.",
+      "description": "Dirty, quick, effective.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "rank": 1
+    },
+    "smoke_pellet": {
+      "name": "Smoke Pellet",
+      "kind": "Trick",
+      "keywords": "smoke pellet",
+      "effect": "guard",
+      "period": 3500,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        5,
+        7,
+        10
+      ],
+      "hit": "{actor} raises a cloud of smoke.",
+      "perfect_hit": "{actor} raises a cloud of smoke just in time!",
+      "miss": "{actor} is too slow with a cloud of smoke.",
+      "whiff": "too slow.",
+      "description": "Hard to hit what you can't see. Best in still air.",
+      "weather": {
+        "temperature": 0,
+        "energy": -0.7,
+        "precipitation": "dry",
+        "tier": "green"
+      },
+      "rank": 1
+    },
+    "feint": {
+      "name": "Feint",
+      "kind": "Trick",
+      "keywords": "feint",
+      "effect": "damage",
+      "period": 2500,
+      "window": 260,
+      "perfect_window": 90,
+      "amounts": [
+        2,
+        3,
+        5
+      ],
+      "hit": "{actor} hits {target} with a feint.",
+      "perfect_hit": "{actor} lands a feint perfectly on {target}!",
+      "miss": "{actor} misses {target} with a feint.",
+      "whiff": "your feint finds nothing.",
+      "description": "They flinch: their next blow comes later.",
+      "weather": {
+        "temperature": -0.3,
+        "energy": 0.3,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "rank": 1,
+      "stagger_ms": 1200
+    },
+    "twin_jab": {
+      "name": "Twin Jab",
+      "kind": "Light",
+      "keywords": "twin jab",
+      "effect": "damage",
+      "period": 1000,
+      "window": 180,
+      "perfect_window": 60,
+      "amounts": [
+        1,
+        2,
+        4
+      ],
+      "hit": "{actor} hits {target} with a twin jab.",
+      "perfect_hit": "{actor} lands a twin jab perfectly on {target}!",
+      "miss": "{actor} misses {target} with a twin jab.",
+      "whiff": "your twin jab finds nothing.",
+      "description": "The fastest thing you own.",
+      "weather": {
+        "temperature": 0.5,
+        "energy": 0.5,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "rank": 1
+    },
+    "garrote": {
+      "name": "Garrote",
+      "kind": "Light",
+      "keywords": "garrote",
+      "effect": "damage",
+      "period": 4000,
+      "window": 260,
+      "perfect_window": 80,
+      "amounts": [
+        10,
+        13,
+        21
+      ],
+      "hit": "{actor} hits {target} with a garrote.",
+      "perfect_hit": "{actor} lands a garrote perfectly on {target}!",
+      "miss": "{actor} misses {target} with a garrote.",
+      "whiff": "your garrote finds nothing.",
+      "description": "Slow, quiet and deadly. Best on a still night.",
+      "weather": {
+        "temperature": -0.4,
+        "energy": -0.5,
+        "precipitation": "any",
+        "tier": "blue"
+      },
+      "rank": 2
+    },
+    "shadowstep": {
+      "name": "Shadowstep",
+      "kind": "Trick",
+      "keywords": "shadowstep",
+      "effect": "guard",
+      "period": 3000,
+      "window": 280,
+      "perfect_window": 90,
+      "amounts": [
+        8,
+        10,
+        15
+      ],
+      "hit": "{actor} raises a shadowstep.",
+      "perfect_hit": "{actor} raises a shadowstep just in time!",
+      "miss": "{actor} is too slow with a shadowstep.",
+      "whiff": "too slow.",
+      "description": "You aren't where the blow lands.",
+      "weather": {
+        "temperature": -0.2,
+        "energy": -0.6,
+        "precipitation": "any",
+        "tier": "blue"
+      },
+      "rank": 2
+    },
+    "venom_cloud": {
+      "name": "Venom Cloud",
+      "kind": "Trick",
+      "keywords": "venom cloud",
+      "effect": "damage",
+      "period": 3500,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        4,
+        6,
+        9
+      ],
+      "hit": "{actor} hits {target} with a venom cloud.",
+      "perfect_hit": "{actor} lands a venom cloud perfectly on {target}!",
+      "miss": "{actor} misses {target} with a venom cloud.",
+      "whiff": "your venom cloud finds nothing.",
+      "description": "Poisons hard in hot, still air.",
+      "weather": {
+        "temperature": 0.6,
+        "energy": -0.6,
+        "precipitation": "dry",
+        "tier": "blue"
+      },
+      "rank": 2,
+      "bleed": {
+        "damage": 4,
+        "beats": 4
+      }
+    },
+    "gutter_trick": {
+      "name": "Gutter Trick",
+      "kind": "Trick",
+      "keywords": "gutter trick",
+      "effect": "damage",
+      "period": 2500,
+      "window": 260,
+      "perfect_window": 90,
+      "amounts": [
+        6,
+        8,
+        12
+      ],
+      "hit": "{actor} hits {target} with a gutter trick.",
+      "perfect_hit": "{actor} lands a gutter trick perfectly on {target}!",
+      "miss": "{actor} misses {target} with a gutter trick.",
+      "whiff": "your gutter trick finds nothing.",
+      "description": "Mud in the eyes. Better in the rain.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0.4,
+        "precipitation": "wet",
+        "tier": "blue"
+      },
+      "rank": 2,
+      "stagger_ms": 1500
+    },
+    "assassinate": {
+      "name": "Assassinate",
+      "kind": "Light",
+      "keywords": "assassinate",
+      "effect": "damage",
+      "period": 6000,
+      "window": 200,
+      "perfect_window": 60,
+      "amounts": [
+        20,
+        30,
+        60
+      ],
+      "hit": "{actor} hits {target} with an assassin's blade.",
+      "perfect_hit": "{actor} lands an assassin's blade perfectly on {target}!",
+      "miss": "{actor} misses {target} with an assassin's blade.",
+      "whiff": "your assassin's blade finds nothing.",
+      "description": "One perfect moment.",
+      "weather": {
+        "temperature": -0.5,
+        "energy": -0.8,
+        "precipitation": "any",
+        "tier": "purple"
+      },
+      "rank": 3
+    },
+    "thousand_cuts": {
+      "name": "A Thousand Cuts",
+      "kind": "Light",
+      "keywords": "a thousand cuts",
+      "effect": "damage",
+      "period": 1500,
+      "window": 220,
+      "perfect_window": 70,
+      "amounts": [
+        4,
+        5,
+        8
+      ],
+      "hit": "{actor} hits {target} with a flurry of cuts.",
+      "perfect_hit": "{actor} lands a flurry of cuts perfectly on {target}!",
+      "miss": "{actor} misses {target} with a flurry of cuts.",
+      "whiff": "your flurry of cuts finds nothing.",
+      "description": "Many small wounds that keep bleeding.",
+      "weather": {
+        "temperature": 0.5,
+        "energy": 0.2,
+        "precipitation": "any",
+        "tier": "purple"
+      },
+      "rank": 3,
+      "bleed": {
+        "damage": 2,
+        "beats": 5
+      }
+    },
+    "vanishing_act": {
+      "name": "Vanishing Act",
+      "kind": "Trick",
+      "keywords": "vanishing act",
+      "effect": "guard",
+      "period": 4000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        16,
+        20,
+        30
+      ],
+      "hit": "{actor} raises a vanishing act.",
+      "perfect_hit": "{actor} raises a vanishing act just in time!",
+      "miss": "{actor} is too slow with a vanishing act.",
+      "whiff": "too slow.",
+      "description": "Gone, until the danger passes.",
+      "weather": {
+        "temperature": 0,
+        "energy": -1,
+        "precipitation": "any",
+        "tier": "purple"
+      },
+      "rank": 3
+    },
+    "boathook": {
+      "name": "Boathook",
+      "kind": "Weapon",
+      "keywords": "boathook",
+      "effect": "damage",
+      "period": 3000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        6,
+        8,
+        12
+      ],
+      "hit": "{actor} hits {target} with a boathook.",
+      "perfect_hit": "{actor} lands a boathook perfectly on {target}!",
+      "miss": "{actor} misses {target} with a boathook.",
+      "whiff": "your boathook finds nothing.",
+      "description": "A long ash pole with an iron hook. Better with spray in the air.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0.5,
+        "precipitation": "wet",
+        "tier": "green"
+      }
+    },
+    "tar_flask": {
+      "name": "Tar Flask",
+      "kind": "Trick",
+      "keywords": "tar flask",
+      "effect": "damage",
+      "period": 3500,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        3,
+        4,
+        6
+      ],
+      "hit": "{actor} hits {target} with a flask of hot tar.",
+      "perfect_hit": "{actor} lands a flask of hot tar perfectly on {target}!",
+      "miss": "{actor} misses {target} with a flask of hot tar.",
+      "whiff": "your flask of hot tar finds nothing.",
+      "description": "Sticky, hot, and they slow down.",
+      "weather": {
+        "temperature": 0.4,
+        "energy": 0,
+        "precipitation": "dry",
+        "tier": "green"
+      },
+      "stagger_ms": 1200
+    },
+    "belaying_pin": {
+      "name": "Belaying Pin",
+      "kind": "Light",
+      "keywords": "belaying pin",
+      "effect": "damage",
+      "period": 1500,
+      "window": 220,
+      "perfect_window": 70,
+      "amounts": [
+        3,
+        4,
+        6
+      ],
+      "hit": "{actor} hits {target} with a belaying pin.",
+      "perfect_hit": "{actor} lands a belaying pin perfectly on {target}!",
+      "miss": "{actor} misses {target} with a belaying pin.",
+      "whiff": "your belaying pin finds nothing.",
+      "description": "A sailor's club.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0.3,
+        "precipitation": "any",
+        "tier": "grey"
+      }
+    },
+    "sea_biscuits": {
+      "name": "Sea Biscuits",
+      "kind": "Potion",
+      "keywords": "sea biscuits",
+      "effect": "heal",
+      "period": 4000,
+      "window": 350,
+      "perfect_window": 120,
+      "amounts": [
+        6,
+        9,
+        14
+      ],
+      "hit": "{actor} drinks a sea biscuit.",
+      "perfect_hit": "{actor} downs a sea biscuit in one perfect gulp!",
+      "miss": "{actor} fumbles a sea biscuit.",
+      "whiff": "you fumble it.",
+      "description": "Hard as wood, but they keep you going."
+    },
+    "cudgel": {
+      "name": "Cudgel",
+      "kind": "Weapon",
+      "keywords": "cudgel",
+      "effect": "damage",
+      "period": 3000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        6,
+        8,
+        12
+      ],
+      "hit": "{actor} hits {target} with a cudgel.",
+      "perfect_hit": "{actor} lands a cudgel perfectly on {target}!",
+      "miss": "{actor} misses {target} with a cudgel.",
+      "whiff": "your cudgel finds nothing.",
+      "description": "A merchant's answer to an argument.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0,
+        "precipitation": "any",
+        "tier": "grey"
+      }
+    },
+    "weighted_purse": {
+      "name": "Weighted Purse",
+      "kind": "Light",
+      "keywords": "weighted purse",
+      "effect": "damage",
+      "period": 1600,
+      "window": 220,
+      "perfect_window": 70,
+      "amounts": [
+        3,
+        4,
+        6
+      ],
+      "hit": "{actor} hits {target} with a purse full of lead.",
+      "perfect_hit": "{actor} lands a purse full of lead perfectly on {target}!",
+      "miss": "{actor} misses {target} with a purse full of lead.",
+      "whiff": "your purse full of lead finds nothing.",
+      "description": "Heavier than it looks.",
+      "weather": {
+        "temperature": 0,
+        "energy": -0.2,
+        "precipitation": "any",
+        "tier": "grey"
+      }
+    },
+    "pepper_pouch": {
+      "name": "Pepper Pouch",
+      "kind": "Trick",
+      "keywords": "pepper pouch",
+      "effect": "damage",
+      "period": 3000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        2,
+        3,
+        5
+      ],
+      "hit": "{actor} hits {target} with a cloud of pepper.",
+      "perfect_hit": "{actor} lands a cloud of pepper perfectly on {target}!",
+      "miss": "{actor} misses {target} with a cloud of pepper.",
+      "whiff": "your cloud of pepper finds nothing.",
+      "description": "They sneeze, and slow down.",
+      "weather": {
+        "temperature": 0.5,
+        "energy": -0.4,
+        "precipitation": "dry",
+        "tier": "green"
+      },
+      "stagger_ms": 1500
+    },
+    "tonic": {
+      "name": "Tonic",
+      "kind": "Potion",
+      "keywords": "tonic",
+      "effect": "heal",
+      "period": 4000,
+      "window": 350,
+      "perfect_window": 120,
+      "amounts": [
+        7,
+        10,
+        16
+      ],
+      "hit": "{actor} drinks a tonic.",
+      "perfect_hit": "{actor} downs a tonic in one perfect gulp!",
+      "miss": "{actor} fumbles a tonic.",
+      "whiff": "you fumble it.",
+      "description": "A merchant's tonic, mostly honest."
+    },
+    "hatchet": {
+      "name": "Hatchet",
+      "kind": "Weapon",
+      "keywords": "hatchet",
+      "effect": "damage",
+      "period": 2800,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        6,
+        7,
+        11
+      ],
+      "hit": "{actor} hits {target} with a hatchet.",
+      "perfect_hit": "{actor} lands a hatchet perfectly on {target}!",
+      "miss": "{actor} misses {target} with a hatchet.",
+      "whiff": "your hatchet finds nothing.",
+      "description": "A woodsman's axe, good in cool, quiet woods.",
+      "weather": {
+        "temperature": -0.2,
+        "energy": -0.2,
+        "precipitation": "any",
+        "tier": "green"
+      }
+    },
+    "skinning_knife": {
+      "name": "Skinning Knife",
+      "kind": "Light",
+      "keywords": "skinning knife",
+      "effect": "damage",
+      "period": 1300,
+      "window": 200,
+      "perfect_window": 70,
+      "amounts": [
+        2,
+        3,
+        5
+      ],
+      "hit": "{actor} hits {target} with a skinning knife.",
+      "perfect_hit": "{actor} lands a skinning knife perfectly on {target}!",
+      "miss": "{actor} misses {target} with a skinning knife.",
+      "whiff": "your skinning knife finds nothing.",
+      "description": "Sharp and short.",
+      "weather": {
+        "temperature": 0,
+        "energy": -0.3,
+        "precipitation": "any",
+        "tier": "grey"
+      }
+    },
+    "snare": {
+      "name": "Snare",
+      "kind": "Trick",
+      "keywords": "snare",
+      "effect": "damage",
+      "period": 3000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        2,
+        3,
+        5
+      ],
+      "hit": "{actor} hits {target} with a snare.",
+      "perfect_hit": "{actor} lands a snare perfectly on {target}!",
+      "miss": "{actor} misses {target} with a snare.",
+      "whiff": "your snare finds nothing.",
+      "description": "Catches a foot: their next blow comes later.",
+      "weather": {
+        "temperature": 0,
+        "energy": -0.5,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "stagger_ms": 1500
+    },
+    "poultice": {
+      "name": "Poultice",
+      "kind": "Potion",
+      "keywords": "poultice",
+      "effect": "heal",
+      "period": 4500,
+      "window": 350,
+      "perfect_window": 120,
+      "amounts": [
+        8,
+        11,
+        18
+      ],
+      "hit": "{actor} drinks a poultice.",
+      "perfect_hit": "{actor} downs a poultice in one perfect gulp!",
+      "miss": "{actor} fumbles a poultice.",
+      "whiff": "you fumble it.",
+      "description": "Moss and honey. It works."
+    },
+    "shiv": {
+      "name": "Shiv",
+      "kind": "Light",
+      "keywords": "shiv",
+      "effect": "damage",
+      "period": 1100,
+      "window": 200,
+      "perfect_window": 70,
+      "amounts": [
+        2,
+        3,
+        5
+      ],
+      "hit": "{actor} hits {target} with a shiv.",
+      "perfect_hit": "{actor} lands a shiv perfectly on {target}!",
+      "miss": "{actor} misses {target} with a shiv.",
+      "whiff": "your shiv finds nothing.",
+      "description": "A sharpened something.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0,
+        "precipitation": "any",
+        "tier": "grey"
+      }
+    },
+    "pocket_sand": {
+      "name": "Pocket Sand",
+      "kind": "Trick",
+      "keywords": "pocket sand",
+      "effect": "damage",
+      "period": 2500,
+      "window": 280,
+      "perfect_window": 90,
+      "amounts": [
+        1,
+        2,
+        4
+      ],
+      "hit": "{actor} hits {target} with a fistful of sand.",
+      "perfect_hit": "{actor} lands a fistful of sand perfectly on {target}!",
+      "miss": "{actor} misses {target} with a fistful of sand.",
+      "whiff": "your fistful of sand finds nothing.",
+      "description": "In the eyes: their next blow comes later.",
+      "weather": {
+        "temperature": 0.3,
+        "energy": 0.2,
+        "precipitation": "dry",
+        "tier": "green"
+      },
+      "stagger_ms": 1500
+    },
+    "cosh": {
+      "name": "Cosh",
+      "kind": "Weapon",
+      "keywords": "cosh",
+      "effect": "damage",
+      "period": 2600,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        5,
+        7,
+        10
+      ],
+      "hit": "{actor} hits {target} with a cosh.",
+      "perfect_hit": "{actor} lands a cosh perfectly on {target}!",
+      "miss": "{actor} misses {target} with a cosh.",
+      "whiff": "your cosh finds nothing.",
+      "description": "A leather sap full of shot.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0,
+        "precipitation": "any",
+        "tier": "grey"
+      }
+    },
+    "stolen_tonic": {
+      "name": "Stolen Tonic",
+      "kind": "Potion",
+      "keywords": "stolen tonic",
+      "effect": "heal",
+      "period": 4000,
+      "window": 350,
+      "perfect_window": 120,
+      "amounts": [
+        7,
+        10,
+        16
+      ],
+      "hit": "{actor} drinks a stolen tonic.",
+      "perfect_hit": "{actor} downs a stolen tonic in one perfect gulp!",
+      "miss": "{actor} fumbles a stolen tonic.",
+      "whiff": "you fumble it.",
+      "description": "Tastes better for being free."
     }
   },
   "starting_gear": [
@@ -1868,41 +5131,77 @@
       "name": "Shore-sleeper",
       "description": "You can bed down in any sheltered spot on the coast: the shore is a safe place for you to rest.",
       "safe_terrain": "coast"
-    }
-  },
-  "levels": {
-    "2": {
-      "gear": [
-        "sword"
-      ]
     },
-    "3": {
-      "gear": [
-        "mending"
-      ],
-      "perks": [
-        "woodcraft"
-      ]
+    "second_wind": {
+      "name": "Second Wind",
+      "description": "Each time the attuned slot's ball touches the left edge, you heal 1.",
+      "slot": true
     },
-    "4": {
-      "gear": [
-        "firebolt",
-        "draught"
-      ]
+    "last_stand": {
+      "name": "Last Stand",
+      "description": "Below a quarter of your health, everything you use is 20% stronger."
     },
-    "5": {
-      "perks": [
-        "shore_sleeper"
-      ]
+    "quick_study": {
+      "name": "Quick Study",
+      "description": "You gain 10% more experience."
     },
-    "6": {
-      "gear": [
-        "greataxe"
-      ]
+    "haggler": {
+      "name": "Haggler",
+      "description": "Fares cost you 15% less."
+    },
+    "trapsense": {
+      "name": "Trapsense",
+      "description": "You sense traps in the rooms next to you, and they're marked on your map."
+    },
+    "steady_hands": {
+      "name": "Steady Hands",
+      "description": "Your first miss in each fight doesn't use up the beat."
+    },
+    "long_breath": {
+      "name": "Long Breath",
+      "description": "A perfect hit widens your other slots' windows for their next beat."
+    },
+    "starsight": {
+      "name": "Starsight",
+      "description": "You see at night as well as by day."
+    },
+    "feather_step": {
+      "name": "Feather Step",
+      "description": "Rough ground slows you no more than open country."
+    },
+    "skyreading": {
+      "name": "Skyreading",
+      "description": "You sense which way the weather is heading, about 10 minutes ahead, in any realm."
+    },
+    "moonlit_edge": {
+      "name": "Moonlit Edge",
+      "description": "At night, each time the attuned slot's ball touches the right edge, its next hit is 10% stronger (up to 30%).",
+      "slot": true
+    },
+    "bloodrhythm": {
+      "name": "Bloodrhythm",
+      "description": "Each miss on the attuned slot makes its next hit 10% stronger (up to 30%).",
+      "slot": true
+    },
+    "berserk_seal": {
+      "name": "Berserk Seal",
+      "description": "The attuned slot is 50% stronger, but once its ball touches the left edge it is sealed until the fight ends.",
+      "slot": true
+    },
+    "thick_hide": {
+      "name": "Thick Hide",
+      "description": "Weather penalties to your gear are halved."
+    },
+    "iron_gut": {
+      "name": "Iron Gut",
+      "description": "Potions heal you 25% more."
+    },
+    "hunters_nose": {
+      "name": "Hunter's Nose",
+      "description": "You smell creatures in the rooms next to you."
     }
   },
   "rules": {
-    "move_cooldown_ms": 250,
     "sleep_seconds": 120,
     "shrine_room": "temple_steps",
     "regen": 2,
@@ -1912,7 +5211,16 @@
     "weather_unit_minutes": 30,
     "pack_size": 12,
     "starting_coins": 20,
-    "stage_seconds": 2
+    "stage_seconds": 4,
+    "pace": 1,
+    "step_road_ms": 600,
+    "step_open_ms": 900,
+    "step_rough_ms": 1500,
+    "day_minutes": 60,
+    "event_chance": 0.05,
+    "event_seconds": 60,
+    "level_cap": 20,
+    "respec_coins_per_level": 10
   },
   "channels": [
     "general"
@@ -1981,6 +5289,16 @@
       "precipitation": 0.1
     }
   },
+  "terrain_ground": {
+    "coast": "open",
+    "forest": "open",
+    "field": "open",
+    "cave": "open",
+    "marsh": "rough",
+    "mountain": "rough",
+    "scree": "rough",
+    "deep_forest": "rough"
+  },
   "kinds": {
     "Weapon": {
       "temperature": 0,
@@ -2005,48 +5323,57 @@
       "energy": 0,
       "precipitation": "any",
       "tier": "grey"
+    },
+    "Light": {
+      "temperature": 0,
+      "energy": 0.2,
+      "precipitation": "any",
+      "tier": "grey"
+    },
+    "Trick": {
+      "temperature": 0,
+      "energy": -0.3,
+      "precipitation": "dry",
+      "tier": "grey"
     }
   },
   "routes": {
     "coach-to-harrowlake": {
-      "name": "the Lake Road coach",
+      "name": "the High Road coach",
       "keywords": "coach harrowlake lake carriage",
       "from": "market_square",
       "to": "village_green",
       "by": "bram",
       "fare": 3,
-      "via": "coach",
       "depart": "You pay Bram three coins and climb into the coach. He cracks the whip.",
-      "leave": "{actor} climbs into Bram's coach, and it rattles off west.",
+      "leave": "{actor} climbs into Bram's coach, and it rattles off towards the mountains.",
       "arrive": "Bram's coach rattles up, and {actor} climbs down.",
-      "stages": [
-        "Bram cracks the whip, and the coach lurches out of the square towards the harbour road.",
-        "The coach rocks as it goes over the cobbles, then onto the rutted dirt of the Lake Road.",
-        {
-          "text": "Reeds crowd the road on both sides. Somewhere out in the marsh, something heavy splashes.",
-          "event": "marsh"
-        },
-        "The cottages of Harrowlake come into view, smoke rising from their chimneys."
-      ]
+      "kind": "coach",
+      "path": [
+        "switchbacks",
+        "high_pass",
+        "gallows_ridge",
+        "harrow_ford"
+      ],
+      "strand": "scree_foot"
     },
     "coach-to-harrowgate": {
-      "name": "the Lake Road coach",
+      "name": "the High Road coach",
       "keywords": "coach harrowgate city carriage",
       "from": "village_green",
       "to": "market_square",
       "fare": 3,
-      "via": "coach",
       "depart": "You drop three coins in the coachman's box and climb aboard.",
-      "leave": "{actor} climbs into the coach, and it rattles off east.",
-      "arrive": "The Lake Road coach rattles into the square, and {actor} climbs down.",
-      "stages": [
-        "The coach lurches off, past the village green and out onto the Lake Road.",
-        {
-          "text": "Reeds crowd the road on both sides. The coach slows where the road floods.",
-          "event": "marsh"
-        },
-        "The road climbs onto cobbles, and the rooftops of Harrowgate rise ahead."
-      ]
+      "leave": "{actor} climbs into the coach, and it rattles off towards the mountains.",
+      "arrive": "The High Road coach rattles into the square, and {actor} climbs down.",
+      "kind": "coach",
+      "path": [
+        "harrow_ford",
+        "gallows_ridge",
+        "high_pass",
+        "switchbacks"
+      ],
+      "strand": "scree_foot"
     },
     "ferry-to-saltmere": {
       "name": "the Saltmere ferry",
@@ -2055,7 +5382,6 @@
       "to": "saltmere_landing",
       "by": "osric",
       "fare": 5,
-      "via": "ferry_deck",
       "when": {
         "energy": [
           -1,
@@ -2066,14 +5392,12 @@
       "depart": "You press five coins into Osric's hand. He pushes off without a word.",
       "leave": "{actor} boards Osric's ferry, and it slides out into the mist.",
       "arrive": "The ferry grounds on the shingle, and {actor} steps ashore.",
-      "stages": [
-        "Osric pushes off. The jetty shrinks behind you into the mist.",
-        {
-          "text": "The water goes black and still. Something large turns over beneath the boat, then is gone.",
-          "event": "deep_water"
-        },
-        "A shingle beach rises out of the mist ahead, white with salt."
-      ]
+      "kind": "ferry",
+      "path": [
+        "open_lake",
+        "far_shoals"
+      ],
+      "strand": "drift_beach"
     },
     "ferry-from-saltmere": {
       "name": "the Saltmere ferry",
@@ -2081,7 +5405,6 @@
       "from": "saltmere_landing",
       "to": "ferry_dock",
       "fare": 5,
-      "via": "ferry_deck",
       "when": {
         "energy": [
           -1,
@@ -2092,14 +5415,12 @@
       "depart": "You ring the bell on its post and drop five coins in the box. The ferry comes for you out of the mist.",
       "leave": "{actor} boards the ferry, and it slides off into the mist.",
       "arrive": "The ferry bumps against the jetty, and {actor} steps off.",
-      "stages": [
-        "The ferry slides away from the shingle into the mist.",
-        {
-          "text": "Out in the middle, the mist is so thick you can't see the bow.",
-          "event": "deep_water"
-        },
-        "The lights of the Harrowlake jetty glow through the mist."
-      ]
+      "kind": "ferry",
+      "path": [
+        "far_shoals",
+        "open_lake"
+      ],
+      "strand": "drift_beach"
     },
     "portal-to-rimewaste": {
       "name": "Sister Ilse's ring of frost",
@@ -2109,7 +5430,8 @@
       "by": "ilse",
       "depart": "Sister Ilse traces a ring of frost in the air, and it opens onto a howling white world.",
       "leave": "{actor} steps through Sister Ilse's ring of frost and is gone.",
-      "arrive": "{actor} stumbles out of a ring of frost into the snow."
+      "arrive": "{actor} stumbles out of a ring of frost into the snow.",
+      "kind": "portal"
     },
     "portal-home": {
       "name": "Veyra's portal",
@@ -2119,7 +5441,8 @@
       "by": "veyra",
       "depart": "Veyra touches the frost ring, and the Harrowlake chapel shimmers into view.",
       "leave": "{actor} steps through Veyra's portal and is gone.",
-      "arrive": "{actor} steps out of a ring of frost, shaking off snow."
+      "arrive": "{actor} steps out of a ring of frost, shaking off snow.",
+      "kind": "portal"
     },
     "rift": {
       "name": "the rift",
@@ -2128,7 +5451,8 @@
       "to": "rift_fall",
       "depart": "You step into the heat pouring out of the rift.",
       "leave": "{actor} steps into the rift and is gone.",
-      "arrive": "{actor} tumbles out of the sky onto the hot glass."
+      "arrive": "{actor} tumbles out of the sky onto the hot glass.",
+      "kind": "rift"
     },
     "sun-portal": {
       "name": "the Sun Altar portal",
@@ -2145,7 +5469,1907 @@
       "closed": "The portal frame stays dark. It needs the still air to stir, and no wraiths standing in your way.",
       "depart": "The frame fills with a hot wind, and you step into it.",
       "leave": "{actor} steps through the portal in a gust of hot wind.",
-      "arrive": "{actor} staggers out of a gust of hot wind onto the temple steps, skin burnt red."
+      "arrive": "{actor} staggers out of a gust of hot wind onto the temple steps, skin burnt red.",
+      "kind": "portal"
+    },
+    "gullhaven-cog": {
+      "name": "the trading cog",
+      "keywords": "ferry",
+      "from": "quay_end",
+      "to": "ferry_dock",
+      "path": [
+        "gh_open_sea",
+        "gh_strait"
+      ],
+      "kind": "ferry",
+      "hidden": true,
+      "events": [
+        "cog_squall"
+      ],
+      "risk": 1,
+      "depart": "You shoulder your sea bag and climb aboard the cog. Gullhaven shrinks behind you.",
+      "leave": "{actor} is gone.",
+      "arrive": "A trading cog ties up, and {actor} steps ashore with a sea bag."
+    },
+    "copperstall-caravan": {
+      "name": "Dace's caravan",
+      "keywords": "coach",
+      "from": "caravan_yard",
+      "to": "market_square",
+      "path": [
+        "cs_hill_road",
+        "cs_woods"
+      ],
+      "kind": "coach",
+      "hidden": true,
+      "events": [
+        "caravan_bandits"
+      ],
+      "risk": 1,
+      "depart": "You climb up beside Dace, and the caravan rolls out of Copperstall.",
+      "leave": "{actor} is gone.",
+      "arrive": "Dace's caravan rolls into the square, and {actor} jumps down."
+    },
+    "thornwick-barge": {
+      "name": "Tobin's barge",
+      "keywords": "ferry",
+      "from": "smokehouse",
+      "to": "woodland_path",
+      "path": [
+        "tw_river_bend",
+        "tw_rapids"
+      ],
+      "kind": "ferry",
+      "hidden": true,
+      "events": [
+        "barge_snag"
+      ],
+      "risk": 1,
+      "depart": "You climb onto the timber, and Tobin poles off downriver.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} climbs off a timber barge at the river bank and walks up into the wood."
+    },
+    "lowwick-cart": {
+      "name": "Joss's cart",
+      "keywords": "coach",
+      "from": "cart_yard",
+      "to": "back_alley",
+      "path": [
+        "lw_low_road",
+        "lw_tollgate"
+      ],
+      "kind": "coach",
+      "hidden": true,
+      "events": [
+        "checkpoint"
+      ],
+      "risk": 1,
+      "depart": "You curl up under the tarpaulin among the turnips, and the cart jolts off.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} rolls out from under a tarpaulin in the back alley, and the cart is gone."
+    }
+  },
+  "travel_events": {
+    "rut": {
+      "pools": [
+        "coach"
+      ],
+      "weight": 3,
+      "when": {
+        "precipitation": [
+          0,
+          1
+        ],
+        "severity": [
+          0,
+          0.6
+        ]
+      },
+      "text": "The coach lurches and stops. A wheel is sunk to the hub in mud, and the driver swears at it.",
+      "choices": [
+        {
+          "label": "Climb down and help push",
+          "check": {
+            "stat": "vigor",
+            "difficulty": "fair"
+          },
+          "bonus": "woodsman",
+          "success": [
+            {
+              "text": "With a heave and a sucking sound, the wheel comes free. The driver claps you on the back."
+            },
+            {
+              "hasten": 1
+            },
+            {
+              "reputation": {
+                "faction": "harrowfolk",
+                "affinity": 1,
+                "note": "Word gets round that you put your shoulder to a stuck wheel."
+              }
+            }
+          ],
+          "failure": [
+            {
+              "text": "Your boots slide out from under you, and the wheel rolls back over your foot."
+            },
+            {
+              "hp": -4
+            },
+            {
+              "delay": 1
+            }
+          ]
+        },
+        {
+          "label": "Stay in your seat",
+          "success": [
+            {
+              "text": "You wait while the driver digs. It takes a long time."
+            },
+            {
+              "delay": 1
+            }
+          ]
+        }
+      ]
+    },
+    "toll": {
+      "pools": [
+        "coach"
+      ],
+      "weight": 2,
+      "text": "A toll-keeper with a lantern and a bored expression steps into the road. \"Two coins a head for the bridge.\"",
+      "choices": [
+        {
+          "label": "Pay the toll",
+          "cost": 2,
+          "success": [
+            {
+              "text": "He bites one coin, pockets both, and waves you on."
+            }
+          ]
+        },
+        {
+          "label": "Talk your way past",
+          "check": {
+            "stat": "presence",
+            "difficulty": "fair"
+          },
+          "bonus": "merchant",
+          "success": [
+            {
+              "text": "By the time you have finished explaining, he is apologising to you."
+            }
+          ],
+          "failure": [
+            {
+              "text": "He listens politely, then charges you three for wasting his evening."
+            },
+            {
+              "coins": -3
+            }
+          ]
+        },
+        {
+          "label": "Press a clipped coin into his hand",
+          "background": "street_urchin",
+          "success": [
+            {
+              "text": "He never looks at it. Old tricks are the best ones."
+            }
+          ]
+        },
+        {
+          "label": "Refuse, and let the driver argue",
+          "success": [
+            {
+              "text": "The argument goes on, and on."
+            },
+            {
+              "delay": 2
+            }
+          ]
+        }
+      ]
+    },
+    "pickpocket": {
+      "pools": [
+        "coach",
+        "ferry"
+      ],
+      "weight": 2,
+      "text": "The passenger beside you leans in closer than the jolting road explains. A hand brushes your belt.",
+      "choices": [
+        {
+          "label": "Catch their wrist",
+          "check": {
+            "stat": "poise",
+            "difficulty": "fair"
+          },
+          "bonus": "street_urchin",
+          "success": [
+            {
+              "text": "You catch them in the act. They drop your purse, and a few of their own coins with it, and flee at the next stop."
+            },
+            {
+              "coins": 3
+            },
+            {
+              "reputation": {
+                "faction": "harrowfolk",
+                "affinity": 1,
+                "note": "The other passengers cheer the thief off the road."
+              }
+            }
+          ],
+          "failure": [
+            {
+              "text": "You grab at empty air. By the time you check your purse, it is lighter."
+            },
+            {
+              "coins": -3
+            }
+          ]
+        },
+        {
+          "label": "Shift away and keep a hand on your purse",
+          "success": [
+            {
+              "text": "They give up and pretend to sleep."
+            }
+          ]
+        }
+      ]
+    },
+    "innkeeper": {
+      "pools": [
+        "coach-to-harrowlake"
+      ],
+      "weight": 2,
+      "once": true,
+      "text": "A young man opposite you clears his throat. \"You came from Harrowgate? The innkeeper at the Gilded Tankard was so kind to me, and I never caught her name. I owe her a letter. Do you remember it?\"",
+      "choices": [
+        {
+          "label": "\"Marta.\"",
+          "success": [
+            {
+              "text": "\"Marta! Of course.\" He beams, and insists you share his lunch."
+            },
+            {
+              "hp": 10
+            },
+            {
+              "boon": {
+                "stat": "presence",
+                "amount": 1,
+                "minutes": 20,
+                "name": "Good company"
+              }
+            }
+          ]
+        },
+        {
+          "label": "\"Martha.\"",
+          "success": [
+            {
+              "text": "\"Martha? I could have sworn it was something else.\" He writes it down anyway, frowning."
+            }
+          ]
+        },
+        {
+          "label": "\"I didn't catch it either.\"",
+          "success": [
+            {
+              "text": "He sighs, and looks out of the window for the rest of the way."
+            }
+          ]
+        }
+      ]
+    },
+    "riddle": {
+      "pools": [
+        "ferry"
+      ],
+      "weight": 1,
+      "once": true,
+      "when": {
+        "energy": [
+          -1,
+          -0.2
+        ],
+        "severity": [
+          0,
+          0.4
+        ]
+      },
+      "text": "On the still water, the ferry drifts past a rowboat with no oars. An old man in it smiles at you. \"Answer me this, and I will tell you something worth knowing. I have cities but no houses, forests but no trees, and water but no fish. What am I?\"",
+      "choices": [
+        {
+          "label": "\"A map.\"",
+          "success": [
+            {
+              "text": "\"A map.\" He nods slowly. \"Then here is something for yours: past the burning glass there is a stillness that never ends.\" The mist takes his boat."
+            },
+            {
+              "rumour": "stillsands"
+            },
+            {
+              "xp": 20
+            }
+          ]
+        },
+        {
+          "label": "\"A dream.\"",
+          "success": [
+            {
+              "text": "\"A pretty answer, and a wrong one.\" He lets the mist take him."
+            }
+          ]
+        },
+        {
+          "label": "\"A painting.\"",
+          "success": [
+            {
+              "text": "He shakes his head, smiling, and the mist takes him."
+            }
+          ]
+        },
+        {
+          "label": "Say nothing",
+          "success": [
+            {
+              "text": "The rowboat drifts away into the mist."
+            }
+          ]
+        }
+      ]
+    },
+    "lame_horse": {
+      "pools": [
+        "coach"
+      ],
+      "weight": 2,
+      "text": "One of the horses stumbles and starts to limp. The driver pulls up, cursing.",
+      "choices": [
+        {
+          "label": "Look at the hoof",
+          "check": {
+            "stat": "focus",
+            "difficulty": "fair"
+          },
+          "bonus": "woodsman",
+          "success": [
+            {
+              "text": "A stone, wedged in the shoe. You pry it out, and the horse steps easy again."
+            },
+            {
+              "hasten": 1
+            }
+          ],
+          "failure": [
+            {
+              "text": "You can't see anything wrong, and the horse nearly takes your hand off."
+            },
+            {
+              "delay": 1
+            }
+          ]
+        },
+        {
+          "label": "Wait for the driver to deal with it",
+          "success": [
+            {
+              "text": "It takes him a while."
+            },
+            {
+              "delay": 1
+            }
+          ]
+        }
+      ]
+    },
+    "fallen_tree": {
+      "pools": [
+        "coach"
+      ],
+      "weight": 2,
+      "when": {
+        "severity": [
+          0.3,
+          1
+        ]
+      },
+      "text": "The wind has brought a tree down across the road. The driver looks at it, then at you.",
+      "choices": [
+        {
+          "label": "Help drag it clear",
+          "check": {
+            "stat": "vigor",
+            "difficulty": "fair"
+          },
+          "bonus": "woodsman",
+          "success": [
+            {
+              "text": "Between you, the tree rolls off the road."
+            },
+            {
+              "xp": 10
+            }
+          ],
+          "failure": [
+            {
+              "text": "A branch whips back and opens your cheek."
+            },
+            {
+              "hp": -6
+            },
+            {
+              "delay": 1
+            }
+          ]
+        },
+        {
+          "label": "Leave it to the driver",
+          "success": [
+            {
+              "text": "He saws, slowly."
+            },
+            {
+              "delay": 2
+            }
+          ]
+        }
+      ]
+    },
+    "saltmere_rumour": {
+      "pools": [
+        "alzendor"
+      ],
+      "weight": 1,
+      "once": true,
+      "text": "Two passengers are arguing about an island. \"Saltmere's real, I tell you. Osric the ferryman goes out to it, if he likes you.\"",
+      "choices": [
+        {
+          "label": "Listen in",
+          "success": [
+            {
+              "discover": "saltmere"
+            }
+          ]
+        },
+        {
+          "label": "Doze off",
+          "success": [
+            {
+              "text": "You sleep through the rest of it."
+            }
+          ]
+        }
+      ]
+    },
+    "rimewaste_rumour": {
+      "pools": [
+        "alzendor"
+      ],
+      "weight": 1,
+      "once": true,
+      "text": "A traveller with frost-blackened fingers sits wrapped in three cloaks. \"Been through the ring at Harrowlake chapel,\" she says to nobody. \"Never again.\"",
+      "choices": [
+        {
+          "label": "Ask her about it",
+          "success": [
+            {
+              "text": "\"White. Howling. Wolves.\" She shivers. \"Sister Ilse will open it for you, if you're fool enough.\""
+            },
+            {
+              "rumour": "rimewaste"
+            },
+            {
+              "xp": 5
+            }
+          ]
+        },
+        {
+          "label": "Leave her be",
+          "success": [
+            {
+              "text": "She stares out of the window."
+            }
+          ]
+        }
+      ]
+    },
+    "fish": {
+      "pools": [
+        "ferry"
+      ],
+      "weight": 2,
+      "when": {
+        "severity": [
+          0,
+          0.4
+        ]
+      },
+      "text": "A fat silver fish leaps out of the calm water and lands flapping on the deck at your feet.",
+      "choices": [
+        {
+          "label": "Grab it",
+          "check": {
+            "stat": "poise",
+            "difficulty": "easy"
+          },
+          "bonus": "sailor",
+          "success": [
+            {
+              "text": "You pin it. Osric grills it over his lantern, and it is the best thing you have eaten in days."
+            },
+            {
+              "hp": 12
+            }
+          ],
+          "failure": [
+            {
+              "text": "It flips over the side, and Osric laughs at you."
+            }
+          ]
+        },
+        {
+          "label": "Let it be",
+          "success": [
+            {
+              "text": "It flops back into the lake."
+            }
+          ]
+        }
+      ]
+    },
+    "squall": {
+      "pools": [
+        "ferry"
+      ],
+      "weight": 3,
+      "when": {
+        "severity": [
+          0.4,
+          0.8
+        ]
+      },
+      "text": "A squall comes across the water like a wall. The ferry heels, and spray sheets over the side.",
+      "choices": [
+        {
+          "label": "Read the gusts and take the pole",
+          "background": "sailor",
+          "success": [
+            {
+              "text": "You feel the gusts before they come, and drive the ferry through them. Osric gives you a long look of respect."
+            },
+            {
+              "hasten": 1
+            },
+            {
+              "reputation": {
+                "faction": "harrowfolk",
+                "respect": 2,
+                "note": "Osric tells the dock you can handle a boat."
+              }
+            }
+          ]
+        },
+        {
+          "label": "Bail",
+          "check": {
+            "stat": "vigor",
+            "difficulty": "fair"
+          },
+          "success": [
+            {
+              "text": "You bail until your arms burn, and the ferry rides it out."
+            }
+          ],
+          "failure": [
+            {
+              "text": "A wave knocks you into the gunwale."
+            },
+            {
+              "hp": -8
+            },
+            {
+              "delay": 1
+            }
+          ]
+        },
+        {
+          "label": "Hold on and wait",
+          "success": [
+            {
+              "text": "You cling on, soaked and frozen, while it passes."
+            },
+            {
+              "hp": -4
+            },
+            {
+              "delay": 1
+            }
+          ]
+        }
+      ]
+    },
+    "swamped": {
+      "pools": [
+        "ferry"
+      ],
+      "weight": 3,
+      "when": {
+        "severity": [
+          0.8,
+          1
+        ]
+      },
+      "text": "The gale throws the ferry onto its side. Water pours in over the gunwale, and Osric shouts something the wind tears away.",
+      "choices": [
+        {
+          "label": "Bail for your life",
+          "check": {
+            "stat": "vigor",
+            "difficulty": "hard"
+          },
+          "bonus": "sailor",
+          "success": [
+            {
+              "text": "Somehow, between you, you keep her afloat. You reach the shore half-drowned."
+            },
+            {
+              "hp": -10
+            },
+            {
+              "delay": 2
+            }
+          ],
+          "failure": [
+            {
+              "death": "The ferry rolls over. The cold takes your breath, then everything else. The lake keeps you."
+            }
+          ]
+        },
+        {
+          "label": "Swim for the shore",
+          "check": {
+            "stat": "resilience",
+            "difficulty": "fair"
+          },
+          "success": [
+            {
+              "strand": "You swim until there is nothing left, and drag yourself up onto shingle you don't know."
+            }
+          ],
+          "failure": [
+            {
+              "death": "The water is too cold and the shore too far. The lake keeps you."
+            }
+          ]
+        },
+        {
+          "label": "Cling to the wreck",
+          "success": [
+            {
+              "hp": -12
+            },
+            {
+              "strand": "You cling to a broken plank all night. In the grey morning, the lake gives you back to a shingle beach."
+            }
+          ]
+        }
+      ]
+    },
+    "rockslide": {
+      "pools": [
+        "coach-to-harrowlake",
+        "coach-to-harrowgate"
+      ],
+      "weight": 3,
+      "when": {
+        "severity": [
+          0.6,
+          1
+        ]
+      },
+      "text": "A roar from above: rocks pour down the mountainside onto the road, and the coach skids towards the edge.",
+      "choices": [
+        {
+          "label": "Jump clear",
+          "check": {
+            "stat": "poise",
+            "difficulty": "fair"
+          },
+          "success": [
+            {
+              "text": "You land rolling on the road as the rocks thunder past. The coach is still there, just."
+            },
+            {
+              "delay": 1
+            }
+          ],
+          "failure": [
+            {
+              "hp": -10
+            },
+            {
+              "strand": "You jump the wrong way. The world tumbles, rock and sky and rock, all the way down the scree."
+            }
+          ]
+        },
+        {
+          "label": "Brace yourself inside",
+          "check": {
+            "stat": "resilience",
+            "difficulty": "fair"
+          },
+          "success": [
+            {
+              "text": "The coach shudders to a stop on the very lip of the drop."
+            },
+            {
+              "delay": 2
+            }
+          ],
+          "failure": [
+            {
+              "text": "You are thrown about like a die in a cup."
+            },
+            {
+              "hp": -15
+            },
+            {
+              "delay": 2
+            }
+          ]
+        }
+      ]
+    },
+    "wolves": {
+      "pools": [
+        "coach"
+      ],
+      "weight": 1,
+      "when": {
+        "time": [
+          "dusk",
+          "night",
+          "dawn"
+        ]
+      },
+      "text": "Grey shapes come splashing across the ford in the half-light. Wolves, and they are hungry. The horses scream.",
+      "choices": [
+        {
+          "label": "Whip the horses on",
+          "check": {
+            "stat": "poise",
+            "difficulty": "hard"
+          },
+          "success": [
+            {
+              "text": "The coach lurches up the bank, and the wolves fall behind."
+            },
+            {
+              "hasten": 1
+            }
+          ],
+          "failure": [
+            {
+              "text": "A wheel catches on a rock. The wolves are on you."
+            },
+            {
+              "ambush": [
+                "ford_wolf",
+                "ford_wolf"
+              ]
+            }
+          ]
+        },
+        {
+          "label": "Jump down and fight",
+          "success": [
+            {
+              "ambush": [
+                "ford_wolf",
+                "ford_wolf"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "highwaymen": {
+      "pools": [
+        "coach"
+      ],
+      "weight": 1,
+      "when": {
+        "time": [
+          "night"
+        ]
+      },
+      "text": "Two riders burst from the dark and seize the lead horses. \"Stand and deliver!\"",
+      "choices": [
+        {
+          "label": "Hand over five coins",
+          "cost": 5,
+          "success": [
+            {
+              "text": "They take it, tip their hats, and are gone into the night."
+            }
+          ]
+        },
+        {
+          "label": "Call out the one you know from the gutters",
+          "background": "street_urchin",
+          "success": [
+            {
+              "text": "\"Weasel? Is that you?\" A long pause. \"...On your way, then.\" They melt back into the dark."
+            }
+          ]
+        },
+        {
+          "label": "Fight them",
+          "success": [
+            {
+              "ambush": [
+                "highwayman",
+                "highwayman"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "flask": {
+      "pools": [
+        "any"
+      ],
+      "weight": 2,
+      "when": {
+        "severity": [
+          0,
+          0.5
+        ]
+      },
+      "text": "An old woman across from you unscrews a dented flask and holds it out. \"Keeps the cold off.\"",
+      "choices": [
+        {
+          "label": "Take a nip",
+          "success": [
+            {
+              "text": "It burns all the way down, then glows."
+            },
+            {
+              "hp": 6
+            },
+            {
+              "boon": {
+                "stat": "resilience",
+                "amount": 1,
+                "minutes": 20,
+                "name": "Warmed through"
+              }
+            }
+          ]
+        },
+        {
+          "label": "Decline politely",
+          "success": [
+            {
+              "text": "\"Suit yourself,\" she says, and has your share."
+            }
+          ]
+        }
+      ]
+    },
+    "aground": {
+      "pools": [
+        "ferry"
+      ],
+      "weight": 1,
+      "once": true,
+      "text": "There's a grinding crunch, and the ferry stops dead. In the mist you've run onto rocks, and water is coming in. Osric swears quietly and steers for a shape of an island.",
+      "choices": [
+        {
+          "label": "Help Osric push off the rocks",
+          "check": {
+            "stat": "vigor",
+            "difficulty": "hard"
+          },
+          "bonus": "sailor",
+          "success": [
+            {
+              "text": "You throw your weight against the pole, and the ferry grinds free. She leaks, but she floats."
+            },
+            {
+              "delay": 1
+            }
+          ],
+          "failure": [
+            {
+              "text": "The pole snaps. There's nothing for it but the island."
+            },
+            {
+              "maroon": {
+                "room": "wreck_cove",
+                "quest": "marooned"
+              }
+            }
+          ]
+        },
+        {
+          "label": "Wade ashore",
+          "success": [
+            {
+              "maroon": {
+                "room": "wreck_cove",
+                "quest": "marooned"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "cog_squall": {
+      "pools": [
+        "gullhaven-cog"
+      ],
+      "text": "A squall hits the cog in the strait. The sail cracks like a gunshot, and the helmsman is struggling.",
+      "choices": [
+        {
+          "label": "Take the helm and read the gusts",
+          "background": "sailor",
+          "success": [
+            {
+              "text": "You feel each gust before it comes and ride them through. The captain gives you a long look, then a nod."
+            },
+            {
+              "xp": 10
+            },
+            {
+              "hasten": 1
+            }
+          ]
+        },
+        {
+          "label": "Haul on the sheet",
+          "check": {
+            "stat": "vigor",
+            "difficulty": "fair"
+          },
+          "success": [
+            {
+              "text": "The sail comes under control."
+            }
+          ],
+          "failure": [
+            {
+              "text": "The rope burns through your hands."
+            },
+            {
+              "hp": -5
+            }
+          ]
+        },
+        {
+          "label": "Hold on",
+          "success": [
+            {
+              "text": "You cling to the rail until it passes, soaked through."
+            },
+            {
+              "hp": -3
+            }
+          ]
+        }
+      ]
+    },
+    "caravan_bandits": {
+      "pools": [
+        "copperstall-caravan"
+      ],
+      "text": "In the woods, a rider bursts from the trees and grabs the lead mule. \"Your money or your life!\"",
+      "choices": [
+        {
+          "label": "Offer him a better deal",
+          "background": "merchant",
+          "success": [
+            {
+              "text": "You talk money until he is sure he is robbing you, and leaves with a bag of buttons."
+            },
+            {
+              "xp": 10
+            }
+          ]
+        },
+        {
+          "label": "Fight him off",
+          "success": [
+            {
+              "ambush": [
+                "highwayman"
+              ]
+            }
+          ]
+        },
+        {
+          "label": "Pay him five coins",
+          "cost": 5,
+          "success": [
+            {
+              "text": "He bites a coin and is gone."
+            }
+          ]
+        }
+      ]
+    },
+    "barge_snag": {
+      "pools": [
+        "thornwick-barge"
+      ],
+      "text": "The barge grinds onto a snag at the rapids and swings sideways. Tobin swears.",
+      "choices": [
+        {
+          "label": "Read the current and point Tobin to the channel",
+          "background": "woodsman",
+          "success": [
+            {
+              "text": "You know this river. \"Left of the white rock!\" The barge slides free."
+            },
+            {
+              "xp": 10
+            },
+            {
+              "hasten": 1
+            }
+          ]
+        },
+        {
+          "label": "Lever it off with a pole",
+          "check": {
+            "stat": "vigor",
+            "difficulty": "fair"
+          },
+          "success": [
+            {
+              "text": "It comes free with a lurch."
+            }
+          ],
+          "failure": [
+            {
+              "text": "The pole slips and you go in up to your waist."
+            },
+            {
+              "hp": -4
+            }
+          ]
+        },
+        {
+          "label": "Let Tobin sort it out",
+          "success": [
+            {
+              "text": "It takes him a while."
+            },
+            {
+              "delay": 1
+            }
+          ]
+        }
+      ]
+    },
+    "checkpoint": {
+      "pools": [
+        "lowwick-cart"
+      ],
+      "text": "The cart stops at the checkpoint. Boots crunch closer. A lantern lifts the edge of the tarpaulin.",
+      "choices": [
+        {
+          "label": "Be a sack of turnips",
+          "check": {
+            "stat": "poise",
+            "difficulty": "easy"
+          },
+          "bonus": "street_urchin",
+          "success": [
+            {
+              "text": "The lantern passes over you. \"Just turnips.\" The cart rolls on."
+            }
+          ],
+          "failure": [
+            {
+              "text": "A boot prods you. You bribe him with everything in your pocket before he can shout."
+            },
+            {
+              "coins": -5
+            }
+          ]
+        },
+        {
+          "label": "\"Evening, Sergeant. Nan sends her love.\"",
+          "background": "street_urchin",
+          "success": [
+            {
+              "text": "A long silence. The tarpaulin drops. \"...Move along.\""
+            },
+            {
+              "xp": 10
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "quests": {
+    "marooned": {
+      "name": "Marooned",
+      "priority": true,
+      "area": "castaway_isle",
+      "start": "gather",
+      "steps": {
+        "gather": {
+          "goal": "Find a sound plank, a lump of pitch and a coil of rope to mend the ferry.",
+          "on": {
+            "have": [
+              "plank-1",
+              "pitch-1",
+              "rope-1"
+            ]
+          },
+          "then": "mend"
+        },
+        "mend": {
+          "goal": "Mend the ferry: USE PLANK ON FERRY in Wreck Cove.",
+          "on": {
+            "use": "plank-1",
+            "on": "ferry"
+          },
+          "effects": [
+            {
+              "take": "plank-1"
+            },
+            {
+              "take": "pitch-1"
+            },
+            {
+              "take": "rope-1"
+            },
+            {
+              "text": "You lash the plank over the hole and seal it with pitch. Osric pushes the ferry off the shingle, and she floats. Old Ness waves you off from the rocks."
+            },
+            {
+              "xp": 40
+            },
+            {
+              "resume_journey": true
+            }
+          ]
+        }
+      }
+    },
+    "gh_tar": {
+      "name": "Caulk and Tar",
+      "start": "tar",
+      "steps": {
+        "tar": {
+          "goal": "Hedda needs tar for the hull. Go NORTH to the tar pits and GET TAR.",
+          "on": {
+            "get": "tar-g"
+          },
+          "then": "caulk"
+        },
+        "caulk": {
+          "goal": "Back on the slipway (SOUTH), seal the hull: USE TAR ON HULL.",
+          "on": {
+            "use": "tar-g",
+            "on": "hull"
+          },
+          "effects": [
+            {
+              "take": "tar-g"
+            },
+            {
+              "text": "You work the tar into the sprung seams. Hedda nods: \"Good. Now, about my anchor chain...\""
+            },
+            {
+              "xp": 50
+            },
+            {
+              "start": "gh_chain"
+            }
+          ]
+        }
+      }
+    },
+    "gh_chain": {
+      "name": "Lost Chain",
+      "start": "ask",
+      "steps": {
+        "ask": {
+          "goal": "The anchor chain went over at Seal Rocks. Old Pell, in the Salted Gull (EAST, then NORTH), knows the way: ASK PELL ABOUT ROCKS. Ask him about the WEATHER too.",
+          "on": {
+            "ask": "pell",
+            "about": "rocks"
+          },
+          "then": "chain"
+        },
+        "chain": {
+          "goal": "Walk out along the breakwater (east of the Quay Steps) to Seal Rocks and GET CHAIN. Crabs bite: press 4, 3 or 2 to use your slots on whatever you target (Tab).",
+          "on": {
+            "get": "chain-g"
+          },
+          "then": "return"
+        },
+        "return": {
+          "goal": "Bring the chain back to Hedda on the slipway: USE CHAIN ON HEDDA.",
+          "on": {
+            "use": "chain-g",
+            "on": "hedda"
+          },
+          "effects": [
+            {
+              "take": "chain-g"
+            },
+            {
+              "text": "Hedda hefts the chain. \"That'll pay for the tar. Listen: I've seen lights down in the cove at night.\""
+            },
+            {
+              "xp": 100
+            },
+            {
+              "start": "gh_wreckers"
+            }
+          ]
+        }
+      }
+    },
+    "gh_wreckers": {
+      "name": "Wreckers",
+      "start": "fight",
+      "steps": {
+        "fight": {
+          "goal": "False lights in Wreckers' Cove, south of Seal Rocks. Deal with the wreckers' leader.",
+          "on": {
+            "kill": "wrecker_chief"
+          },
+          "then": "proof"
+        },
+        "proof": {
+          "goal": "GET the false lantern from the cove and show the harbourmaster: USE LANTERN ON VANE.",
+          "on": {
+            "use": "lantern-g",
+            "on": "vane"
+          },
+          "effects": [
+            {
+              "take": "lantern-g"
+            },
+            {
+              "text": "Vane turns the lantern over. \"Proof. Good. You've done this town a service.\" He counts out a reward."
+            },
+            {
+              "coins": 10
+            },
+            {
+              "xp": 150
+            },
+            {
+              "start": "gh_leave"
+            }
+          ]
+        }
+      }
+    },
+    "gh_leave": {
+      "name": "Paid Off",
+      "start": "ask",
+      "steps": {
+        "ask": {
+          "goal": "Captain Ardith is waiting at Quay End. ASK ARDITH ABOUT PASSAGE.",
+          "on": {
+            "ask": "ardith",
+            "about": "passage"
+          },
+          "effects": [
+            {
+              "leave_start": "gullhaven-cog"
+            }
+          ]
+        }
+      }
+    },
+    "cs_stall": {
+      "name": "Opening the Stall",
+      "start": "crates",
+      "steps": {
+        "crates": {
+          "goal": "Aunt Brisa wants your goods out. Go WEST to the fountain and GET CRATES.",
+          "on": {
+            "get": "crates-m"
+          },
+          "then": "stall"
+        },
+        "stall": {
+          "goal": "Back at Stall Row (EAST), set them out: USE CRATES ON STALL.",
+          "on": {
+            "use": "crates-m",
+            "on": "stall"
+          },
+          "effects": [
+            {
+              "take": "crates-m"
+            },
+            {
+              "text": "Your stall is open. Within a minute, the shouting starts across the market."
+            },
+            {
+              "xp": 50
+            },
+            {
+              "start": "cs_weight"
+            }
+          ]
+        }
+      }
+    },
+    "cs_weight": {
+      "name": "Short Weight",
+      "start": "okur",
+      "steps": {
+        "okur": {
+          "goal": "The spicers and clothiers accuse each other of crooked scales. Hear Okur out, NORTH: ASK OKUR ABOUT SCALES.",
+          "on": {
+            "ask": "okur",
+            "about": "scales"
+          },
+          "then": "selene"
+        },
+        "selene": {
+          "goal": "Now hear Selene, at the cloth stalls: ASK SELENE ABOUT SCALES.",
+          "on": {
+            "ask": "selene",
+            "about": "scales"
+          },
+          "then": "search"
+        },
+        "search": {
+          "goal": "Someone swapped the guild's weights. Search the counting house on Guild Row (LOOK at things) and GET what's wrong.",
+          "on": {
+            "get": "weight-m"
+          },
+          "then": "show"
+        },
+        "show": {
+          "goal": "Show the guildmaster, in the guild hall: USE WEIGHT ON THORNE.",
+          "on": {
+            "use": "weight-m",
+            "on": "thorne"
+          },
+          "effects": [
+            {
+              "take": "weight-m"
+            },
+            {
+              "text": "Thorne weighs it in his palm. \"Filed. Both of them have been cheating with the guild's own weights.\" The quarrel ends in two fines."
+            },
+            {
+              "xp": 100
+            },
+            {
+              "start": "cs_rats"
+            }
+          ]
+        }
+      }
+    },
+    "cs_rats": {
+      "name": "Rats in the Granary",
+      "start": "king",
+      "steps": {
+        "king": {
+          "goal": "Thorne wants the guild granary cleared: east of the counting house, then DOWN. Kill the Rat King.",
+          "on": {
+            "kill": "rat_king"
+          },
+          "effects": [
+            {
+              "text": "The squeaking stops. The granary is quiet."
+            },
+            {
+              "coins": 10
+            },
+            {
+              "xp": 150
+            },
+            {
+              "start": "cs_leave"
+            }
+          ]
+        }
+      }
+    },
+    "cs_leave": {
+      "name": "The Caravan",
+      "start": "ask",
+      "steps": {
+        "ask": {
+          "goal": "Your aunt can run the stall. You want more. Dace, in the caravan yard south of Guild Row, leaves for Harrowgate: ASK DACE ABOUT PASSAGE.",
+          "on": {
+            "ask": "dace",
+            "about": "passage"
+          },
+          "effects": [
+            {
+              "leave_start": "copperstall-caravan"
+            }
+          ]
+        }
+      }
+    },
+    "tw_snares": {
+      "name": "Checking the Snares",
+      "start": "walk",
+      "steps": {
+        "walk": {
+          "goal": "Walk your snare line: EAST to the smokehouse, EAST into the old wood, and EAST again.",
+          "on": {
+            "enter": "snare_line"
+          },
+          "then": "poacher"
+        },
+        "poacher": {
+          "goal": "Your snares are cut, and there's someone else's wire about (LOOK at it: INSPECT WIRE). The poacher has been in the deep oaks, NORTH. Step carefully: CREEP NORTH.",
+          "on": {
+            "enter": "deep_oaks"
+          },
+          "effects": [
+            {
+              "text": "Poachers, and their snares. Your own woods are not safe any more."
+            },
+            {
+              "xp": 50
+            },
+            {
+              "start": "tw_bloom"
+            }
+          ]
+        }
+      }
+    },
+    "tw_bloom": {
+      "name": "Moonbloom",
+      "start": "ask",
+      "steps": {
+        "ask": {
+          "goal": "Maud the healer (back at the hamlet, NORTH of the lodge) wants something: ASK MAUD ABOUT MOONBLOOM.",
+          "on": {
+            "ask": "maud",
+            "about": "moonbloom"
+          },
+          "then": "weather"
+        },
+        "weather": {
+          "goal": "Learn to read the sky: ASK MAUD ABOUT WEATHER. Then type WEATHER to see when it will be still and damp.",
+          "on": {
+            "ask": "maud",
+            "about": "weather"
+          },
+          "then": "bloom"
+        },
+        "bloom": {
+          "goal": "Be at the mist pool in Fernhollow (east of the snare line) while the air is still and damp, and the moonbloom will open. Bog wisps guard the way.",
+          "on": {
+            "in": "mist_pool",
+            "when": {
+              "energy": [
+                -1,
+                0
+              ],
+              "precipitation": [
+                -0.2,
+                1
+              ]
+            }
+          },
+          "effects": [
+            {
+              "give": "moonbloom-t"
+            },
+            {
+              "text": "In the stillness, a moonbloom opens, and you pick it."
+            }
+          ],
+          "then": "deliver"
+        },
+        "deliver": {
+          "goal": "Take the moonbloom to Maud: USE MOONBLOOM ON MAUD.",
+          "on": {
+            "use": "moonbloom-t",
+            "on": "maud"
+          },
+          "effects": [
+            {
+              "take": "moonbloom-t"
+            },
+            {
+              "text": "Maud brews it at once. \"The fever will break by morning. Now, there's talk of a white hart on Stag's Rise...\""
+            },
+            {
+              "xp": 100
+            },
+            {
+              "start": "tw_hart"
+            }
+          ]
+        }
+      }
+    },
+    "tw_hart": {
+      "name": "The White Hart",
+      "start": "hunt",
+      "steps": {
+        "hunt": {
+          "goal": "Hunt the white hart on Stag's Rise, NORTH of the deep oaks. The wolves are hunting it too.",
+          "on": {
+            "kill": "white_hart"
+          },
+          "effects": [
+            {
+              "text": "The white hart falls. Its hide would fetch a fortune in the city."
+            },
+            {
+              "xp": 150
+            },
+            {
+              "start": "tw_leave"
+            }
+          ]
+        }
+      }
+    },
+    "tw_leave": {
+      "name": "Downriver",
+      "start": "ask",
+      "steps": {
+        "ask": {
+          "goal": "Sell the hide in the big woods. Tobin, at the smokehouse, takes his barge downriver: ASK TOBIN ABOUT PASSAGE.",
+          "on": {
+            "ask": "tobin",
+            "about": "passage"
+          },
+          "effects": [
+            {
+              "leave_start": "thornwick-barge"
+            }
+          ]
+        }
+      }
+    },
+    "lw_lift": {
+      "name": "Lifting",
+      "start": "purse",
+      "steps": {
+        "purse": {
+          "goal": "Nan wants a purse. The drunk in Tipsy Lane (WEST) won't notice: GET PURSE.",
+          "on": {
+            "get": "purse-u"
+          },
+          "then": "nan"
+        },
+        "nan": {
+          "goal": "Back to the den (EAST): USE PURSE ON NAN.",
+          "on": {
+            "use": "purse-u",
+            "on": "nan"
+          },
+          "effects": [
+            {
+              "take": "purse-u"
+            },
+            {
+              "text": "Nan weighs it, and smiles with all four teeth. \"Good. Now, real work: ASK me about the SIGNET.\""
+            },
+            {
+              "xp": 50
+            },
+            {
+              "start": "lw_signet"
+            }
+          ]
+        }
+      }
+    },
+    "lw_signet": {
+      "name": "The Signet",
+      "start": "ask",
+      "steps": {
+        "ask": {
+          "goal": "ASK NAN ABOUT SIGNET.",
+          "on": {
+            "ask": "nan",
+            "about": "signet"
+          },
+          "then": "steal"
+        },
+        "steal": {
+          "goal": "Steal the magistrate's signet. His house is east of Wick Square, the study up the stairs (NORTH). Deal with the dog, and LOOK at the stairs before you climb.",
+          "on": {
+            "get": "signet-u"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Get the signet back to Nan in the den: USE SIGNET ON NAN.",
+          "on": {
+            "use": "signet-u",
+            "on": "nan"
+          },
+          "effects": [
+            {
+              "take": "signet-u"
+            },
+            {
+              "text": "Nan pockets it. Then the bells start. \"The watch. They know it was one of mine. You need to be gone, tonight.\""
+            },
+            {
+              "xp": 100
+            },
+            {
+              "start": "lw_hot"
+            }
+          ]
+        }
+      }
+    },
+    "lw_hot": {
+      "name": "Too Hot",
+      "start": "roofs",
+      "steps": {
+        "roofs": {
+          "goal": "The watch is in the streets. Go over the rooftops (through the magistrate's study, EAST) and down to the cart yard.",
+          "on": {
+            "enter": "cart_yard"
+          },
+          "then": "joss"
+        },
+        "joss": {
+          "goal": "Joss the carter owes Nan a favour: ASK JOSS ABOUT PASSAGE.",
+          "on": {
+            "ask": "joss",
+            "about": "passage"
+          },
+          "effects": [
+            {
+              "xp": 150
+            },
+            {
+              "leave_start": "lowwick-cart"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "classes": {
+    "fighter": {
+      "name": "Fighter",
+      "description": "Steel, guard and stubbornness. Fighters wear down anything in front of them.",
+      "ability": "cleave",
+      "kinds": [
+        "Weapon",
+        "Light",
+        "Melee",
+        "Potion"
+      ],
+      "talents": [
+        "shield_bash",
+        "guard_up",
+        "hamstring",
+        "second_breath",
+        "heavy_swing",
+        "brace",
+        "whirlwind",
+        "iron_wall",
+        "rending_blow",
+        "rallying_shout",
+        "earthbreaker",
+        "unbroken",
+        "executioner"
+      ]
+    },
+    "mage": {
+      "name": "Mage",
+      "description": "Spells that ride the weather. A mage reads the sky and strikes when it suits them.",
+      "ability": "missile",
+      "kinds": [
+        "Spell",
+        "Light",
+        "Melee",
+        "Potion"
+      ],
+      "talents": [
+        "firebolt",
+        "mending",
+        "spark",
+        "frost_shard",
+        "gust",
+        "mist_veil",
+        "cinder",
+        "chain_lightning",
+        "ice_lance",
+        "cinder_rain",
+        "renewal",
+        "tempest",
+        "absolute_zero",
+        "sunlance",
+        "ember_shield"
+      ]
+    },
+    "rogue": {
+      "name": "Rogue",
+      "description": "Quick blades and dirty tricks. Rogues win by never being where the blow lands.",
+      "ability": "flick_knife",
+      "kinds": [
+        "Light",
+        "Trick",
+        "Melee",
+        "Potion"
+      ],
+      "talents": [
+        "caltrops",
+        "poisoned_edge",
+        "low_blow",
+        "smoke_pellet",
+        "feint",
+        "twin_jab",
+        "garrote",
+        "shadowstep",
+        "venom_cloud",
+        "gutter_trick",
+        "assassinate",
+        "thousand_cuts",
+        "vanishing_act"
+      ]
+    }
+  },
+  "ancestries": {
+    "human": {
+      "name": "Human",
+      "description": "Adaptable, talkative, everywhere. Humans get on with people.",
+      "stat": "presence",
+      "passives": [
+        "second_wind",
+        "last_stand",
+        "quick_study",
+        "haggler",
+        "shore_sleeper",
+        "trapsense",
+        "steady_hands"
+      ]
+    },
+    "elf": {
+      "name": "Elf",
+      "description": "Long-lived and sharp-eyed, at home under trees and stars.",
+      "stat": "focus",
+      "passives": [
+        "long_breath",
+        "woodcraft",
+        "starsight",
+        "feather_step",
+        "skyreading",
+        "trapsense",
+        "moonlit_edge"
+      ]
+    },
+    "orc": {
+      "name": "Orc",
+      "description": "Strong, hardy and proud. Orcs fight with their blood up.",
+      "stat": "vigor",
+      "passives": [
+        "bloodrhythm",
+        "berserk_seal",
+        "thick_hide",
+        "iron_gut",
+        "hunters_nose",
+        "trapsense",
+        "skyreading"
+      ]
+    }
+  },
+  "backgrounds": {
+    "sailor": {
+      "name": "Sailor",
+      "description": "You grew up on decks and docks. You read water, wind and knots.",
+      "items": [
+        "boathook",
+        "tar_flask",
+        "belaying_pin",
+        "sea_biscuits"
+      ],
+      "coins": 15,
+      "opinions": [
+        {
+          "faction": "harrowfolk",
+          "affinity": 5
+        }
+      ],
+      "start": "slipway",
+      "arrive": "ferry_dock",
+      "quest": "gh_tar",
+      "intro": "The storm nearly drowned you all. Now your ship, the Kittiwake, sits on the slipway at Gullhaven with her hull sprung, and Hedda the shipwright says she'll never cross an ocean again. Your old life is ending. Hedda needs a hand first, though. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)"
+    },
+    "merchant": {
+      "name": "Merchant",
+      "description": "You were raised behind a market stall. You know prices, people and lies.",
+      "items": [
+        "cudgel",
+        "weighted_purse",
+        "pepper_pouch",
+        "tonic"
+      ],
+      "coins": 40,
+      "opinions": [
+        {
+          "faction": "harrowfolk",
+          "affinity": 10
+        },
+        {
+          "faction": "orcs",
+          "affinity": -5
+        }
+      ],
+      "start": "stall_row",
+      "arrive": "market_square",
+      "quest": "cs_stall",
+      "intro": "Your first day running the family stall in Copperstall Market, alone. Aunt Brisa is watching, the market is loud, and across the square two merchants are about to come to blows. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)"
+    },
+    "woodsman": {
+      "name": "Woodsman",
+      "description": "You lived off the woods: tracking, trapping, and reading the weather on the trail.",
+      "items": [
+        "hatchet",
+        "skinning_knife",
+        "snare",
+        "poultice"
+      ],
+      "coins": 10,
+      "opinions": [
+        {
+          "faction": "wardens",
+          "affinity": 10
+        }
+      ],
+      "start": "hunters_lodge",
+      "arrive": "woodland_path",
+      "quest": "tw_snares",
+      "intro": "Your last season in Thornwick. The game is thin, the old wood is quiet, and this morning you found your snares cut. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)"
+    },
+    "street_urchin": {
+      "name": "Street Urchin",
+      "description": "You grew up in the gutters. You know locks, crowds and how to run.",
+      "items": [
+        "cosh",
+        "shiv",
+        "pocket_sand",
+        "stolen_tonic"
+      ],
+      "coins": 25,
+      "opinions": [
+        {
+          "faction": "orcs",
+          "respect": 5
+        },
+        {
+          "faction": "harrowfolk",
+          "affinity": -5
+        }
+      ],
+      "start": "gutter_den",
+      "arrive": "back_alley",
+      "quest": "lw_lift",
+      "intro": "Low Wick is a small town, and you've run out of pockets to pick in it. Nan Gristle, who runs the gutter kids, has a job for you. One more, she says. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)"
     }
   }
 }

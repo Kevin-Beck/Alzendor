@@ -19,7 +19,7 @@ from .world import DIRECTIONS, World
 
 MAX_INPUT = 500
 CHANNEL_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{1,23}$")
-TARGET_RE = re.compile(r"^(pc|npc):[a-z0-9_-]{1,40}$")
+TARGET_RE = re.compile(r"^(pc|npc):[a-z0-9_~-]{1,80}$")  # ~ joins an ambusher's template, owner and number
 SHORT_DIRECTIONS = {
     "n": "north", "s": "south", "e": "east", "w": "west",
     "ne": "northeast", "nw": "northwest", "se": "southeast", "sw": "southwest",
@@ -195,10 +195,17 @@ async def ask(ctx: Context, rest: str) -> None:
 # Moving -----------------------------------------------------------------------
 
 
-@command("continue", "CONTINUE", "Go on to the next stage of a journey. Shorthand: Enter on an empty line, while travelling.",
-         aliases=("onward", "next"))
-async def continue_(ctx: Context, rest: str) -> None:
-    await ctx.call("continue")
+@command("choose", "CHOOSE <number>", "Make a choice in a travel event, e.g. CHOOSE 2.", aliases=("pick",))
+async def choose(ctx: Context, rest: str) -> None:
+    number = rest.strip()
+    if not number.isdigit():
+        raise Usage("Choose which? e.g. CHOOSE 1.")
+    await ctx.call("choose", number)
+
+
+@command("flee", "FLEE", "Run from an ambush on the road, and be left behind in the wilds.", aliases=("run",))
+async def flee(ctx: Context, rest: str) -> None:
+    await ctx.call("flee")
 
 
 @command("travel", "TRAVEL [destination]", "List the ferries, coaches, portals and other routes from here, or take one, e.g. TRAVEL VILLAGE GREEN.",
@@ -214,6 +221,15 @@ async def move(ctx: Context, rest: str) -> None:
     if direction not in DIRECTIONS:
         raise Usage("Move where? Directions are " + ", ".join(DIRECTIONS) + ".")
     await ctx.call("move", direction)
+
+
+@command("creep", "CREEP <direction>", "Step somewhere carefully: slower, but likelier to spot a trap.", aliases=("careful", "sneak"))
+async def creep(ctx: Context, rest: str) -> None:
+    direction = rest.lower()
+    direction = SHORT_DIRECTIONS.get(direction, direction)
+    if direction not in DIRECTIONS:
+        raise Usage("Creep where? Directions are " + ", ".join(DIRECTIONS) + ".")
+    await ctx.call("move", direction, "careful")
 
 
 # Acting in the room -----------------------------------------------------------
@@ -264,7 +280,7 @@ def _verb_handler(verb: str, plain: str | None, targeted: str | None) -> Handler
 
 
 for _verb, (_plain, _targeted) in VERBS.items():
-    _usage = _verb if _targeted is None else (f"{_verb} <thing>" if _plain is None else f"{_verb} [thing]")
+    _usage = _verb.upper() if _targeted is None else (f"{_verb.upper()} <thing>" if _plain is None else f"{_verb.upper()} [thing]")
     command(_verb, _usage, f"Emote: {_verb}.")(_verb_handler(_verb, _plain, _targeted))
 
 
@@ -285,12 +301,41 @@ SLOT_NUMBERS = ("1", "2", "3")
 SLOT_FILLER = ("in", "into", "to", "slot")
 
 
-@command("use", "USE <slot> [target]", "Use what's in slot 1, 2 or 3, on its beat. Shorthand: 1, 2, 3 (in the web client, the keys 4, 3, 2)")
+@command("use", "USE <slot> [target] | USE <item> [ON <thing>]",
+         "Use what's in slot 1, 2 or 3, on its beat (shorthand: 1, 2, 3; in the web client, the keys 4, 3, 2), "
+         "or use something you carry, e.g. USE TAR ON HULL.")
 async def use(ctx: Context, rest: str) -> None:
     slot, _, target = rest.partition(" ")
-    if slot not in SLOT_NUMBERS:
-        raise Usage("Use which slot? 1, 2 or 3.")
-    await ctx.call("use", slot, _thing(target) or ctx.target)
+    if slot in SLOT_NUMBERS:
+        await ctx.call("use", slot, _thing(target) or ctx.target)
+        return
+    if not rest or slot.isdigit():
+        raise Usage("Use which slot? 1, 2 or 3. Or USE <item> ON <thing>.")
+    item, _, thing = rest.lower().partition(" on ")
+    await ctx.call("use_item", _thing(item), _thing(thing))
+
+
+@command("learn", "LEARN <talent or passive>", "Learn a talent from your class (at even levels) or a passive from your ancestry (at 5, 10, 15 and 20).")
+async def learn(ctx: Context, rest: str) -> None:
+    await ctx.call("learn", _require(rest.strip(), "Learn what? The Character panel lists what you can."))
+
+
+@command("attune", "ATTUNE <passive> <slot>", "Choose which slot a slot passive (like Second Wind) belongs to.")
+async def attune(ctx: Context, rest: str) -> None:
+    words = rest.lower().split()
+    if len(words) < 2 or words[-1] not in SLOT_NUMBERS:
+        raise Usage("Usage: ATTUNE <passive> <slot>, e.g. ATTUNE SECOND WIND 1.")
+    await ctx.call("attune", " ".join(words[:-1]), words[-1])
+
+
+@command("respec", "RESPEC", "At a trainer, forget your talents and passives and choose again, for 10 coins a level.")
+async def respec(ctx: Context, rest: str) -> None:
+    await ctx.call("respec")
+
+
+@command("quests", "QUESTS", "List your quests and what each needs next.", aliases=("journal", "q"))
+async def quests(ctx: Context, rest: str) -> None:
+    await ctx.call("quests")
 
 
 @command("equip", "EQUIP <gear> [slot]", "Put gear in a slot, e.g. EQUIP SWORD 2. GEAR lists it all.", aliases=("wield",))
@@ -397,10 +442,23 @@ async def announce(ctx: Context, rest: str) -> None:
 @command("setweather", "SETWEATHER <temperature> <energy> <precipitation> | CLEAR",
          "Pin the weather in your region (each -1 to 1) for testing, or let it run free.", admin=True)
 async def setweather(ctx: Context, rest: str) -> None:
-    values = rest.split()
+    values = rest.lower().split()
     if values != ["clear"] and len(values) != 3:
         raise Usage("Usage: SETWEATHER <temperature> <energy> <precipitation> (each -1 to 1), or SETWEATHER CLEAR.")
     await ctx.call("set_weather", *values)
+
+
+@command("goto", "GOTO <room id>", "Jump to any room, for testing.", admin=True)
+async def goto(ctx: Context, rest: str) -> None:
+    await ctx.call("goto", _require(rest.strip().lower(), "Usage: GOTO <room id>"))
+
+
+@command("setclock", "SETCLOCK <hour> | CLEAR", "Pin the time of day (0-23) for testing, or let the clock run.", admin=True)
+async def setclock(ctx: Context, rest: str) -> None:
+    value = rest.lower().strip()
+    if not value:
+        raise Usage("Usage: SETCLOCK <hour 0-23>, or SETCLOCK CLEAR.")
+    await ctx.call("set_clock", value)
 
 
 # Session ----------------------------------------------------------------------

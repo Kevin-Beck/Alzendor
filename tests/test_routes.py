@@ -1,9 +1,8 @@
 """Routes: fast travel by ferry and coach within a realm, the same way as portals
-between realms. Journeys go in stages. See docs/places.md."""
+between realms. Journeys pass through waypoints and play themselves. See
+docs/places.md and docs/journeys.md."""
 
-from .conftest import drain, enter, set_weather, texts
-
-TO_FERRY_DOCK = ("north", "west", "west", "west", "west", "west", "southwest")
+from .conftest import drain, enter, ride, set_weather, texts
 
 
 def of_type(events, kind):
@@ -15,20 +14,7 @@ async def walk(world, pid, *directions):
         await world.call("move", pid, direction)
 
 
-async def go_on(world, pid):
-    """Continues a journey one stage, skipping the wait."""
-    await world.call("continue", pid)
-    await world.redis.zadd("alz:journeys", {pid: 0})
-    await world.call("tick")
-
-
-async def ride(world, pid):
-    """Continues a journey to its end."""
-    while await world.redis.exists(f"PLAYER:{pid}:journey"):
-        await go_on(world, pid)
-
-
-async def test_the_coach_goes_in_stages_and_costs_a_fare(world):
+async def test_the_coach_runs_through_its_waypoints_and_costs_a_fare(world):
     kevin, mara = await enter(world, "kevin"), await enter(world, "mara")
     await walk(world, "kevin", "north")
     await walk(world, "mara", "north")
@@ -38,39 +24,54 @@ async def test_the_coach_goes_in_stages_and_costs_a_fare(world):
     listing = of_type(await drain(kevin), "routes")[0]
     assert listing["text"].splitlines() == [
         "Routes from here. Type one of these to go (you have 20 coins):",
-        "  TRAVEL VILLAGE GREEN: the Lake Road coach to Harrowlake. 3 coins, 4 stages.",
+        "  TRAVEL VILLAGE GREEN: the High Road coach to Harrowlake. 3 coins, 4 stages.",
     ]
 
     await world.call("travel", "kevin", "village green")  # its destination, as listed
     events = await drain(kevin)
     assert texts(events)[0] == "You pay Bram three coins and climb into the coach. He cracks the whip."
     stage = of_type(events, "journey")[0]
-    assert (stage["stage"], stage["stages"], stage["waiting"]) == (1, 4, True)
-    assert stage["text"] == "Bram cracks the whip, and the coach lurches out of the square towards the harbour road. (Enter to go on)"
-    assert await world.redis.get("PLAYER:kevin:room") == "coach"
+    assert (stage["stage"], stage["stages"], stage["at"], stage["kind"]) == (1, 4, "switchbacks", "coach")
+    assert stage["text"].startswith("The road climbs the mountain in tight switchbacks")
+    assert await world.redis.get("PLAYER:kevin:room") == "switchbacks"
+    assert of_type(events, "room")[-1]["room"]["waypoint"] is True
     assert of_type(events, "kit")[-1]["coins"] == 17
-    assert "Kevin climbs into Bram's coach, and it rattles off west." in texts(await drain(mara))
+    assert "Kevin climbs into Bram's coach, and it rattles off towards the mountains." in texts(await drain(mara))
 
-    # Continuing waits a couple of seconds before the next stage.
-    await world.call("continue", "kevin")
+    # It moves on by itself after stage_seconds; nothing to press.
     await world.call("tick")
     assert of_type(await drain(kevin), "journey") == []
     await world.redis.zadd("alz:journeys", {"kevin": 0})
     await world.call("tick")
-    assert of_type(await drain(kevin), "journey")[0]["stage"] == 2
+    assert of_type(await drain(kevin), "journey")[0]["at"] == "high_pass"
 
     await world.call("move", "kevin", "west")  # nowhere to walk mid-journey
     assert texts(await drain(kevin)) == ["You can't go that way."]
     await ride(world, "kevin")
     events = await drain(kevin)
-    assert of_type(events, "journey")[-1]["text"].endswith("(Enter to arrive)")
+    assert of_type(events, "journey")[-1].get("done") is True
     assert await world.redis.get("PLAYER:kevin:room") == "village_green"
     assert "REGION:harrowlake" in kevin.subs
 
 
+async def test_riders_are_private(world):
+    kevin, mara = await enter(world, "kevin"), await enter(world, "mara")
+    for pid in ("kevin", "mara"):
+        await walk(world, pid, "north")
+        await world.call("travel", pid, "coach")  # each gets a coach of their own
+    await drain(kevin), await drain(mara)
+    assert await world.redis.get("PLAYER:mara:room") == "switchbacks"
+    assert await world.redis.smembers("ROOM:switchbacks:players") == set()
+    assert "ROOM:switchbacks" not in kevin.subs
+    await world.call("look", "kevin")
+    assert of_type(await drain(kevin), "room")[-1]["room"]["entities"] == []
+    await world.call("say", "kevin", "Hello?")
+    assert texts(await drain(mara)) == []
+
+
 async def test_the_ferry_needs_the_island_known_the_ferryman_and_a_calm_enough_wind(world):
     kevin = await enter(world, "kevin")
-    await walk(world, "kevin", *TO_FERRY_DOCK)
+    await world.call("goto", "kevin", "ferry_dock")
     await drain(kevin)
     await world.call("travel", "kevin", "ferry")
     assert texts(await drain(kevin)) == ["No route from here goes to 'ferry'. Type TRAVEL to see where you can go."]
@@ -102,39 +103,46 @@ async def test_asking_the_operator_about_passage_takes_their_route(world):
     await walk(world, "kevin", "north")
     await drain(kevin)
     await world.call("ask", "kevin", "bram", "passage")
-    assert await world.redis.get("PLAYER:kevin:room") == "coach"
+    assert await world.redis.get("PLAYER:kevin:room") == "switchbacks"
 
 
 async def test_a_journey_waits_for_you_if_you_log_out_on_the_way(world):
     kevin = await enter(world, "kevin")
     await walk(world, "kevin", "north")
     await world.call("travel", "kevin", "coach")
-    await go_on(world, "kevin")
-    await world.call("disconnect", "kevin", "session-kevin", "", "Bye.")  # the coach is safe: gone at once
-    await world.call("tick")
+    await ride(world, "kevin", stages=1)
+    await world.call("disconnect", "kevin", "session-kevin", "", "Bye.")  # aboard is safe: gone at once
+    await world.redis.zadd("alz:journeys", {"kevin": 0})
+    await world.call("tick")  # offline: the journey doesn't move on without you
+    assert await world.redis.get("PLAYER:kevin:room") == "high_pass"
     again = await enter(world, "kevin", session="again")
     events = await drain(again)
-    assert of_type(events, "room")[-1]["room"]["id"] == "coach"
+    assert of_type(events, "room")[-1]["room"]["id"] == "high_pass"
     assert of_type(events, "journey")[-1]["stage"] == 2  # where you left off
     await ride(world, "kevin")
     assert await world.redis.get("PLAYER:kevin:room") == "village_green"
 
 
-async def test_instant_routes_need_no_stages(world):
+async def test_instant_routes_need_no_waypoints(world):
     kevin = await enter(world, "kevin")
-    await walk(world, "kevin", "north", "west", "west", "west", "west", "west", "north")  # the chapel
+    await world.call("goto", "kevin", "chapel")
     await world.call("travel", "kevin", "ring")
     assert await world.redis.get("PLAYER:kevin:room") == "rime_landing"
     assert not await world.redis.exists("PLAYER:kevin:journey")
 
 
-async def test_the_map_shows_routes_from_explored_rooms(world):
+async def test_the_map_shows_routes_along_their_paths(world):
     kevin = await enter(world, "kevin")
     await walk(world, "kevin", "north")
     await drain(kevin)
     again = await enter(world, "kevin", session="again")
     full = of_type(await drain(again), "map")[0]
-    assert {(r["from"], r["to"]) for r in full["routes"]} == {("market_square", "village_green")}
+    [route] = full["routes"]
+    assert (route["from"], route["to"], route["kind"], route["command"]) == (
+        "market_square", "village_green", "coach", "TRAVEL VILLAGE GREEN")
+    assert route["path"] == [[-160, -90], [-300, -140], [-450, -110], [-590, -30]]
+    assert "switchbacks" not in {r["id"] for r in full["rooms"]}  # waypoints are drawn as the route, not as rooms
+    assert "harrowlake" in {g["id"] for g in full["regions"]}  # the coach joins the regions
 
 
 async def test_npcs_drop_coins(world):
@@ -145,3 +153,12 @@ async def test_npcs_drop_coins(world):
     await world.call("use", "kevin", 1, "npc:rat-1")
     assert "You take the Dock Rat's 1 coin." in texts(await drain(kevin))
     assert await world.redis.hget("ACCOUNT:kevin", "coins") == "21"
+
+
+async def test_riders_hear_themselves(world):
+    kevin = await enter(world, "kevin")
+    await walk(world, "kevin", "north")
+    await world.call("travel", "kevin", "coach")
+    await drain(kevin)
+    await world.call("say", "kevin", "Lovely view.")
+    assert texts(await drain(kevin)) == ['Kevin says, "Lovely view."']

@@ -7,7 +7,7 @@ import pytest
 
 from alzendor.world import validate_seed
 
-from .conftest import SEED, drain, enter, texts
+from .conftest import SEED, drain, enter, ride, texts
 
 
 async def test_entering_subscribes_to_every_level(world):
@@ -187,7 +187,7 @@ async def test_logging_in_elsewhere_ends_the_old_connection(world):
     new = await enter(world, "kevin", session="new")
     await drain(old)
     assert old.ended == "You connected from somewhere else."
-    assert [(e["type"], e.get("cause")) for e in await drain(new) if e["type"] not in ("timing", "kit", "character")] == [
+    assert [(e["type"], e.get("cause")) for e in await drain(new) if e["type"] not in ("timing", "kit", "character", "quests")] == [
         ("map", None), ("weather", None), ("room", "resume"),
     ]
     assert await drain(mara) == []  # no leave and re-enter for a takeover
@@ -231,9 +231,9 @@ async def test_map_shows_explored_rooms_and_glimpses_of_their_exits(world):
     assert "name" not in rooms["cellar"]  # glimpsed rooms stay unnamed until visited
     assert [a["id"] for a in first["areas"]] == ["old_quarter"]
     assert first["areas"][0]["bounds"] == [40, -20, 80, 48]
-    assert first["areas"][0]["color"] == 6  # colours go in area id order within the realm: docks, forest_edge, …
+    assert first["areas"][0]["color"] == 1  # colours go in area id order within the realm, wrapping after 6
     assert {g["id"]: g["state"] for g in first["regions"]} == {
-        "harrowgate": "explored", "harrowlake": "discovered", "spiderwood": "discovered"}
+        "harrowgate": "explored", "harrowlake": "discovered", "spiderwood": "discovered", "harrow_mountains": "discovered"}
 
     await world.call("move", "kevin", "north")
     update = next(e for e in await drain(kevin) if e["type"] == "map")
@@ -355,13 +355,14 @@ async def walk(world, pid: str, *directions: str) -> None:
 
 async def test_hidden_regions_are_not_discovered_by_bordering(world):
     kevin = await enter(world, "kevin")
-    await walk(world, "kevin", "north", "west", "west", "west", "west", "west", "southwest")  # to the ferry dock
+    await world.call("goto", "kevin", "ferry_dock")
     events = await drain(kevin)
     assert [e for e in events if e["type"] == "room"][-1]["room"]["id"] == "ferry_dock"
     states = region_states([e for e in events if e["type"] == "map"][-1])
-    assert states == {"harrowgate": "explored", "harrowlake": "explored", "spiderwood": "discovered"}
+    assert states == {"harrowgate": "explored", "harrowlake": "explored", "spiderwood": "discovered",
+                      "harrow_mountains": "discovered"}
 
-    # The ferry dock's exit west leads to Saltmere, but no glimpse of it shows.
+    # The ferry goes to Saltmere, but no glimpse of it shows.
     await world.call("look", "kevin")
     await drain(kevin)
     again = await enter(world, "kevin", session="second")
@@ -372,7 +373,7 @@ async def test_hidden_regions_are_not_discovered_by_bordering(world):
 
 async def test_a_map_reveals_hidden_regions(world):
     kevin = await enter(world, "kevin")
-    await walk(world, "kevin", "north", "west", "west", "west", "west", "west", "west")  # to the Drowned Lantern
+    await world.call("goto", "kevin", "drowned_lantern")
     await drain(kevin)
     await world.call("get", "kevin", "chart")
     events = await drain(kevin)
@@ -381,7 +382,7 @@ async def test_a_map_reveals_hidden_regions(world):
     assert update["full"] is True
     saltmere = next(g for g in update["regions"] if g["id"] == "saltmere")
     assert saltmere["state"] == "discovered" and saltmere["name"] == "Saltmere Isle"
-    assert saltmere["bounds"] == [-310, 15, -280, 40]
+    assert saltmere["bounds"] == [-910, 15, -880, 40]
 
     # Learning it again tells you nothing; going there explores it.
     await world.call("drop", "kevin", "chart")
@@ -389,10 +390,7 @@ async def test_a_map_reveals_hidden_regions(world):
     assert not any(e["type"] == "map" for e in await drain(kevin))
     await walk(world, "kevin", "east", "southwest")  # the ferry dock: the island is only reached by ferry
     await world.call("travel", "kevin", "ferry")
-    while await world.redis.exists("PLAYER:kevin:journey"):  # the crossing, without the waits
-        await world.call("continue", "kevin")
-        await world.redis.zadd("alz:journeys", {"kevin": 0})
-        await world.call("tick")
+    await ride(world, "kevin")  # the crossing, without the waits
     update = [e for e in await drain(kevin) if e["type"] == "map"][-1]
     assert region_states(update)["saltmere"] == "explored"
     assert "REGION:saltmere" in kevin.subs
@@ -422,7 +420,8 @@ async def test_players_from_before_regions_learn_them_from_where_they_have_been(
     await world.redis.sadd("PLAYER:kevin:explored", "tavern", "woodland_path")
     kevin = await enter(world, "kevin")
     full = next(e for e in await drain(kevin) if e["type"] == "map")
-    assert region_states(full) == {"harrowgate": "explored", "spiderwood": "explored", "harrowlake": "discovered"}
+    assert region_states(full) == {"harrowgate": "explored", "spiderwood": "explored", "harrowlake": "discovered",
+                                   "harrow_mountains": "discovered"}
 
 
 def test_seed_validation_catches_broken_maps():

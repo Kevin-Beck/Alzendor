@@ -50,8 +50,10 @@ docker compose up -d --build    # Redis + two game servers
 
 Open <http://localhost:8001> and <http://localhost:8002> in two windows. Each
 one is served by a different server, and both are in the same world. Create an
-account in each and try `look`, `north`, `say hello`, `touch ground`,
-`get map`, `weather`, `tell <name> hi`, `chat general hi`, and `help`.
+account in each, then a character (a class, an ancestry and a background), and
+play through your background's starting realm: it teaches moving, looking,
+talking (`ASK <name> ABOUT <topic>`), quests, fighting and the weather, and
+ends with a journey into the world proper. Try `help` for every command.
 
 The game writes commands in capitals (`TRAVEL VILLAGE GREEN`, `HELP`) so they
 stand out from the text around them; type them in any case. In usages,
@@ -64,7 +66,11 @@ The web client is built around the map:
   bar between the map and the log, to resize them. Focus a bar and use the
   arrow keys to nudge it, or double-click it to reset. Sizes are remembered
   per browser. On a phone, the panels stack instead.
-- **Map.** The world nests in four levels: **realms** (separate worlds, see
+- **Map.** Routes are drawn along their waypoints as roads you can't walk
+  (amber for a coach, blue for a ferry), traps you know of are marked ⚠, and
+  the map darkens outdoors at night. Realms you've only heard of are listed in
+  **All**, greyed out.
+- **The world.** The world nests in four levels: **realms** (separate worlds, see
   [Realms](#realms)) hold **regions** (a city like Harrowgate, a village like
   Harrowlake, a wild place like Spiderwood), which hold **areas**, which hold
   **rooms**. The map shows the realm you're in. Regions and areas are boxes; rooms are dots
@@ -106,12 +112,22 @@ The web client is built around the map:
 - **Here.** Everyone in the room, as cards: name (players and NPCs in
   different colours), race/class, short description, health, and an NPC's
   disposition. Sleeping players are marked asleep.
-- **Inventory**, **Character** and **Reputation** (header buttons). Your
-  gear and what it does in today's weather, with buttons to put any piece in
-  slot 1, 2 or 3, and how full your pack is; your level, experience, stats
-  (with `+` buttons when you have points to spend), faction boons and
-  abilities; and the factions that know you, grouped by realm (home first),
-  with their affinity and respect.
+- **Inventory**, **Character**, **Reputation** and **Quests** (header
+  buttons). Your gear and what it does in today's weather, with buttons to
+  put any piece in slot 1, 2 or 3, and how full your pack is; your class,
+  ancestry and background, level, experience, stats (with `+` buttons when
+  you have points to spend), talents and ancestry passives (with Learn
+  buttons, and slot buttons to attune a passive), faction boons and other
+  abilities; the factions that know you, grouped by realm (home first), with
+  their affinity and respect; and your quests. A badge shows when you have
+  points or picks to spend, or quests on the go.
+- **Quest.** The goal of your current quest, always visible in the side panel.
+- **Journeys.** On a route, your dot moves along it on the map, the room
+  panel says where you are, and a travel event appears in the log as a card
+  with a button for each choice.
+- **Creating a character.** A new account (or one whose character was wiped)
+  chooses a class, an ancestry and its first passive, and a background before
+  entering the world. See [Characters](#characters).
 - **Targeting.** In the command box, **Tab** / **Shift+Tab** cycle through the
   cards and **Esc** clears the selection. Your slots and commands that take
   a target (`poke`, `wave`, `inspect`, …) go to the selected card when you don't type a
@@ -277,7 +293,31 @@ Defeat anywhere sends you home to the temple shrine, and that's the cost: the
 whole journey is lost. Each realm has a `REALM:` channel for realm-wide
 events. The design is in [docs/realms.md](docs/realms.md).
 
-### Travel and coins
+### Getting around: walking, traps and night
+
+Every step takes time: 0.6 s through towns, along roads and indoors, 0.9 s
+over open country, and 1.5 s on rough ground (mountains, marsh, scree, deep
+forest), plus whatever snow and mud add. Click-to-walk paces itself to match.
+
+**Traps** lie in some rooms: walking in springs one unless you pass a stat
+check (a snare tests Poise, a rockfall Vigor), and the next room over always
+shows a sign for those who look ("a coil of trapper's wire in the leaves").
+`CREEP <direction>` steps in slowly and carefully, with a better chance; a
+trap you already know about is easier too, and your map marks it ⚠.
+**Trapsense** (an ancestry passive) warns you of traps next door.
+
+**Checks** (traps, travel events) test one stat: the chance is the
+difficulty's base (easy 50%, fair 30%, hard 10%) plus 12% a point, between
+5% and 95%. You're told which stat is tested, not the odds. A background
+that suits the check adds 35%.
+
+**Day and night.** A game day lasts an hour of real time (`day_minutes`).
+Outdoors at night you can't see past the ways you know, as in heavy rain;
+some travel events only happen at night. A realm can have a sky of its own:
+the Stillsands' sun never sets. `SETCLOCK <hour>` (admin) pins the hour for
+testing.
+
+### Travel: routes, journeys and travel events
 
 Walk with exits, or click a known room on the map. For longer trips there
 are **routes**: ferries, coaches, portal mages and rifts. `travel` lists the
@@ -285,30 +325,66 @@ routes from where you are as the exact commands to type, one per line:
 
 ```
 Routes from here. Type one of these to go (you have 20 coins):
-  TRAVEL VILLAGE GREEN: the Lake Road coach to Harrowlake. 3 coins, 4 stages.
+  TRAVEL VILLAGE GREEN: the High Road coach to Harrowlake. 3 coins, 4 stages.
 ```
 
 A route is named by where it goes. `TRAVEL VILLAGE GREEN` takes it (so does
 `travel to village green`, or one of the route's keywords like `travel
 coach`), and each is also a button beside the exits. A place you've never
-heard of is listed as "somewhere you know nothing about". A route can need its operator there and friendly
-to you, a fare, the right weather, or a room clear of enemies. Routes to a
-hidden place are only offered once you know it's there.
+heard of is listed as "somewhere you know nothing about". A route can need
+its operator there and friendly to you, a fare, the right weather, or a room
+clear of enemies. Routes to a hidden place are only offered once you know
+it's there.
 
-Most routes are **journeys in stages**: you ride in a real room (the coach,
-the ferry's deck), each stage is a line ("The coach rocks as it goes over the
-cobbles…"), and you press **Enter** (or the button, or `continue`) to go on;
-a couple of seconds later the next stage comes, and after the last you
-arrive. Log out on the way and you're still aboard when you come back.
-Portals are instant.
+Coaches and ferries are **journeys**: they run through waypoints (the
+Switchbacks, the High Pass, Gallows Ridge, the Harrow Ford), one every few
+seconds, by themselves. You can't walk to a waypoint or off the route, and
+every ride is your own: nobody waits for anyone, and other riders can't see
+you (chat still works). Log out on the way and you're still aboard when you
+come back. Portals and rifts are instant.
 
-- **The Lake Road coach** runs from Harrowgate's market square to Harrowlake's
-  village green and back (Bram the coachman, 3 coins).
+- **The High Road coach** goes from Harrowgate's market square over the
+  mountains to Harrowlake's village green and back (Bram, 3 coins). There's
+  no road on foot: Harrowlake is far to the west.
 - **The Saltmere ferry** is the only way to Saltmere Isle (Osric, 5 coins),
   and it won't sail in a strong wind.
 
-You start with 20 **coins**, and NPCs you defeat drop more. The guide to
-places and travel is [docs/places.md](docs/places.md).
+**Travel events** are rare (5% at each waypoint, at most one a journey): a
+wheel stuck in the mud, a toll-keeper, a pickpocket, a passenger asking the
+innkeeper's name, a riddle from a man adrift in a rowboat, rumours of hidden
+places and other realms. Each is a card with two to four choices: a stat
+check, a cost, an answer, or an option only your background gets ("Read the
+gusts and take the helm" for a sailor). Choose with the buttons or `CHOOSE
+<n>`; wait a minute and the last choice is taken for you. Results are small:
+time lost or gained, coins, health, reputation, a short buff, a region or
+realm you hear of.
+
+Bad weather doesn't make them likelier: it makes them worse. In a storm, a
+squall can swamp the ferry (and you can drown: a real death), rocks can come
+down on the coach, and the ferry can run aground on a skerry, **marooning**
+you on Castaway Isle until you find what's needed to mend it (a priority
+quest; the journey waits for you). Very rarely the ride is **ambushed**
+(wolves at the ford at dusk, highwaymen at night): fight your attackers
+(they're yours alone) and the ride goes on; lose, or `FLEE`, and you're
+**stranded** in the wilds below the road, battered, the fare gone, with a
+walk back to town.
+
+You start with some **coins** (your background decides how many), and NPCs
+you defeat drop more. The guide to places and travel is
+[docs/places.md](docs/places.md); the design of journeys is
+[docs/journeys.md](docs/journeys.md).
+
+### Quests
+
+People have things to say: a character's card lists their topics, and `ASK
+<name> ABOUT <topic>` asks. Some start quests. `QUESTS` (or the Quests
+panel) lists yours with what each needs next, and the side panel shows the
+current goal. Quests move on when you do what they ask: talk to someone,
+pick something up, go somewhere, defeat something, use an item on something
+(`USE <item> ON <thing>`), or be somewhere in the right weather. Quest items
+are your own: two players on the same quest each find their own. A
+**priority** quest (being marooned) holds you: leaving its place any other
+way than finishing it (dying, a teleport) fails it, but logging out doesn't.
 
 ### Reputation: affinity and respect
 
@@ -337,13 +413,56 @@ friendly; a hostile one stays its hand if it respects you or likes you enough.
 Greetings and taunts count once per NPC per 10 minutes. Your **Presence**
 stat moves every change further.
 
-### Experience, stats and abilities
+### Characters
 
-Defeating NPCs earns experience (each level needs 100 × your level). Each
-level gives a **stat point** to spend with `train <stat>` (or the `+`
-buttons), and the seed's level table grants gear and abilities: a Sword at
-level 2, Mending Light and Woodcraft at 3, Firebolt and the Healing Draught at
-4, Shore-sleeper at 5, a Greataxe at 6.
+A new character chooses three things, once ([docs/characters.md](docs/characters.md)):
+
+- **Class**: how you fight. It gives your first slot ability and decides
+  which kinds of gear you can use. **Fighter** (Cleave; weapon, light, melee,
+  potion), **Mage** (Magic Missile; spell, light, melee, potion) or **Rogue**
+  (Flick Knife; light, trick, melee, potion).
+- **Ancestry**: what you are. +1 to a stat and a passive from its pool of
+  seven. **Human** (+1 Presence: Second Wind, Last Stand, Quick Study,
+  Haggler, Shore-sleeper, Trapsense, Steady Hands), **Elf** (+1 Focus: Long
+  Breath, Woodcraft, Starsight, Feather Step, Skyreading, Trapsense, Moonlit
+  Edge) or **Orc** (+1 Vigor: Bloodrhythm, Berserk Seal, Thick Hide, Iron
+  Gut, Hunter's Nose, Trapsense, Skyreading).
+- **Background**: how you've lived. Two starting items (the two of its four
+  that your class can use), coins, small starting opinions with factions,
+  better options in travel events, and where your story starts: **Sailor**
+  (Gullhaven), **Merchant** (Copperstall), **Woodsman** (Thornwick) or
+  **Street Urchin** (Low Wick).
+
+Your class ability and background items fill your three slots. Choices are
+sidegrades, not ranks: none is meant to be best.
+
+**Starting realms.** Each background begins in a small realm of its own: a
+shipyard town, a market town, a hamlet in an old wood, a town that's got too
+small for you. Its quests teach the game, take you to level 3, and end with a
+journey out into Alzendor. You can't go back. Die there and you wake where
+you began.
+
+**Levelling** (to a cap of 20; each level needs 100 × your level in
+experience):
+
+- every level: a **stat point** (`TRAIN <stat>`, or the `+` buttons);
+- every even level: a **talent**, a slot ability from your class's pool
+  (`LEARN <talent>`, or the Character panel). Your first three are rank 1;
+  rank 2 opens after three talents, rank 3 after seven. Talents have weather
+  elements, so a broad set lets you swap slots as the weather turns. Some
+  stagger (push the target's next blow back), guard (soak up the next blows)
+  or bleed and burn (hurt on each of the target's next beats, never quite
+  killing it);
+- levels 5, 10, 15 and 20: another **ancestry passive** (`LEARN <passive>`).
+
+Levelling gives no gear: that comes from the world. Some passives play with
+the slot ball: Second Wind heals you each time the attuned slot's ball
+touches the left edge, Bloodrhythm makes misses charge the next hit, and
+Berserk Seal makes a slot 50% stronger until its ball first touches the left
+edge, then seals it for the rest of the fight. `ATTUNE <passive> <slot>`
+chooses the slot (not mid-fight). **Sergeant Holt**, in the Harrowgate
+training yard, resets your talents and passives for 10 coins a level
+(`RESPEC`).
 
 The stats are deliberately plain: everyone wants them, and you choose where
 your points go. Gear and abilities are what make characters different.
@@ -356,7 +475,7 @@ your points go. Gear and abilities are what make characters different.
 | Presence | your deeds move reputation 15% further, good or bad |
 | Resilience | weather penalties 10% softer (up to 50%); bonuses kept |
 
-Factions can grant **boons**: a stat bonus while your standing with them is
+Your ancestry's +1 counts like a trained point. Factions can grant **boons**: a stat bonus while your standing with them is
 high enough. The Wardens give +1 Resilience at affinity 20, and the
 Spiderwood Brood +1 Poise at respect 30. The Character panel shows which are
 active and what the others need.
@@ -443,8 +562,10 @@ items are, who is where, NPC health) is never overwritten.
   verbs on them (`"touch:ground": "crouches and presses a palm to…"`).
 - **Realms** have a `name`, a `description`, and optionally `weather`:
   `[centre, spread]` for each axis (e.g. `"temperature": [-0.85, 0.15]`),
-  default `[0, 1]`. Exactly one is `"home": true`. Rooms in different realms
-  can't be joined by exits.
+  default `[0, 1]`; a `sky` (`always_day` or `always_night`); and a `shrine`
+  (where you wake if you die there; default the `shrine_room` rule).
+  Exactly one is `"home": true`; `"starting": true` marks a background's
+  starting realm. Rooms in different realms can't be joined by exits.
 - **Regions** belong to a `realm`: Harrowgate is a city, Harrowlake a
   village, Spiderwood a forest, Saltmere a hidden isle. Each has a `name`,
   and optionally:
@@ -463,7 +584,18 @@ items are, who is where, NPC health) is never overwritten.
   rooms inside them. Leave clear space between regions and between areas so
   their boxes don't touch on the map. Areas are coloured in id order, or set
   `"color": 1`–`6`.
-- **Items** can have `reveals`: a list of regions that become discovered for
+- **Waypoints** are rooms with `"waypoint": true` and no exits: the stops on
+  a route's `path`, drawn as part of the route and only reached by riding it.
+  Their `description` is the line you see as you pass.
+- **Traps**: a room's `trap` has a `name`, the `stat` that avoids it, a
+  `difficulty` (`easy`, `fair`, `hard`), `damage`, optionally `slows`
+  (seconds of slower steps) and `rearm` (seconds), texts `hit`, `avoid` and
+  `sprung` (with `{actor}`), and a `sign`: `{room, name, text}`, a feature in
+  a room next door.
+- **`terrain_ground`** maps terrains to `open` or `rough` for walking pace
+  (rooms without a terrain, and indoor rooms, are road).
+- **Items** can be `"quest": true` (each player gets their own; with no
+  `room`, only a quest hands it out). They can have `reveals`: a list of regions that become discovered for
   whoever picks the item up (a map), and `forecasts`: realms whose skies
   they can then read (a storm glass).
 - **NPCs** have a `name`, `label` (race/class), short `description`, longer
@@ -476,7 +608,9 @@ items are, who is where, NPC health) is never overwritten.
   with a `name`, `period` in ms, `damage` and `hit` text using `{actor}` and
   `{target}`), `xp` (default half its max HP), `drops` (gear ids given to
   whoever kills it), `coins` they drop, and `"immortal": true` for practice
-  targets.
+  targets. `topics` maps what they'll talk about to a line, or to `{text,
+  starts}` to start a quest. `"trainer": true` lets players `RESPEC` there.
+  A `"template": true` NPC has no room: ambushes copy it.
 - **Rooms** can be `"safe": true` (inns, shrines, camps) and have a `terrain`
   (`forest`, `coast`, …) that perks can make safe and that nudges the weather
   (`terrain_weather`, e.g. forests are sheltered).
@@ -484,15 +618,40 @@ items are, who is where, NPC health) is never overwritten.
   is always neutral and dry. An exceptional room or area can have a fixed
   `climate: {temperature, energy, precipitation}` (each -1 to 1) instead.
 - **`routes`** are every jump between rooms (ferries, coaches, portals,
-  rifts; see [docs/places.md](docs/places.md)): a `name`, `keywords` (other
-  words `travel` matches, besides the `to` room's name, which is what players
-  are shown to type), `from` and `to` rooms, and optionally `by` (an operator
-  NPC who must be in the `from` room and friendly), `fare` (coins), `when`
-  (weather ranges like `active_when`), `clear` (no NPC hostile to you
-  there), `via` (the room you travel in) with `stages` (lines, or `{text,
-  event}`; `event` is reserved for travel events, not built yet), and texts
-  `closed`, `depart`, `leave` and `arrive` (with `{actor}`). A route without
-  stages is instant.
+  rifts; see [docs/places.md](docs/places.md)): a `name`, a `kind` (`coach`,
+  `ferry`, `portal`, `rift`), `keywords` (other words `travel` matches,
+  besides the `to` room's name, which is what players are shown to type),
+  `from` and `to` rooms, and optionally `by` (an operator NPC who must be in
+  the `from` room and friendly), `fare` (coins), `when` (weather ranges like
+  `active_when`), `clear` (no NPC hostile to you there), a `path` of
+  waypoint rooms (a journey; without one it's instant), `strand` (where the
+  stranded wake), `risk` (added to the chance of an event), `events` (only
+  these travel events), `"hidden": true` (only a quest can start it), and
+  texts `closed`, `depart`, `leave` and `arrive` (with `{actor}`). Two
+  routes from one room can't share a destination.
+- **`travel_events`** ([docs/journeys.md](docs/journeys.md)): `text`,
+  `pools` (route ids, route kinds, realms, or `any`), `weight`, `once`,
+  `when` (weather ranges, `severity` [low, high] and `time` phases), and two
+  to four `choices`. A choice has a `label`, optionally a `check` (`{stat,
+  difficulty}`), `cost` (coins), `background` (only they see it) or `bonus`
+  (they get +35%), and `success` and `failure` outcomes: lists of effects
+  (`text`, `delay`, `hasten`, `coins`, `xp`, `hp`, `reputation`, `discover`,
+  `rumour`, `boon`, `death`, `strand`, `ambush` (template NPCs), `maroon`
+  (`{room, quest}`)).
+- **`quests`** ([docs/quests.md](docs/quests.md)): a `name`, `start` step,
+  optionally `"priority": true` with its `area`, and `steps`, each with a
+  `goal`, `on` (one of `ask` + `about`, `get`, `enter`, `kill`, `use` + `on`,
+  `have`, `level`, `in`; any with `when`), `effects` (travel event effects,
+  plus `give`, `take`, `start`, `teleport`, `resume_journey`, `leave_start`)
+  and `then`.
+- **`classes`**, **`ancestries`** and **`backgrounds`**
+  ([docs/characters.md](docs/characters.md)): a class has a `name`,
+  `description`, `ability` (gear), the gear `kinds` it can use and its
+  `talents` (gear with a `rank` of 1 to 3, and maybe `requires`); an ancestry
+  a `stat` and its `passives` (perks); a background its four `items`,
+  `coins`, `opinions` (`{faction, affinity, respect}`), `start` (a room in
+  its starting realm), `arrive` (where its journey out lands), `intro` and
+  first `quest`.
 - **NPC weather.** `forecasts` lists the realms whose skies an NPC can teach
   a player (`ask <npc> about weather`). `active_when` gives ranges, e.g.
   `{"precipitation": [-1, 0.2]}`: outside them the NPC hides (never
@@ -503,17 +662,22 @@ items are, who is where, NPC health) is never overwritten.
   `affinity` and `respect` it adds, and a `note` explaining why. `boons` give
   a stat bonus (`stat`, `amount`, `note`) at an `affinity` and/or `respect`
   threshold.
-- **Perks** (abilities) have a `name`, `description` and optionally a
-  `safe_terrain`. **`levels`** maps a level number to the `gear` and `perks`
-  it grants. **`starting_gear`** is what new characters own.
-- **`rules`** holds tunable numbers: `move_cooldown_ms`, `sleep_seconds`,
-  `shrine_room`, `regen` and `safe_regen` (health per upkeep, every 5 s),
-  `social_cooldown` (seconds), `pack_size`, `starting_coins`,
-  `stage_seconds` (the wait between journey stages), and for the weather
+- **Perks** (passives) have a `name`, `description`, optionally a
+  `safe_terrain`, and `"slot": true` for passives attuned to a slot.
+  **`starting_gear`** and `loadout` are only for characters made without
+  creation (tests).
+- **`rules`** holds tunable numbers: `pace` (scales walking; 0 turns it off),
+  `step_road_ms`, `step_open_ms`, `step_rough_ms`, `day_minutes`,
+  `sleep_seconds`, `shrine_room`, `regen` and `safe_regen` (health per
+  upkeep, every 5 s), `social_cooldown` (seconds), `pack_size`,
+  `starting_coins`, `stage_seconds` (between waypoints), `event_chance` and
+  `event_seconds` (travel events), `level_cap`, `respec_coins_per_level`, and for the weather
   `weather_seed` (which draws every realm's sky; change it for different
   weather) and `weather_unit_minutes` (how fast it moves; default 30).
-- **Gear** has a `name`, `kind` (shown in `gear`), `keywords`, an `effect`
-  (`damage` a target, or `heal` yourself), a `period` (ms between beats), a
+- **Gear** has a `name`, `kind` (shown in `gear`; classes use some kinds),
+  `keywords`, an `effect` (`damage` a target, `heal` yourself, or `guard`:
+  soak up the next blows), optionally `stagger_ms` (pushes the target's next
+  blow back) and `bleed` (`{damage, beats}`), a `period` (ms between beats), a
   `window` and `perfect_window` (ms either side of a beat), `amounts` (opening
   / good / perfect), and texts: `hit`, `perfect_hit` and `miss` for the room
   (with `{actor}` and `{target}`), and `whiff` for you when you mistime it.
@@ -528,23 +692,29 @@ items are, who is where, NPC health) is never overwritten.
 One JSON object per WebSocket message, at `/ws`. The full reference is in
 [alzendor/session.py](alzendor/session.py). In short: the client sends
 `register`, `login` or `resume`, then `{"type": "cmd", "text": "...",
-"target": "npc:orc-1"}` messages (`target` is optional). The server sends
-`auth_ok`/`auth_error`, then a stream of `{"type": "event", "event": {...}}`
+"target": "npc:orc-1"}` messages (`target` is optional). A player without a
+character is first sent `create` (with the `options`: classes, ancestries
+with their passives, backgrounds with their items per class) and answers
+`{"type": "create", "class", "ancestry", "passive", "background"}` until it
+stops getting `create_error`. The server sends `auth_ok`/`auth_error`, then a stream of `{"type": "event", "event": {...}}`
 messages, each with a `seq`. Clients can also send `{"type": "ping", "t": …}`
 and get back a `pong` with `server_ms`, Redis's clock, for drawing combat
 timing. Most events have a `text` to show. A few are pure
 state updates, without one:
 
-- `room`: the full room, with `entities` (cards), `items` and `features`,
-  `indoor`, `routes` (the routes leaving it: `id`, `name`, `fare`), and
-  `exits_hidden` when heavy rain or snow hides some exits
+- `room`: the full room, with `entities` (cards, NPCs with their `topics`),
+  `items` (quest items marked `quest`) and `features`, `indoor`, `step_ms`
+  (how long crossing it takes), `routes` (the routes leaving it: `id`, `name`,
+  `fare`, `to`, `command`), `exits_hidden` when rain, snow or the dark hides
+  some exits, `scents` (Hunter's Nose), and `waypoint` and `pos` while riding
 - `map`: explored rooms (each with its `realm`), glimpsed rooms and areas
   (`full` replaces what the client knows; otherwise merge them in);
   `regions`: every region the player knows in every realm, with `state`
   (`explored` or `discovered`), `bounds` and `realm` (always the whole list;
   replace it); `realms`: the realms they've been to; `realm`: the one
-  they're in; and `routes` (`from`, `to`, `name`) leaving rooms they've
-  explored
+  they're in (realms only heard of have `rumour`); and `routes` (`from`,
+  `to`, `name`, `kind`, `fare`, `command`, and `path`: the waypoints'
+  positions) leaving rooms they've explored. Rooms with a known trap have `trap`
 - `entity`: a changed card
 - `timing`: one of your slots (`slot`, `label`, and if it holds something
   `gear`, `kind` and `period_ms`; `active`, and while active `start_ms`,
@@ -565,15 +735,19 @@ state updates, without one:
   `weather` (its profile) and `now`: its `factor`, `amounts` and timings in
   today's weather, and `mods`, one `{label, pct, on}` per modifier. Sent
   again whenever the weather changes it
-- `character`: your `level`, `xp`, `xp_next`, `points`, `stats` (with boons),
-  `trained`, `stat_order`, `stat_info`, `boons`, `perks`, `factions` (the
-  ones that know you, home realm first: `realm`, `realm_name`, `description`,
-  affinity and respect), `hp`, `max_hp`
+- `character`: your `level`, `level_cap`, `xp`, `xp_next`, `points`, `stats`
+  (with ancestry, buffs and boons), `trained`, `stat_order`, `stat_info`,
+  `boons`, `perks` (each with `slot` and `attuned`), `factions` (the ones
+  that know you, home realm first: `realm`, `realm_name`, `description`,
+  affinity and respect), `hp`, `max_hp`, and for a created character
+  `class`, `ancestry`, `background`, `talent_picks`, `passive_picks`,
+  `talents` (`id`, `name`, `rank`, `kind`, `learned`, `locked`) and
+  `passives` (`id`, `name`, `slot`, `learned`)
 - `weather`: where you are (`place`, `indoor`), `temperature`, `energy`,
   `precipitation` (exact, or to the nearest half if `exact` is false),
   `zone`, `falling`, `intensity`, `summary`, `visibility`, `ground` (`snow`,
-  `mud`), `realm` (its name) and, with lore, a `forecast` (a point every 7.5
-  minutes). Sent on connecting, on changing realm, region or indoors, and
+  `mud`), `realm` (its name), `clock` (`hour`, `phase`), with lore a
+  `forecast` (a point every 7.5 minutes), and with Skyreading a `heading`. Sent on connecting, on changing realm, region or indoors, and
   every 30 s
 - `travel` (has text): a move held up by snow or mud (`delay_ms`, `cause`).
   The `leave` and `room` follow when it's done
@@ -583,8 +757,14 @@ state updates, without one:
   `name`, `to`, `command` (what to type), `fare`, `stages`, and `refusal` if
   it won't take you now). Routes in a `room` event carry `to` and `command`
   too
-- `journey` (has text): a stage of a journey (`route`, `stage`, `stages`,
-  `waiting`); send `continue` to go on
+- `journey` (has text): reaching a waypoint (`route`, `kind`, `stage`,
+  `stages`, `at`, `pos`, `name`), or `done` at the end
+- `travel_event` (has text): a choice on the road (`id`, `choices`: `n`,
+  `label`, `check`, `cost`, `background`, `tags`; `until_ms`), or `done`
+  once chosen. Send `choose <n>`
+- `quests`: your quests (`id`, `name`, `status`, `priority`, `goal`,
+  `count`, `need`), active first
+- `intro` (has text): a new character's story so far
 - `reputation` (has text): a faction's opinion of you changed
 - `death` (has text): an NPC going down, with its `entity_id`
 - `arrive` / `leave` (these have text) carry `entity` / `entity_id`, so the
@@ -641,4 +821,11 @@ tests/
 - [docs/realms.md](docs/realms.md): realms (separate worlds): their weather,
   travel between them by routes, one-way realms, death and the map, with its
   build plan.
-- [docs/quests.md](docs/quests.md): options for quests (not built yet).
+- [docs/quests.md](docs/quests.md): options for quests, and the quest engine
+  that was built.
+- [docs/journeys.md](docs/journeys.md): walking pace, traps, day and night,
+  routes as waypoints, and travel events: checks, stranding, surprise combat
+  and marooning.
+- [docs/characters.md](docs/characters.md): class, ancestry and background;
+  talents, ancestry passives (including ones that play with the slot ball),
+  levelling to 20, respec, and the four starting realms.

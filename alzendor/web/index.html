@@ -14,7 +14,7 @@
     --map-bg: #fbfaf7; --edge: #8b857b; --fog: #b9b3a8; --box: #e9e4da; --box-line: #cfc8bb;
     --area-1: #4f7fb8; --area-2: #d9822b; --area-3: #3f9a5a; --area-4: #8e5bb5; --area-5: #c25a7c; --area-6: #2f8f8f;
     --tier-grey: #8b857b; --tier-green: #3f9a5a; --tier-blue: #3d7cc9; --tier-purple: #8e5bb5; --tier-orange: #d9822b;
-    --up: #3f8a33; --down: #b8402e; --wet: #3d7cc9;
+    --up: #3f8a33; --down: #b8402e; --wet: #3d7cc9; --route: #b07a1f;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -26,7 +26,7 @@
       --map-bg: #1b1a1f; --edge: #77727c; --fog: #57535c; --box: #24232a; --box-line: #3d3b44;
       --area-1: #6f9fd8; --area-2: #f0a050; --area-3: #5fbf7a; --area-4: #b48ae0; --area-5: #e07fa0; --area-6: #5fc0c0;
       --tier-grey: #9a958c; --tier-green: #5fbf7a; --tier-blue: #6fa6e8; --tier-purple: #b48ae0; --tier-orange: #f0a050;
-      --up: #6fbf5a; --down: #ef6a55; --wet: #6fa6e8;
+      --up: #6fbf5a; --down: #ef6a55; --wet: #6fa6e8; --route: #e0a845;
     }
   }
   :root[data-theme="dark"] {
@@ -38,7 +38,7 @@
     --map-bg: #1b1a1f; --edge: #77727c; --fog: #57535c; --box: #24232a; --box-line: #3d3b44;
     --area-1: #6f9fd8; --area-2: #f0a050; --area-3: #5fbf7a; --area-4: #b48ae0; --area-5: #e07fa0; --area-6: #5fc0c0;
       --tier-grey: #9a958c; --tier-green: #5fbf7a; --tier-blue: #6fa6e8; --tier-purple: #b48ae0; --tier-orange: #f0a050;
-      --up: #6fbf5a; --down: #ef6a55; --wet: #6fa6e8;
+      --up: #6fbf5a; --down: #ef6a55; --wet: #6fa6e8; --route: #e0a845;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
@@ -91,6 +91,7 @@
   #map-tools button { background: var(--panel); font-size: 12px; }
   #map-tools button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
   #map-realms { display: flex; flex-direction: column; gap: 4px; padding-left: 6px; border-left: 1px solid var(--border); }
+  #map-wrap.night::after { content: ""; position: absolute; inset: 0; background: rgba(10, 20, 60, .2); pointer-events: none; }
   #map-hint { position: absolute; left: 10px; bottom: 6px; font-size: 11px; color: var(--muted); pointer-events: none; }
   #log-wrap { position: relative; flex: 42 1 0; min-height: 100px; display: flex; }
   #log { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -248,6 +249,19 @@
   .now { font-size: 12px; }
   .now .up { color: var(--up); } .now .down { color: var(--down); }
   .t-travel, .t-journey { color: var(--move); font-style: italic; }
+  .rhythm.edge-left .lane { box-shadow: inset 3px 0 0 var(--accent); }
+  .rhythm.edge-right .lane { box-shadow: inset -3px 0 0 var(--accent); }
+  .rhythm.charged .lane { box-shadow: inset 0 -2px 0 var(--down); }
+  .rhythm[data-passive]:not([data-passive=""]) .status::after { content: "· " attr(data-passive); color: var(--accent); font-size: 11px; margin-left: 6px; }
+  .identity { color: var(--accent); font-weight: 600; margin-bottom: 4px; }
+  .rows li.off { opacity: .75; }
+  #log .intro { margin: 8px 0; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--panel); }
+  #log .tevent { margin: 8px 0; padding: 8px 10px; border: 1px solid var(--accent); border-radius: 6px; background: var(--panel); }
+  #log .tevent .choices { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+  #log .tevent .choices button.trade { border-color: var(--accent); color: var(--accent); }
+  #log .tevent .sub { color: var(--muted); font-size: 12px; }
+  .riding { color: var(--move); font-style: italic; font-size: 12px; }
+  #quest-goal { font-size: 13px; }
   #exits button.route { border-style: dashed; } .t-weather_change { color: var(--wet); }
   .t-weather_report { white-space: pre-wrap; color: var(--wet); }
   #exits .hidden-ways { font-size: 12px; color: var(--muted); font-style: italic; align-self: center; }
@@ -295,6 +309,19 @@
   #login-note { color: var(--muted); margin: 0; }
   #login-note:empty { display: none; }
 
+  /* Character creation: class, ancestry (and a first passive), background. */
+  #creator { max-width: 760px; margin: 4vh auto; padding: 24px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
+  #creator h2 { margin: 0 0 4px; color: var(--accent); font-size: 18px; }
+  #creator h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 18px 0 8px; }
+  #creator .choices { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+  #creator .choice { text-align: left; padding: 10px; border-radius: 6px; background: var(--bg); }
+  #creator .choice[aria-pressed="true"] { border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: -1px; }
+  #creator .choice .name { font-weight: 600; }
+  #creator .choice .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  #creator .foot { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+  #creator .foot p { flex: 1; margin: 0; color: var(--muted); }
+  #create-error { color: var(--system); }
+
   @media (max-width: 760px) {
     header { flex-wrap: wrap; row-gap: 6px; }
     main { display: flex; flex-direction: column; overflow-y: auto; }
@@ -316,6 +343,7 @@
     <button id="open-inventory" type="button">Inventory</button>
     <button id="open-character" type="button">Character<span id="points-badge" class="badge hidden"></span></button>
     <button id="open-reputation" type="button">Reputation</button>
+    <button id="open-quests" type="button">Quests<span id="quests-badge" class="badge hidden"></span></button>
   </span>
   <span id="status" class="down">offline</span>
   <button id="reconnect" class="hidden" type="button">Reconnect</button>
@@ -332,6 +360,16 @@
   <p id="login-note" aria-live="polite"></p>
   <p id="login-error" role="alert"></p>
 </form>
+
+<section id="creator" class="hidden" aria-labelledby="creator-title">
+  <h2 id="creator-title">Who are you?</h2>
+  <p class="sub" id="creator-intro">Choose once: these are yours for life. Your class decides how you fight, your ancestry what you are, and your background where your story starts.</p>
+  <h3>Class</h3><div class="choices" id="create-classes"></div>
+  <h3>Ancestry</h3><div class="choices" id="create-ancestries"></div>
+  <h3 id="create-passive-title" class="hidden">Your first passive</h3><div class="choices" id="create-passives"></div>
+  <h3>Background</h3><div class="choices" id="create-backgrounds"></div>
+  <div class="foot"><p id="create-summary"></p><span id="create-error" role="alert"></span><button id="create-go" type="button" disabled>Begin</button></div>
+</section>
 
 <main id="world" class="hidden">
   <section id="left">
@@ -373,6 +411,10 @@
         <div class="about" id="wx-about"></div>
       </div>
     </section>
+    <section id="quest-panel" class="hidden">
+      <h2>Quest <span class="hint" id="quest-name"></span></h2>
+      <div id="quest-goal"></div>
+    </section>
     <section id="combat-panel">
       <h2>Loadout <span class="hint">4 3 2 use your slots · hover for details</span></h2>
       <div id="timings" role="group" aria-label="Your slots"></div>
@@ -398,6 +440,10 @@
 <dialog id="character-dialog" aria-labelledby="character-title">
   <div class="dhead"><h2 id="character-title">Character</h2><button type="button" data-close>Close</button></div>
   <div class="dbody" id="character-body"></div>
+</dialog>
+<dialog id="quests-dialog" aria-labelledby="quests-title">
+  <div class="dhead"><h2 id="quests-title">Quests</h2><button type="button" data-close>Close</button></div>
+  <div class="dbody" id="quests-body"></div>
 </dialog>
 <dialog id="reputation-dialog" aria-labelledby="reputation-title">
   <div class="dhead"><h2 id="reputation-title">Reputation</h2><button type="button" data-close>Close</button></div>
@@ -430,7 +476,9 @@ let walk = null;        // a click-to-walk in progress: { dest, steps: [{dir, to
 let kit = null;         // your gear, slots and carried items (the latest `kit` event)
 let character = null;   // your level, stats, perks and reputation (the latest `character` event)
 let wx = null;          // the weather where you are (the latest `weather` event)
-let journey = null;     // a journey in progress: { via (the room you travel in), waiting, stage, stages }
+let journey = null;     // a journey in progress: the latest `journey` event (route, kind, stage, stages, at, pos, name)
+let travelEvent = null; // a travel event waiting for your choice, and the log card showing it
+let quests = [];        // your quests (the latest `quests` event), active first
 const history = [];
 let historyIndex = 0;
 
@@ -495,11 +543,24 @@ function handle(message) {
       $("password").value = "";
       $("who").textContent = message.name;
       $("login").classList.add("hidden");
+      $("creator").classList.add("hidden");
       $("world").classList.remove("hidden");
       $("panel-buttons").classList.remove("hidden");
       setStatus("connected · " + message.server, true);
       startClockSync();
       $("input").focus();
+      break;
+    case "create":
+      // A new character: choose class, ancestry and background first.
+      store.set("alz.token", message.token);
+      resuming = false;
+      setBusy(null);
+      $("login").classList.add("hidden");
+      showCreator(message.name, message.options);
+      break;
+    case "create_error":
+      $("create-error").textContent = message.message;
+      $("create-go").disabled = false;
       break;
     case "auth_error":
       if (resuming) signOut();
@@ -519,6 +580,62 @@ function handle(message) {
       break;
   }
 }
+
+// Character creation --------------------------------------------------------------------
+
+const creation = { class: null, ancestry: null, passive: null, background: null, options: null };
+
+function choiceCard(title, lines, pressed, onclick) {
+  const b = el("button", "choice");
+  b.type = "button";
+  b.setAttribute("aria-pressed", String(pressed));
+  b.append(el("div", "name", title), ...lines.filter(Boolean).map((t) => el("div", "sub", t)));
+  b.onclick = onclick;
+  return b;
+}
+
+function showCreator(name, options) {
+  creation.options = options;
+  $("creator-title").textContent = `Who are you, ${name}?`;
+  $("creator").classList.remove("hidden");
+  renderCreator();
+}
+
+function renderCreator() {
+  const o = creation.options, pick = (key, value) => () => {
+    creation[key] = value;
+    if (key === "ancestry") creation.passive = null;
+    renderCreator();
+  };
+  $("create-classes").replaceChildren(...o.classes.map((c) => choiceCard(c.name,
+    [c.description, `Starts with ${c.ability.name}: ${c.ability.description}`, `Uses ${c.kinds.join(", ").toLowerCase()} gear.`],
+    creation.class === c.id, pick("class", c.id))));
+  $("create-ancestries").replaceChildren(...o.ancestries.map((a) => choiceCard(a.name, [a.description, `+1 ${capital(a.stat)}`],
+    creation.ancestry === a.id, pick("ancestry", a.id))));
+  const ancestry = o.ancestries.find((a) => a.id === creation.ancestry);
+  $("create-passive-title").classList.toggle("hidden", !ancestry);
+  $("create-passives").replaceChildren(...(ancestry ? ancestry.passives : []).map((p) => choiceCard(p.name, [p.description],
+    creation.passive === p.id, pick("passive", p.id))));
+  $("create-backgrounds").replaceChildren(...o.backgrounds.map((b) => {
+    const items = creation.class ? b.items[creation.class].map((g) => g.name).join(" and ") : "two items for your class";
+    return choiceCard(b.name, [b.description, `Brings ${items}, and ${b.coins} coins.`, `Begins in ${b.start}.`],
+      creation.background === b.id, pick("background", b.id));
+  }));
+  const named = (list, id) => (list.find((x) => x.id === id) || {}).name;
+  const ready = creation.class && creation.ancestry && creation.passive && creation.background;
+  $("create-summary").textContent = ready
+    ? `${named(o.ancestries, creation.ancestry)} ${named(o.classes, creation.class)}, ${named(o.backgrounds, creation.background).toLowerCase()}, with ${named(ancestry.passives, creation.passive)}.`
+    : "Choose a class, an ancestry and its first passive, and a background.";
+  $("create-go").disabled = !ready;
+}
+
+$("create-go").addEventListener("click", () => {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  $("create-go").disabled = true;
+  $("create-error").textContent = "";
+  const { class: cls, ancestry, passive, background } = creation;
+  ws.send(JSON.stringify({ type: "create", class: cls, ancestry, passive, background }));
+});
 
 // Sends a command, with the selected target for commands that take one.
 function sendCmd(text) {
@@ -562,8 +679,11 @@ function show(event) {
   if (event.type === "map") return applyMap(event);
   if (event.type === "timing") return applyTiming(event);
   if (event.type === "kit") { kit = event; decorateSlots(); return renderInventory(); }
-  if (event.type === "weather") { wx = event; renderWeather(); return renderPanels(); }
-  if (event.type === "journey") { journey = { via: room && room.id, waiting: true, stage: event.stage, stages: event.stages }; renderPanels(); }
+  if (event.type === "weather") { wx = event; renderWeather(); renderNight(); return renderPanels(); }
+  if (event.type === "journey") { journey = event.done ? null : event; renderPanels(); renderMap(); if (!event.text) return; }
+  if (event.type === "travel_event") return showTravelEvent(event);
+  if (event.type === "quests") { quests = event.quests; return renderQuests(); }
+  if (event.type === "intro") return line(event.text, "intro");
   if (event.type === "character") { character = event; renderCharacter(); return renderTarget(); }
   if (event.type === "npc_timing") return applyNpcTiming(event);
   if (event.type === "dispositions") return applyDispositions(event.dispositions);
@@ -612,13 +732,12 @@ function showRoom(snapshot, text, cause) {
   const unchanged = cause === "resume" && JSON.stringify(snapshot) === JSON.stringify(room);
   const moved = !room || room.id !== snapshot.id;
   room = snapshot;
-  if (journey && journey.via !== snapshot.id) journey = null; // arrived
   showSelf(snapshot.self);
   if (moved) setTarget(null);
   else if (target && !room.entities.some((c) => c.id === target)) setTarget(null);
 
-  const midWalk = walk && cause === "move" && advanceWalk(snapshot.id);
-  if (!unchanged) {
+  const midWalk = walk && cause === "move" && advanceWalk(snapshot.id, snapshot.step_ms);
+  if (!unchanged && !(snapshot.waypoint && cause === "travel")) { // a waypoint's line comes with the journey
     if (midWalk) {
       line("→ " + snapshot.name, "step");
     } else {
@@ -664,23 +783,55 @@ function renderPanels() {
     b.onclick = () => { stopWalk(); sendCmd("travel " + r.id); };
     $("exits").append(b);
   }
-  if (journey) {
-    const b = el("button", "route", journey.waiting ? `Go on ⏎ (${journey.stage}/${journey.stages})` : "On the way…");
-    b.type = "button";
-    b.disabled = !journey.waiting;
-    b.onclick = continueJourney;
-    $("exits").append(b);
-  }
+  if (journey) $("exits").append(el("span", "riding", `On the way: ${journey.name} (${journey.stage} of ${journey.stages})`));
+  if (room && room.scents) $("exits").append(el("span", "hidden-ways", `you smell something to the ${room.scents.join(", ")}`));
   renderEntities();
   renderGround();
 }
 
-// Journeys go in stages: Enter (or the button) goes on to the next one.
-function continueJourney() {
-  if (!journey || !journey.waiting) return;
-  journey.waiting = false;
-  sendCmd("continue");
-  renderPanels();
+// Travel events: a card in the log with a button for each choice. The journey
+// waits for one (or takes the last after a minute).
+function showTravelEvent(event) {
+  if (event.done) {
+    if (travelEvent) for (const b of travelEvent.card.querySelectorAll("button")) b.disabled = true;
+    travelEvent = null;
+    return line(event.text, "t-journey");
+  }
+  const card = line("", "tevent");
+  card.append(el("div", "", event.text.split("\n")[0]));
+  const row = el("div", "choices");
+  for (const c of event.choices) {
+    const b = button(c.label + (c.tags.length ? ` (${c.tags.join(", ")})` : ""), () => sendCmd("choose " + c.n), `CHOOSE ${c.n}`);
+    if (c.background) b.classList.add("trade");
+    row.append(b);
+  }
+  card.append(row, el("div", "sub", "Choose one (or CHOOSE <number>). If you wait too long, the moment passes."));
+  if (following) $("log").scrollTop = $("log").scrollHeight;
+  travelEvent = { ...event, card };
+}
+
+// Quests: the Quests panel lists them all; the side panel shows what your
+// top quest needs next.
+function renderQuests() {
+  const active = quests.filter((q) => q.status === "active");
+  const top = active[0];
+  $("quest-panel").classList.toggle("hidden", !top);
+  if (top) {
+    $("quest-name").textContent = top.name + (top.priority ? " · urgent" : "");
+    $("quest-goal").textContent = top.goal + (top.need ? ` (${top.count} / ${top.need})` : "");
+  }
+  $("quests-badge").textContent = active.length || "";
+  $("quests-badge").classList.toggle("hidden", !active.length);
+  const rows = el("ul", "rows");
+  for (const q of quests) {
+    const li = el("li");
+    const info = el("div", "grow");
+    info.append(el("div", "", q.name), el("div", "sub", q.status === "active" ? q.goal : q.status === "done" ? "Done." : "Failed."));
+    li.append(info);
+    rows.append(li);
+  }
+  if (!quests.length) rows.append(el("li", "empty", "No quests yet. Talk to people: ASK <name> ABOUT <topic>."));
+  $("quests-body").replaceChildren(rows);
 }
 
 function disposition(card) {
@@ -884,6 +1035,13 @@ function decorateSlots() {
     slot.row.classList.toggle("boosted", change >= 5);
     slot.row.classList.toggle("reduced", change <= -5);
     if (g && g.now && !slot.event) slot.row.querySelector(".note").textContent = `every ${(g.now.period_ms / 1000).toFixed(1)}s`;
+    // A passive attuned to this slot: named, with a glow on the edge it watches.
+    const attuned = character ? character.perks.filter((p) => p.attuned === i + 1) : [];
+    slot.row.querySelector(".label").title = attuned.map((p) => `${p.name}: ${p.description}`).join("\n");
+    slot.row.classList.toggle("edge-left", attuned.some((p) => ["second_wind", "berserk_seal"].includes(p.id)));
+    slot.row.classList.toggle("edge-right", attuned.some((p) => p.id === "moonlit_edge"));
+    slot.row.classList.toggle("charged", attuned.some((p) => p.id === "bloodrhythm"));
+    slot.row.dataset.passive = attuned.map((p) => p.name).join(", ");
   });
 }
 
@@ -997,6 +1155,7 @@ function renderTarget() {
       ? `${card.faction}: ${known.affinity_label}, ${known.respect_label}`
       : `${card.faction}: they don't know you yet`));
   }
+  if (card.topics) box.append(el("div", "standing", `Ask about: ${card.topics.join(", ")} (ASK ${card.name.split(" ").pop().toUpperCase()} ABOUT …)`));
   if (card.kind === "npc" && card.attacks && card.attacks.length) {
     const fight = card.fight;
     const list = el("div", "attacks");
@@ -1115,20 +1274,22 @@ function axisMeter(value) {
 function renderCharacter() {
   if (!character) return;
   const c = character;
-  $("points-badge").textContent = c.points ? "+" + c.points : "";
-  $("points-badge").classList.toggle("hidden", !c.points);
+  const picks = (c.points || 0) + Math.max(0, c.talent_picks || 0) + Math.max(0, c.passive_picks || 0);
+  $("points-badge").textContent = picks ? "+" + picks : "";
+  $("points-badge").classList.toggle("hidden", !picks);
   const xp = el("div", "meter");
   const fill = el("div", "fill");
   fill.style.width = Math.min(100, (100 * c.xp) / c.xp_next) + "%";
   xp.append(fill);
   const summary = el("div", "");
-  summary.append(el("div", "", `Level ${c.level} · ${c.xp} / ${c.xp_next} experience · health ${c.hp} / ${c.max_hp}`), xp);
+  if (c.class) summary.append(el("div", "identity", `${c.ancestry} ${c.class} · ${c.background}`));
+  summary.append(el("div", "", `Level ${c.level}${c.level >= c.level_cap ? " (the cap)" : ""} · ${c.xp} / ${c.xp_next} experience · health ${c.hp} / ${c.max_hp}`), xp);
   const statRows = el("ul", "rows");
   for (const name of c.stat_order || Object.keys(c.stats)) {
     const value = c.stats[name], trained = c.trained ? c.trained[name] : value;
     const li = el("li");
     const info = el("div", "grow");
-    const extra = value !== trained ? ` (${trained} trained, +${value - trained} from boons)` : "";
+    const extra = value !== trained ? ` (${trained} trained, +${value - trained} from your ancestry, boons and buffs)` : "";
     info.append(el("div", "", `${capital(name)} ${value}${extra}`), el("div", "sub", c.stat_info[name] || ""));
     const train = button("+", () => sendCmd("train " + name), "Spend a point on " + name);
     train.disabled = !c.points;
@@ -1149,9 +1310,47 @@ function renderCharacter() {
     }
     parts.push(el("h3", "", "Boons · stat bonuses from the factions that rate you"), boonRows);
   }
-  if (c.perks.length) {
+  if (c.talents) {
+    // Talents in rank order; locked ranks say what opens them.
+    const rows = el("ul", "rows");
+    for (const t of [...c.talents].sort((a, b) => a.rank - b.rank)) {
+      const li = el("li", t.learned ? "" : "off");
+      const info = el("div", "grow");
+      info.append(el("div", "", `${t.name} · rank ${t.rank} · ${t.kind.toLowerCase()}`), el("div", "sub", t.locked && !t.learned ? `${t.description} (${t.locked})` : t.description));
+      li.append(info);
+      if (t.learned) li.append(el("span", "sub", "learned"));
+      else {
+        const b = button("Learn", () => sendCmd("learn " + t.name), "LEARN " + t.name.toUpperCase());
+        b.disabled = !(c.talent_picks > 0) || !!t.locked;
+        li.append(b);
+      }
+      rows.append(li);
+    }
+    parts.push(el("h3", "", `Talents · ${c.talent_picks > 0 ? c.talent_picks + " to learn" : "one at every even level"}`), rows);
+  }
+  if (c.passives) {
+    const rows = el("ul", "rows");
+    for (const p of c.passives) {
+      const owned = c.perks.find((perk) => perk.id === p.id);
+      const li = el("li", owned ? "" : "off");
+      const info = el("div", "grow");
+      info.append(el("div", "", p.name + (owned && owned.attuned ? ` · slot ${owned.attuned}` : "")), el("div", "sub", p.description));
+      li.append(info);
+      if (owned && p.slot) {
+        for (const n of [1, 2, 3]) li.append(button(String(n), () => sendCmd(`attune ${p.name} ${n}`), `Attune ${p.name} to slot ${n}`));
+      } else if (!owned) {
+        const b = button("Learn", () => sendCmd("learn " + p.name), "LEARN " + p.name.toUpperCase());
+        b.disabled = !(c.passive_picks > 0);
+        li.append(b);
+      }
+      rows.append(li);
+    }
+    parts.push(el("h3", "", `${c.ancestry} passives · ${c.passive_picks > 0 ? c.passive_picks + " to choose" : "one more at levels 5, 10, 15 and 20"}`), rows);
+  }
+  const others = c.perks.filter((perk) => !(c.passives || []).some((p) => p.id === perk.id));
+  if (others.length) {
     const perkRows = el("ul", "rows");
-    for (const perk of c.perks) {
+    for (const perk of others) {
       const li = el("li");
       const info = el("div", "grow");
       info.append(el("div", "", perk.name), el("div", "sub", perk.description));
@@ -1162,6 +1361,7 @@ function renderCharacter() {
   }
   $("character-body").replaceChildren(...parts);
   renderReputation();
+  decorateSlots();
 }
 
 // Reputation: the factions that know you (and so that you know of), grouped by
@@ -1192,6 +1392,7 @@ function renderReputation() {
 $("open-inventory").addEventListener("click", () => { renderInventory(); $("inventory-dialog").showModal(); });
 $("open-character").addEventListener("click", () => { renderCharacter(); $("character-dialog").showModal(); });
 $("open-reputation").addEventListener("click", () => { renderReputation(); $("reputation-dialog").showModal(); });
+$("open-quests").addEventListener("click", () => { renderQuests(); $("quests-dialog").showModal(); });
 for (const dialog of document.querySelectorAll("dialog")) {
   dialog.querySelector("[data-close]").addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => { hideTip(); $("input").focus(); });
@@ -1291,12 +1492,14 @@ function renderWeather() {
   svgEl("title", {}, svg).textContent = `Now: ${wx.summary}` + (title ? "\n" + title : "");
   $("wx-precip").style.height = (wx.precipitation > 0 ? Math.max(6, 100 * wx.intensity) : 0) + "%";
   const about = [el("div", "main", capital(wx.summary))];
+  if (wx.clock) about.push(el("div", "sub", `${String(wx.clock.hour).padStart(2, "0")}:00 · ${wx.clock.phase}`));
+  if (wx.heading) about.push(el("div", "sub", "Skyreading: " + wx.heading.text));
   if (wx.zone && wx.zone !== "Temperate") about.push(el("span", "zone-tag", wx.zone));
   if (wx.indoor) about.push(el("div", "sub", "Indoors: it never changes in here."));
   const depth = (v) => (v < 0.25 ? "a little" : v < 0.5 ? "some" : v < 0.75 ? "deep" : "very deep");
   if (wx.ground && wx.ground.snow >= 0.05) about.push(el("div", "sub", `Snow: ${depth(wx.ground.snow)}. Slows travel.`));
   if (wx.ground && wx.ground.mud >= 0.05) about.push(el("div", "sub", `Mud: ${depth(wx.ground.mud)}. Slows travel.`));
-  if (wx.visibility === "poor") about.push(el("div", "warn", `You can't see far in the ${wx.falling}.`));
+  if (wx.visibility === "poor") about.push(el("div", "warn", `You can't see far in the ${wx.falling || "dark"}.`));
   if (!wx.indoor) {
     if (!wx.exact) about.push(el("div", "sub", "Roughly: you can't read these skies. Someone local could teach you (ASK <name> ABOUT WEATHER)."));
     else if (wx.forecast) about.push(el("div", "sub", `Forecast ${duration(wx.forecast[wx.forecast.length - 1].minutes)} ahead (dotted). Hover the grid.`));
@@ -1427,6 +1630,11 @@ function currentRealm() {
   return (here && here.realm) || known.realm;
 }
 
+// Night darkens the map outdoors.
+function renderNight() {
+  $("map-wrap").classList.toggle("night", !!(wx && wx.clock && wx.clock.phase === "night" && !wx.indoor));
+}
+
 function shownRealm() {
   return view.realm || currentRealm();
 }
@@ -1443,6 +1651,13 @@ function renderRealmButtons() {
   box.replaceChildren(...realms.map((r) => {
     const b = el("button", "", r.name);
     b.type = "button";
+    if (r.rumour) {
+      // Only heard of: there's no map to show.
+      b.disabled = true;
+      b.title = `You've heard talk of ${r.name}, but never been there`;
+      b.textContent = r.name + " ?";
+      return b;
+    }
     b.title = r.id === currentRealm() ? "The realm you're in" : `${r.name}, as you last saw it`;
     b.setAttribute("aria-pressed", String(r.id === shownRealm()));
     b.onclick = () => { view.realm = r.id === currentRealm() ? null : r.id; setMapMode("all"); };
@@ -1497,8 +1712,10 @@ function frame([x1, y1, x2, y2]) {
 
 // The box, in map units, around every region and room the player knows.
 function knownBounds() {
+  const routePoints = (known.routes || []).filter((r) => known.rooms[r.from] && inShownRealm(known.rooms[r.from])).flatMap((r) => r.path || []);
   const boxes = [...shownRegions().map((g) => g.bounds),
-    ...shownRooms().map((r) => [r.pos[0], r.pos[1], r.pos[0], r.pos[1]])];
+    ...shownRooms().map((r) => [r.pos[0], r.pos[1], r.pos[0], r.pos[1]]),
+    ...routePoints.map((p) => [p[0], p[1], p[0], p[1]])];
   if (!boxes.length) return null;
   return [Math.min(...boxes.map((b) => b[0])), Math.min(...boxes.map((b) => b[1])),
     Math.max(...boxes.map((b) => b[2])), Math.max(...boxes.map((b) => b[3]))];
@@ -1526,7 +1743,7 @@ function targetView() {
     const bounds = knownBounds();
     return bounds && frame(bounds);
   }
-  if (!here) return null;
+  if (!here) return room && room.pos ? frame([room.pos[0] - 80, room.pos[1] - 60, room.pos[0] + 80, room.pos[1] + 60]) : null;
   const area = known.areas[here.area];
   return frame(area ? area.bounds : [here.pos[0] - 15, here.pos[1] - 15, here.pos[0] + 15, here.pos[1] + 15]);
 }
@@ -1666,13 +1883,33 @@ function drawMap() {
     }
   }
 
-  // Routes (ferries, coaches) between known rooms: long dashed lines.
+  // Routes: roads you can't walk, drawn along their waypoints as a two-tone
+  // line (amber for a coach, blue for a ferry) with ticks at the stops and a
+  // glyph in the middle. Hover for the fare and what to type.
   for (const route of known.routes || []) {
-    const a = known.rooms[route.from], b = known.rooms[route.to];
-    if (!a || !b || !inShownRealm(a) || !inShownRealm(b)) continue;
-    svgEl("line", { x1: a.pos[0], y1: a.pos[1], x2: b.pos[0], y2: b.pos[1], stroke: "var(--wet)", "stroke-opacity": 0.6,
-      "stroke-width": 1.5, "stroke-dasharray": "8 6", ...line }, svg).append(
-      Object.assign(document.createElementNS(SVG, "title"), { textContent: route.name }));
+    const a = known.rooms[route.from];
+    if (!a || !inShownRealm(a)) continue;
+    const b = known.rooms[route.to];
+    const pts = [a.pos, ...(route.path || []), ...(b && inShownRealm(b) ? [b.pos] : [])];
+    if (pts.length < 2) continue;
+    const colour = route.kind === "ferry" ? "var(--wet)" : route.kind === "coach" ? "var(--route)" : "var(--accent)";
+    const points = pts.map((p) => p.join(",")).join(" ");
+    const g = svgEl("g", { class: "route-line" }, svg);
+    svgEl("polyline", { points, fill: "none", stroke: colour, "stroke-opacity": 0.35, "stroke-width": 6, "stroke-linejoin": "round", ...line }, g);
+    svgEl("polyline", { points, fill: "none", stroke: colour, "stroke-width": 1.5, "stroke-dasharray": "2 3", "stroke-linejoin": "round", ...line }, g);
+    for (const p of route.path || []) svgEl("circle", { cx: p[0], cy: p[1], r: 2.5 * k, fill: colour }, g);
+    const mid = pts[Math.floor(pts.length / 2)];
+    const glyph = route.kind === "ferry" ? "⛵" : route.kind === "coach" ? "🐎" : "✦";
+    label((mid[0] - vx) / k, (mid[1] - vy) / k - 6, glyph, 13, 400, colour, "middle");
+    svgEl("title", {}, g).textContent = `${route.name}${route.fare ? ` · ${route.fare} coins` : ""} · no way on foot\n${route.command || ""}`;
+  }
+
+  // Riding: you're somewhere on a route, not in a room the map shows.
+  if (room && room.waypoint && room.pos) {
+    svgEl("circle", { cx: room.pos[0], cy: room.pos[1], r: 12 * k, fill: "none", stroke: "var(--accent)", "stroke-width": 2, ...line }, svg);
+    svgEl("circle", { cx: room.pos[0], cy: room.pos[1], r: 6 * k, fill: "var(--accent)" }, svg);
+    const [px, py] = toPx(...room.pos);
+    label(px + 16, py + 4, room.name, 12.5, 700, "var(--accent)", "start");
   }
 
   if (walk && here) {
@@ -1692,6 +1929,7 @@ function drawMap() {
     svgEl("circle", { class: "dot", cx: r.pos[0], cy: r.pos[1], r: radius * k,
       fill: r.explored ? areaColor(r.area) : "var(--map-bg)", stroke: r.explored ? "var(--map-bg)" : "var(--fog)",
       "stroke-width": r.explored ? 2 : 1.5, ...line }, g);
+    if (r.trap) label(px + 8, py - 6, "⚠", 11, 700, "var(--system)", "start", { "class": "trap-mark" });
     svgEl("circle", { cx: r.pos[0], cy: r.pos[1], r: 14 * k, fill: "transparent" }, g); // a bigger click target
     if (!current && !view.realm) g.addEventListener("click", () => { if (!dragged) walkTo(r.id); });
     blocked.push([px - (current ? 13 : radius + 2), py - (current ? 13 : radius + 2), px + (current ? 13 : radius + 2), py + (current ? 13 : radius + 2)]);
@@ -1875,6 +2113,7 @@ function findPath(from, to) {
 
 function walkTo(id) {
   if (walk) return stopWalk();
+  if (room && room.waypoint) return line("You can't walk off the road mid-journey.", "t-system");
   if (!room || id === room.id) return;
   const steps = findPath(room.id, id);
   if (!steps) return line("You don't know a way there yet.", "t-system");
@@ -1889,11 +2128,12 @@ function nextStep() {
 }
 
 // Called when a move lands; true if the walk continues past this room.
-function advanceWalk(roomId) {
+function advanceWalk(roomId, stepMs) {
   if (roomId !== walk.expect) { stopWalk(); return false; }
   walk.steps.shift();
   if (!walk.steps.length) { walk = null; return false; }
-  walk.timer = setTimeout(nextStep, 300);
+  // Wait out the time it takes to cross this room (the server refuses an early step).
+  walk.timer = setTimeout(nextStep, Math.max(150, (stepMs || 0) + 60));
   return true;
 }
 
@@ -1917,7 +2157,8 @@ function signOut() {
   $("me-hp").classList.add("hidden");
   $("panel-buttons").classList.add("hidden");
   for (const dialog of document.querySelectorAll("dialog")) dialog.close();
-  kit = character = wx = journey = null;
+  kit = character = wx = journey = travelEvent = null;
+  quests = [];
   renderWeather();
   hideTip();
   for (const kind of ["rooms", "areas", "regions"]) known[kind] = {};
@@ -1928,6 +2169,7 @@ function signOut() {
   store.remove("alz.token");
   $("log").replaceChildren();
   $("world").classList.add("hidden");
+  $("creator").classList.add("hidden");
   $("login").classList.remove("hidden");
   $("who").textContent = "";
 }
@@ -1958,7 +2200,7 @@ $("login").addEventListener("submit", (e) => {
 $("command").addEventListener("submit", (e) => {
   e.preventDefault();
   const text = $("input").value.trim();
-  if (!text) { if (journey) continueJourney(); return; }
+  if (!text) return;
   stopWalk();
   history.push(text);
   scrollToLatest();

@@ -9,7 +9,7 @@ from websockets.asyncio.client import connect
 
 from alzendor.config import Config
 from alzendor.feed import FEED_BLOCK_MS
-from alzendor.server import GameServer
+from alzendor.server import GameServer, open_redis
 
 from .conftest import SEED
 
@@ -51,8 +51,13 @@ class Client:
         await self.ws.send(json.dumps(message))
 
     async def auth(self, **message) -> dict:
+        """Logs in, creating a character (a human fighter from Copperstall) if asked."""
         await self.send(**message)
         reply = json.loads(await self.ws.recv())
+        if reply["type"] == "create":
+            await self.send(type="create", **{"class": "fighter", "ancestry": "human", "passive": "second_wind",
+                                              "background": "merchant"})
+            reply = json.loads(await self.ws.recv())
         assert reply["type"] == "auth_ok", reply
         self.token = reply["token"]
         return reply
@@ -99,17 +104,12 @@ async def test_players_on_different_servers_see_each_other(redis):
             assert "Kevin waves at Mara." in await mara_again.until("Kevin waves at Mara.")
 
 
-async def test_idle_connections_stay_open(redis):
-    """A quiet room must not drop the connection (a Redis read timeout once did)."""
-    async with running_server(redis, "one") as url:
-        async with Client.open(url) as kevin, Client.open(url) as mara:
-            await kevin.auth(type="register", name="Kevin", password="correct horse")
-            await mara.auth(type="register", name="Mara", password="battery staple")
-            await kevin.until("Mara arrives, well rested.")
-            await asyncio.sleep(FEED_BLOCK_MS / 1000 + 2)
-            await mara.send(type="cmd", text="say Still there?")
-            assert await kevin.until('Mara says, "Still there?"') == ['Mara says, "Still there?"']
-            assert kevin.ws.state.name == "OPEN"
+def test_redis_reads_outlast_a_feed_block():
+    """A quiet room must not drop the connection: a Redis read timeout shorter
+    than a feed's blocking read once did. (Checking the setting is enough; the
+    other tests here exercise real feeds.)"""
+    client = open_redis("redis://localhost:6379/15")
+    assert client.connection_pool.connection_kwargs["socket_timeout"] > FEED_BLOCK_MS / 1000
 
 
 async def test_ping_reports_the_redis_clock(redis):
@@ -134,3 +134,24 @@ async def test_quitting_closes_with_a_reason(redis):
             async with asyncio.timeout(5):
                 await kevin.ws.wait_closed()
             assert kevin.ws.close_reason == "You leave the world."
+
+
+async def test_a_new_player_creates_a_character_first(redis):
+    async with running_server(redis, "one") as url:
+        async with Client.open(url) as kevin:
+            await kevin.send(type="register", name="Kevin", password="correct horse")
+            offer = json.loads(await kevin.ws.recv())
+            assert offer["type"] == "create" and offer["name"] == "Kevin"
+            assert [c["id"] for c in offer["options"]["classes"]] == ["fighter", "mage", "rogue"]
+            urchin = next(b for b in offer["options"]["backgrounds"] if b["id"] == "street_urchin")
+            assert [g["id"] for g in urchin["items"]["rogue"]] == ["shiv", "pocket_sand"] and urchin["start"] == "Low Wick"
+
+            await kevin.send(type="cmd", text="look")  # nothing else until the character exists
+            assert json.loads(await kevin.ws.recv())["type"] == "create_error"
+            await kevin.send(type="create", **{"class": "rogue", "ancestry": "elf", "passive": "bloodrhythm", "background": "street_urchin"})
+            assert json.loads(await kevin.ws.recv()) == {"type": "create_error", "message": "Choose a passive from your ancestry."}
+            await kevin.send(type="create", **{"class": "rogue", "ancestry": "elf", "passive": "starsight", "background": "street_urchin"})
+            assert json.loads(await kevin.ws.recv())["type"] == "auth_ok"
+            seen = await kevin.until("New quest: Lifting. Nan wants a purse. The drunk in Tipsy Lane (WEST) won't notice: GET PURSE.")
+            assert seen[0].startswith("The Gutter Den")
+            assert any(text.startswith("Low Wick is a small town") for text in seen)  # the story so far

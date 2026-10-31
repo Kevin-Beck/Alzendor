@@ -279,6 +279,6 @@ async def test_gear_lists_what_you_own_fastest_first(world):
     lines = event["text"].split("\n")
     # Indoors it's always dead neutral and dry: grey gear at its best, and the frost
     # dagger far from its cold, still spot but glad of the dry air.
-    assert "  Dagger (weapon, green): every 1.2s, ±200ms, 3 / 6 damage [weather +12%]" in lines
+    assert "  Dagger (light, green): every 1.2s, ±200ms, 3 / 6 damage [weather +12%]" in lines
     assert "  Health Potion (potion, grey): every 5.0s, ±350ms, heals 17 / 29 [weather +15%]" in lines
     assert lines[-1].startswith("Your slots: 1 Kick · 2 Magic Missile · 3 Health Potion.")
