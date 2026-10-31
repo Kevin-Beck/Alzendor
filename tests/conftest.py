@@ -34,7 +34,16 @@ async def world(redis):
     await world.seed(SEED)
     # Most tests walk several rooms in a row; the move cooldown has tests of its own.
     await redis.hset("alz:rules", "move_cooldown_ms", 0)
+    # Tests run on a mild, dry, temperate day in every realm; weather tests set their own.
+    for realm in await redis.smembers("alz:realms"):
+        await set_weather(redis, realm, 0, 0, -1)
     return world
+
+
+async def set_weather(redis, realm: str, temperature: float, energy: float, precipitation: float) -> None:
+    """Pins a realm's weather, as the admin 'setweather' command does."""
+    await redis.hset(f"alz:weather_override:{realm}",
+                     mapping={"temperature": temperature, "energy": energy, "precipitation": precipitation})
 
 
 async def enter(world: World, pid: str, session: str | None = None, since: int = 0) -> Feed:

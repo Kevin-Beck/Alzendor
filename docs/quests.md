@@ -7,7 +7,7 @@ recommendation is at the end.
 ## What we already have to build on
 
 - **Events on channels.** Everything that happens is an event appended to a
-  Redis Stream (`ROOM:`, `AREA:`, `CITY:`, `PLAYER:`), in one global order.
+  Redis Stream (`ROOM:`, `AREA:`, `REGION:`, `PLAYER:`), in one global order.
   Kills, heals, emotes, moves, item pickups and reputation changes are already
   events with structured fields (`type`, `verb`, `actor`, `target`,
   `entity_id`).

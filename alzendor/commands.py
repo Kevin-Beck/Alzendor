@@ -5,6 +5,10 @@ both work from that registry. Handlers check the shape of the input and then
 call one game-rules function (alzendor.lua), which checks it against the world
 and publishes the outcome. Nothing a handler does is sent to the client
 directly: replies are events on the player's own channel, like everything else.
+
+Commands are shown to players in capitals (TRAVEL VILLAGE GREEN), so they
+stand out from the text around them, and accepted in any case. In usages,
+lowercase words are what you fill in.
 """
 
 import re
@@ -107,7 +111,7 @@ async def dispatch(ctx: Context, text: str) -> None:
     name, rest = parsed
     cmd = COMMANDS.get(name)
     if cmd is None or (cmd.admin and not ctx.is_admin):
-        await ctx.reply(f"Unknown command '{name[:20]}'. Type 'help' for a list.")
+        await ctx.reply(f"Unknown command '{name[:20]}'. Type HELP for a list.")
         return
     try:
         await cmd.handler(ctx, rest)
@@ -149,30 +153,61 @@ def _channel(rest: str) -> str:
 # Looking around ---------------------------------------------------------------
 
 
-@command("look", "look [thing]", "Describe the room, or something in it.", aliases=("l",))
+@command("look", "LOOK [thing]", "Describe the room, or something in it.", aliases=("l",))
 async def look(ctx: Context, rest: str) -> None:
     await ctx.call("look", _thing(rest))
 
 
-@command("inspect", "inspect <thing>", "Examine something closely.", aliases=("examine", "x"))
+@command("inspect", "INSPECT <thing>", "Examine something closely.", aliases=("examine", "x"))
 async def inspect(ctx: Context, rest: str) -> None:
     await ctx.call("inspect", _require(_thing(rest) or ctx.target, "Inspect what?"))
 
 
-@command("inventory", "inventory", "List what you're carrying.", aliases=("i", "inv"))
+@command("inventory", "INVENTORY", "List what you're carrying.", aliases=("i", "inv"))
 async def inventory(ctx: Context, rest: str) -> None:
     await ctx.call("inventory")
 
 
-@command("who", "who", "List who is online.")
+@command("who", "WHO", "List who is online.")
 async def who(ctx: Context, rest: str) -> None:
     await ctx.call("who")
+
+
+# Weather ----------------------------------------------------------------------
+
+
+@command("weather", "WEATHER", "The weather here, what's on the ground, and the forecast if you can read these skies.",
+         aliases=("forecast", "sky"))
+async def weather(ctx: Context, rest: str) -> None:
+    await ctx.call("weather")
+
+
+@command("ask", "ASK <someone> [ABOUT] <topic>", "Ask someone about something, e.g. ASK TAMSIN ABOUT WEATHER.")
+async def ask(ctx: Context, rest: str) -> None:
+    words = [w for w in _thing(rest).split() if w != "about"]
+    if not words:
+        raise Usage("Ask whom, about what? e.g. ASK TAMSIN ABOUT WEATHER.")
+    topic = words.pop()
+    whom = " ".join(words) or ctx.target
+    await ctx.call("ask", _require(whom, "Ask whom? Name them, or press Tab to pick someone."), topic)
 
 
 # Moving -----------------------------------------------------------------------
 
 
-@command("move", "move <direction>", "Walk somewhere. Shorthand: n, s, e, w, ne, nw, se, sw, u, d.", aliases=("go", "walk"))
+@command("continue", "CONTINUE", "Go on to the next stage of a journey. Shorthand: Enter on an empty line, while travelling.",
+         aliases=("onward", "next"))
+async def continue_(ctx: Context, rest: str) -> None:
+    await ctx.call("continue")
+
+
+@command("travel", "TRAVEL [destination]", "List the ferries, coaches, portals and other routes from here, or take one, e.g. TRAVEL VILLAGE GREEN.",
+         aliases=("enter", "board", "ride"))
+async def travel(ctx: Context, rest: str) -> None:
+    await ctx.call("travel", _thing(rest))
+
+
+@command("move", "MOVE <direction>", "Walk somewhere. Shorthand: N, S, E, W, NE, NW, SE, SW, U, D.", aliases=("go", "walk"))
 async def move(ctx: Context, rest: str) -> None:
     direction = rest.lower()
     direction = SHORT_DIRECTIONS.get(direction, direction)
@@ -184,12 +219,12 @@ async def move(ctx: Context, rest: str) -> None:
 # Acting in the room -----------------------------------------------------------
 
 
-@command("say", "say <message>", "Speak to everyone in the room (addressed to your target, if you have one). Shorthand: 'message")
+@command("say", "SAY <message>", "Speak to everyone in the room (addressed to your target, if you have one). Shorthand: 'message (an apostrophe first)")
 async def say(ctx: Context, rest: str) -> None:
     await ctx.call("say", _require(rest, "Say what?"), ctx.target)
 
 
-@command("emote", "emote <action>", "Act something out, e.g. 'emote stretches'. Shorthand: :action", aliases=("me",))
+@command("emote", "EMOTE <action>", "Act something out, e.g. EMOTE STRETCHES. Shorthand: :action", aliases=("me",))
 async def emote(ctx: Context, rest: str) -> None:
     text = _require(rest, "Emote what?")
     if text[-1] not in ".!?":
@@ -220,7 +255,7 @@ def _verb_handler(verb: str, plain: str | None, targeted: str | None) -> Handler
     async def handler(ctx: Context, rest: str) -> None:
         target = _thing(rest) or (ctx.target if targeted else "")
         if target and targeted is None:
-            raise Usage(f"Just '{verb}'.")
+            raise Usage(f"Just {verb.upper()}.")
         if not target and plain is None:
             raise Usage(f"{verb.capitalize()} what?")
         await ctx.call("emote", verb, target, plain or "", targeted or "")
@@ -233,9 +268,9 @@ for _verb, (_plain, _targeted) in VERBS.items():
     command(_verb, _usage, f"Emote: {_verb}.")(_verb_handler(_verb, _plain, _targeted))
 
 
-@command("describe", "describe <text>", "Set the short description others see, e.g. 'tall, with a scarred lip'.")
+@command("describe", "DESCRIBE <text>", "Set the short description others see, e.g. 'tall, with a scarred lip'.")
 async def describe(ctx: Context, rest: str) -> None:
-    text = _require(rest, "Describe yourself how? e.g. 'describe tall, with a scarred lip'")
+    text = _require(rest, "Describe yourself how? e.g. DESCRIBE tall, with a scarred lip")
     if len(text) > 80:
         raise Usage("Keep it under 80 characters.")
     await ctx.call("describe", text)
@@ -250,7 +285,7 @@ SLOT_NUMBERS = ("1", "2", "3")
 SLOT_FILLER = ("in", "into", "to", "slot")
 
 
-@command("use", "use <slot> [target]", "Use what's in slot 1, 2 or 3, on its beat. Shorthand: 1, 2, 3")
+@command("use", "USE <slot> [target]", "Use what's in slot 1, 2 or 3, on its beat. Shorthand: 1, 2, 3 (in the web client, the keys 4, 3, 2)")
 async def use(ctx: Context, rest: str) -> None:
     slot, _, target = rest.partition(" ")
     if slot not in SLOT_NUMBERS:
@@ -258,7 +293,7 @@ async def use(ctx: Context, rest: str) -> None:
     await ctx.call("use", slot, _thing(target) or ctx.target)
 
 
-@command("equip", "equip <gear> [slot]", "Put gear in a slot, e.g. 'equip sword 2'. 'gear' lists it all.", aliases=("wield",))
+@command("equip", "EQUIP <gear> [slot]", "Put gear in a slot, e.g. EQUIP SWORD 2. GEAR lists it all.", aliases=("wield",))
 async def equip(ctx: Context, rest: str) -> None:
     words = rest.lower().split()
     slot = ""
@@ -268,10 +303,10 @@ async def equip(ctx: Context, rest: str) -> None:
         slot = words.pop(0)
     while words and words[-1] in SLOT_FILLER:
         words.pop()
-    await ctx.call("equip", _require(_thing(" ".join(words)), "Equip what? Type 'gear' to see what there is."), slot)
+    await ctx.call("equip", _require(_thing(" ".join(words)), "Equip what? Type GEAR to see what there is."), slot)
 
 
-@command("unequip", "unequip <slot>", "Empty a slot.")
+@command("unequip", "UNEQUIP <slot>", "Empty a slot.")
 async def unequip(ctx: Context, rest: str) -> None:
     slot = rest.lower().removeprefix("slot").strip()
     if slot not in SLOT_NUMBERS:
@@ -279,22 +314,22 @@ async def unequip(ctx: Context, rest: str) -> None:
     await ctx.call("unequip", slot)
 
 
-@command("gear", "gear", "List your gear and what's in your slots.", aliases=("slots", "loadout"))
+@command("gear", "GEAR", "List your gear and what's in your slots.", aliases=("slots", "loadout"))
 async def gear(ctx: Context, rest: str) -> None:
     await ctx.call("gear")
 
 
 # Character ----------------------------------------------------------------------
 
-STATS = ("vigor", "poise", "focus", "presence")
+STATS = ("vigor", "poise", "focus", "presence", "resilience")
 
 
-@command("stats", "stats", "Your level, stats, perks and reputation.", aliases=("character", "sheet", "reputation", "rep"))
+@command("stats", "STATS", "Your level, stats, perks and reputation.", aliases=("character", "sheet", "reputation", "rep"))
 async def stats(ctx: Context, rest: str) -> None:
     await ctx.call("stats")
 
 
-@command("train", "train <stat>", "Spend a stat point: vigor, poise, focus or presence.")
+@command("train", "TRAIN <stat>", "Spend a stat point: vigor, poise, focus, presence or resilience.")
 async def train(ctx: Context, rest: str) -> None:
     stat = rest.lower().strip()
     if stat not in STATS:
@@ -302,12 +337,12 @@ async def train(ctx: Context, rest: str) -> None:
     await ctx.call("train", stat)
 
 
-@command("get", "get <item>", "Pick something up.", aliases=("take",))
+@command("get", "GET <item>", "Pick something up.", aliases=("take",))
 async def get(ctx: Context, rest: str) -> None:
     await ctx.call("get", _thing(_require(rest, "Get what?")))
 
 
-@command("drop", "drop <item>", "Put something down.")
+@command("drop", "DROP <item>", "Put something down.")
 async def drop(ctx: Context, rest: str) -> None:
     await ctx.call("drop", _thing(_require(rest, "Drop what?")))
 
@@ -315,34 +350,34 @@ async def drop(ctx: Context, rest: str) -> None:
 # Talking ----------------------------------------------------------------------
 
 
-@command("tell", "tell <player> <message>", "Send a private message to a player.", aliases=("whisper", "dm"))
+@command("tell", "TELL <player> <message>", "Send a private message to a player.", aliases=("whisper", "dm"))
 async def tell(ctx: Context, rest: str) -> None:
     target, message = _split(rest, "Usage: tell <player> <message>")
     await ctx.call("tell", target, message)
 
 
-@command("chat", "chat <channel> <message>", "Talk on a chat channel you've joined.", aliases=("c",))
+@command("chat", "CHAT <channel> <message>", "Talk on a chat channel you've joined.", aliases=("c",))
 async def chat(ctx: Context, rest: str) -> None:
     channel, message = _split(rest, "Usage: chat <channel> <message>")
     await ctx.call("chat", _channel(channel), message)
 
 
-@command("channels", "channels", "List chat channels.")
+@command("channels", "CHANNELS", "List chat channels.")
 async def channels(ctx: Context, rest: str) -> None:
     await ctx.call("channels")
 
 
-@command("join", "join <channel>", "Join a chat channel.")
+@command("join", "JOIN <channel>", "Join a chat channel.")
 async def join(ctx: Context, rest: str) -> None:
     await ctx.call("join", _channel(_require(rest)))
 
 
-@command("leave", "leave <channel>", "Leave a chat channel.")
+@command("leave", "LEAVE <channel>", "Leave a chat channel.")
 async def leave(ctx: Context, rest: str) -> None:
     await ctx.call("leave", _channel(_require(rest)))
 
 
-@command("create", "create <channel>", "Create a new chat channel and join it.")
+@command("create", "CREATE <channel>", "Create a new chat channel and join it.")
 async def create(ctx: Context, rest: str) -> None:
     rest = rest.removeprefix("channel ").strip()
     await ctx.call("create_channel", _channel(_require(rest)))
@@ -351,18 +386,27 @@ async def create(ctx: Context, rest: str) -> None:
 # Admin ------------------------------------------------------------------------
 
 
-@command("announce", "announce <area|city> <message>", "Announce to your whole area or city.", admin=True)
+@command("announce", "ANNOUNCE AREA|REGION|REALM <message>", "Announce to your whole area, region or realm.", admin=True)
 async def announce(ctx: Context, rest: str) -> None:
-    scope, message = _split(rest, "Usage: announce <area|city> <message>")
-    if scope not in ("area", "city"):
-        raise Usage("Usage: announce <area|city> <message>")
+    scope, message = _split(rest, "Usage: ANNOUNCE AREA|REGION|REALM <message>")
+    if scope not in ("area", "region", "realm"):
+        raise Usage("Usage: ANNOUNCE AREA|REGION|REALM <message>")
     await ctx.call("announce", scope, message)
+
+
+@command("setweather", "SETWEATHER <temperature> <energy> <precipitation> | CLEAR",
+         "Pin the weather in your region (each -1 to 1) for testing, or let it run free.", admin=True)
+async def setweather(ctx: Context, rest: str) -> None:
+    values = rest.split()
+    if values != ["clear"] and len(values) != 3:
+        raise Usage("Usage: SETWEATHER <temperature> <energy> <precipitation> (each -1 to 1), or SETWEATHER CLEAR.")
+    await ctx.call("set_weather", *values)
 
 
 # Session ----------------------------------------------------------------------
 
 
-@command("help", "help [command]", "List commands, or explain one.", aliases=("?", "commands"))
+@command("help", "HELP [command]", "List commands, or explain one.", aliases=("?", "commands"))
 async def help_(ctx: Context, rest: str) -> None:
     visible = {name: cmd for name, cmd in COMMANDS.items() if ctx.is_admin or not cmd.admin}
     if rest:
@@ -371,20 +415,20 @@ async def help_(ctx: Context, rest: str) -> None:
             raise Usage(f"There's no '{rest[:20]}' command.")
         lines = [cmd.usage, cmd.summary]
         if cmd.aliases:
-            lines.append("Also: " + ", ".join(cmd.aliases))
+            lines.append("Also: " + ", ".join(alias.upper() for alias in cmd.aliases))
         await ctx.reply("\n".join(lines))
         return
     width = max(len(cmd.usage) for cmd in visible.values())
     lines = ["Commands:"] + [f"  {cmd.usage.ljust(width)}  {cmd.summary}" for cmd in visible.values() if cmd.name not in VERBS]
-    lines.append("Emotes: " + ", ".join(VERBS))
+    lines.append("Emotes: " + ", ".join(verb.upper() for verb in VERBS))
     await ctx.reply("\n".join(lines))
 
 
-@command("quit", "quit", "Leave the world (you stay signed in on this device).")
+@command("quit", "QUIT", "Leave the world (you stay signed in on this device).")
 async def quit_(ctx: Context, rest: str) -> None:
     await ctx.quit(False)
 
 
-@command("logout", "logout", "Leave the world and sign out.")
+@command("logout", "LOGOUT", "Leave the world and sign out.")
 async def logout(ctx: Context, rest: str) -> None:
     await ctx.quit(True)

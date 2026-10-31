@@ -74,18 +74,18 @@ async def test_uses_land_on_the_beat_and_mashing_misses(world):
     # Right on beat 2: perfect.
     await wait_until(world.redis, start + 2 * PERIOD)
     await world.call("use", "kevin", 1, "npc:rat-1")
-    assert texts(await drain(kevin)) == ["Kevin lands a perfect kick on the Dock Rat! (8)"]
+    assert texts(await drain(kevin)) == ["Kevin lands a perfect kick on the Dock Rat! (9)"]  # 8, +12% on a mild coastal day
 
     # A little after beat 3: still inside the window.
     await wait_until(world.redis, start + 3 * PERIOD + 200)
     await world.call("use", "kevin", 1, "npc:rat-1")
-    assert texts(await drain(kevin)) == ["Kevin kicks the Dock Rat. (5)"]
+    assert texts(await drain(kevin)) == ["Kevin kicks the Dock Rat. (6)"]
 
     # Well after beat 4: too late.
     await wait_until(world.redis, start + 4 * PERIOD + 450)
     await world.call("use", "kevin", 1, "npc:rat-1")
     assert texts(await drain(kevin))[0] == "Too late: your kick goes wide."
-    assert await world.redis.hget("NPC:rat-1", "hp") == str(100 - 4 - 8 - 5)
+    assert await world.redis.hget("NPC:rat-1", "hp") == str(100 - 4 - 9 - 6)
 
 
 async def test_each_slot_keeps_its_own_beat(world):
@@ -95,7 +95,7 @@ async def test_each_slot_keeps_its_own_beat(world):
     # Slot 2 hasn't started, so magic missile opens it and lands at once.
     await world.call("use", "kevin", 2, "npc:rat-1")
     events = await drain(kevin)
-    assert texts(events) == ["Kevin kicks the Dock Rat. (4)", "Kevin hurls a magic missile at the Dock Rat. (14)"]
+    assert texts(events) == ["Kevin kicks the Dock Rat. (4)", "Kevin hurls a magic missile at the Dock Rat. (15)"]
     assert [(t["slot"], t["period_ms"], t["grace_ms"]) for t in of_type(events, "timing")] == [
         (1, PERIOD, 300), (2, 8000, 400),
     ]
@@ -120,7 +120,7 @@ async def test_healing_gear_works_on_its_own_beat(world):
     await world.redis.hset("ACCOUNT:kevin", mapping={"hp": 70, "max_hp": 100})
     await world.call("use", "kevin", 3, "npc:rat-1")  # a target makes no difference to a potion
     events = await drain(kevin)
-    assert texts(events) == ["Kevin drinks a health potion. (+10)"]
+    assert texts(events) == ["Kevin drinks a health potion. (+11)"]
     assert of_type(events, "heal")[0]["slot"] == 3
 
     await world.call("use", "kevin", 3, "")  # mashing
@@ -128,7 +128,7 @@ async def test_healing_gear_works_on_its_own_beat(world):
 
     await wait_until(world.redis, await started(world, 3) + 2 * PERIOD)
     await world.call("use", "kevin", 3, "")
-    assert texts(await drain(kevin)) == ["Kevin downs a health potion in one perfect gulp! (+20)"]  # capped at 100
+    assert texts(await drain(kevin)) == ["Kevin downs a health potion in one perfect gulp! (+19)"]  # capped at 100
     assert await world.redis.hget("ACCOUNT:kevin", "hp") == "100"
 
 
@@ -216,7 +216,7 @@ async def test_equipping_changes_a_slots_gear_and_timing(world):
     await world.call("equip", "kevin", "dagger", 4)
     assert texts(await drain(kevin)) == [
         "Slot 1: Magic Missile, every 8.0s.", "You don't have Greataxe.", "Slot 1: Greataxe, every 4.5s.",
-        "Slot 1 already holds Greataxe.", "There's no gear called 'banjo'. Type 'gear' to see what you have.",
+        "Slot 1 already holds Greataxe.", "There's no gear called 'banjo'. Type GEAR to see what you have.",
         "Your slots are 1, 2 and 3.",
     ]
 
@@ -234,7 +234,7 @@ async def test_equip_without_a_slot_fills_the_first_empty_one(world):
     await world.call("use", "kevin", 2, "orc")
     assert texts(await drain(kevin)) == [
         "Slot 2 is empty now.", "Slot 2 is already empty.",
-        "Slot 2 is empty. Try 'equip <gear> 2', or 'gear' to see what you have.",
+        "Slot 2 is empty. Try EQUIP <gear> 2, or GEAR to see what you have.",
     ]
 
 
@@ -248,6 +248,7 @@ async def test_a_full_loadout_needs_a_slot_number(world):
 async def test_a_slot_in_rhythm_cannot_be_swapped(world):
     kevin = await at_fish_market(world)
     await world.call("use", "kevin", 1, "npc:rat-1")
+    await world.redis.delete("PLAYER:kevin:foes")  # the rat loses interest; only the rhythm holds the slot
     await world.call("equip", "kevin", "dagger", 1)
     await world.call("unequip", "kevin", 1)
     await world.call("equip", "kevin", "dagger", 2)  # slot 2 hasn't been used
@@ -276,6 +277,8 @@ async def test_gear_lists_what_you_own_fastest_first(world):
     assert [g["id"] for g in event["gear"]] == ["dagger", "kick", "potion", "missile"]
     assert event["slots"] == ["kick", "missile", "potion"]
     lines = event["text"].split("\n")
-    assert "  Dagger (weapon): every 1.2s, ±200ms, 3 / 5 damage" in lines
-    assert "  Health Potion (potion): every 5.0s, ±350ms, heals 15 / 25" in lines
+    # Indoors it's always dead neutral and dry: grey gear at its best, and the frost
+    # dagger far from its cold, still spot but glad of the dry air.
+    assert "  Dagger (weapon, green): every 1.2s, ±200ms, 3 / 6 damage [weather +12%]" in lines
+    assert "  Health Potion (potion, grey): every 5.0s, ±350ms, heals 17 / 29 [weather +15%]" in lines
     assert lines[-1].startswith("Your slots: 1 Kick · 2 Magic Missile · 3 Health Potion.")

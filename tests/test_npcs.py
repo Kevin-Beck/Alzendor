@@ -84,7 +84,7 @@ async def test_friendly_npcs_cannot_be_attacked_but_can_be_healed(world):
     await world.redis.hset("NPC:marta", "hp", 10)
     await world.call("use", "kevin", 3, "npc:marta")
     assert texts(await drain(kevin))[1:] == [
-        "Kevin lays glowing hands on Marta. (+8)",
+        "Kevin lays glowing hands on Marta. (+8)",  # a rain spell, in the dry (neutral) tavern
         "The Folk of Harrowgate: They won't forget a kindness. (affinity +4, respect +1)",
     ]
     assert await world.redis.hget("NPC:marta", "hp") == "18"
@@ -131,7 +131,7 @@ async def test_the_training_dummy_never_falls_and_gives_nothing(world):
     await walk(world, "kevin", "north", "east", "east")
     await drain(kevin)
     await kill(world, "kevin", "dummy-1")
-    assert texts(await drain(kevin)) == ["Kevin kicks the Training Dummy. (4)", "The Training Dummy wobbles back upright."]
+    assert texts(await drain(kevin)) == ["Kevin kicks the Training Dummy. (5)", "The Training Dummy wobbles back upright."]
     assert await world.redis.hget("NPC:dummy-1", "hp") == "200"
     assert await world.redis.sismember("ROOM:training_yard:npcs", "dummy-1")
     assert not await world.redis.hget("ACCOUNT:kevin", "xp")
@@ -147,10 +147,10 @@ async def test_cultures_judge_the_same_kill_differently(world):
     # The orc is already fighting Kevin (it turned on him), so this isn't an ambush.
     await kill(world, "kevin", "orc-1")
     lines = texts(await drain(kevin))
-    assert lines[:2] == ["Kevin kicks the Orc Warrior. (4)", "The Orc Warrior collapses."]
+    assert lines[:2] == ["Kevin kicks the Orc Warrior. (5)", "The Orc Warrior collapses."]
     assert "The Folk of Harrowgate: They're glad of one less orc in the alleys. (affinity +3)" in lines
     assert "The Back-Alley Orcs: They hate you for it, but a warrior's death is honourable. (affinity -6, respect +4)" in lines
-    assert "You take the Orc Warrior's Greataxe. ('inventory' to equip it.)" in lines
+    assert "You take the Orc Warrior's Greataxe, 6 coins. (INVENTORY to equip it.)" in lines
     assert "You gain 60 experience." in lines
     assert await world.redis.hgetall("PLAYER:kevin:rep:orcs") == {"affinity": "-6", "respect": "4"}
 
@@ -205,9 +205,12 @@ async def test_levelling_up_grants_a_point_and_rewards(world):
     await drain(kevin)
     await kill(world, "kevin", "orc-1")
     events = await drain(kevin)
-    assert "You reach level 2! You have a stat point to spend: 'train <stat>'. You gain: Sword." in texts(events)
+    assert "You reach level 2! You have a stat point to spend: TRAIN <stat>. You gain: Sword." in texts(events)
     character = of_type(events, "character")[-1]
     assert (character["level"], character["xp"], character["xp_next"], character["points"]) == (2, 50, 200, 1)
+    # Reputation lists only the factions that know you, each with its realm.
+    assert {(f["id"], f["realm"], f["realm_name"]) for f in character["factions"]} == {
+        ("harrowfolk", "alzendor", "Alzendor"), ("orcs", "alzendor", "Alzendor")}
     assert "sword" in [g["id"] for g in of_type(events, "kit")[-1]["gear"]]
 
     await world.call("train", "kevin", "vigor")

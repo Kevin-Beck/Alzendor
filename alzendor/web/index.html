@@ -13,6 +13,8 @@
     --hp-good: #4c8a3a; --hp-mid: #c28a1c; --hp-low: #b8402e; --hp-track: #e7e2d8;
     --map-bg: #fbfaf7; --edge: #8b857b; --fog: #b9b3a8; --box: #e9e4da; --box-line: #cfc8bb;
     --area-1: #4f7fb8; --area-2: #d9822b; --area-3: #3f9a5a; --area-4: #8e5bb5; --area-5: #c25a7c; --area-6: #2f8f8f;
+    --tier-grey: #8b857b; --tier-green: #3f9a5a; --tier-blue: #3d7cc9; --tier-purple: #8e5bb5; --tier-orange: #d9822b;
+    --up: #3f8a33; --down: #b8402e; --wet: #3d7cc9;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -23,6 +25,8 @@
       --hp-good: #6fbf5a; --hp-mid: #e0b040; --hp-low: #ef6a55; --hp-track: #34323a;
       --map-bg: #1b1a1f; --edge: #77727c; --fog: #57535c; --box: #24232a; --box-line: #3d3b44;
       --area-1: #6f9fd8; --area-2: #f0a050; --area-3: #5fbf7a; --area-4: #b48ae0; --area-5: #e07fa0; --area-6: #5fc0c0;
+      --tier-grey: #9a958c; --tier-green: #5fbf7a; --tier-blue: #6fa6e8; --tier-purple: #b48ae0; --tier-orange: #f0a050;
+      --up: #6fbf5a; --down: #ef6a55; --wet: #6fa6e8;
     }
   }
   :root[data-theme="dark"] {
@@ -33,6 +37,8 @@
     --hp-good: #6fbf5a; --hp-mid: #e0b040; --hp-low: #ef6a55; --hp-track: #34323a;
     --map-bg: #1b1a1f; --edge: #77727c; --fog: #57535c; --box: #24232a; --box-line: #3d3b44;
     --area-1: #6f9fd8; --area-2: #f0a050; --area-3: #5fbf7a; --area-4: #b48ae0; --area-5: #e07fa0; --area-6: #5fc0c0;
+      --tier-grey: #9a958c; --tier-green: #5fbf7a; --tier-blue: #6fa6e8; --tier-purple: #b48ae0; --tier-orange: #f0a050;
+      --up: #6fbf5a; --down: #ef6a55; --wet: #6fa6e8;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
@@ -62,10 +68,16 @@
   input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   .hidden { display: none !important; }
 
-  /* Game screen: map and log on the left, room panels on the right. */
-  main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 320px; }
+  /* Game screen: map and log on the left, room panels on the right. The bars
+     between them drag to resize (sizes are remembered per browser). */
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto var(--side-width, 360px); }
+  .splitter { flex: none; background: var(--border); position: relative; z-index: 2; touch-action: none; }
+  .splitter::after { content: ""; position: absolute; inset: -4px; } /* a wider grip than it looks */
+  .splitter:hover, .splitter:focus-visible, .splitter.dragging { background: var(--accent); outline: none; }
+  #split-side { width: 1px; cursor: col-resize; }
+  #split-map { height: 1px; cursor: row-resize; }
   #left { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  #map-wrap { position: relative; flex: 1 1 58%; min-height: 160px; background: var(--map-bg); border-bottom: 1px solid var(--border); }
+  #map-wrap { position: relative; flex: 58 1 0; min-height: 120px; background: var(--map-bg); }
   #map { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; user-select: none; }
   #map.dragging { cursor: grabbing; }
   #map .node { cursor: pointer; }
@@ -75,11 +87,12 @@
     paint-order: stroke; stroke: var(--box); stroke-linejoin: round; pointer-events: none;
   }
   #map .node:hover .dot { stroke: var(--accent); }
-  #map-tools { position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; }
+  #map-tools { position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; align-items: flex-start; }
   #map-tools button { background: var(--panel); font-size: 12px; }
   #map-tools button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  #map-realms { display: flex; flex-direction: column; gap: 4px; padding-left: 6px; border-left: 1px solid var(--border); }
   #map-hint { position: absolute; left: 10px; bottom: 6px; font-size: 11px; color: var(--muted); pointer-events: none; }
-  #log-wrap { position: relative; flex: 1 1 42%; min-height: 120px; display: flex; }
+  #log-wrap { position: relative; flex: 42 1 0; min-height: 100px; display: flex; }
   #log { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
   #log .ev { margin: 2px 0; }
   #log .room { margin: 8px 0; padding-left: 10px; border-left: 2px solid var(--accent); }
@@ -100,13 +113,13 @@
   #target-chip .name { overflow: hidden; text-overflow: ellipsis; }
   #target-chip button { border: 0; padding: 0 6px; background: none; color: var(--muted); }
 
-  aside { border-left: 1px solid var(--border); background: var(--panel); overflow-y: auto; min-height: 0; }
+  aside { background: var(--panel); overflow-y: auto; min-height: 0; }
   aside section { padding: 12px 16px; border-bottom: 1px solid var(--border); }
   aside h2 {
     display: flex; justify-content: space-between; align-items: baseline;
     font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px;
   }
-  aside h2 .hint { text-transform: none; letter-spacing: 0; font-weight: normal; }
+  aside h2 .hint { text-transform: none; letter-spacing: 0; font-weight: normal; text-align: right; padding-left: 8px; }
   #room-name { color: var(--accent); font-weight: bold; font-size: 15px; }
   #room-area { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
   #exits { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -197,6 +210,49 @@
   .card .tag { font-size: 11px; color: var(--muted); }
   #room-area .safe { color: var(--hp-good); }
 
+  /* Weather: the temperature/energy grid with the current point, the forecast
+     trail, and a precipitation bar beside it. The same grid shows a gear's spot. */
+  .wx { display: flex; gap: 10px; align-items: stretch; }
+  .wx svg { flex: none; width: 112px; height: 112px; border: 1px solid var(--border); border-radius: 6px; background: var(--map-bg); }
+  .wx svg text { font-family: system-ui, sans-serif; fill: var(--muted); }
+  .wx .precip { flex: none; width: 10px; border: 1px solid var(--border); border-radius: 5px; background: var(--hp-track); position: relative; overflow: hidden; }
+  .wx .precip .fill { position: absolute; left: 0; right: 0; bottom: 0; background: var(--wet); }
+  .wx .about { min-width: 0; font-size: 12px; display: flex; flex-direction: column; gap: 3px; }
+  .wx .about .main { font-size: 13px; color: var(--text); }
+  .wx .about .sub { color: var(--muted); }
+  .wx .about .warn { color: var(--system); }
+  .zone-tag { font-size: 11px; padding: 0 6px; border-radius: 8px; border: 1px solid var(--border); color: var(--muted); align-self: flex-start; }
+
+  /* Weather's effect on each slot, and the gear tooltip. */
+  .rhythm .wxbadge { font-size: 11px; font-weight: bold; }
+  .rhythm .wxbadge.up { color: var(--up); } .rhythm .wxbadge.down { color: var(--down); }
+  .rhythm.boosted .bar { box-shadow: 0 0 0 2px color-mix(in srgb, var(--up) 55%, transparent); }
+  .rhythm.reduced .bar { box-shadow: 0 0 0 2px color-mix(in srgb, var(--down) 45%, transparent); }
+  .rhythm.reduced .label { opacity: .7; }
+  #tip {
+    position: fixed; z-index: 10; width: min(330px, calc(100vw - 16px)); padding: 10px 12px; pointer-events: none;
+    background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, .18); font-size: 12px; line-height: 1.4;
+  }
+  #tip .name { font-weight: bold; font-size: 13px; }
+  #tip .tier { font-weight: bold; }
+  #tip .sub { color: var(--muted); }
+  #tip .wx { margin: 8px 0; }
+  #tip .wx svg { width: 96px; height: 96px; }
+  #tip h4 { margin: 8px 0 3px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  #tip .mod { display: flex; justify-content: space-between; gap: 8px; }
+  #tip .mod .up { color: var(--up); } #tip .mod .down { color: var(--down); }
+  #tip .result { margin-top: 4px; font-weight: bold; }
+  .tier-grey { color: var(--tier-grey); } .tier-green { color: var(--tier-green); } .tier-blue { color: var(--tier-blue); }
+  .tier-purple { color: var(--tier-purple); } .tier-orange { color: var(--tier-orange); }
+  .now { font-size: 12px; }
+  .now .up { color: var(--up); } .now .down { color: var(--down); }
+  .t-travel, .t-journey { color: var(--move); font-style: italic; }
+  #exits button.route { border-style: dashed; } .t-weather_change { color: var(--wet); }
+  .t-weather_report { white-space: pre-wrap; color: var(--wet); }
+  #exits .hidden-ways { font-size: 12px; color: var(--muted); font-style: italic; align-self: center; }
+  .boon.off { opacity: .6; }
+
   /* Inventory and character panels. */
   dialog {
     width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 64px); padding: 0;
@@ -212,6 +268,7 @@
   .rows > li:last-child { border-bottom: 0; }
   .rows .grow { flex: 1; min-width: 0; }
   .rows .sub { color: var(--muted); font-size: 12px; }
+  .dbody > p.sub { color: var(--muted); font-size: 12px; margin: 0 0 4px; }
   .rows button { font-size: 12px; padding: 2px 8px; }
   .rows button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
   .meter { height: 6px; border-radius: 3px; background: var(--hp-track); position: relative; overflow: hidden; margin-top: 3px; }
@@ -239,11 +296,13 @@
   #login-note:empty { display: none; }
 
   @media (max-width: 760px) {
+    header { flex-wrap: wrap; row-gap: 6px; }
     main { display: flex; flex-direction: column; overflow-y: auto; }
     #left { flex: none; }
-    #map-wrap { flex: none; height: 42vh; }
-    #log-wrap { flex: none; height: 34vh; }
-    aside { border-left: 0; overflow: visible; }
+    #map-wrap { flex: none !important; height: 42vh; border-bottom: 1px solid var(--border); }
+    .splitter { display: none; }
+    #log-wrap { flex: none !important; height: 34vh; }
+    aside { overflow: visible; }
     #login { margin: 6vh 16px; }
   }
 </style>
@@ -256,6 +315,7 @@
   <span id="panel-buttons" class="hidden">
     <button id="open-inventory" type="button">Inventory</button>
     <button id="open-character" type="button">Character<span id="points-badge" class="badge hidden"></span></button>
+    <button id="open-reputation" type="button">Reputation</button>
   </span>
   <span id="status" class="down">offline</span>
   <button id="reconnect" class="hidden" type="button">Reconnect</button>
@@ -279,10 +339,12 @@
       <svg id="map" role="img" aria-label="Map of explored rooms"></svg>
       <div id="map-tools">
         <button id="map-area" type="button" aria-pressed="true" title="Focus on the area you're in">Area</button>
-        <button id="map-all" type="button" aria-pressed="false" title="Show everywhere you've been">All</button>
+        <button id="map-all" type="button" aria-pressed="false" title="Show the regions you know">All</button>
+        <div id="map-realms" class="hidden" role="group" aria-label="Realms you've been to"></div>
       </div>
       <div id="map-hint">Click a room to walk there · drag to pan · scroll to zoom</div>
     </div>
+    <div class="splitter" id="split-map" role="separator" aria-orientation="horizontal" tabindex="0" title="Drag to resize the map and log · double-click to reset"></div>
     <div id="log-wrap">
       <div id="log" aria-live="polite"></div>
       <button id="latest" class="hidden" type="button">↓ Latest</button>
@@ -292,18 +354,27 @@
         ▸ <span class="name" id="target-name"></span>
         <button id="target-clear" type="button" aria-label="Clear target">×</button>
       </span>
-      <input id="input" placeholder="Type a command — Tab picks a target, 1 2 3 use your slots" maxlength="500" aria-label="Command">
+      <input id="input" placeholder="Type a command — Tab picks a target, 4 3 2 use your slots" maxlength="500" aria-label="Command">
       <button type="submit">Send</button>
     </form>
   </section>
+  <div class="splitter" id="split-side" role="separator" aria-orientation="vertical" tabindex="0" title="Drag to resize the side panel · double-click to reset"></div>
   <aside>
     <section>
       <div id="room-name">—</div>
       <div id="room-area"></div>
       <div id="exits"></div>
     </section>
-    <section id="combat-panel" class="hidden">
-      <h2>Combat <span class="hint">1 2 3 use your slots</span></h2>
+    <section id="weather-panel" class="hidden">
+      <h2>Weather <span class="hint" id="wx-place"></span></h2>
+      <div class="wx">
+        <svg id="wx-grid" role="img" aria-label="The weather: temperature across, energy up"></svg>
+        <div class="precip" title="Precipitation"><div class="fill" id="wx-precip"></div></div>
+        <div class="about" id="wx-about"></div>
+      </div>
+    </section>
+    <section id="combat-panel">
+      <h2>Loadout <span class="hint">4 3 2 use your slots · hover for details</span></h2>
       <div id="timings" role="group" aria-label="Your slots"></div>
       <div id="target-card" aria-live="polite"></div>
     </section>
@@ -318,6 +389,8 @@
   </aside>
 </main>
 
+<div id="tip" class="hidden" role="tooltip"></div>
+
 <dialog id="inventory-dialog" aria-labelledby="inventory-title">
   <div class="dhead"><h2 id="inventory-title">Inventory</h2><button type="button" data-close>Close</button></div>
   <div class="dbody" id="inventory-body"></div>
@@ -325,6 +398,10 @@
 <dialog id="character-dialog" aria-labelledby="character-title">
   <div class="dhead"><h2 id="character-title">Character</h2><button type="button" data-close>Close</button></div>
   <div class="dbody" id="character-body"></div>
+</dialog>
+<dialog id="reputation-dialog" aria-labelledby="reputation-title">
+  <div class="dhead"><h2 id="reputation-title">Reputation</h2><button type="button" data-close>Close</button></div>
+  <div class="dbody" id="reputation-body"></div>
 </dialog>
 
 <script>
@@ -352,6 +429,8 @@ let target = null;      // selected entity id ('pc:…' or 'npc:…')
 let walk = null;        // a click-to-walk in progress: { dest, steps: [{dir, to}], expect, timer }
 let kit = null;         // your gear, slots and carried items (the latest `kit` event)
 let character = null;   // your level, stats, perks and reputation (the latest `character` event)
+let wx = null;          // the weather where you are (the latest `weather` event)
+let journey = null;     // a journey in progress: { via (the room you travel in), waiting, stage, stages }
 const history = [];
 let historyIndex = 0;
 
@@ -482,7 +561,9 @@ function line(text, className) {
 function show(event) {
   if (event.type === "map") return applyMap(event);
   if (event.type === "timing") return applyTiming(event);
-  if (event.type === "kit") { kit = event; return renderInventory(); }
+  if (event.type === "kit") { kit = event; decorateSlots(); return renderInventory(); }
+  if (event.type === "weather") { wx = event; renderWeather(); return renderPanels(); }
+  if (event.type === "journey") { journey = { via: room && room.id, waiting: true, stage: event.stage, stages: event.stages }; renderPanels(); }
   if (event.type === "character") { character = event; renderCharacter(); return renderTarget(); }
   if (event.type === "npc_timing") return applyNpcTiming(event);
   if (event.type === "dispositions") return applyDispositions(event.dispositions);
@@ -531,6 +612,7 @@ function showRoom(snapshot, text, cause) {
   const unchanged = cause === "resume" && JSON.stringify(snapshot) === JSON.stringify(room);
   const moved = !room || room.id !== snapshot.id;
   room = snapshot;
+  if (journey && journey.via !== snapshot.id) journey = null; // arrived
   showSelf(snapshot.self);
   if (moved) setTarget(null);
   else if (target && !room.entities.some((c) => c.id === target)) setTarget(null);
@@ -572,8 +654,33 @@ function renderPanels() {
     b.onclick = () => { stopWalk(); sendCmd("move " + dir); };
     return b;
   }));
+  if (room && room.exits_hidden) {
+    $("exits").append(el("span", "hidden-ways", `other ways hidden by the ${(wx && wx.falling) || "weather"}`));
+  }
+  for (const r of (room && room.routes) || []) {
+    const b = el("button", "route", `⇢ ${r.to || r.name}${r.fare ? ` · ${r.fare}c` : ""}`);
+    b.type = "button";
+    b.title = `${r.command || "TRAVEL"}: by ${r.name}`;
+    b.onclick = () => { stopWalk(); sendCmd("travel " + r.id); };
+    $("exits").append(b);
+  }
+  if (journey) {
+    const b = el("button", "route", journey.waiting ? `Go on ⏎ (${journey.stage}/${journey.stages})` : "On the way…");
+    b.type = "button";
+    b.disabled = !journey.waiting;
+    b.onclick = continueJourney;
+    $("exits").append(b);
+  }
   renderEntities();
   renderGround();
+}
+
+// Journeys go in stages: Enter (or the button) goes on to the next one.
+function continueJourney() {
+  if (!journey || !journey.waiting) return;
+  journey.waiting = false;
+  sendCmd("continue");
+  renderPanels();
 }
 
 function disposition(card) {
@@ -582,7 +689,6 @@ function disposition(card) {
 
 function renderEntities() {
   const cards = room ? room.entities : [];
-  $("combat-panel").classList.toggle("hidden", !inCombat() && !target && !cards.some((c) => c.kind === "npc"));
   renderTarget();
   if (!cards.length) return $("entities").replaceChildren(el("li", "empty", "No one else is here."));
   $("entities").replaceChildren(...cards.map((card) => {
@@ -718,15 +824,17 @@ function useSlot(n) {
 function slotRow(n) {
   if (slots[n]) return slots[n];
   const row = el("div", "rhythm idle");
-  row.title = `Press ${n} (or click) to use this slot`;
+  row.title = `Press ${SLOT_KEYS[n]} (or click) to use this slot`;
   const status = el("div", "status");
-  status.append(el("span", "key", String(n)), el("span", "label"), el("span", "note"), el("span", "result"));
+  status.append(el("span", "key", SLOT_KEYS[n]), el("span", "label"), el("span", "wxbadge"), el("span", "note"), el("span", "result"));
   const lane = el("div", "lane");
   lane.append(el("div", "zone"), el("div", "sweet"), el("div", "ball"));
   const bar = el("div", "bar");
   bar.append(lane);
   row.append(status, bar);
   row.addEventListener("click", () => { useSlot(n); $("input").focus(); });
+  row.addEventListener("mouseenter", () => { if (slots[n].gear) showTip(row, gearTip(slots[n].gear)); });
+  row.addEventListener("mouseleave", hideTip);
   // Keep the slots in order however their first events arrive.
   const after = Object.keys(slots).map(Number).filter((m) => m > n).sort((a, b) => a - b)[0];
   $("timings").insertBefore(row, after ? slots[after].row : null);
@@ -754,8 +862,29 @@ function applyTiming(event) {
     q("ball").style.left = "50%";
     row.classList.remove("spent");
   }
-  q("note").textContent = period ? `every ${(period / 1000).toFixed(1)}s` : `equip something: 'equip <gear> ${event.slot}'`;
+  q("note").textContent = period ? `every ${(period / 1000).toFixed(1)}s` : `equip something: EQUIP <gear> ${event.slot}`;
+  decorateSlots();
   renderEntities();
+}
+
+// Marks each slot with what the weather does to its gear: ▲ stronger, ▼
+// weaker, and the beat it would open at now.
+function decorateSlots() {
+  if (!kit) return;
+  kit.slots.forEach((gid, i) => {
+    const slot = slots[i + 1];
+    if (!slot) return;
+    const g = gid ? kit.gear.find((x) => x.id === gid) : null;
+    slot.gear = g;
+    const change = g && g.now ? Math.round((g.now.factor - 1) * 100) : 0;
+    const badge = slot.row.querySelector(".wxbadge");
+    badge.textContent = change > 0 ? `▲${change}%` : change < 0 ? `▼${-change}%` : "";
+    badge.className = "wxbadge" + (change > 0 ? " up" : change < 0 ? " down" : "");
+    badge.title = g ? "What the weather does to it right now. Hover for details." : "";
+    slot.row.classList.toggle("boosted", change >= 5);
+    slot.row.classList.toggle("reduced", change <= -5);
+    if (g && g.now && !slot.event) slot.row.querySelector(".note").textContent = `every ${(g.now.period_ms / 1000).toFixed(1)}s`;
+  });
 }
 
 function drawTiming() {
@@ -910,10 +1039,24 @@ function button(text, onclick, title) {
   return b;
 }
 
+function amountsText(g, amounts) {
+  return g.effect === "heal" ? `heals ${amounts.join(" / ")}` : `${amounts.join(" / ")} damage`;
+}
+
 function gearLine(g) {
-  const amounts = g.effect === "heal" ? `heals ${g.amounts[1]} / ${g.amounts[2]}` : `${g.amounts[1]} / ${g.amounts[2]} damage`;
-  return `${g.kind.toLowerCase()} · every ${(g.period_ms / 1000).toFixed(1)}s · ±${g.grace_ms}ms · ${amounts}`
+  const tier = g.weather ? ` · ${g.weather.tier}` : "";
+  return `${g.kind.toLowerCase()}${tier} · every ${(g.period_ms / 1000).toFixed(1)}s · ±${g.grace_ms}ms · ${amountsText(g, g.amounts.slice(1))}`
     + (g.targets === "ally" ? " · you or an ally" : "");
+}
+
+// "now: 6 / 9 damage ▲12%"
+function nowLine(g) {
+  const line = el("div", "now");
+  if (!g.now) return line;
+  const change = Math.round((g.now.factor - 1) * 100);
+  line.append(`now: ${amountsText(g, g.now.amounts.slice(1))}, every ${(g.now.period_ms / 1000).toFixed(1)}s `);
+  if (change) line.append(el("span", change > 0 ? "up" : "down", change > 0 ? `▲${change}%` : `▼${-change}%`));
+  return line;
 }
 
 function renderInventory() {
@@ -925,7 +1068,10 @@ function renderInventory() {
     const li = el("li");
     const info = el("div", "grow");
     info.append(el("div", "", `${i + 1} · ${gid && byId[gid] ? byId[gid].name : "Empty"}`));
-    if (gid && byId[gid]) info.append(el("div", "sub", gearLine(byId[gid])));
+    if (gid && byId[gid]) {
+      info.append(el("div", "sub", gearLine(byId[gid])), nowLine(byId[gid]));
+      withTip(li, () => gearTip(byId[gid]));
+    }
     li.append(info);
     if (gid) li.append(button("Unequip", () => sendCmd(`unequip ${i + 1}`)));
     slotRows.append(li);
@@ -934,8 +1080,9 @@ function renderInventory() {
   for (const g of kit.gear) {
     const li = el("li");
     const info = el("div", "grow");
-    info.append(el("div", "", g.name), el("div", "sub", gearLine(g)));
+    info.append(el("div", "", g.name), el("div", "sub", gearLine(g)), nowLine(g));
     li.append(info);
+    withTip(li, () => gearTip(g));
     for (let n = 1; n <= kit.slots.length; n++) {
       const b = button(String(n), () => sendCmd(`equip ${g.id} ${n}`), `Put ${g.name} in slot ${n}`);
       b.setAttribute("aria-pressed", String(kit.slots[n - 1] === g.id));
@@ -943,7 +1090,8 @@ function renderInventory() {
     }
     gearRows.append(li);
   }
-  const parts = [el("h3", "", "Slots"), slotRows, el("h3", "", "Gear · pick a slot to equip"), gearRows];
+  const parts = [el("p", "", `Purse: ${kit.coins || 0} coins`), el("h3", "", "Slots · no changing them mid-fight"), slotRows,
+    el("h3", "", `Gear · pick a slot to equip · pack ${kit.pack} / ${kit.pack_size}`), gearRows];
   if (kit.items.length) {
     const itemRows = el("ul", "rows");
     for (const item of kit.items) {
@@ -976,16 +1124,31 @@ function renderCharacter() {
   const summary = el("div", "");
   summary.append(el("div", "", `Level ${c.level} · ${c.xp} / ${c.xp_next} experience · health ${c.hp} / ${c.max_hp}`), xp);
   const statRows = el("ul", "rows");
-  for (const [name, value] of Object.entries(c.stats)) {
+  for (const name of c.stat_order || Object.keys(c.stats)) {
+    const value = c.stats[name], trained = c.trained ? c.trained[name] : value;
     const li = el("li");
     const info = el("div", "grow");
-    info.append(el("div", "", `${name[0].toUpperCase() + name.slice(1)} ${value}`), el("div", "sub", c.stat_info[name] || ""));
+    const extra = value !== trained ? ` (${trained} trained, +${value - trained} from boons)` : "";
+    info.append(el("div", "", `${capital(name)} ${value}${extra}`), el("div", "sub", c.stat_info[name] || ""));
     const train = button("+", () => sendCmd("train " + name), "Spend a point on " + name);
     train.disabled = !c.points;
     li.append(info, train);
     statRows.append(li);
   }
   const parts = [summary, el("h3", "", c.points ? `Stats · ${c.points} point${c.points > 1 ? "s" : ""} to spend` : "Stats"), statRows];
+  if (c.boons && c.boons.length) {
+    const boonRows = el("ul", "rows");
+    for (const b of c.boons) {
+      const li = el("li", "boon" + (b.active ? "" : " off"));
+      const info = el("div", "grow");
+      const need = [b.affinity !== undefined && `affinity ${b.affinity}`, b.respect !== undefined && `respect ${b.respect}`].filter(Boolean).join(" and ");
+      info.append(el("div", "", `+${b.amount} ${capital(b.stat)} · ${b.faction}`),
+        el("div", "sub", b.active ? b.note : `At ${need} or more.`));
+      li.append(info, el("span", "sub", b.active ? "active" : "locked"));
+      boonRows.append(li);
+    }
+    parts.push(el("h3", "", "Boons · stat bonuses from the factions that rate you"), boonRows);
+  }
   if (c.perks.length) {
     const perkRows = el("ul", "rows");
     for (const perk of c.perks) {
@@ -997,26 +1160,224 @@ function renderCharacter() {
     }
     parts.push(el("h3", "", "Abilities"), perkRows);
   }
-  const repRows = el("ul", "rows");
-  for (const f of c.factions) {
+  $("character-body").replaceChildren(...parts);
+  renderReputation();
+}
+
+// Reputation: the factions that know you (and so that you know of), grouped by
+// realm, home first (the server sends them in that order).
+function renderReputation() {
+  if (!character) return;
+  const parts = [el("p", "sub", "How much each people likes you (affinity) and how much they respect you.")];
+  let rows = null, realm;
+  for (const f of character.factions) {
+    if (!rows || f.realm !== realm) {
+      realm = f.realm;
+      rows = el("ul", "rows");
+      parts.push(el("h3", "", f.realm_name || "Elsewhere"), rows);
+    }
     const li = el("li");
     const info = el("div", "grow");
-    const affinity = el("div", "sub", `Affinity ${f.affinity}: ${f.affinity_label}`);
-    const respect = el("div", "sub", `Respect ${f.respect}: ${f.respect_label}`);
-    info.append(el("div", "", f.name), affinity, axisMeter(f.affinity), respect, axisMeter(f.respect));
+    info.append(el("div", "", f.name));
+    if (f.description) info.append(el("div", "sub", f.description));
+    info.append(el("div", "sub", `Affinity ${f.affinity}: ${f.affinity_label}`), axisMeter(f.affinity),
+      el("div", "sub", `Respect ${f.respect}: ${f.respect_label}`), axisMeter(f.respect));
     li.append(info);
-    repRows.append(li);
+    rows.append(li);
   }
-  if (!c.factions.length) repRows.append(el("li", "empty", "No one has formed an opinion of you yet."));
-  parts.push(el("h3", "", "Reputation · how much they like you, and how much they respect you"), repRows);
-  $("character-body").replaceChildren(...parts);
+  if (!character.factions.length) parts.push(el("p", "empty", "No one has formed an opinion of you yet."));
+  $("reputation-body").replaceChildren(...parts);
 }
 
 $("open-inventory").addEventListener("click", () => { renderInventory(); $("inventory-dialog").showModal(); });
 $("open-character").addEventListener("click", () => { renderCharacter(); $("character-dialog").showModal(); });
+$("open-reputation").addEventListener("click", () => { renderReputation(); $("reputation-dialog").showModal(); });
 for (const dialog of document.querySelectorAll("dialog")) {
   dialog.querySelector("[data-close]").addEventListener("click", () => dialog.close());
-  dialog.addEventListener("close", () => $("input").focus());
+  dialog.addEventListener("close", () => { hideTip(); $("input").focus(); });
+}
+
+// Weather -----------------------------------------------------------------------------
+// The weather is a point on a grid: temperature runs left (cold) to right (hot),
+// energy runs bottom (dead still) to top (chaos), and the corners are named.
+// Precipitation is the bar beside it. The same grid shows where a piece of gear
+// works best (its spot, shaded in its tier's colour) against today's weather.
+
+const TIER_RADIUS = { grey: 2.0, green: 1.5, blue: 1.1, purple: 0.8, orange: 0.5 }; // as in alzendor.lua
+const TIER_NOTE = {
+  grey: "Grey: a basic piece. The weather nudges it a little, like anything of its kind.",
+  green: "Green: better near its spot, a little worse away from it.",
+  blue: "Blue: much better near its spot, clearly worse away from it.",
+  purple: "Purple: a specialist. Strong at its spot, poor elsewhere.",
+  orange: "Orange: only works at its spot, where it is devastating. Useless anywhere else.",
+};
+const ZONES = [["Gale", -0.95, -0.82, "start"], ["Tempest", 0.95, -0.82, "end"], ["Rime", -0.95, 0.93, "start"], ["Scorch", 0.95, 0.93, "end"]];
+let gradients = 0;
+
+const capital = (text) => text ? text[0].toUpperCase() + text.slice(1) : "";
+
+function zoneOf(x, y) {
+  if (Math.abs(x) < 0.5 && Math.abs(y) < 0.5) return "Temperate";
+  if (x > 0.5 && y < -0.5) return "Scorch";
+  if (x > 0.5 && y > 0.5) return "Tempest";
+  if (x < -0.5 && y > 0.5) return "Gale";
+  if (x < -0.5 && y < -0.5) return "Rime";
+  return null;
+}
+
+// Where a gear's spot is, in words: "Gale: cold and wild" or "warm, with lively air".
+function spotName({ temperature: x, energy: y }) {
+  const zone = zoneOf(x, y);
+  if (zone && zone !== "Temperate") return `${zone}: ${x > 0 ? "hot" : "cold"} and ${y > 0 ? "wild" : "dead still"}`;
+  const t = x > 0.5 ? "hot" : x < -0.5 ? "cold" : x > 0.2 ? "warm" : x < -0.2 ? "cool" : "mild";
+  const e = y > 0.5 ? "wild, energetic air" : y < -0.5 ? "dead-still air" : y > 0.2 ? "lively air" : y < -0.2 ? "quiet air" : "a light breeze";
+  return `${t}, with ${e}`;
+}
+
+function drawWeatherGrid(svg, { here = null, exact = true, trail = [], spot = null, tier = "grey" }) {
+  svg.setAttribute("viewBox", "-1 -1 2 2");
+  svg.replaceChildren();
+  const thin = { "vector-effect": "non-scaling-stroke" };
+  svgEl("rect", { x: -0.5, y: -0.5, width: 1, height: 1, fill: "var(--box)", stroke: "var(--box-line)", ...thin }, svg);
+  for (const v of [-0.5, 0.5]) {
+    svgEl("line", { x1: v, y1: -1, x2: v, y2: 1, stroke: "var(--box-line)", "stroke-dasharray": "2 3", ...thin }, svg);
+    svgEl("line", { x1: -1, y1: v, x2: 1, y2: v, stroke: "var(--box-line)", "stroke-dasharray": "2 3", ...thin }, svg);
+  }
+  for (const [name, x, y, anchor] of ZONES) {
+    svgEl("text", { x, y, "font-size": 0.14, "text-anchor": anchor }, svg).textContent = name;
+  }
+  svgEl("text", { x: -0.97, y: 0.06, "font-size": 0.13 }, svg).textContent = "cold";
+  svgEl("text", { x: 0.97, y: 0.06, "font-size": 0.13, "text-anchor": "end" }, svg).textContent = "hot";
+  if (spot) {
+    const id = `spot-${++gradients}`;
+    const color = `var(--tier-${tier})`;
+    const defs = svgEl("defs", {}, svg);
+    const grad = svgEl("radialGradient", { id }, defs);
+    svgEl("stop", { offset: "0%", "stop-color": color, "stop-opacity": 0.55 }, grad);
+    svgEl("stop", { offset: "100%", "stop-color": color, "stop-opacity": 0 }, grad);
+    svgEl("circle", { cx: spot.temperature, cy: -spot.energy, r: TIER_RADIUS[tier] || 2, fill: `url(#${id})` }, svg);
+    svgEl("circle", { cx: spot.temperature, cy: -spot.energy, r: 0.08, fill: color, stroke: "var(--panel)", "stroke-width": 1.5, ...thin }, svg);
+  }
+  if (here && trail.length) {
+    const points = [here, ...trail].map((p) => `${p.temperature},${-p.energy}`).join(" ");
+    svgEl("polyline", { points, fill: "none", stroke: "var(--wet)", "stroke-opacity": 0.5, "stroke-dasharray": "2 3", ...thin }, svg);
+    trail.forEach((p, i) => svgEl("circle", { cx: p.temperature, cy: -p.energy, r: 0.035, fill: "var(--wet)",
+      "fill-opacity": 0.9 - (0.7 * i) / trail.length }, svg));
+  }
+  if (here) {
+    if (exact) {
+      svgEl("circle", { cx: here.temperature, cy: -here.energy, r: 0.09, fill: "var(--accent)", stroke: "var(--panel)", "stroke-width": 2, ...thin }, svg);
+    } else {
+      // Without lore you only feel it roughly: a blurred patch, kept inside the grid.
+      const inside = (v) => Math.max(-0.75, Math.min(0.75, v));
+      svgEl("circle", { cx: inside(here.temperature), cy: -inside(here.energy), r: 0.3, fill: "var(--accent)", "fill-opacity": 0.22,
+        stroke: "var(--accent)", "stroke-dasharray": "2 3", ...thin }, svg);
+    }
+  }
+}
+
+function duration(minutes) {
+  const h = Math.floor(minutes / 60), m = Math.round(minutes % 60);
+  return h ? `${h} h${m ? ` ${m} min` : ""}` : `${m} min`;
+}
+
+function renderWeather() {
+  $("weather-panel").classList.toggle("hidden", !wx);
+  if (!wx) return;
+  $("wx-place").textContent = (wx.realm ? capital(wx.realm) + " · " : "") + wx.place + (wx.indoor ? " · indoors, always mild" : "");
+  const svg = $("wx-grid");
+  drawWeatherGrid(svg, { here: wx, exact: wx.exact, trail: wx.forecast || [] });
+  const title = wx.forecast ? wx.forecast.filter((_, i) => i % 2 === 1).map((f) => `In ${duration(f.minutes)}: ${f.summary}`).join("\n") : "";
+  svgEl("title", {}, svg).textContent = `Now: ${wx.summary}` + (title ? "\n" + title : "");
+  $("wx-precip").style.height = (wx.precipitation > 0 ? Math.max(6, 100 * wx.intensity) : 0) + "%";
+  const about = [el("div", "main", capital(wx.summary))];
+  if (wx.zone && wx.zone !== "Temperate") about.push(el("span", "zone-tag", wx.zone));
+  if (wx.indoor) about.push(el("div", "sub", "Indoors: it never changes in here."));
+  const depth = (v) => (v < 0.25 ? "a little" : v < 0.5 ? "some" : v < 0.75 ? "deep" : "very deep");
+  if (wx.ground && wx.ground.snow >= 0.05) about.push(el("div", "sub", `Snow: ${depth(wx.ground.snow)}. Slows travel.`));
+  if (wx.ground && wx.ground.mud >= 0.05) about.push(el("div", "sub", `Mud: ${depth(wx.ground.mud)}. Slows travel.`));
+  if (wx.visibility === "poor") about.push(el("div", "warn", `You can't see far in the ${wx.falling}.`));
+  if (!wx.indoor) {
+    if (!wx.exact) about.push(el("div", "sub", "Roughly: you can't read these skies. Someone local could teach you (ASK <name> ABOUT WEATHER)."));
+    else if (wx.forecast) about.push(el("div", "sub", `Forecast ${duration(wx.forecast[wx.forecast.length - 1].minutes)} ahead (dotted). Hover the grid.`));
+  }
+  $("wx-about").replaceChildren(...about);
+}
+
+// Tooltips ------------------------------------------------------------------------------
+
+function showTip(anchor, content) {
+  const tip = $("tip");
+  (anchor.closest("dialog") || document.body).append(tip); // a modal dialog sits above everything else
+  tip.replaceChildren(...content);
+  tip.classList.remove("hidden");
+  const r = anchor.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+  let left = r.left - w - 10;
+  if (left < 8) left = Math.max(8, Math.min(r.right + 10, innerWidth - w - 8));
+  if (left + w > innerWidth - 8) left = Math.max(8, innerWidth - w - 8);
+  tip.style.left = left + "px";
+  tip.style.top = Math.max(8, Math.min(r.top, innerHeight - h - 8)) + "px";
+}
+
+function hideTip() {
+  $("tip").classList.add("hidden");
+}
+
+// Hover shows it; on a touch screen, tapping the row (not its buttons) toggles it.
+function withTip(node, build) {
+  let touch = false;
+  node.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") showTip(node, build()); });
+  node.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") hideTip(); });
+  node.addEventListener("pointerdown", (e) => { touch = e.pointerType !== "mouse"; });
+  node.addEventListener("click", (e) => {
+    if (!touch || e.target.closest("button")) return;
+    if ($("tip").classList.contains("hidden")) showTip(node, build()); else hideTip();
+  });
+}
+
+function signed(n) {
+  return (n > 0 ? "+" : n < 0 ? "−" : "±") + Math.abs(n);
+}
+
+// What a piece of gear is and how it works, then what today's weather does to it.
+function gearTip(g) {
+  const tier = g.weather ? g.weather.tier : "grey";
+  const head = el("div");
+  head.append(el("span", "name", g.name), ` · ${g.kind} · `, el("span", `tier tier-${tier}`, tier));
+  const parts = [head];
+  if (g.description) parts.push(el("div", "sub", g.description));
+  parts.push(el("div", "", `Every ${(g.period_ms / 1000).toFixed(1)} s · ±${g.grace_ms} ms (perfect ±${g.perfect_ms}) · `
+    + amountsText(g, g.amounts) + (g.targets === "ally" ? " · you or an ally" : "")));
+  if (g.weather) {
+    const row = el("div", "wx");
+    const svg = document.createElementNS(SVG, "svg");
+    drawWeatherGrid(svg, { here: wx, exact: wx ? wx.exact : true, spot: g.weather, tier });
+    const bar = el("div", "precip");
+    bar.title = { wet: "Wants wet weather", dry: "Wants dry weather", any: "Doesn't mind rain" }[g.weather.precipitation];
+    const fill = el("div", "fill");
+    fill.style.height = { wet: "100%", dry: "0%", any: "50%" }[g.weather.precipitation];
+    bar.append(fill);
+    const about = el("div", "about");
+    const wants = { wet: "Wants it wet: stronger the harder it rains or snows.", dry: "Wants it dry: weaker in rain or snow.",
+      any: "Doesn't mind rain or dry." }[g.weather.precipitation];
+    about.append(el("div", "", `Best: ${spotName(g.weather)}`), el("div", "sub", wants), el("div", "sub", TIER_NOTE[tier]));
+    row.append(svg, bar, about);
+    parts.push(row);
+  }
+  if (g.now && wx) {
+    parts.push(el("h4", "", `Current conditions · ${wx.place}`), el("div", "sub", capital(wx.summary)));
+    for (const m of g.now.mods) {
+      const row = el("div", "mod");
+      const good = m.on === "resilience" || (m.on === "period" ? m.pct < 0 : m.pct > 0);
+      const value = m.on === "resilience" ? `${m.pct}% softer` : m.on === "period" ? `${signed(m.pct)}% beat`
+        : m.on ? `${signed(m.pct)}% window` : `${signed(m.pct)}%`;
+      row.append(el("span", "", m.label), el("span", m.pct === 0 ? "" : good ? "up" : "down", value));
+      parts.push(row);
+    }
+    parts.push(el("div", "result", `→ ${amountsText(g, g.now.amounts)} · every ${(g.now.period_ms / 1000).toFixed(1)} s · `
+      + `±${g.now.grace_ms} ms (perfect ±${g.now.perfect_ms})`));
+  }
+  return parts;
 }
 
 // Map -------------------------------------------------------------------------------
@@ -1024,30 +1385,72 @@ for (const dialog of document.querySelectorAll("dialog")) {
 // centre point plus a scale in map units per pixel, so it always matches the
 // SVG's shape. It frames the area you're in and glides to each new area as you
 // enter it; dragging or zooming takes over until the next area, or Area / All.
+// "All" shows the regions you know: explored ones with their rooms, and greyed
+// outlines of the ones you've only discovered. Panning and zooming out stop at
+// those regions, so the rest of the world stays off the map.
 
 const SVG = "http://www.w3.org/2000/svg";
 const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
-const known = { rooms: {}, areas: {}, cities: {} };
-const view = { cx: 0, cy: 0, k: 0.25, mode: "area", area: null }; // mode: area | all | free
+const known = { rooms: {}, areas: {}, regions: {} };
+const view = { cx: 0, cy: 0, k: 0.25, mode: "area", area: null, realm: null }; // mode: area | all | free; realm: null = yours
 const measurer = document.createElement("canvas").getContext("2d");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 let glide = null;
 
 // Space around boxes, in pixels, so titles never sit on rooms at any zoom.
 const AREA_PAD = { side: 18, top: 40, bottom: 16 };
-const CITY_PAD = { side: 16, top: 28, bottom: 16 };
+const REGION_PAD = { side: 16, top: 28, bottom: 16 };
 // Space around a framed area, in pixels: room for the boxes, labels and buttons.
 const FRAME_MARGIN = { left: 56, right: 120, top: 80, bottom: 48 };
 
 function applyMap(event) {
-  if (event.full) for (const kind of ["rooms", "areas", "cities"]) known[kind] = {};
+  if (event.full) for (const kind of ["rooms", "areas"]) known[kind] = {};
   for (const r of event.rooms) {
     if (known.rooms[r.id] && known.rooms[r.id].explored && !r.explored) continue;
     known.rooms[r.id] = r;
   }
   for (const a of event.areas) known.areas[a.id] = a;
-  for (const c of event.cities) known.cities[c.id] = c;
+  known.regions = Object.fromEntries(event.regions.map((g) => [g.id, g])); // always the whole list
+  if (event.realms) known.realms = event.realms;
+  if (event.routes) known.routes = event.routes;
+  if (event.realm) known.realm = event.realm;
+  renderRealmButtons();
   renderMap();
+}
+
+// Realms ------------------------------------------------------------------------------
+// The map shows one realm at a time: yours, or (from the buttons in All) another
+// realm you've been to, as you knew it on your last visit.
+
+function currentRealm() {
+  const here = room && known.rooms[room.id];
+  return (here && here.realm) || known.realm;
+}
+
+function shownRealm() {
+  return view.realm || currentRealm();
+}
+
+const inShownRealm = (thing) => !thing.realm || thing.realm === shownRealm();
+const shownRooms = () => Object.values(known.rooms).filter(inShownRealm);
+const shownRegions = () => Object.values(known.regions).filter(inShownRealm);
+const shownAreas = () => Object.values(known.areas).filter((a) => inShownRealm(known.regions[a.region] || {}));
+
+function renderRealmButtons() {
+  const realms = known.realms || [];
+  const box = $("map-realms");
+  box.classList.toggle("hidden", realms.length < 2 || view.mode === "area");
+  box.replaceChildren(...realms.map((r) => {
+    const b = el("button", "", r.name);
+    b.type = "button";
+    b.title = r.id === currentRealm() ? "The realm you're in" : `${r.name}, as you last saw it`;
+    b.setAttribute("aria-pressed", String(r.id === shownRealm()));
+    b.onclick = () => { view.realm = r.id === currentRealm() ? null : r.id; setMapMode("all"); };
+    return b;
+  }));
+  const away = view.realm && view.realm !== currentRealm();
+  $("map-hint").textContent = away ? "As you last saw it · Area returns to where you are"
+    : "Click a room to walk there · drag to pan · scroll to zoom";
 }
 
 function areaColor(id) {
@@ -1067,13 +1470,20 @@ function svgEl(tag, attrs, parent) {
   return node;
 }
 
+// Padding is in pixels, so it would grow in map units as you zoom out; past
+// PAD_MAX_K it stops growing, which keeps boxes inside the gaps the seed check
+// insists on (30 units between areas, 40 between regions).
+const PAD_MAX_K = 0.4;
+
 function areaRect(area, k) {
   const [x1, y1, x2, y2] = area.bounds, p = AREA_PAD;
+  k = Math.min(k, PAD_MAX_K);
   return [x1 - p.side * k, y1 - p.top * k, x2 + p.side * k, y2 + p.bottom * k];
 }
 
-function cityRect(city, k) {
-  const [x1, y1, x2, y2] = city.bounds, a = AREA_PAD, c = CITY_PAD;
+function regionRect(region, k) {
+  const [x1, y1, x2, y2] = region.bounds, a = AREA_PAD, c = REGION_PAD;
+  k = Math.min(k, PAD_MAX_K);
   return [x1 - (a.side + c.side) * k, y1 - (a.top + c.top) * k, x2 + (a.side + c.side) * k, y2 + (a.bottom + c.bottom) * k];
 }
 
@@ -1085,13 +1495,36 @@ function frame([x1, y1, x2, y2]) {
   return { cx: (x1 + x2) / 2 + ((m.right - m.left) / 2) * k, cy: (y1 + y2) / 2 + ((m.bottom - m.top) / 2) * k, k };
 }
 
+// The box, in map units, around every region and room the player knows.
+function knownBounds() {
+  const boxes = [...shownRegions().map((g) => g.bounds),
+    ...shownRooms().map((r) => [r.pos[0], r.pos[1], r.pos[0], r.pos[1]])];
+  if (!boxes.length) return null;
+  return [Math.min(...boxes.map((b) => b[0])), Math.min(...boxes.map((b) => b[1])),
+    Math.max(...boxes.map((b) => b[2])), Math.max(...boxes.map((b) => b[3]))];
+}
+
+// How far out the view may zoom: a little past the known regions.
+function zoomLimit() {
+  const bounds = knownBounds();
+  return bounds ? frame(bounds).k * 1.15 : 2;
+}
+
+// Keeps the view on the known regions: no zooming out past them, and no
+// panning their middle off screen.
+function clampView() {
+  const bounds = knownBounds();
+  if (!bounds) return;
+  view.k = Math.min(view.k, zoomLimit());
+  view.cx = Math.min(Math.max(view.cx, bounds[0]), bounds[2]);
+  view.cy = Math.min(Math.max(view.cy, bounds[1]), bounds[3]);
+}
+
 function targetView() {
   const here = room && known.rooms[room.id];
   if (view.mode === "all") {
-    const rooms = Object.values(known.rooms);
-    if (!rooms.length) return null;
-    const xs = rooms.map((r) => r.pos[0]), ys = rooms.map((r) => r.pos[1]);
-    return frame([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]);
+    const bounds = knownBounds();
+    return bounds && frame(bounds);
   }
   if (!here) return null;
   const area = known.areas[here.area];
@@ -1127,6 +1560,10 @@ function renderMap() {
     const first = view.area === null;
     view.area = area;
     view.mode = "area";
+    view.realm = null;
+    $("map-area").setAttribute("aria-pressed", "true");
+    $("map-all").setAttribute("aria-pressed", "false");
+    renderRealmButtons();
     const target = targetView();
     if (first && target) { Object.assign(view, target); return drawMap(); }
     return glideTo(target);
@@ -1134,7 +1571,7 @@ function renderMap() {
   if (glide) return;
   if (view.mode !== "free") {
     Object.assign(view, targetView() || {});
-  } else if (here) {
+  } else if (here && !view.realm) {
     const halfW = (svg.clientWidth * view.k) / 2 - 20 * view.k, halfH = (svg.clientHeight * view.k) / 2 - 20 * view.k;
     if (Math.abs(here.pos[0] - view.cx) > halfW || Math.abs(here.pos[1] - view.cy) > halfH) {
       return glideTo({ cx: here.pos[0], cy: here.pos[1], k: view.k });
@@ -1173,7 +1610,7 @@ function drawMap() {
   const line = { "vector-effect": "non-scaling-stroke" };
   const here = room && known.rooms[room.id];
   const blocked = []; // pixel rectangles labels must avoid
-  const rooms = Object.values(known.rooms);
+  const rooms = shownRooms();
   const dots = rooms.map((r) => { const [px, py] = toPx(...r.pos); return [px - 13, py - 13, px + 13, py + 13]; });
   const titleFits = (box) => !dots.some((d) => overlaps(box, d)) && !blocked.some((b) => overlaps(box, b));
   const edges = [];   // pixel segments labels should avoid
@@ -1183,19 +1620,24 @@ function drawMap() {
     t.textContent = text;
   };
 
-  // Nested boxes: cities, and the areas inside them, each titled top-left.
-  for (const city of Object.values(known.cities)) {
-    const [x1, y1, x2, y2] = cityRect(city, k);
-    svgEl("rect", { x: x1, y: y1, width: x2 - x1, height: y2 - y1, rx: 14 * k, fill: "none",
-      stroke: "var(--box-line)", "stroke-width": 1.5, "stroke-dasharray": "6 4", ...line }, svg);
+  // Nested boxes: regions, and the areas inside them, each titled top-left.
+  // Regions only discovered are greyed out, with nothing drawn inside.
+  const regions = shownRegions().sort((a, b) => (a.state === "explored") - (b.state === "explored"));
+  for (const region of regions) {
+    const explored = region.state === "explored";
+    const [x1, y1, x2, y2] = regionRect(region, k);
+    svgEl("rect", { x: x1, y: y1, width: x2 - x1, height: y2 - y1, rx: 14 * k,
+      fill: explored ? "none" : "var(--box)", "fill-opacity": explored ? 1 : 0.6,
+      stroke: explored ? "var(--box-line)" : "var(--fog)", "stroke-width": 1.5, "stroke-dasharray": explored ? "6 4" : "2 5", ...line }, svg);
     const [px, py] = toPx(x1, y1);
-    const box = [px + 10, py + 4, px + 18 + textWidth(city.name, 13, 600), py + 24];
+    const title = explored ? region.name : `${region.name} · unexplored`;
+    const box = [px + 10, py + 4, px + 18 + textWidth(title, 13, 600), py + 24];
     if (titleFits(box)) {
-      label(px + 14, py + 19, city.name, 13, 600, "var(--muted)");
+      label(px + 14, py + 19, title, 13, 600, explored ? "var(--muted)" : "var(--fog)", "start", explored ? {} : { "font-style": "italic" });
       blocked.push(box);
     }
   }
-  for (const area of Object.values(known.areas)) {
+  for (const area of shownAreas()) {
     const [x1, y1, x2, y2] = areaRect(area, k);
     svgEl("rect", { x: x1, y: y1, width: x2 - x1, height: y2 - y1, rx: 10 * k, fill: "var(--box)",
       stroke: areaColor(area.id), "stroke-opacity": area.id === view.area ? 0.9 : 0.4, "stroke-width": area.id === view.area ? 1.5 : 1, ...line }, svg);
@@ -1210,7 +1652,7 @@ function drawMap() {
 
   // Connections. Up/down exits are dashed; ones into unexplored rooms dotted.
   const drawn = new Set();
-  for (const r of Object.values(known.rooms)) {
+  for (const r of rooms) {
     if (!r.explored) continue;
     for (const [dir, dest] of Object.entries(r.exits || {})) {
       const other = known.rooms[dest];
@@ -1222,6 +1664,15 @@ function drawMap() {
         "stroke-dasharray": dir === "up" || dir === "down" ? "5 4" : other.explored ? "none" : "2 4", ...line }, svg);
       edges.push([...toPx(...r.pos), ...toPx(...other.pos)]);
     }
+  }
+
+  // Routes (ferries, coaches) between known rooms: long dashed lines.
+  for (const route of known.routes || []) {
+    const a = known.rooms[route.from], b = known.rooms[route.to];
+    if (!a || !b || !inShownRealm(a) || !inShownRealm(b)) continue;
+    svgEl("line", { x1: a.pos[0], y1: a.pos[1], x2: b.pos[0], y2: b.pos[1], stroke: "var(--wet)", "stroke-opacity": 0.6,
+      "stroke-width": 1.5, "stroke-dasharray": "8 6", ...line }, svg).append(
+      Object.assign(document.createElementNS(SVG, "title"), { textContent: route.name }));
   }
 
   if (walk && here) {
@@ -1242,7 +1693,7 @@ function drawMap() {
       fill: r.explored ? areaColor(r.area) : "var(--map-bg)", stroke: r.explored ? "var(--map-bg)" : "var(--fog)",
       "stroke-width": r.explored ? 2 : 1.5, ...line }, g);
     svgEl("circle", { cx: r.pos[0], cy: r.pos[1], r: 14 * k, fill: "transparent" }, g); // a bigger click target
-    if (!current) g.addEventListener("click", () => { if (!dragged) walkTo(r.id); });
+    if (!current && !view.realm) g.addEventListener("click", () => { if (!dragged) walkTo(r.id); });
     blocked.push([px - (current ? 13 : radius + 2), py - (current ? 13 : radius + 2), px + (current ? 13 : radius + 2), py + (current ? 13 : radius + 2)]);
   }
 
@@ -1278,6 +1729,8 @@ function drawMap() {
 
 function setMapMode(mode) {
   view.mode = mode;
+  if (mode === "area") view.realm = null;
+  renderRealmButtons();
   $("map-area").setAttribute("aria-pressed", String(mode === "area"));
   $("map-all").setAttribute("aria-pressed", String(mode === "all"));
   glideTo(targetView());
@@ -1305,6 +1758,7 @@ window.addEventListener("pointermove", (e) => {
   $("map").classList.add("dragging");
   view.cx = drag.cx - (e.clientX - drag.x) * view.k;
   view.cy = drag.cy - (e.clientY - drag.y) * view.k;
+  clampView();
   drawMap();
 });
 window.addEventListener("pointerup", () => {
@@ -1318,16 +1772,82 @@ $("map").addEventListener("wheel", (e) => {
   const rect = $("map").getBoundingClientRect();
   const mx = view.cx + (e.clientX - rect.left - rect.width / 2) * view.k;
   const my = view.cy + (e.clientY - rect.top - rect.height / 2) * view.k;
-  const k = Math.min(2, Math.max(0.03, view.k * Math.exp(e.deltaY * 0.0015)));
+  const k = Math.min(2, zoomLimit(), Math.max(0.03, view.k * Math.exp(e.deltaY * 0.0015)));
   // Zoom around the pointer: keep the map point under it in place.
   view.cx = mx - (mx - view.cx) * (k / view.k);
   view.cy = my - (my - view.cy) * (k / view.k);
   view.k = k;
+  clampView();
   drawMap();
 }, { passive: false });
 $("map-area").addEventListener("click", () => setMapMode("area"));
 $("map-all").addEventListener("click", () => setMapMode("all"));
-window.addEventListener("resize", () => { renderMap(); if (following) scrollToLatest(); });
+window.addEventListener("resize", () => applyLayout(false));
+
+// Resizable panels -----------------------------------------------------------------------
+// Two bars: one between the map/log and the side panel, one between the map and
+// the log. Drag them (or focus one and use the arrow keys); double-click resets.
+// Sizes are a per-browser preference.
+
+const SIDE = { min: 260, max: 640, initial: 360 };
+const MAP = { min: 0.2, max: 0.8, initial: 0.58 };
+let sideWidth = SIDE.initial, mapShare = MAP.initial;
+
+function applyLayout(save) {
+  const room = innerWidth - 320; // always leave the map and log some width
+  sideWidth = Math.round(Math.min(Math.max(sideWidth, SIDE.min), SIDE.max, Math.max(room, SIDE.min)));
+  mapShare = Math.min(Math.max(mapShare, MAP.min), MAP.max);
+  $("world").style.setProperty("--side-width", `${sideWidth}px`);
+  $("map-wrap").style.flexGrow = Math.round(mapShare * 100);
+  $("log-wrap").style.flexGrow = 100 - Math.round(mapShare * 100);
+  $("split-side").setAttribute("aria-valuenow", sideWidth);
+  $("split-map").setAttribute("aria-valuenow", Math.round(mapShare * 100));
+  if (save) store.set("layout", JSON.stringify({ side: sideWidth, map: mapShare }));
+  renderMap();
+  if (following) scrollToLatest();
+}
+
+function dragBar(bar, onMove) {
+  bar.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    bar.setPointerCapture(e.pointerId);
+    bar.classList.add("dragging");
+    const move = (ev) => { onMove(ev); applyLayout(false); };
+    const up = () => {
+      bar.classList.remove("dragging");
+      bar.removeEventListener("pointermove", move);
+      bar.removeEventListener("pointerup", up);
+      bar.removeEventListener("pointercancel", up);
+      applyLayout(true);
+    };
+    bar.addEventListener("pointermove", move);
+    bar.addEventListener("pointerup", up);
+    bar.addEventListener("pointercancel", up);
+  });
+}
+
+dragBar($("split-side"), (e) => { sideWidth = $("world").getBoundingClientRect().right - e.clientX; });
+dragBar($("split-map"), (e) => {
+  const map = $("map-wrap").getBoundingClientRect(), log = $("log-wrap").getBoundingClientRect();
+  mapShare = (e.clientY - map.top) / (log.bottom - map.top);
+});
+$("split-side").addEventListener("dblclick", () => { sideWidth = SIDE.initial; applyLayout(true); });
+$("split-map").addEventListener("dblclick", () => { mapShare = MAP.initial; applyLayout(true); });
+$("split-side").addEventListener("keydown", (e) => {
+  const step = { ArrowLeft: 20, ArrowRight: -20 }[e.key];
+  if (step) { e.preventDefault(); sideWidth += step; applyLayout(true); }
+});
+$("split-map").addEventListener("keydown", (e) => {
+  const step = { ArrowUp: -0.04, ArrowDown: 0.04 }[e.key];
+  if (step) { e.preventDefault(); mapShare += step; applyLayout(true); }
+});
+try {
+  const saved = JSON.parse(store.get("layout") || "{}");
+  if (Number.isFinite(saved.side)) sideWidth = saved.side;
+  if (Number.isFinite(saved.map)) mapShare = saved.map;
+} catch {}
+applyLayout(false);
 
 // Click to walk ------------------------------------------------------------------------
 // Walks the shortest known path one real move at a time. Typing a command,
@@ -1397,10 +1917,14 @@ function signOut() {
   $("me-hp").classList.add("hidden");
   $("panel-buttons").classList.add("hidden");
   for (const dialog of document.querySelectorAll("dialog")) dialog.close();
-  kit = character = null;
-  for (const kind of ["rooms", "areas", "cities"]) known[kind] = {};
-  view.area = null;
+  kit = character = wx = journey = null;
+  renderWeather();
+  hideTip();
+  for (const kind of ["rooms", "areas", "regions"]) known[kind] = {};
+  known.realms = known.realm = null;
+  view.area = view.realm = null;
   view.mode = "area";
+  renderRealmButtons();
   store.remove("alz.token");
   $("log").replaceChildren();
   $("world").classList.add("hidden");
@@ -1434,7 +1958,7 @@ $("login").addEventListener("submit", (e) => {
 $("command").addEventListener("submit", (e) => {
   e.preventDefault();
   const text = $("input").value.trim();
-  if (!text) return;
+  if (!text) { if (journey) continueJourney(); return; }
   stopWalk();
   history.push(text);
   scrollToLatest();
@@ -1445,11 +1969,15 @@ $("command").addEventListener("submit", (e) => {
   else $("input").value = "";
 });
 
-// 1, 2 and 3 use your slots straight away, without Enter, unless you're
-// typing something: they work on an empty command line, or in a fight when
-// the kept command is all selected.
+// The keys that use each slot: 4, 3 and 2, so a resting finger sits on the
+// first slot. They work straight away, without Enter, unless you're typing
+// something: on an empty command line, or in a fight when the kept command
+// is all selected.
+const SLOT_KEYS = { 1: "4", 2: "3", 3: "2" };
+
 function slotKey(e) {
-  if (!["1", "2", "3"].includes(e.key) || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return false;
+  const n = Number(Object.keys(SLOT_KEYS).find((slot) => SLOT_KEYS[slot] === e.key));
+  if (!n || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return false;
   if ($("world").classList.contains("hidden") || document.querySelector("dialog[open]")) return false;
   const field = e.target;
   if (field === $("input")) {
@@ -1459,7 +1987,7 @@ function slotKey(e) {
     return false;
   }
   e.preventDefault();
-  useSlot(Number(e.key));
+  useSlot(n);
   return true;
 }
 

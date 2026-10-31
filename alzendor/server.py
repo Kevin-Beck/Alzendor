@@ -28,6 +28,7 @@ log = logging.getLogger(__name__)
 
 WEB_CLIENT = Path(__file__).with_name("web") / "index.html"
 MAX_MESSAGE_BYTES = 16 * 1024
+WEATHER_SECONDS = 30  # how often weather_tick runs (ground, NPCs, everyone's weather)
 SECURITY_HEADERS = {
     "Content-Security-Policy": (
         "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
@@ -143,16 +144,26 @@ class GameServer:
 
     async def _ticker(self) -> None:
         """Runs the world's upkeep (respawns, sleeping bodies fading, healing out
-        of a fight) and publishes the map's ambient events (bells, weather).
+        of a fight), the weather's 30-second tick, and the map's ambient events.
         Every server runs this loop: upkeep is atomic in Redis, and a Redis key
         per time slot makes sure only one server fires each ambient."""
         last_slot = {i: int(time.time() // a["every"]) for i, a in enumerate(self.ambient)}
+        last_weather = 0
         while True:
             await asyncio.sleep(5)
             try:
                 await self.world.call("upkeep")
             except Exception:
                 log.exception("upkeep failed")
+            # The weather's beat: one server per 30 s slot (see weather_tick).
+            slot = int(time.time() // WEATHER_SECONDS)
+            if slot != last_weather:
+                last_weather = slot
+                try:
+                    if await self.world.redis.set(f"alz:weather_tick:{slot}", self.config.server_id, nx=True, ex=WEATHER_SECONDS * 2):
+                        await self.world.call("weather_tick")
+                except Exception:
+                    log.exception("weather tick failed")
             for i, ambient in enumerate(self.ambient):
                 slot = int(time.time() // ambient["every"])
                 if slot == last_slot[i]:

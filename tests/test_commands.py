@@ -127,7 +127,7 @@ async def test_free_emote_gets_punctuation(ctx):
         ("equip", "Equip what?"),
         ("equip 2", "Equip what?"),
         ("unequip", "Unequip which slot?"),
-        ("stand on table", "Just 'stand'."),
+        ("stand on table", "Just STAND."),
         ("say", "Say what?"),
         ("tell mara", "Usage: tell <player> <message>"),
         ("juggle", "Unknown command 'juggle'"),
@@ -148,14 +148,14 @@ async def test_private_channels_cannot_be_joined(ctx, name):
 
 
 async def test_admin_commands_are_hidden_from_players(ctx):
-    await dispatch(ctx, "announce city Hello")
-    assert ctx.world.replies == ["Unknown command 'announce'. Type 'help' for a list."]
+    await dispatch(ctx, "announce region Hello")
+    assert ctx.world.replies == ["Unknown command 'announce'. Type HELP for a list."]
     await dispatch(ctx, "help")
-    assert "announce" not in ctx.world.replies[1]
+    assert "ANNOUNCE" not in ctx.world.replies[1]
 
     admin = Context(RecordingWorld(), "kevin", is_admin=True)
-    await dispatch(admin, "announce city Hello")
-    assert admin.world.calls == [("announce", "kevin", "city", "Hello")]
+    await dispatch(admin, "announce region Hello")
+    assert admin.world.calls == [("announce", "kevin", "region", "Hello")]
 
 
 async def test_help_lists_every_command(ctx):
@@ -163,6 +163,43 @@ async def test_help_lists_every_command(ctx):
     listing = ctx.world.replies[0]
     for name, cmd in commands.COMMANDS.items():
         if not cmd.admin:
-            assert name in listing
-    await dispatch(ctx, "help n")
-    assert ctx.world.replies[1].startswith("move <direction>")
+            assert name.upper() in listing  # commands are shown in capitals
+    await dispatch(ctx, "HELP N")  # and accepted in any case
+    assert ctx.world.replies[1].startswith("MOVE <direction>")
+
+
+@pytest.mark.parametrize("text, call", [
+    ("ask tamsin about weather", ("ask", "kevin", "tamsin", "weather")),
+    ("ask old tamsin weather", ("ask", "kevin", "old tamsin", "weather")),
+    ("weather", ("weather", "kevin")),
+    ("forecast", ("weather", "kevin")),
+    ("train resilience", ("train", "kevin", "resilience")),
+])
+async def test_weather_commands(ctx, text, call):
+    await dispatch(ctx, text)
+    assert ctx.world.calls == [call]
+
+
+async def test_asking_without_a_name_uses_the_target(ctx):
+    ctx.target = "npc:tamsin"
+    await dispatch(ctx, "ask about weather")
+    assert ctx.world.calls == [("ask", "kevin", "npc:tamsin", "weather")]
+
+
+async def test_setweather_is_for_admins(ctx):
+    admin = Context(RecordingWorld(), "kevin", is_admin=True)
+    await dispatch(admin, "setweather 0.5 -1 0.2")
+    await dispatch(admin, "setweather clear")
+    assert admin.world.calls == [("set_weather", "kevin", "0.5", "-1", "0.2"), ("set_weather", "kevin", "clear")]
+    await dispatch(admin, "setweather hot")
+    assert admin.world.replies[-1].startswith("Usage: SETWEATHER")
+
+
+async def test_enter_and_realm_announcements(ctx):
+    await dispatch(ctx, "enter the rift")
+    await dispatch(ctx, "travel")
+    await dispatch(ctx, "TRAVEL to Village Green")
+    assert ctx.world.calls == [("travel", "kevin", "rift"), ("travel", "kevin", ""), ("travel", "kevin", "village green")]
+    admin = Context(RecordingWorld(), "kevin", is_admin=True)
+    await dispatch(admin, "announce realm The ground shudders.")
+    assert admin.world.calls == [("announce", "kevin", "realm", "The ground shudders.")]

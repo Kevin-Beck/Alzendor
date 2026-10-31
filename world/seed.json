@@ -1,40 +1,124 @@
 {
   "start_room": "tavern",
-  "cities": {
+  "realms": {
+    "alzendor": {
+      "name": "Alzendor",
+      "home": true,
+      "description": "The home realm: every kind of weather, and extremes only rarely."
+    },
+    "rimewaste": {
+      "name": "the Rimewaste",
+      "description": "A realm of endless winter: frigid, howling, and snowing almost without pause.",
+      "weather": {
+        "temperature": [
+          -0.85,
+          0.15
+        ],
+        "energy": [
+          0.7,
+          0.3
+        ],
+        "precipitation": [
+          0.75,
+          0.25
+        ]
+      }
+    },
+    "stillsands": {
+      "name": "the Stillsands",
+      "description": "A dead-still desert of glass under a sun that never relents. It never rains.",
+      "weather": {
+        "temperature": [
+          0.9,
+          0.1
+        ],
+        "energy": [
+          -0.85,
+          0.15
+        ],
+        "precipitation": [
+          -1,
+          0
+        ]
+      }
+    }
+  },
+  "regions": {
     "harrowgate": {
-      "name": "Harrowgate"
+      "name": "Harrowgate",
+      "realm": "alzendor"
     },
     "harrowlake": {
-      "name": "Harrowlake"
+      "name": "Harrowlake",
+      "realm": "alzendor"
     },
     "spiderwood": {
-      "name": "Spiderwood"
+      "name": "Spiderwood",
+      "realm": "alzendor"
+    },
+    "saltmere": {
+      "name": "Saltmere Isle",
+      "hidden": true,
+      "reveal": {
+        "faction": "harrowfolk",
+        "affinity": 10,
+        "text": "Folk around the lake have started telling you about Saltmere Isle, out past the ferry."
+      },
+      "realm": "alzendor"
+    },
+    "frostfell": {
+      "name": "Frostfell",
+      "realm": "rimewaste"
+    },
+    "glass_flats": {
+      "name": "the Glass Flats",
+      "realm": "stillsands"
     }
   },
   "areas": {
     "old_quarter": {
       "name": "the Old Quarter",
-      "city": "harrowgate"
+      "region": "harrowgate"
     },
     "docks": {
       "name": "the Docks",
-      "city": "harrowgate"
+      "region": "harrowgate"
     },
     "lake_road": {
       "name": "the Lake Road",
-      "city": "harrowlake"
+      "region": "harrowlake"
     },
     "harrowlake_village": {
       "name": "Harrowlake Village",
-      "city": "harrowlake"
+      "region": "harrowlake"
     },
     "forest_edge": {
       "name": "the Forest Edge",
-      "city": "spiderwood"
+      "region": "spiderwood"
     },
     "webbed_hollow": {
       "name": "the Webbed Hollow",
-      "city": "spiderwood"
+      "region": "spiderwood"
+    },
+    "saltmere_shore": {
+      "name": "the Saltmere Shore",
+      "region": "saltmere"
+    },
+    "shattered_shore": {
+      "name": "the Shattered Shore",
+      "region": "frostfell"
+    },
+    "howling_pass": {
+      "name": "the Howling Pass",
+      "region": "frostfell"
+    },
+    "glass_dunes": {
+      "name": "the Glass Dunes",
+      "region": "glass_flats"
+    },
+    "lake_crossing": {
+      "name": "the Lake Crossing",
+      "region": "harrowlake"
     }
   },
   "rooms": {
@@ -61,7 +145,8 @@
         "touch:hearth": "holds a hand to the hearth and pulls it back quickly.",
         "sit:bar": "pulls up a stool at the bar."
       },
-      "safe": true
+      "safe": true,
+      "indoor": true
     },
     "cellar": {
       "name": "Tavern Cellar",
@@ -81,7 +166,8 @@
       "flavor": {
         "touch:ground": "kneels and touches the cold, packed earth.",
         "touch:casks": "raps a knuckle on a cask. It sounds full."
-      }
+      },
+      "indoor": true
     },
     "market_square": {
       "name": "Market Square",
@@ -127,7 +213,8 @@
       },
       "flavor": {
         "touch:anvil": "lays a hand on the anvil and snatches it back. Still warm."
-      }
+      },
+      "indoor": true
     },
     "temple_steps": {
       "name": "Temple Steps",
@@ -342,7 +429,8 @@
       "features": {
         "window": "Stained glass: a ferryman poling across a lake of stars."
       },
-      "safe": true
+      "safe": true,
+      "indoor": true
     },
     "drowned_lantern": {
       "name": "The Drowned Lantern",
@@ -362,7 +450,8 @@
       "flavor": {
         "touch:hearth": "warms their hands over the smoky peat fire."
       },
-      "safe": true
+      "safe": true,
+      "indoor": true
     },
     "ferry_dock": {
       "name": "Ferry Dock",
@@ -371,7 +460,7 @@
         -190,
         40
       ],
-      "description": "A long jetty juts into the lake. A flat-bottomed ferry is tied up, rocking gently.",
+      "description": "A long jetty juts into the lake. A flat-bottomed ferry is tied up, rocking gently. Far out across the water, a smudge of mist hangs over something.",
       "exits": {
         "northeast": "village_green"
       },
@@ -475,7 +564,8 @@
       "features": {
         "bones": "Small bones, picked clean."
       },
-      "terrain": "cave"
+      "terrain": "cave",
+      "indoor": true
     },
     "silk_cavern": {
       "name": "Silk Cavern",
@@ -491,7 +581,12 @@
       "features": {
         "silk": "Curtains of silk, thick enough to climb."
       },
-      "terrain": "cave"
+      "terrain": "cave",
+      "climate": {
+        "temperature": 0.85,
+        "energy": -0.9,
+        "precipitation": -1
+      }
     },
     "training_yard": {
       "name": "Training Yard",
@@ -507,6 +602,214 @@
       "features": {
         "rack": "A rack of blunted practice blades, dented from years of use."
       }
+    },
+    "saltmere_landing": {
+      "name": "Saltmere Landing",
+      "area": "saltmere_shore",
+      "pos": [
+        -280,
+        40
+      ],
+      "description": "A shingle beach where the ferry grounds. Salt crusts every stone, and the mist never quite lifts.",
+      "exits": {
+        "west": "salt_flats",
+        "north": "tide_shrine"
+      },
+      "features": {
+        "shingle": "Grey pebbles, rimed white with salt."
+      },
+      "terrain": "coast"
+    },
+    "salt_flats": {
+      "name": "Salt Flats",
+      "area": "saltmere_shore",
+      "pos": [
+        -310,
+        40
+      ],
+      "description": "A white plain of cracked salt stretches into the mist. Your footprints fill slowly with brine.",
+      "exits": {
+        "east": "saltmere_landing"
+      },
+      "features": {
+        "salt": "Thick plates of salt, cracked into hexagons."
+      },
+      "terrain": "coast"
+    },
+    "tide_shrine": {
+      "name": "Tide Shrine",
+      "area": "saltmere_shore",
+      "pos": [
+        -280,
+        15
+      ],
+      "description": "A ring of standing stones, green with weed to the height of a man. Small offerings sit on the altar stone.",
+      "exits": {
+        "south": "saltmere_landing"
+      },
+      "features": {
+        "stones": "Each stone is carved with a wave, worn almost smooth."
+      },
+      "safe": true
+    },
+    "rime_landing": {
+      "name": "Rime Landing",
+      "area": "shattered_shore",
+      "pos": [
+        0,
+        0
+      ],
+      "description": "Snow screams sideways across a shelf of black rock. Behind you, a ring of frost marks where the portal opens.",
+      "exits": {
+        "north": "howling_pass",
+        "east": "ice_shelf"
+      },
+      "features": {
+        "ring": "A ring of hoarfrost on the rock, humming faintly: the anchor of Veyra's portal."
+      },
+      "terrain": "coast"
+    },
+    "ice_shelf": {
+      "name": "Ice Shelf",
+      "area": "shattered_shore",
+      "pos": [
+        30,
+        0
+      ],
+      "description": "Blue ice groans underfoot. Wolf tracks circle a dark hole in the shelf.",
+      "exits": {
+        "west": "rime_landing",
+        "north": "frozen_lake"
+      },
+      "terrain": "coast"
+    },
+    "frozen_lake": {
+      "name": "Frozen Lake",
+      "area": "shattered_shore",
+      "pos": [
+        30,
+        -25
+      ],
+      "description": "A lake frozen so deep the ice is black. Shapes drift beneath it.",
+      "exits": {
+        "south": "ice_shelf",
+        "northwest": "howling_pass"
+      }
+    },
+    "howling_pass": {
+      "name": "Howling Pass",
+      "area": "howling_pass",
+      "pos": [
+        0,
+        -55
+      ],
+      "description": "The wind funnels between two cliffs with a sound like a voice. Something pale moves in the snow.",
+      "exits": {
+        "south": "rime_landing",
+        "southeast": "frozen_lake",
+        "west": "ember_hollow",
+        "north": "rift_chasm"
+      }
+    },
+    "ember_hollow": {
+      "name": "Ember Hollow",
+      "area": "howling_pass",
+      "pos": [
+        -30,
+        -55
+      ],
+      "description": "A low cave where someone keeps a fire of black stones burning. The only warmth for miles.",
+      "exits": {
+        "east": "howling_pass"
+      },
+      "safe": true,
+      "features": {
+        "fire": "Black stones that burn without smoke. Someone feeds them, but you never see who."
+      },
+      "indoor": true
+    },
+    "rift_chasm": {
+      "name": "Rift Chasm",
+      "area": "howling_pass",
+      "pos": [
+        0,
+        -85
+      ],
+      "description": "The pass ends at a chasm. Across it, a tear in the air shows a sky of white heat. It only ever goes one way.",
+      "exits": {
+        "south": "howling_pass"
+      },
+      "features": {
+        "rift": "A ragged tear in the air. Heat pours out of it, and no one has come back through."
+      }
+    },
+    "rift_fall": {
+      "name": "Rift Fall",
+      "area": "glass_dunes",
+      "pos": [
+        0,
+        0
+      ],
+      "description": "You land on glass that burns through your boots. Above, the rift is already closing. There's no way back up.",
+      "exits": {
+        "east": "dune_sea"
+      }
+    },
+    "dune_sea": {
+      "name": "Dune Sea",
+      "area": "glass_dunes",
+      "pos": [
+        30,
+        0
+      ],
+      "description": "Dunes of fused glass ripple to every horizon, perfectly still. Nothing breathes here.",
+      "exits": {
+        "west": "rift_fall",
+        "east": "sun_altar"
+      }
+    },
+    "sun_altar": {
+      "name": "Sun Altar",
+      "area": "glass_dunes",
+      "pos": [
+        60,
+        0
+      ],
+      "description": "A disc of white stone carved with a sun. A portal frame stands on it, dark and empty, waiting for the air to move.",
+      "exits": {
+        "west": "dune_sea"
+      },
+      "features": {
+        "portal": "An empty frame of white stone. Carved along it: 'When the still air breathes, and none stand against you, go home.'"
+      }
+    },
+    "ferry_deck": {
+      "name": "Aboard the Lake Ferry",
+      "area": "lake_crossing",
+      "pos": [
+        -235,
+        70
+      ],
+      "description": "The ferry's flat deck sways under you. Osric leans on his pole without a word, and the shore slips away into the mist.",
+      "features": {
+        "pole": "A long ash pole, worn smooth where Osric's hands go.",
+        "water": "Dark, cold water. Something large turns over beneath the boat, then is gone."
+      },
+      "terrain": "coast"
+    },
+    "coach": {
+      "name": "Inside the Lake Road Coach",
+      "area": "lake_road",
+      "pos": [
+        -50,
+        50
+      ],
+      "description": "A cramped, swaying box of a coach that smells of leather and wet wool. Through the window, the Lake Road jolts past.",
+      "features": {
+        "window": "Reeds, then water, then reeds again, rattling by."
+      },
+      "safe": true,
+      "indoor": true
     }
   },
   "items": {
@@ -520,7 +823,12 @@
       "name": "worn map",
       "keywords": "map",
       "room": "tavern",
-      "description": "A hand-drawn map of Harrowgate, stained with ale rings."
+      "description": "A hand-drawn map of Harrowgate and the roads out of it, stained with ale rings.",
+      "reveals": [
+        "harrowgate",
+        "harrowlake",
+        "spiderwood"
+      ]
     },
     "horseshoe-1": {
       "name": "iron horseshoe",
@@ -563,6 +871,24 @@
       "keywords": "silk bundle",
       "room": "hollow_tree",
       "description": "A tight bundle of spider silk. Strong as rope."
+    },
+    "chart-1": {
+      "name": "sea chart",
+      "keywords": "chart sea map",
+      "room": "drowned_lantern",
+      "description": "A water-stained chart of the lake. Past the ferry crossing, someone has inked a small island and written 'Saltmere'.",
+      "reveals": [
+        "saltmere"
+      ]
+    },
+    "glass-1": {
+      "name": "storm glass",
+      "keywords": "glass storm stormglass",
+      "room": "ember_hollow",
+      "description": "A sealed glass of cloudy water. The crystals in it shift before the weather does: hold it a while and you can read the Rimewaste's skies.",
+      "forecasts": [
+        "rimewaste"
+      ]
     }
   },
   "npcs": {
@@ -624,7 +950,8 @@
           "damage": 4,
           "hit": "{actor} slams a shield into {target}."
         }
-      ]
+      ],
+      "coins": 6
     },
     "rat-1": {
       "name": "Dock Rat",
@@ -643,7 +970,8 @@
           "damage": 1,
           "hit": "{actor} nips at {target}."
         }
-      ]
+      ],
+      "coins": 1
     },
     "rat-2": {
       "name": "Dock Rat",
@@ -662,7 +990,8 @@
           "damage": 1,
           "hit": "{actor} nips at {target}."
         }
-      ]
+      ],
+      "coins": 1
     },
     "tamsin": {
       "name": "Old Tamsin",
@@ -675,7 +1004,10 @@
       "disposition": "friendly",
       "faction": "harrowfolk",
       "role": "civilian",
-      "icon": "🏮"
+      "icon": "🏮",
+      "forecasts": [
+        "alzendor"
+      ]
     },
     "lurker-1": {
       "name": "Bog Lurker",
@@ -701,7 +1033,16 @@
           "damage": 3,
           "hit": "{actor} spits stinking mire at {target}."
         }
-      ]
+      ],
+      "active_when": {
+        "precipitation": [
+          0,
+          1
+        ]
+      },
+      "hide": "{actor} sinks back under the drying reeds.",
+      "emerge": "{actor} rises out of the rain-soaked reeds.",
+      "coins": 8
     },
     "ilse": {
       "name": "Sister Ilse",
@@ -728,7 +1069,10 @@
       "disposition": "friendly",
       "faction": "harrowfolk",
       "role": "civilian",
-      "icon": "⛵"
+      "icon": "⛵",
+      "forecasts": [
+        "alzendor"
+      ]
     },
     "wren": {
       "name": "Wren",
@@ -741,7 +1085,10 @@
       "disposition": "friendly",
       "faction": "wardens",
       "role": "ranger",
-      "icon": "🏹"
+      "icon": "🏹",
+      "forecasts": [
+        "alzendor"
+      ]
     },
     "spider-1": {
       "name": "Giant Spider",
@@ -769,7 +1116,16 @@
           "damage": 3,
           "hit": "{actor} lashes {target} with sticky silk."
         }
-      ]
+      ],
+      "active_when": {
+        "precipitation": [
+          -1,
+          0.2
+        ]
+      },
+      "hide": "{actor} scuttles up into the dark as the wet comes in.",
+      "emerge": "{actor} drops back down on a thread, now the air is dry.",
+      "coins": 6
     },
     "brood-1": {
       "name": "Broodmother",
@@ -804,7 +1160,11 @@
           "damage": 5,
           "hit": "{actor} wraps {target} in choking silk."
         }
-      ]
+      ],
+      "drops": [
+        "stormcall"
+      ],
+      "coins": 40
     },
     "orc-2": {
       "name": "Orc Whelp",
@@ -826,7 +1186,8 @@
           "damage": 3,
           "hit": "{actor} takes a wild swing at {target}."
         }
-      ]
+      ],
+      "coins": 4
     },
     "dummy-1": {
       "name": "Training Dummy",
@@ -861,6 +1222,186 @@
           "hit": "{actor}'s arm swings round and clips {target}."
         }
       ]
+    },
+    "veyra": {
+      "name": "Veyra",
+      "proper": true,
+      "label": "Elven Portal-Mage",
+      "description": "wrapped in furs, eyes white with frost",
+      "keywords": "veyra mage elf",
+      "room": "rime_landing",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "role": "civilian",
+      "icon": "🧝",
+      "details": "Veyra keeps the portal anchored, and will send anyone back who asks. 'Most ask sooner than they meant to,' she says."
+    },
+    "frostwolf-1": {
+      "name": "Frost Wolf",
+      "label": "Beast",
+      "description": "white, lean, starving",
+      "keywords": "wolf frost",
+      "max_hp": 45,
+      "disposition": "hostile",
+      "role": "beast",
+      "icon": "🐺",
+      "respawn": 90,
+      "xp": 40,
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 5000,
+          "damage": 7,
+          "hit": "{actor} sinks its fangs into {target}."
+        },
+        {
+          "name": "lunge",
+          "period": 8000,
+          "damage": 5,
+          "hit": "{actor} slams into {target}, knocking them into the snow."
+        }
+      ],
+      "room": "ice_shelf",
+      "coins": 10
+    },
+    "frostwolf-2": {
+      "name": "Frost Wolf",
+      "label": "Beast",
+      "description": "white, lean, starving",
+      "keywords": "wolf frost",
+      "max_hp": 45,
+      "disposition": "hostile",
+      "role": "beast",
+      "icon": "🐺",
+      "respawn": 90,
+      "xp": 40,
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 5000,
+          "damage": 7,
+          "hit": "{actor} sinks its fangs into {target}."
+        },
+        {
+          "name": "lunge",
+          "period": 8000,
+          "damage": 5,
+          "hit": "{actor} slams into {target}, knocking them into the snow."
+        }
+      ],
+      "room": "frozen_lake",
+      "coins": 10
+    },
+    "wraith-1": {
+      "name": "Ice Wraith",
+      "label": "Spirit",
+      "description": "a shape of blown snow with two cold lights",
+      "keywords": "wraith ice spirit",
+      "room": "howling_pass",
+      "max_hp": 80,
+      "disposition": "hostile",
+      "role": "spirit",
+      "icon": "👻",
+      "respawn": 180,
+      "xp": 90,
+      "drops": [
+        "rimefang"
+      ],
+      "attacks": [
+        {
+          "name": "chill",
+          "period": 6000,
+          "damage": 9,
+          "hit": "{actor} passes through {target}, freezing them to the bone."
+        },
+        {
+          "name": "howl",
+          "period": 11000,
+          "damage": 6,
+          "hit": "{actor} howls, and the wind tears at {target}."
+        }
+      ],
+      "coins": 25
+    },
+    "scorpion-1": {
+      "name": "Glass Scorpion",
+      "label": "Beast",
+      "description": "clear as glass, sun burning inside it",
+      "keywords": "scorpion glass",
+      "room": "dune_sea",
+      "max_hp": 60,
+      "disposition": "hostile",
+      "role": "beast",
+      "icon": "🦂",
+      "respawn": 120,
+      "xp": 60,
+      "attacks": [
+        {
+          "name": "sting",
+          "period": 7000,
+          "damage": 11,
+          "hit": "{actor} drives its sting into {target}."
+        }
+      ],
+      "coins": 15
+    },
+    "sandwraith-1": {
+      "name": "Sand Wraith",
+      "label": "Spirit",
+      "description": "a whirl of hot sand in the shape of a man",
+      "keywords": "wraith sand",
+      "room": "sun_altar",
+      "max_hp": 40,
+      "disposition": "hostile",
+      "role": "spirit",
+      "icon": "🌪️",
+      "respawn": 20,
+      "xp": 15,
+      "attacks": [
+        {
+          "name": "scour",
+          "period": 5000,
+          "damage": 6,
+          "hit": "{actor} scours {target} with burning sand."
+        }
+      ],
+      "coins": 2
+    },
+    "sandwraith-2": {
+      "name": "Sand Wraith",
+      "label": "Spirit",
+      "description": "a whirl of hot sand in the shape of a man",
+      "keywords": "wraith sand",
+      "room": "sun_altar",
+      "max_hp": 40,
+      "disposition": "hostile",
+      "role": "spirit",
+      "icon": "🌪️",
+      "respawn": 20,
+      "xp": 15,
+      "attacks": [
+        {
+          "name": "scour",
+          "period": 5000,
+          "damage": 6,
+          "hit": "{actor} scours {target} with burning sand."
+        }
+      ],
+      "coins": 2
+    },
+    "bram": {
+      "name": "Bram",
+      "proper": true,
+      "label": "Human Coachman",
+      "description": "red-faced, whip over one shoulder",
+      "keywords": "bram coachman driver",
+      "room": "market_square",
+      "max_hp": 40,
+      "disposition": "friendly",
+      "faction": "harrowfolk",
+      "role": "civilian",
+      "icon": "🐴",
+      "details": "Bram drives the Lake Road coach to Harrowlake and back. 'Three coins, and I'll have you there before your boots are wet.'"
     }
   },
   "gear": {
@@ -880,7 +1421,14 @@
       "hit": "{actor} jabs {target} with a dagger.",
       "perfect_hit": "{actor} slips a dagger neatly into {target}!",
       "miss": "{actor} jabs at {target} and misses.",
-      "whiff": "your dagger thrust finds only air."
+      "whiff": "your dagger thrust finds only air.",
+      "description": "A thin, frost-blued blade that stays keen in the dead cold and the dry.",
+      "weather": {
+        "temperature": -0.7,
+        "energy": -0.6,
+        "precipitation": "dry",
+        "tier": "green"
+      }
     },
     "kick": {
       "name": "Kick",
@@ -898,7 +1446,8 @@
       "hit": "{actor} kicks {target}.",
       "perfect_hit": "{actor} lands a perfect kick on {target}!",
       "miss": "{actor} kicks at {target} and misses.",
-      "whiff": "your kick goes wide."
+      "whiff": "your kick goes wide.",
+      "description": "A hard kick. Plain, quick and always there; it likes a neutral day like any weapon."
     },
     "sword": {
       "name": "Sword",
@@ -916,7 +1465,8 @@
       "hit": "{actor} slashes {target} with a sword.",
       "perfect_hit": "{actor} cuts {target} with a clean sword stroke!",
       "miss": "{actor} swings a sword at {target} and misses.",
-      "whiff": "your sword cuts empty air."
+      "whiff": "your sword cuts empty air.",
+      "description": "A plain soldier's sword. Steady in any weather, best on a mild day."
     },
     "draught": {
       "name": "Healing Draught",
@@ -934,7 +1484,8 @@
       "hit": "{actor} sips a healing draught.",
       "perfect_hit": "{actor} tosses back a healing draught without spilling a drop!",
       "miss": "{actor} fumbles a healing draught.",
-      "whiff": "the draught slips through your fingers."
+      "whiff": "the draught slips through your fingers.",
+      "description": "A quick sip of something restorative. Indifferent to the sky."
     },
     "firebolt": {
       "name": "Firebolt",
@@ -952,7 +1503,14 @@
       "hit": "{actor} flings a firebolt at {target}.",
       "perfect_hit": "{actor}'s firebolt engulfs {target}!",
       "miss": "{actor}'s firebolt sails past {target}.",
-      "whiff": "your firebolt sputters out."
+      "whiff": "your firebolt sputters out.",
+      "description": "A bolt of fire that loves a hot, wild sky and hates the wet.",
+      "weather": {
+        "temperature": 0.7,
+        "energy": 0.6,
+        "precipitation": "dry",
+        "tier": "blue"
+      }
     },
     "greataxe": {
       "name": "Greataxe",
@@ -970,7 +1528,14 @@
       "hit": "{actor} hacks at {target} with a greataxe.",
       "perfect_hit": "{actor} brings a greataxe down squarely on {target}!",
       "miss": "{actor}'s greataxe thuds into the ground beside {target}.",
-      "whiff": "your greataxe swing comes too slow."
+      "whiff": "your greataxe swing comes too slow.",
+      "description": "A heavy axe forged in a winter storm. It sings in a gale.",
+      "weather": {
+        "temperature": -0.6,
+        "energy": 0.7,
+        "precipitation": "any",
+        "tier": "blue"
+      }
     },
     "potion": {
       "name": "Health Potion",
@@ -988,7 +1553,8 @@
       "hit": "{actor} drinks a health potion.",
       "perfect_hit": "{actor} downs a health potion in one perfect gulp!",
       "miss": "{actor} fumbles a health potion and spills it.",
-      "whiff": "you fumble the potion and spill it."
+      "whiff": "you fumble the potion and spill it.",
+      "description": "A slow, strong healing potion. Indifferent to the sky."
     },
     "missile": {
       "name": "Magic Missile",
@@ -1006,7 +1572,8 @@
       "hit": "{actor} hurls a magic missile at {target}.",
       "perfect_hit": "{actor}'s magic missile strikes {target} dead centre!",
       "miss": "{actor}'s magic missile streaks past {target}.",
-      "whiff": "your magic missile fizzles."
+      "whiff": "your magic missile fizzles.",
+      "description": "A dart of raw force. Like all spells, it's strongest when the air is restless."
     },
     "mending": {
       "name": "Mending Light",
@@ -1025,7 +1592,64 @@
       "hit": "{actor} lays glowing hands on {target}.",
       "perfect_hit": "{actor} bathes {target} in warm, mending light!",
       "miss": "{actor}'s mending light gutters out.",
-      "whiff": "the light slips away from you."
+      "whiff": "the light slips away from you.",
+      "description": "A gentle spell of healing that draws on rain and a living breeze.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0.3,
+        "precipitation": "wet",
+        "tier": "green"
+      }
+    },
+    "stormcall": {
+      "name": "Stormcall",
+      "kind": "Spell",
+      "keywords": "storm call stormcall",
+      "description": "A shard of the broodmother's lightning-glass. In a hot, wild downpour it is devastating; anywhere else it does nothing at all.",
+      "effect": "damage",
+      "period": 5000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        14,
+        18,
+        28
+      ],
+      "hit": "{actor} calls the storm down on {target}.",
+      "perfect_hit": "Lightning answers {actor}, and strikes {target} full on!",
+      "miss": "{actor}'s stormcall crackles uselessly near {target}.",
+      "whiff": "the storm doesn't answer.",
+      "weather": {
+        "temperature": 0.6,
+        "energy": 0.8,
+        "precipitation": "wet",
+        "tier": "orange"
+      }
+    },
+    "rimefang": {
+      "name": "Rimefang",
+      "kind": "Weapon",
+      "keywords": "rimefang fang blade",
+      "description": "A blade of ice that never melts, taken from an ice wraith. In a howling blizzard it bites deep; on a mild day it's dull.",
+      "effect": "damage",
+      "period": 2000,
+      "window": 250,
+      "perfect_window": 80,
+      "amounts": [
+        7,
+        9,
+        15
+      ],
+      "hit": "{actor} slashes {target} with Rimefang.",
+      "perfect_hit": "{actor}'s Rimefang bites deep into {target}, frost spreading from the wound!",
+      "miss": "{actor} swings Rimefang wide of {target}.",
+      "whiff": "Rimefang slides off the air.",
+      "weather": {
+        "temperature": -0.8,
+        "energy": 0.75,
+        "precipitation": "wet",
+        "tier": "purple"
+      }
     }
   },
   "starting_gear": [
@@ -1042,6 +1666,7 @@
   "factions": {
     "harrowfolk": {
       "name": "The Folk of Harrowgate",
+      "realm": "alzendor",
       "description": "Innkeepers, smiths, keepers and ferrymen. They value kindness, manners and safe streets.",
       "rules": [
         {
@@ -1089,6 +1714,7 @@
     },
     "orcs": {
       "name": "The Back-Alley Orcs",
+      "realm": "alzendor",
       "description": "They live by a warrior's code: fight openly, fight well, never run, and never prey on the young.",
       "rules": [
         {
@@ -1148,6 +1774,7 @@
     },
     "spiders": {
       "name": "The Spiderwood Brood",
+      "realm": "alzendor",
       "description": "Patient hunters. They prize cunning: the strike from hiding, and the wisdom to slip away.",
       "rules": [
         {
@@ -1186,10 +1813,19 @@
           "respect": -2,
           "note": "Only prey makes so much noise."
         }
+      ],
+      "boons": [
+        {
+          "stat": "poise",
+          "amount": 1,
+          "respect": 30,
+          "note": "You move with the brood's patience."
+        }
       ]
     },
     "wardens": {
       "name": "The Wardens of the Wood",
+      "realm": "alzendor",
       "description": "Rangers who keep the forest road. They value protecting the wood, and a light step in it.",
       "rules": [
         {
@@ -1210,6 +1846,14 @@
           "of": "wardens",
           "affinity": 1,
           "note": "A friendly nod in the woods."
+        }
+      ],
+      "boons": [
+        {
+          "stat": "resilience",
+          "amount": 1,
+          "affinity": 20,
+          "note": "The wardens have taught you to weather the wood."
         }
       ]
     }
@@ -1263,7 +1907,12 @@
     "shrine_room": "temple_steps",
     "regen": 2,
     "safe_regen": 10,
-    "social_cooldown": 600
+    "social_cooldown": 600,
+    "weather_seed": "alzendor-1",
+    "weather_unit_minutes": 30,
+    "pack_size": 12,
+    "starting_coins": 20,
+    "stage_seconds": 2
   },
   "channels": [
     "general"
@@ -1285,28 +1934,17 @@
       ]
     },
     {
-      "channel": "CITY:harrowgate",
-      "every": 1200,
-      "texts": [
-        "A cold wind blows in off the sea.",
-        "Light rain begins to fall over Harrowgate.",
-        "The clouds break, and thin sunlight falls across the rooftops."
-      ]
-    },
-    {
-      "channel": "CITY:harrowlake",
+      "channel": "REGION:harrowlake",
       "every": 900,
       "texts": [
-        "Mist rolls in off the lake.",
         "A heron cries somewhere out on the water."
       ]
     },
     {
-      "channel": "CITY:spiderwood",
+      "channel": "REGION:spiderwood",
       "every": 600,
       "texts": [
-        "Something skitters through the canopy overhead.",
-        "The trees creak, though there is no wind."
+        "Something skitters through the canopy overhead."
       ]
     },
     {
@@ -1315,6 +1953,199 @@
       "texts": [
         "A web somewhere nearby thrums, as if plucked."
       ]
+    },
+    {
+      "channel": "REGION:saltmere",
+      "every": 900,
+      "texts": [
+        "Somewhere out on the water, a bell rings once."
+      ]
+    },
+    {
+      "channel": "REALM:rimewaste",
+      "every": 600,
+      "texts": [
+        "Far off, something vast moves under the ice, and the ground shudders."
+      ]
     }
-  ]
+  ],
+  "terrain_weather": {
+    "forest": {
+      "energy": -0.25,
+      "precipitation": -0.2
+    },
+    "coast": {
+      "energy": 0.2
+    },
+    "marsh": {
+      "precipitation": 0.1
+    }
+  },
+  "kinds": {
+    "Weapon": {
+      "temperature": 0,
+      "energy": 0,
+      "precipitation": "any",
+      "tier": "grey"
+    },
+    "Melee": {
+      "temperature": 0,
+      "energy": 0,
+      "precipitation": "any",
+      "tier": "grey"
+    },
+    "Spell": {
+      "temperature": 0,
+      "energy": 0.6,
+      "precipitation": "any",
+      "tier": "grey"
+    },
+    "Potion": {
+      "temperature": 0,
+      "energy": 0,
+      "precipitation": "any",
+      "tier": "grey"
+    }
+  },
+  "routes": {
+    "coach-to-harrowlake": {
+      "name": "the Lake Road coach",
+      "keywords": "coach harrowlake lake carriage",
+      "from": "market_square",
+      "to": "village_green",
+      "by": "bram",
+      "fare": 3,
+      "via": "coach",
+      "depart": "You pay Bram three coins and climb into the coach. He cracks the whip.",
+      "leave": "{actor} climbs into Bram's coach, and it rattles off west.",
+      "arrive": "Bram's coach rattles up, and {actor} climbs down.",
+      "stages": [
+        "Bram cracks the whip, and the coach lurches out of the square towards the harbour road.",
+        "The coach rocks as it goes over the cobbles, then onto the rutted dirt of the Lake Road.",
+        {
+          "text": "Reeds crowd the road on both sides. Somewhere out in the marsh, something heavy splashes.",
+          "event": "marsh"
+        },
+        "The cottages of Harrowlake come into view, smoke rising from their chimneys."
+      ]
+    },
+    "coach-to-harrowgate": {
+      "name": "the Lake Road coach",
+      "keywords": "coach harrowgate city carriage",
+      "from": "village_green",
+      "to": "market_square",
+      "fare": 3,
+      "via": "coach",
+      "depart": "You drop three coins in the coachman's box and climb aboard.",
+      "leave": "{actor} climbs into the coach, and it rattles off east.",
+      "arrive": "The Lake Road coach rattles into the square, and {actor} climbs down.",
+      "stages": [
+        "The coach lurches off, past the village green and out onto the Lake Road.",
+        {
+          "text": "Reeds crowd the road on both sides. The coach slows where the road floods.",
+          "event": "marsh"
+        },
+        "The road climbs onto cobbles, and the rooftops of Harrowgate rise ahead."
+      ]
+    },
+    "ferry-to-saltmere": {
+      "name": "the Saltmere ferry",
+      "keywords": "ferry saltmere isle island",
+      "from": "ferry_dock",
+      "to": "saltmere_landing",
+      "by": "osric",
+      "fare": 5,
+      "via": "ferry_deck",
+      "when": {
+        "energy": [
+          -1,
+          0.6
+        ]
+      },
+      "closed": "Osric shakes his head at the water. He won't take the ferry out in a wind like this.",
+      "depart": "You press five coins into Osric's hand. He pushes off without a word.",
+      "leave": "{actor} boards Osric's ferry, and it slides out into the mist.",
+      "arrive": "The ferry grounds on the shingle, and {actor} steps ashore.",
+      "stages": [
+        "Osric pushes off. The jetty shrinks behind you into the mist.",
+        {
+          "text": "The water goes black and still. Something large turns over beneath the boat, then is gone.",
+          "event": "deep_water"
+        },
+        "A shingle beach rises out of the mist ahead, white with salt."
+      ]
+    },
+    "ferry-from-saltmere": {
+      "name": "the Saltmere ferry",
+      "keywords": "ferry harrowlake home back",
+      "from": "saltmere_landing",
+      "to": "ferry_dock",
+      "fare": 5,
+      "via": "ferry_deck",
+      "when": {
+        "energy": [
+          -1,
+          0.6
+        ]
+      },
+      "closed": "The ferry waits at the shingle, but nobody will cross in this wind.",
+      "depart": "You ring the bell on its post and drop five coins in the box. The ferry comes for you out of the mist.",
+      "leave": "{actor} boards the ferry, and it slides off into the mist.",
+      "arrive": "The ferry bumps against the jetty, and {actor} steps off.",
+      "stages": [
+        "The ferry slides away from the shingle into the mist.",
+        {
+          "text": "Out in the middle, the mist is so thick you can't see the bow.",
+          "event": "deep_water"
+        },
+        "The lights of the Harrowlake jetty glow through the mist."
+      ]
+    },
+    "portal-to-rimewaste": {
+      "name": "Sister Ilse's ring of frost",
+      "keywords": "ring frost portal rimewaste passage",
+      "from": "chapel",
+      "to": "rime_landing",
+      "by": "ilse",
+      "depart": "Sister Ilse traces a ring of frost in the air, and it opens onto a howling white world.",
+      "leave": "{actor} steps through Sister Ilse's ring of frost and is gone.",
+      "arrive": "{actor} stumbles out of a ring of frost into the snow."
+    },
+    "portal-home": {
+      "name": "Veyra's portal",
+      "keywords": "portal home ring passage chapel",
+      "from": "rime_landing",
+      "to": "chapel",
+      "by": "veyra",
+      "depart": "Veyra touches the frost ring, and the Harrowlake chapel shimmers into view.",
+      "leave": "{actor} steps through Veyra's portal and is gone.",
+      "arrive": "{actor} steps out of a ring of frost, shaking off snow."
+    },
+    "rift": {
+      "name": "the rift",
+      "keywords": "rift tear",
+      "from": "rift_chasm",
+      "to": "rift_fall",
+      "depart": "You step into the heat pouring out of the rift.",
+      "leave": "{actor} steps into the rift and is gone.",
+      "arrive": "{actor} tumbles out of the sky onto the hot glass."
+    },
+    "sun-portal": {
+      "name": "the Sun Altar portal",
+      "keywords": "portal altar frame home",
+      "from": "sun_altar",
+      "to": "temple_steps",
+      "when": {
+        "energy": [
+          -0.78,
+          1
+        ]
+      },
+      "clear": true,
+      "closed": "The portal frame stays dark. It needs the still air to stir, and no wraiths standing in your way.",
+      "depart": "The frame fills with a hot wind, and you step into it.",
+      "leave": "{actor} steps through the portal in a gust of hot wind.",
+      "arrive": "{actor} staggers out of a gust of hot wind onto the temple steps, skin burnt red."
+    }
+  }
 }

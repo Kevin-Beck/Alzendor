@@ -1,7 +1,10 @@
 # Design notes
 
 The thinking behind some of Alzendor's systems, and options we didn't take
-(yet). What's actually built is described in the [README](../README.md).
+(yet). What's actually built is described in the [README](../README.md). The
+weather and its elements have a document of their own,
+[weather.md](weather.md), which also sets the rule every new mechanic follows:
+it must be used by other systems, remembered, visible, and a real choice.
 
 ## Stats
 
@@ -20,6 +23,11 @@ So each stat plugs straight into a system you can feel:
 | **Poise** | timing windows 15 ms wider per point | The timing game is the core skill; this makes it more forgiving. |
 | **Focus** | perfect windows 10 ms wider per point | Rewards players who already hit their windows. |
 | **Presence** | reputation moves 15% further per point | Your deeds matter more, good *or* bad. A social stat. |
+| **Resilience** | weather penalties 10% softer per point (up to 50%); bonuses kept | Insurance against the weather. It never adds a bonus, so a specialist still wants its own weather. |
+
+Stats can also come from **boons**: factions grant a stat bonus while your
+standing with them is high enough (see [weather.md](weather.md)). That gives
+reputation a payoff you can feel in every fight.
 
 Windows are capped so they never reach halfway to the next beat (and perfect
 never exceeds the window), so the timing game never goes away.
@@ -31,6 +39,10 @@ Ideas for later, if stats ever need more flavour:
   points.
 - Stats that only matter in some places, like **Nerve** working only in
   arenas, or **Bearings** making you harder to ambush in the forest.
+- Stats that touch the weather in other ways: **Wayfinding** (shorter travel
+  delays, and spotting new regions in poor visibility). Not **Insight**
+  (longer forecasts): foresight is meant to be scarce in other realms, so it
+  comes from a narrow Skyreading sense instead (see docs/weather.md).
 
 ## Abilities (perks)
 

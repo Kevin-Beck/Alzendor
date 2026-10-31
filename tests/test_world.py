@@ -12,7 +12,8 @@ from .conftest import SEED, drain, enter, texts
 
 async def test_entering_subscribes_to_every_level(world):
     kevin = await enter(world, "kevin")
-    assert set(kevin.subs) == {"PLAYER:kevin", "ROOM:tavern", "AREA:old_quarter", "CITY:harrowgate", "CHANNEL:general"}
+    assert set(kevin.subs) == {"PLAYER:kevin", "ROOM:tavern", "AREA:old_quarter", "REGION:harrowgate", "REALM:alzendor",
+                               "CHANNEL:general"}
     events = await drain(kevin)
     assert events[-1]["type"] == "room"
     assert events[-1]["room"]["id"] == "tavern"
@@ -37,7 +38,7 @@ async def test_moving_swaps_room_channels(world):
     await world.call("move", "kevin", "north")
     assert texts(await drain(mara)) == ["Kevin heads north."]
     events = await drain(kevin)
-    assert [e["type"] for e in events] == ["leave", "map", "room"]
+    assert [e["type"] for e in events] == ["leave", "map", "room", "weather", "kit"]  # out of the tavern's climate
     assert "ROOM:market_square" in kevin.subs and "ROOM:tavern" not in kevin.subs
 
     await world.call("say", "mara", "Bye!")
@@ -53,11 +54,11 @@ async def test_crossing_into_another_area_swaps_area_channel(world):
     await world.call("move", "kevin", "west")
     await drain(kevin)
     assert "AREA:docks" in kevin.subs and "AREA:old_quarter" not in kevin.subs
-    assert "CITY:harrowgate" in kevin.subs
+    assert "REGION:harrowgate" in kevin.subs
 
     await world.call("ambient", "AREA:old_quarter", "A bell tolls.")
     await world.call("ambient", "AREA:docks", "Gulls scream.")
-    await world.call("ambient", "CITY:harrowgate", "It rains.")
+    await world.call("ambient", "REGION:harrowgate", "It rains.")
     assert texts(await drain(kevin)) == ["Gulls scream.", "It rains."]
 
 
@@ -81,9 +82,9 @@ async def test_entering_a_room_has_no_gap_and_no_repeats(world):
     await world.call("move", "kevin", "north")
     await world.call("say", "mara", "After.")
     events = await drain(kevin)
-    assert [e["type"] for e in events] == ["leave", "map", "room", "say"]
-    assert [card["name"] for card in events[2]["room"]["entities"]] == ["Mara"]
-    assert events[3]["text"] == 'Mara says, "After."'
+    assert [e["type"] for e in events] == ["leave", "map", "room", "weather", "kit", "say"]
+    assert [card["name"] for card in events[2]["room"]["entities"]] == ["Bram", "Mara"]
+    assert events[5]["text"] == 'Mara says, "After."'
 
 
 async def test_everyone_sees_the_same_order(world):
@@ -187,7 +188,7 @@ async def test_logging_in_elsewhere_ends_the_old_connection(world):
     await drain(old)
     assert old.ended == "You connected from somewhere else."
     assert [(e["type"], e.get("cause")) for e in await drain(new) if e["type"] not in ("timing", "kit", "character")] == [
-        ("map", None), ("room", "resume"),
+        ("map", None), ("weather", None), ("room", "resume"),
     ]
     assert await drain(mara) == []  # no leave and re-enter for a takeover
 
@@ -230,8 +231,9 @@ async def test_map_shows_explored_rooms_and_glimpses_of_their_exits(world):
     assert "name" not in rooms["cellar"]  # glimpsed rooms stay unnamed until visited
     assert [a["id"] for a in first["areas"]] == ["old_quarter"]
     assert first["areas"][0]["bounds"] == [40, -20, 80, 48]
-    assert first["areas"][0]["color"] == 5  # colours go in area id order: docks, forest_edge, …
-    assert first["cities"][0]["id"] == "harrowgate"
+    assert first["areas"][0]["color"] == 6  # colours go in area id order within the realm: docks, forest_edge, …
+    assert {g["id"]: g["state"] for g in first["regions"]} == {
+        "harrowgate": "explored", "harrowlake": "discovered", "spiderwood": "discovered"}
 
     await world.call("move", "kevin", "north")
     update = next(e for e in await drain(kevin) if e["type"] == "map")
@@ -240,7 +242,7 @@ async def test_map_shows_explored_rooms_and_glimpses_of_their_exits(world):
     assert {r["id"] for r in update["rooms"] if not r["explored"]} == {"temple_steps", "smithy", "harbor_road", "back_alley"}
 
     await world.call("move", "kevin", "south")  # back somewhere known: nothing new to send
-    assert [e["type"] for e in await drain(kevin)] == ["leave", "room"]
+    assert [e["type"] for e in await drain(kevin)] == ["leave", "room", "weather", "kit"]
 
     # Reconnecting sends everything explored so far.
     again = await enter(world, "kevin", session="second")
@@ -319,25 +321,108 @@ async def test_npcs_keep_their_state_across_reseeds(world):
     assert await world.redis.hget("NPC:orc-1", "hp") == "12"
 
 
-async def test_leaving_the_city_enters_another_region(world):
+async def test_leaving_a_region_enters_another(world):
     kevin = await enter(world, "kevin")
     for direction in ("north", "north", "north"):  # tavern -> market -> temple steps -> north gate
         await world.call("move", "kevin", direction)
     await drain(kevin)
-    assert "CITY:harrowgate" in kevin.subs
+    assert "REGION:harrowgate" in kevin.subs
 
     await world.call("move", "kevin", "north")
     events = await drain(kevin)
-    assert events[-1]["room"]["id"] == "woodland_path" and events[-1]["room"]["area"] == "the Forest Edge"
-    assert "CITY:spiderwood" in kevin.subs and "AREA:forest_edge" in kevin.subs
-    assert "CITY:harrowgate" not in kevin.subs and "AREA:old_quarter" not in kevin.subs
+    room = [e for e in events if e["type"] == "room"][-1]["room"]
+    assert room["id"] == "woodland_path" and room["area"] == "the Forest Edge"
+    assert "REGION:spiderwood" in kevin.subs and "AREA:forest_edge" in kevin.subs
+    assert "REGION:harrowgate" not in kevin.subs and "AREA:old_quarter" not in kevin.subs
     update = next(e for e in events if e["type"] == "map")
-    assert [c["id"] for c in update["cities"]] == ["spiderwood"]
-    assert [a["id"] for a in update["areas"]] == ["forest_edge"]
+    assert update["full"] is True  # a new region can change what the whole map shows
+    assert {g["id"]: g["state"] for g in update["regions"]}["spiderwood"] == "explored"
+    assert {a["id"] for a in update["areas"]} == {"old_quarter", "forest_edge"}
 
-    await world.call("ambient", "CITY:harrowgate", "Rain in the city.")
-    await world.call("ambient", "CITY:spiderwood", "Something skitters overhead.")
+    await world.call("ambient", "REGION:harrowgate", "Rain in Harrowgate.")
+    await world.call("ambient", "REGION:spiderwood", "Something skitters overhead.")
     assert texts(await drain(kevin)) == ["Something skitters overhead."]
+
+
+def region_states(event: dict) -> dict:
+    return {g["id"]: g["state"] for g in event["regions"]}
+
+
+async def walk(world, pid: str, *directions: str) -> None:
+    for direction in directions:
+        await world.call("move", pid, direction)
+
+
+async def test_hidden_regions_are_not_discovered_by_bordering(world):
+    kevin = await enter(world, "kevin")
+    await walk(world, "kevin", "north", "west", "west", "west", "west", "west", "southwest")  # to the ferry dock
+    events = await drain(kevin)
+    assert [e for e in events if e["type"] == "room"][-1]["room"]["id"] == "ferry_dock"
+    states = region_states([e for e in events if e["type"] == "map"][-1])
+    assert states == {"harrowgate": "explored", "harrowlake": "explored", "spiderwood": "discovered"}
+
+    # The ferry dock's exit west leads to Saltmere, but no glimpse of it shows.
+    await world.call("look", "kevin")
+    await drain(kevin)
+    again = await enter(world, "kevin", session="second")
+    full = next(e for e in await drain(again) if e["type"] == "map")
+    assert "saltmere_landing" not in {r["id"] for r in full["rooms"]}
+    assert "saltmere" not in region_states(full)
+
+
+async def test_a_map_reveals_hidden_regions(world):
+    kevin = await enter(world, "kevin")
+    await walk(world, "kevin", "north", "west", "west", "west", "west", "west", "west")  # to the Drowned Lantern
+    await drain(kevin)
+    await world.call("get", "kevin", "chart")
+    events = await drain(kevin)
+    assert "You study the sea chart and learn of Saltmere Isle. It is marked on your map." in texts(events)
+    update = next(e for e in events if e["type"] == "map")
+    assert update["full"] is True
+    saltmere = next(g for g in update["regions"] if g["id"] == "saltmere")
+    assert saltmere["state"] == "discovered" and saltmere["name"] == "Saltmere Isle"
+    assert saltmere["bounds"] == [-310, 15, -280, 40]
+
+    # Learning it again tells you nothing; going there explores it.
+    await world.call("drop", "kevin", "chart")
+    await world.call("get", "kevin", "chart")
+    assert not any(e["type"] == "map" for e in await drain(kevin))
+    await walk(world, "kevin", "east", "southwest")  # the ferry dock: the island is only reached by ferry
+    await world.call("travel", "kevin", "ferry")
+    while await world.redis.exists("PLAYER:kevin:journey"):  # the crossing, without the waits
+        await world.call("continue", "kevin")
+        await world.redis.zadd("alz:journeys", {"kevin": 0})
+        await world.call("tick")
+    update = [e for e in await drain(kevin) if e["type"] == "map"][-1]
+    assert region_states(update)["saltmere"] == "explored"
+    assert "REGION:saltmere" in kevin.subs
+
+
+async def test_walking_into_an_unknown_region_explores_it(world):
+    kevin = await enter(world, "kevin")
+    await world.redis.delete("PLAYER:kevin:regions")
+    await world.redis.hset("PLAYER:kevin:regions", "harrowgate", "explored")  # e.g. a border added later
+    await walk(world, "kevin", "north", "north", "north", "north")
+    update = [e for e in await drain(kevin) if e["type"] == "map"][-1]
+    assert update["full"] is True
+    assert region_states(update)["spiderwood"] == "explored"
+
+
+async def test_reputation_reveals_gated_regions(world):
+    kevin = await enter(world, "kevin")
+    await world.redis.hset("PLAYER:kevin:rep:harrowfolk", mapping={"affinity": 9, "respect": 0})
+    await drain(kevin)
+    await world.call("emote", "kevin", "wave", "marta", "{actor} waves.", "{actor} waves at {target}.")
+    events = await drain(kevin)
+    assert "Folk around the lake have started telling you about Saltmere Isle, out past the ferry. It is marked on your map." in texts(events)
+    assert region_states([e for e in events if e["type"] == "map"][-1])["saltmere"] == "discovered"
+
+
+async def test_players_from_before_regions_learn_them_from_where_they_have_been(world):
+    await world.redis.sadd("PLAYER:kevin:explored", "tavern", "woodland_path")
+    kevin = await enter(world, "kevin")
+    full = next(e for e in await drain(kevin) if e["type"] == "map")
+    assert region_states(full) == {"harrowgate": "explored", "spiderwood": "explored", "harrowlake": "discovered"}
 
 
 def test_seed_validation_catches_broken_maps():
@@ -349,8 +434,25 @@ def test_seed_validation_catches_broken_maps():
 
 
 @pytest.mark.parametrize("change, message", [
+    (lambda d: d["areas"]["docks"].update(region="atlantis"), "area docks: unknown region 'atlantis'"),
+    (lambda d: d["regions"]["saltmere"].update(borders=["atlantis"]), "borders unknown region 'atlantis'"),
+    (lambda d: d["regions"]["saltmere"]["reveal"].update(faction="pirates"), "reveal needs a known faction"),
+    (lambda d: d["regions"]["saltmere"]["reveal"].pop("affinity"), "reveal needs an affinity or respect threshold"),
+    (lambda d: d["items"]["chart-1"].update(reveals=["atlantis"]), "reveals unknown region 'atlantis'"),
+    (lambda d: d["ambient"].append({"channel": "CITY:harrowgate", "every": 60, "texts": ["x"]}), "unknown channel 'CITY:harrowgate'"),
+])
+def test_seed_validation_checks_regions(change, message):
+    data = json.loads(SEED.read_text())
+    change(data)
+    with pytest.raises(ValueError, match=message):
+        validate_seed(data)
+
+
+@pytest.mark.parametrize("change, message", [
     (lambda rooms: rooms["back_alley"].update(pos=[60, 30]), "exit west to tavern is drawn 27° off west"),
     (lambda rooms: rooms["smithy"]["exits"].update(southwest="back_alley"), "the way back is north, not northeast"),
+    # A room of one area inside another's box looks like it's in both.
+    (lambda rooms: rooms["frozen_lake"].update(pos=[30, -55]), "area howling_pass: its rooms are 0 units from area shattered_shore's"),
 ])
 def test_seed_validation_checks_exits_match_the_map(change, message):
     data = json.loads(SEED.read_text())
