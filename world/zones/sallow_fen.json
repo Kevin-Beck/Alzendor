@@ -1,0 +1,536 @@
+{
+  "_note": "Sallow Fen, levels 5-6: sneak past what you can't fight. See docs/zones.md.",
+  "regions": {
+    "sallow_fen": {
+      "name": "Sallow Fen",
+      "realm": "alzendor"
+    }
+  },
+  "areas": {
+    "fen_causeway": {
+      "name": "the Causeway",
+      "region": "sallow_fen"
+    },
+    "fen_chapel": {
+      "name": "the Fen Chapel",
+      "region": "sallow_fen"
+    },
+    "gnashers_wallow": {
+      "name": "Gnasher's Wallow",
+      "region": "sallow_fen"
+    }
+  },
+  "rooms": {
+    "sf_causeway": {
+      "name": "The Causeway",
+      "area": "fen_causeway",
+      "pos": [
+        300,
+        265
+      ],
+      "description": "A causeway of old timbers across the fen. It sinks a little under every step.",
+      "exits": {
+        "north": "mb_fen_lane",
+        "southwest": "sf_reeds",
+        "southeast": "sf_peatcut"
+      },
+      "features": {},
+      "terrain": "marsh"
+    },
+    "sf_reeds": {
+      "name": "The Reedbanks",
+      "area": "fen_causeway",
+      "pos": [
+        275,
+        290
+      ],
+      "description": "Reeds taller than you, and fog between them. Lights move in it after dark.",
+      "exits": {
+        "northeast": "sf_causeway",
+        "southwest": "sf_chapel_yard"
+      },
+      "features": {},
+      "terrain": "marsh"
+    },
+    "sf_peatcut": {
+      "name": "The Peat Cuts",
+      "area": "fen_causeway",
+      "pos": [
+        325,
+        290
+      ],
+      "description": "Black trenches where peat was cut, full of water and leeches.",
+      "exits": {
+        "northwest": "sf_causeway",
+        "southeast": "sf_mire"
+      },
+      "features": {
+        "trenches": "Something big wallowed through here and flattened the banks. The tracks go south-east."
+      },
+      "terrain": "marsh"
+    },
+    "sf_chapel_yard": {
+      "name": "The Chapel Islet",
+      "area": "fen_chapel",
+      "pos": [
+        225,
+        340
+      ],
+      "description": "A dry hummock with a chapel on it, and a bell on a post.",
+      "exits": {
+        "northeast": "sf_reeds",
+        "west": "sf_chapel"
+      },
+      "features": {},
+      "terrain": "marsh"
+    },
+    "sf_chapel": {
+      "name": "The Fen Chapel",
+      "area": "fen_chapel",
+      "pos": [
+        200,
+        340
+      ],
+      "description": "A tiny chapel of grey stone, warm with candles. Sister Odile lives here.",
+      "exits": {
+        "east": "sf_chapel_yard"
+      },
+      "features": {},
+      "indoor": true,
+      "safe": true,
+      "shelter": true
+    },
+    "sf_mire": {
+      "name": "The Mire",
+      "area": "gnashers_wallow",
+      "pos": [
+        375,
+        340
+      ],
+      "description": "Mud to the knee, and a stink of troll. Huge footprints lead on.",
+      "exits": {
+        "northwest": "sf_peatcut",
+        "southeast": "sf_wallow"
+      },
+      "features": {},
+      "terrain": "marsh"
+    },
+    "sf_wallow": {
+      "name": "Gnasher's Wallow",
+      "area": "gnashers_wallow",
+      "pos": [
+        400,
+        365
+      ],
+      "description": "A pool of warm mud, and in it, mostly asleep, Old Gnasher. Past him, a heap of bones and loot.",
+      "exits": {
+        "northwest": "sf_mire",
+        "southwest": "sf_bones"
+      },
+      "features": {},
+      "terrain": "marsh"
+    },
+    "sf_bones": {
+      "name": "The Bone Heap",
+      "area": "gnashers_wallow",
+      "pos": [
+        375,
+        390
+      ],
+      "description": "Everything the troll ever ate or liked the look of.",
+      "exits": {
+        "northeast": "sf_wallow"
+      },
+      "features": {
+        "heap": "Bones, a cartwheel, a helmet with a head still in it."
+      },
+      "terrain": "marsh"
+    }
+  },
+  "items": {
+    "reliquary": {
+      "name": "Saint Sallow's reliquary",
+      "keywords": "reliquary box saint",
+      "description": "A small silver box with a finger-bone in it. It hums when you hold it.",
+      "quest": true,
+      "room": "sf_bones"
+    }
+  },
+  "npcs": {
+    "odile": {
+      "name": "Sister Odile",
+      "label": "Hermit",
+      "description": "a thin nun in a mud-hemmed habit",
+      "details": "A thin nun in a mud-hemmed habit.",
+      "keywords": "sister odile",
+      "room": "sf_chapel",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🕯️",
+      "proper": true,
+      "topics": {
+        "work": "The chapel's reliquary was stolen by the troll. And the leeches. And the lantern-men. Ask me about the reliquary, the leeches or the lanterns.",
+        "reliquary": {
+          "text": "Old Gnasher took Saint Sallow's reliquary when he flattened the old chapel. It's on his bone heap, past his wallow. You can't fight him, child. Creep past while he dozes, take it, and creep out again.",
+          "starts": "sf_reliquary"
+        },
+        "leeches": {
+          "text": "Giant leeches in the peat cuts. Six of them, and I'll make a salve from what's left.",
+          "starts": "sf_leeches"
+        },
+        "lanterns": {
+          "text": "The lantern-men come out at dusk and lead travellers into the deep water. Put out three of them. They only show after dark.",
+          "starts": "sf_lantern"
+        },
+        "gnasher": "Old Gnasher. He's eaten three knights. Don't be the fourth."
+      }
+    },
+    "giant_leech_1": {
+      "name": "Giant Leech",
+      "label": "Leech",
+      "description": "a leech as long as your arm",
+      "details": "A leech as long as your arm.",
+      "keywords": "giant leech",
+      "room": "sf_peatcut",
+      "max_hp": 60,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "suck",
+          "period": 3000,
+          "damage": 7,
+          "hit": "{actor} latches onto {target}."
+        },
+        {
+          "name": "lunge",
+          "period": 9000,
+          "damage": 14,
+          "hit": "{actor} lunges out of the water at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 16,
+      "icon": "🪱",
+      "role": "leech",
+      "respawn": 300
+    },
+    "giant_leech_2": {
+      "name": "Giant Leech",
+      "label": "Leech",
+      "description": "a leech as long as your arm",
+      "details": "A leech as long as your arm.",
+      "keywords": "giant leech",
+      "room": "sf_peatcut",
+      "max_hp": 60,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "suck",
+          "period": 3000,
+          "damage": 7,
+          "hit": "{actor} latches onto {target}."
+        },
+        {
+          "name": "lunge",
+          "period": 9000,
+          "damage": 14,
+          "hit": "{actor} lunges out of the water at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 16,
+      "icon": "🪱",
+      "role": "leech",
+      "respawn": 300
+    },
+    "giant_leech_3": {
+      "name": "Giant Leech",
+      "label": "Leech",
+      "description": "a leech as long as your arm",
+      "details": "A leech as long as your arm.",
+      "keywords": "giant leech",
+      "room": "sf_mire",
+      "max_hp": 60,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "suck",
+          "period": 3000,
+          "damage": 7,
+          "hit": "{actor} latches onto {target}."
+        },
+        {
+          "name": "lunge",
+          "period": 9000,
+          "damage": 14,
+          "hit": "{actor} lunges out of the water at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 16,
+      "icon": "🪱",
+      "role": "leech",
+      "respawn": 300
+    },
+    "giant_leech_4": {
+      "name": "Giant Leech",
+      "label": "Leech",
+      "description": "a leech as long as your arm",
+      "details": "A leech as long as your arm.",
+      "keywords": "giant leech",
+      "room": "sf_reeds",
+      "max_hp": 60,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "suck",
+          "period": 3000,
+          "damage": 7,
+          "hit": "{actor} latches onto {target}."
+        },
+        {
+          "name": "lunge",
+          "period": 9000,
+          "damage": 14,
+          "hit": "{actor} lunges out of the water at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 16,
+      "icon": "🪱",
+      "role": "leech",
+      "respawn": 300
+    },
+    "lantern_man_1": {
+      "name": "Lantern-Man",
+      "label": "Wisp",
+      "description": "a hovering light with a face in it",
+      "details": "A hovering light with a face in it.",
+      "keywords": "lantern man wisp",
+      "room": "sf_reeds",
+      "max_hp": 50,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "lure",
+          "period": 4000,
+          "damage": 9,
+          "hit": "{actor} flickers, and {target} stumbles towards deep water.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 16,
+      "icon": "🏮",
+      "role": "lantern_man",
+      "respawn": 300,
+      "active_when": {
+        "time": [
+          "dusk",
+          "night"
+        ]
+      },
+      "hide": "{actor} fades into the morning fog.",
+      "emerge": "{actor} kindles in the fog."
+    },
+    "lantern_man_2": {
+      "name": "Lantern-Man",
+      "label": "Wisp",
+      "description": "a hovering light with a face in it",
+      "details": "A hovering light with a face in it.",
+      "keywords": "lantern man wisp",
+      "room": "sf_causeway",
+      "max_hp": 50,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "lure",
+          "period": 4000,
+          "damage": 9,
+          "hit": "{actor} flickers, and {target} stumbles towards deep water.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 16,
+      "icon": "🏮",
+      "role": "lantern_man",
+      "respawn": 300,
+      "active_when": {
+        "time": [
+          "dusk",
+          "night"
+        ]
+      },
+      "hide": "{actor} fades into the morning fog.",
+      "emerge": "{actor} kindles in the fog."
+    },
+    "old_gnasher": {
+      "name": "Old Gnasher",
+      "label": "Fen Troll",
+      "description": "a fen troll the size of a haycart, dozing in the mud",
+      "details": "A fen troll the size of a haycart, dozing in the mud.",
+      "keywords": "gnasher troll fen",
+      "room": "sf_wallow",
+      "max_hp": 700,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "grab",
+          "period": 6000,
+          "damage": 12,
+          "hit": "{actor} grabs at {target}."
+        },
+        {
+          "name": "club",
+          "period": 14000,
+          "damage": 70,
+          "hit": "{actor} swings a tree trunk at {target}!",
+          "defend": "block"
+        }
+      ],
+      "xp": 177,
+      "icon": "🧌",
+      "notice": "fair",
+      "proper": true,
+      "respawn": 900
+    }
+  },
+  "gear": {
+    "leech_salve": {
+      "name": "Leech Salve",
+      "kind": "Potion",
+      "keywords": "salve leech",
+      "effect": "heal",
+      "period": 4500,
+      "window": 320,
+      "perfect_window": 100,
+      "amounts": [
+        8,
+        12,
+        18
+      ],
+      "hit": "{actor} rubs in leech salve.",
+      "perfect_hit": "{actor} rubs in leech salve, and it takes.",
+      "miss": "{actor} fumbles Leech Salve.",
+      "whiff": "your Leech Salve finds nothing.",
+      "description": "Odile's salve, from what the leeches had in them. Works best in damp weather.",
+      "weather": {
+        "temperature": 0,
+        "energy": -0.2,
+        "precipitation": "wet",
+        "tier": "green"
+      },
+      "rarity": "common"
+    }
+  },
+  "wearables": {
+    "oilcloth_waders": {
+      "name": "Oilcloth Waders",
+      "keywords": "oilcloth waders",
+      "place": "legs",
+      "type": "cloth",
+      "description": "Odile's spare waders, blessed and waxed. +1 Resilience.",
+      "rarity": "uncommon",
+      "armor": 3,
+      "stats": {
+        "resilience": 1
+      }
+    }
+  },
+  "quests": {
+    "sf_reliquary": {
+      "name": "The Drowned Reliquary",
+      "start": "get",
+      "steps": {
+        "get": {
+          "goal": "Creep past Old Gnasher in his wallow (CREEP), and GET RELIQUARY from the bone heap beyond.",
+          "on": {
+            "have": [
+              "reliquary"
+            ]
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Get out the same way, and bring it to Sister Odile: USE RELIQUARY ON ODILE.",
+          "on": {
+            "use": "reliquary",
+            "on": "odile"
+          },
+          "effects": [
+            {
+              "take": "reliquary"
+            },
+            {
+              "text": "Odile weeps a little. \"Saint Sallow's home. Take these: they kept me dry for twenty years.\""
+            },
+            {
+              "give": "oilcloth_waders"
+            },
+            {
+              "xp": 195
+            }
+          ]
+        }
+      }
+    },
+    "sf_leeches": {
+      "name": "Leech Harvest",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill six giant leeches in the peat cuts and the mire.",
+          "on": {
+            "kill": "leech",
+            "count": 6
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Odile: ASK ODILE ABOUT LEECHES.",
+          "on": {
+            "ask": "odile",
+            "about": "leeches"
+          },
+          "effects": [
+            {
+              "give": "leech_salve"
+            },
+            {
+              "xp": 135
+            }
+          ]
+        }
+      }
+    },
+    "sf_lantern": {
+      "name": "The Lantern-Men",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Put out three lantern-men. They're in the reeds and on the causeway, but only at dusk and night.",
+          "on": {
+            "kill": "lantern_man",
+            "count": 3
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Odile: ASK ODILE ABOUT LANTERNS.",
+          "on": {
+            "ask": "odile",
+            "about": "lanterns"
+          },
+          "effects": [
+            {
+              "coins": 30
+            },
+            {
+              "xp": 150
+            }
+          ]
+        }
+      }
+    }
+  }
+}

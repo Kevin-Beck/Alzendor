@@ -226,13 +226,37 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 ### 14. Characters ([docs/characters.md](docs/characters.md))
 - [x] Class, ancestry and background; the creation screen; existing characters wiped
 - [x] Gear kinds by class (Light, Trick); class abilities and background items
-- [x] Levelling to 20: stat points, talents at even levels (ranks open after 3 and 7 picks), passives at 5/10/15/20; `LEARN`; no gear for levels
+- [x] Levelling to 20: stat points, talents at levels 3, 6 … 18 (ranks open after 2 and 4 picks), passives at 5/10/15/20; `LEARN`; no gear for levels
 - [x] Talent pools with stagger, guard and bleed/burn
 - [x] Ancestry passives: world ones (Trapsense, Skyreading…) and slot-ball ones, with attuning
 - [x] Respec at the trainer
 - [x] The quest engine ([docs/quests.md](docs/quests.md)), then the starting realms: Low Wick first, then Gullhaven, Copperstall and Thornwick
 
+### 15. A gentler start, worn gear and defence ([docs/combat.md](docs/combat.md))
+- [x] Talents from level 3; level 2 is a stat point; a weather lesson (the panel, weather sensitivity, rarity) and a first fight in every starting realm before it
+- [x] Rarity (the colour of a name) apart from weather sensitivity (dots); tooltips on talents before you learn them
+- [x] Worn gear (head, chest, legs, hand): armour, stats, class types, starting outfits, quest rewards; `WEAR` / `REMOVE`
+- [x] Darkness: dark rooms, the wilds at night, lit towns; a torch in hand to see and walk the ways on
+- [x] Blocking and dodging on 7 (rebindable), timed to the blow, with a cooldown; attacks that can only be dodged, or not met
+- [x] The weather panel in four columns (sky, rain, time, ground) with a day/night wheel
+- [x] The combat panel: here, target, slots; your health behind it, the target's running out right to left
+- [x] Boons on the Reputation tab
+
+### 16. Zones ([docs/zones.md](docs/zones.md))
+- [x] Zone files in `world/zones/`, merged into the seed
+- [x] The Greyfold (3–5): errands and intel from Harrowgate, pelts and bounties, a barrow; about level 5 by the end
+- [x] Five frontier zones (5–9): Sallow Fen, Cindercrag Quarry, Gallows Moor, the Sunken Abbey, the Deepwood
+- [x] Five dangerous places (9–14) with exposure: the Cold Spine, the Underdeep, the Emberwaste, the Rotwood, Hollowcrown
+- [x] Eleven realms (10–20), each reached from where it belongs, with the Tempest Throne behind three relics
+- [x] Exposure and its protections and shelters; watchful NPCs to sneak past; NPCs out only at certain times; deadly tags
+
 ### Next
+- [ ] Balance the zones with real players: XP per level, gear against NPC damage, how often the big blows land
+- [ ] Shops, so gear isn't only quest rewards and drops; more slot gear per tier for each class
+- [ ] NPCs that move between rooms (the Hollow Rider riding the moor; patrols to time)
+- [ ] Map floors for up and down (the Underdeep is drawn beside the quarry for now)
+- [ ] Worn gear from loot and shops, and more of it to find; balancing armour against NPC damage
+- [ ] Key bindings for the slots too (only DEFEND's key can be changed now)
 - [ ] Starting realms' own factions, NPCs that walk rounds, and timetables on the clock
 - [ ] The walkable mountain way between Harrowgate and Harrowlake (50+ rooms, see docs/places.md)
 - [ ] More travel events, pocket areas and ambushes; travel events on foot

@@ -1,0 +1,666 @@
+{
+  "_note": "The Ember Courts, level 11: fire, and a court to please. See docs/zones.md.",
+  "realms": {
+    "ember_courts": {
+      "name": "the Ember Courts",
+      "description": "A realm of fire ruled by salamander nobles from an obsidian palace.",
+      "weather": {
+        "temperature": [
+          0.85,
+          0.1
+        ],
+        "energy": [
+          -0.5,
+          0.2
+        ],
+        "precipitation": [
+          -0.9,
+          0.1
+        ]
+      },
+      "shrine": "ec_court"
+    }
+  },
+  "regions": {
+    "ember_city": {
+      "name": "the Ember City",
+      "realm": "ember_courts"
+    }
+  },
+  "areas": {
+    "ash_gate": {
+      "name": "the Ash Gate",
+      "region": "ember_city"
+    },
+    "obsidian_palace": {
+      "name": "the Obsidian Palace",
+      "region": "ember_city",
+      "lit": true
+    },
+    "magma_gardens": {
+      "name": "the Magma Gardens",
+      "region": "ember_city",
+      "exposure": {
+        "kind": "heat",
+        "name": "heat",
+        "max": 5,
+        "damage": 20,
+        "worse_when": {
+          "temperature": [
+            0.6,
+            1
+          ]
+        },
+        "warn": "The air shimmers and so do you. Get back to the palace.",
+        "hurt": "The heat is cooking you.",
+        "relief": "The palace's cool stone takes the heat out of you."
+      }
+    }
+  },
+  "rooms": {
+    "ec_landing": {
+      "name": "The Rift Steps",
+      "area": "ash_gate",
+      "pos": [
+        0,
+        0
+      ],
+      "description": "Steps of black glass where the rift lets out. Heat beats up from everything.",
+      "exits": {
+        "east": "ec_gate"
+      },
+      "features": {
+        "rift": "Back through it, the Emberwaste's caldera."
+      }
+    },
+    "ec_gate": {
+      "name": "The Ash Gate",
+      "area": "ash_gate",
+      "pos": [
+        25,
+        0
+      ],
+      "description": "A gate of obsidian, guarded by a salamander in gold armour.",
+      "exits": {
+        "west": "ec_landing",
+        "east": "ec_court"
+      },
+      "features": {}
+    },
+    "ec_court": {
+      "name": "The Court of Embers",
+      "area": "obsidian_palace",
+      "pos": [
+        75,
+        0
+      ],
+      "description": "A throne room of black glass and fire. Salamander nobles whisper behind fans.",
+      "exits": {
+        "west": "ec_gate",
+        "east": "ec_clockgate",
+        "northeast": "ec_salon",
+        "southeast": "ec_ring",
+        "south": "ec_gardens"
+      },
+      "features": {},
+      "indoor": true,
+      "safe": true,
+      "shelter": true
+    },
+    "ec_salon": {
+      "name": "The Duchess's Salon",
+      "area": "obsidian_palace",
+      "pos": [
+        100,
+        -25
+      ],
+      "description": "Silk cushions on obsidian. The Ashen Duchess holds court of her own here.",
+      "exits": {
+        "southwest": "ec_court"
+      },
+      "features": {},
+      "indoor": true
+    },
+    "ec_ring": {
+      "name": "The Ember Ring",
+      "area": "obsidian_palace",
+      "pos": [
+        100,
+        25
+      ],
+      "description": "A duelling ring of white-hot sand. Nobles watch from the shade.",
+      "exits": {
+        "northwest": "ec_court"
+      },
+      "features": {}
+    },
+    "ec_clockgate": {
+      "name": "The Clockwork Gate",
+      "area": "obsidian_palace",
+      "pos": [
+        125,
+        0
+      ],
+      "description": "A round door of brass gears set in the palace wall, turning slowly. It doesn't belong here.",
+      "exits": {
+        "west": "ec_court"
+      },
+      "features": {
+        "gears": "Brass, cold even here. Beyond them, a dead-still plain of metal."
+      },
+      "indoor": true
+    },
+    "ec_gardens": {
+      "name": "The Magma Gardens",
+      "area": "magma_gardens",
+      "pos": [
+        75,
+        75
+      ],
+      "description": "Gardens of glass flowers growing beside rivers of lava.",
+      "exits": {
+        "north": "ec_court",
+        "southeast": "ec_flows"
+      },
+      "features": {}
+    },
+    "ec_flows": {
+      "name": "The Lava Flows",
+      "area": "magma_gardens",
+      "pos": [
+        100,
+        100
+      ],
+      "description": "Stepping stones across a lava river. They sink a little when you stand on them.",
+      "exits": {
+        "northwest": "ec_gardens",
+        "southeast": "ec_pavilion"
+      },
+      "features": {},
+      "trap": {
+        "name": "a sinking stepping stone",
+        "stat": "poise",
+        "difficulty": "fair",
+        "damage": 45,
+        "rearm": 2,
+        "hit": "A stone sinks under you and the lava licks your legs.",
+        "avoid": "You hop from stone to stone without stopping.",
+        "sprung": "{actor} slips into the lava!",
+        "sign": {
+          "room": "ec_gardens",
+          "name": "river",
+          "text": "The lava river ahead is crossed by stepping stones. They sink if you stand still."
+        }
+      }
+    },
+    "ec_pavilion": {
+      "name": "The Ashen Duke's Pavilion",
+      "area": "magma_gardens",
+      "pos": [
+        125,
+        125
+      ],
+      "description": "A pavilion of smoke and red silk. The Ember Crown sits on a cushion, stolen.",
+      "exits": {
+        "northwest": "ec_flows"
+      },
+      "features": {
+        "cushion": "The crown's cushion, embroidered with the Duke's own arms."
+      }
+    }
+  },
+  "items": {
+    "ember_crown": {
+      "name": "Ember Crown",
+      "keywords": "crown ember",
+      "description": "A crown of black glass with a fire burning in it. One of three relics.",
+      "quest": true,
+      "room": "ec_pavilion"
+    }
+  },
+  "npcs": {
+    "ruuk": {
+      "name": "Ruuk",
+      "label": "Gatekeeper",
+      "description": "a salamander in gold armour, with a halberd",
+      "details": "A salamander in gold armour, with a halberd.",
+      "keywords": "ruuk",
+      "room": "ec_gate",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🦎",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the hounds.",
+        "ithren": "Ithren! Then pass, and welcome.",
+        "hounds": {
+          "text": "The Duke's magma hounds roam the gardens. Five of them, and the Court will notice you.",
+          "starts": "ec_hounds"
+        }
+      },
+      "faction": "ember_court"
+    },
+    "aszh": {
+      "name": "Vizier Aszh",
+      "label": "Vizier",
+      "description": "a thin salamander with a voice like a fuse",
+      "details": "A thin salamander with a voice like a fuse.",
+      "keywords": "vizier aszh",
+      "room": "ec_court",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🦎",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the crown.",
+        "crown": {
+          "text": "The Ashen Duke has stolen the Ember Crown and sits in his pavilion with it. Take it back. Keep it, even: the Court would rather it was far from him. They say it opens a door, somewhere.",
+          "starts": "ec_crown"
+        }
+      },
+      "faction": "ember_court"
+    },
+    "kalimar": {
+      "name": "the Ashen Duchess Kalimar",
+      "label": "Duchess",
+      "description": "a salamander in a gown of living flame",
+      "details": "A salamander in a gown of living flame.",
+      "keywords": "the ashen duchess kalimar",
+      "room": "ec_salon",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "👸",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the duel.",
+        "duel": {
+          "text": "My champion, Sir Calder, has never lost a duel in the Ember Ring. Beat him, and the whole Court will know your name. Run, and the whole Court will know that too.",
+          "starts": "ec_duel"
+        }
+      },
+      "faction": "ember_court"
+    },
+    "calder": {
+      "name": "Sir Calder Ash",
+      "label": "Champion",
+      "description": "a salamander knight with a blade of white fire",
+      "details": "A salamander knight with a blade of white fire.",
+      "keywords": "calder champion",
+      "room": "ec_ring",
+      "max_hp": 1800,
+      "disposition": "neutral",
+      "attacks": [
+        {
+          "name": "blade",
+          "period": 3000,
+          "damage": 28,
+          "hit": "{actor} cuts at {target}.",
+          "defend": "block"
+        },
+        {
+          "name": "flare",
+          "period": 10000,
+          "damage": 75,
+          "hit": "{actor} flares white-hot at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 116,
+      "icon": "🤺",
+      "faction": "ember_court",
+      "role": "champion",
+      "proper": true,
+      "respawn": 1800
+    },
+    "magma_hound_1": {
+      "name": "Magma Hound",
+      "label": "Hound",
+      "description": "a hound of cooling lava, cracked and glowing",
+      "details": "A hound of cooling lava, cracked and glowing.",
+      "keywords": "magma hound",
+      "room": "ec_gardens",
+      "max_hp": 500,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2500,
+          "damage": 30,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 16,
+      "icon": "🐕",
+      "role": "magma_hound",
+      "respawn": 300
+    },
+    "magma_hound_2": {
+      "name": "Magma Hound",
+      "label": "Hound",
+      "description": "a hound of cooling lava, cracked and glowing",
+      "details": "A hound of cooling lava, cracked and glowing.",
+      "keywords": "magma hound",
+      "room": "ec_gardens",
+      "max_hp": 500,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2500,
+          "damage": 30,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 16,
+      "icon": "🐕",
+      "role": "magma_hound",
+      "respawn": 300
+    },
+    "magma_hound_3": {
+      "name": "Magma Hound",
+      "label": "Hound",
+      "description": "a hound of cooling lava, cracked and glowing",
+      "details": "A hound of cooling lava, cracked and glowing.",
+      "keywords": "magma hound",
+      "room": "ec_flows",
+      "max_hp": 500,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2500,
+          "damage": 30,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 16,
+      "icon": "🐕",
+      "role": "magma_hound",
+      "respawn": 300
+    },
+    "magma_hound_4": {
+      "name": "Magma Hound",
+      "label": "Hound",
+      "description": "a hound of cooling lava, cracked and glowing",
+      "details": "A hound of cooling lava, cracked and glowing.",
+      "keywords": "magma hound",
+      "room": "ec_pavilion",
+      "max_hp": 500,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2500,
+          "damage": 30,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 16,
+      "icon": "🐕",
+      "role": "magma_hound",
+      "respawn": 300
+    },
+    "cinder_guard_1": {
+      "name": "Cinder Guard",
+      "label": "Guard",
+      "description": "one of the Duke's guards, in armour of cinders",
+      "details": "One of the Duke's guards, in armour of cinders.",
+      "keywords": "cinder guard",
+      "room": "ec_pavilion",
+      "max_hp": 600,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "halberd",
+          "period": 4500,
+          "damage": 40,
+          "hit": "{actor} swings a halberd at {target}.",
+          "defend": "block"
+        }
+      ],
+      "xp": 18,
+      "icon": "💂",
+      "role": "cinder_guard",
+      "respawn": 300
+    },
+    "ashen_duke": {
+      "name": "the Ashen Duke",
+      "label": "Duke",
+      "description": "a salamander lord, grey with ash, smiling",
+      "details": "A salamander lord, grey with ash, smiling.",
+      "keywords": "ashen duke",
+      "room": "ec_pavilion",
+      "max_hp": 2800,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "blade",
+          "period": 3500,
+          "damage": 35,
+          "hit": "{actor} cuts {target}."
+        },
+        {
+          "name": "ash-storm",
+          "period": 13000,
+          "damage": 110,
+          "hit": "{actor} calls an ash-storm down on {target}!",
+          "defend": "none"
+        }
+      ],
+      "xp": 212,
+      "icon": "🦎",
+      "respawn": 1800,
+      "proper": false
+    }
+  },
+  "gear": {
+    "ember_rapier": {
+      "name": "Ember Rapier",
+      "kind": "Light",
+      "keywords": "rapier ember",
+      "effect": "damage",
+      "period": 1500,
+      "window": 220,
+      "perfect_window": 70,
+      "amounts": [
+        15,
+        20,
+        32
+      ],
+      "hit": "{actor} lunges at {target}.",
+      "perfect_hit": "{actor} lunges at {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Ember Rapier finds nothing.",
+      "description": "Sir Calder's rapier, burning white. In the heat it's quicker than thought.",
+      "weather": {
+        "temperature": 0.8,
+        "energy": -0.4,
+        "precipitation": "dry",
+        "tier": "blue"
+      },
+      "rarity": "rare"
+    }
+  },
+  "wearables": {
+    "obsidian_mail": {
+      "name": "Obsidian Mail",
+      "keywords": "obsidian mail",
+      "place": "chest",
+      "type": "mail",
+      "description": "Plates of black glass on chain. Heavy, cool, and very hard. +1 Vigor.",
+      "rarity": "rare",
+      "armor": 12,
+      "stats": {
+        "vigor": 1
+      }
+    }
+  },
+  "factions": {
+    "ember_court": {
+      "name": "The Ember Court",
+      "realm": "ember_courts",
+      "description": "The salamander nobility. They admire a duel and despise a coward.",
+      "rules": [
+        {
+          "deed": "kill",
+          "of": "ember_court",
+          "role": "champion",
+          "affinity": -2,
+          "respect": 15,
+          "note": "A fair duel, fairly won."
+        },
+        {
+          "deed": "flee",
+          "of": "ember_court",
+          "respect": -8,
+          "note": "You fled a fight. The Court saw."
+        },
+        {
+          "deed": "defeated",
+          "of": "ember_court",
+          "respect": -3,
+          "note": "You lost."
+        }
+      ]
+    }
+  },
+  "routes": {
+    "caldera-rift": {
+      "name": "the caldera rift",
+      "keywords": "rift courts ember caldera",
+      "from": "ew_heart",
+      "to": "ec_landing",
+      "kind": "rift",
+      "depart": "You walk into the tear in the air, and the heat doubles.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} steps out of the rift onto black glass."
+    },
+    "courts-rift": {
+      "name": "the caldera rift",
+      "keywords": "rift emberwaste home caldera",
+      "from": "ec_landing",
+      "to": "ew_heart",
+      "kind": "rift",
+      "depart": "You step back through the rift.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} steps out of the rift into the caldera."
+    },
+    "clockwork-gate": {
+      "name": "the Clockwork Gate",
+      "keywords": "gate clockwork brassmarch gears",
+      "from": "ec_clockgate",
+      "to": "bm_landing",
+      "kind": "portal",
+      "depart": "The gears turn, and turn, and you're through.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} steps out between turning gears."
+    }
+  },
+  "quests": {
+    "ec_hounds": {
+      "name": "The Duke's Hounds",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill five magma hounds in the Magma Gardens.",
+          "on": {
+            "kill": "magma_hound",
+            "count": 5
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Ruuk: ASK RUUK ABOUT HOUNDS.",
+          "on": {
+            "ask": "ruuk",
+            "about": "hounds"
+          },
+          "effects": [
+            {
+              "give": "obsidian_mail"
+            },
+            {
+              "xp": 155
+            }
+          ]
+        }
+      }
+    },
+    "ec_duel": {
+      "name": "Duel of Embers",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Beat Sir Calder in the Ember Ring. Don't run.",
+          "on": {
+            "kill": "calder"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell the Duchess: ASK KALIMAR ABOUT DUEL.",
+          "on": {
+            "ask": "kalimar",
+            "about": "duel"
+          },
+          "effects": [
+            {
+              "give": "ember_rapier"
+            },
+            {
+              "xp": 195
+            }
+          ]
+        }
+      }
+    },
+    "ec_crown": {
+      "name": "The Ember Crown",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill the Ashen Duke in his pavilion, past the lava flows.",
+          "on": {
+            "kill": "ashen_duke"
+          },
+          "then": "get"
+        },
+        "get": {
+          "goal": "Take the crown: GET CROWN.",
+          "on": {
+            "have": [
+              "ember_crown"
+            ]
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Show the Vizier: ASK ASZH ABOUT CROWN.",
+          "on": {
+            "ask": "aszh",
+            "about": "crown"
+          },
+          "effects": [
+            {
+              "text": "Aszh bows low. \"Keep it far from here. There's a sealed door in a drowned city of yours with a crown-shaped hollow in it. Funny, that.\""
+            },
+            {
+              "xp": 240
+            },
+            {
+              "reputation": {
+                "faction": "ember_court",
+                "affinity": 10,
+                "respect": 10,
+                "note": "You took back the Ember Crown."
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

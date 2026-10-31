@@ -1,0 +1,707 @@
+{
+  "_note": "Mirefall, level 10: the drowned realm where it never stops raining. See docs/zones.md.",
+  "realms": {
+    "mirefall": {
+      "name": "Mirefall",
+      "description": "A drowned realm of stilt villages and endless rain.",
+      "weather": {
+        "temperature": [
+          0.1,
+          0.25
+        ],
+        "energy": [
+          -0.1,
+          0.3
+        ],
+        "precipitation": [
+          0.45,
+          0.2
+        ]
+      },
+      "shrine": "mf_landing"
+    }
+  },
+  "regions": {
+    "the_reach": {
+      "name": "the Reach",
+      "realm": "mirefall"
+    }
+  },
+  "areas": {
+    "ploverhold": {
+      "name": "Ploverhold",
+      "region": "the_reach",
+      "lit": true
+    },
+    "reedways": {
+      "name": "the Reedways",
+      "region": "the_reach"
+    },
+    "sunk_groves": {
+      "name": "the Sunk Groves",
+      "region": "the_reach"
+    }
+  },
+  "rooms": {
+    "mf_landing": {
+      "name": "The Font Stones",
+      "area": "ploverhold",
+      "pos": [
+        0,
+        0
+      ],
+      "description": "Standing stones in shallow water, and a stone font that mirrors a grey abbey ceiling.",
+      "exits": {
+        "east": "mf_boardwalk",
+        "south": "mf_hall"
+      },
+      "features": {
+        "font": "Look in, and you see the undercroft of the Sunken Abbey."
+      },
+      "terrain": "marsh"
+    },
+    "mf_hall": {
+      "name": "Reedmother's Hall",
+      "area": "ploverhold",
+      "pos": [
+        0,
+        25
+      ],
+      "description": "A long hall of woven reed on stilts, smelling of smoke and eel.",
+      "exits": {
+        "north": "mf_landing"
+      },
+      "features": {},
+      "indoor": true,
+      "safe": true
+    },
+    "mf_boardwalk": {
+      "name": "Ploverhold Boardwalk",
+      "area": "ploverhold",
+      "pos": [
+        25,
+        0
+      ],
+      "description": "Boardwalks on stilts over brown water. Rain drums on everything.",
+      "exits": {
+        "west": "mf_landing",
+        "east": "mf_reedway",
+        "south": "mf_docks"
+      },
+      "features": {},
+      "terrain": "marsh"
+    },
+    "mf_docks": {
+      "name": "The Net Docks",
+      "area": "ploverhold",
+      "pos": [
+        25,
+        25
+      ],
+      "description": "Nets hung to dry that never will. Fen-captain Dav mends them.",
+      "exits": {
+        "north": "mf_boardwalk"
+      },
+      "features": {},
+      "terrain": "marsh"
+    },
+    "mf_reedway": {
+      "name": "The Reedways",
+      "area": "reedways",
+      "pos": [
+        100,
+        0
+      ],
+      "description": "Channels through reeds, blocked by a toad-built dam of mud and sticks.",
+      "exits": {
+        "west": "mf_boardwalk",
+        "northeast": "mf_weir",
+        "south": "mf_groves"
+      },
+      "features": {
+        "dam": "Mud and sticks, packed by big webbed hands."
+      },
+      "terrain": "marsh"
+    },
+    "mf_weir": {
+      "name": "The Old Weir",
+      "area": "reedways",
+      "pos": [
+        125,
+        -25
+      ],
+      "description": "An old weir, choked by a second dam.",
+      "exits": {
+        "southwest": "mf_reedway",
+        "southeast": "mf_sluice"
+      },
+      "features": {
+        "weir": "The toads have stuffed it solid."
+      },
+      "terrain": "marsh"
+    },
+    "mf_sluice": {
+      "name": "The Sluice",
+      "area": "reedways",
+      "pos": [
+        150,
+        0
+      ],
+      "description": "A sluice gate jammed shut with mud.",
+      "exits": {
+        "northwest": "mf_weir"
+      },
+      "features": {
+        "sluice": "Jammed. Dig it out and the water would drain."
+      },
+      "terrain": "marsh"
+    },
+    "mf_groves": {
+      "name": "The Sunk Groves",
+      "area": "sunk_groves",
+      "pos": [
+        100,
+        75
+      ],
+      "description": "Trees up to their knees in water, hung with moss and hags' charms.",
+      "exits": {
+        "north": "mf_reedway",
+        "southeast": "mf_court",
+        "southwest": "mf_whirlpool"
+      },
+      "features": {},
+      "terrain": "marsh"
+    },
+    "mf_court": {
+      "name": "The Toad Court",
+      "area": "sunk_groves",
+      "pos": [
+        125,
+        100
+      ],
+      "description": "A mud throne on a mound, and on it a toad the size of a barn.",
+      "exits": {
+        "northwest": "mf_groves"
+      },
+      "features": {},
+      "terrain": "marsh"
+    },
+    "mf_whirlpool": {
+      "name": "The Whirlpool",
+      "area": "sunk_groves",
+      "pos": [
+        75,
+        100
+      ],
+      "description": "Water spirals down into a hole in the world. Far below, something glows pale.",
+      "exits": {
+        "northeast": "mf_groves"
+      },
+      "features": {
+        "whirlpool": "It goes down further than water should."
+      },
+      "terrain": "marsh"
+    }
+  },
+  "items": {
+    "spade": {
+      "name": "Ossa's spade",
+      "keywords": "spade",
+      "description": "A narrow eel-spade, good for mud.",
+      "quest": true
+    }
+  },
+  "npcs": {
+    "ossa": {
+      "name": "Reedmother Ossa",
+      "label": "Elder",
+      "description": "an old woman with eel-skin boots and a voice like a heron",
+      "details": "An old woman with eel-skin boots and a voice like a heron.",
+      "keywords": "reedmother ossa",
+      "room": "mf_hall",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🪶",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the water, or the king.",
+        "water": {
+          "text": "The toads have dammed the Reedways and Ploverhold floods a hand higher every day. Break the dam, the weir and the sluice. Here's a spade.",
+          "starts": "mf_water"
+        },
+        "spade": "Dig, don't think.",
+        "king": {
+          "text": "The Toad King sits in his court in the Sunk Groves and eats our fishermen. Kill him and the toads go back to being toads.",
+          "starts": "mf_king"
+        },
+        "whirlpool": "The whirlpool in the groves goes down to the Pale Deep, where the merrow live. Don't."
+      },
+      "faction": "mirefolk"
+    },
+    "dav": {
+      "name": "Fen-captain Dav",
+      "label": "Fisher",
+      "description": "a lanky man with a hook for a hand",
+      "details": "A lanky man with a hook for a hand.",
+      "keywords": "fen-captain dav",
+      "room": "mf_docks",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🎣",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the nets.",
+        "nets": {
+          "text": "The bog-hags cut my nets for their charms. Four of them, in the groves and the reeds. Their hexes: dodge.",
+          "starts": "mf_nets"
+        }
+      },
+      "faction": "mirefolk"
+    },
+    "bog_hag_1": {
+      "name": "Bog Hag",
+      "label": "Hag",
+      "description": "a hag of weed and bone, muttering",
+      "details": "A hag of weed and bone, muttering.",
+      "keywords": "bog hag",
+      "room": "mf_groves",
+      "max_hp": 400,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "claw",
+          "period": 3000,
+          "damage": 22,
+          "hit": "{actor} claws {target}."
+        },
+        {
+          "name": "hex",
+          "period": 9000,
+          "damage": 50,
+          "hit": "{actor} spits a hex at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 20,
+      "icon": "🧙",
+      "role": "bog_hag",
+      "respawn": 300
+    },
+    "bog_hag_2": {
+      "name": "Bog Hag",
+      "label": "Hag",
+      "description": "a hag of weed and bone, muttering",
+      "details": "A hag of weed and bone, muttering.",
+      "keywords": "bog hag",
+      "room": "mf_weir",
+      "max_hp": 400,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "claw",
+          "period": 3000,
+          "damage": 22,
+          "hit": "{actor} claws {target}."
+        },
+        {
+          "name": "hex",
+          "period": 9000,
+          "damage": 50,
+          "hit": "{actor} spits a hex at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 20,
+      "icon": "🧙",
+      "role": "bog_hag",
+      "respawn": 300
+    },
+    "bog_hag_3": {
+      "name": "Bog Hag",
+      "label": "Hag",
+      "description": "a hag of weed and bone, muttering",
+      "details": "A hag of weed and bone, muttering.",
+      "keywords": "bog hag",
+      "room": "mf_groves",
+      "max_hp": 400,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "claw",
+          "period": 3000,
+          "damage": 22,
+          "hit": "{actor} claws {target}."
+        },
+        {
+          "name": "hex",
+          "period": 9000,
+          "damage": 50,
+          "hit": "{actor} spits a hex at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 20,
+      "icon": "🧙",
+      "role": "bog_hag",
+      "respawn": 300
+    },
+    "bog_hag_4": {
+      "name": "Bog Hag",
+      "label": "Hag",
+      "description": "a hag of weed and bone, muttering",
+      "details": "A hag of weed and bone, muttering.",
+      "keywords": "bog hag",
+      "room": "mf_sluice",
+      "max_hp": 400,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "claw",
+          "period": 3000,
+          "damage": 22,
+          "hit": "{actor} claws {target}."
+        },
+        {
+          "name": "hex",
+          "period": 9000,
+          "damage": 50,
+          "hit": "{actor} spits a hex at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 20,
+      "icon": "🧙",
+      "role": "bog_hag",
+      "respawn": 300
+    },
+    "giant_toad_1": {
+      "name": "Giant Toad",
+      "label": "Toad",
+      "description": "a toad as big as a pig",
+      "details": "A toad as big as a pig.",
+      "keywords": "giant toad",
+      "room": "mf_reedway",
+      "max_hp": 450,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "tongue",
+          "period": 3000,
+          "damage": 25,
+          "hit": "{actor} lashes {target} with its tongue.",
+          "defend": "dodge"
+        },
+        {
+          "name": "slam",
+          "period": 12000,
+          "damage": 70,
+          "hit": "{actor} leaps and lands on {target}!",
+          "defend": "block"
+        }
+      ],
+      "xp": 21,
+      "icon": "🐸",
+      "role": "toad",
+      "respawn": 300
+    },
+    "giant_toad_2": {
+      "name": "Giant Toad",
+      "label": "Toad",
+      "description": "a toad as big as a pig",
+      "details": "A toad as big as a pig.",
+      "keywords": "giant toad",
+      "room": "mf_court",
+      "max_hp": 450,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "tongue",
+          "period": 3000,
+          "damage": 25,
+          "hit": "{actor} lashes {target} with its tongue.",
+          "defend": "dodge"
+        },
+        {
+          "name": "slam",
+          "period": 12000,
+          "damage": 70,
+          "hit": "{actor} leaps and lands on {target}!",
+          "defend": "block"
+        }
+      ],
+      "xp": 21,
+      "icon": "🐸",
+      "role": "toad",
+      "respawn": 300
+    },
+    "toad_king": {
+      "name": "the Toad King",
+      "label": "King",
+      "description": "a toad the size of a barn, wearing a crown of reeds",
+      "details": "A toad the size of a barn, wearing a crown of reeds.",
+      "keywords": "toad king",
+      "room": "mf_court",
+      "max_hp": 2000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "tongue",
+          "period": 3000,
+          "damage": 30,
+          "hit": "{actor} whips its tongue at {target}.",
+          "defend": "dodge"
+        },
+        {
+          "name": "belly-slam",
+          "period": 12000,
+          "damage": 90,
+          "hit": "{actor} throws its bulk on {target}!",
+          "defend": "block"
+        }
+      ],
+      "xp": 212,
+      "icon": "🐸",
+      "respawn": 1800
+    }
+  },
+  "gear": {
+    "eel_spear": {
+      "name": "Eel Spear",
+      "kind": "Light",
+      "keywords": "spear eel",
+      "effect": "damage",
+      "period": 2200,
+      "window": 240,
+      "perfect_window": 80,
+      "amounts": [
+        16,
+        21,
+        34
+      ],
+      "hit": "{actor} spears {target}.",
+      "perfect_hit": "{actor} spears {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Eel Spear finds nothing.",
+      "description": "A barbed Mirefall eel-spear. In the rain it's the best thing you own.",
+      "weather": {
+        "temperature": 0.1,
+        "energy": -0.1,
+        "precipitation": "wet",
+        "tier": "blue"
+      },
+      "rarity": "rare"
+    }
+  },
+  "wearables": {
+    "toadskin_cloak": {
+      "name": "Toadskin Cloak",
+      "keywords": "toadskin cloak",
+      "place": "chest",
+      "type": "cloth",
+      "description": "The Toad King's hide, cured. Nothing wet gets through. +2 Resilience.",
+      "rarity": "rare",
+      "armor": 8,
+      "stats": {
+        "resilience": 2
+      }
+    }
+  },
+  "factions": {
+    "mirefolk": {
+      "name": "The Mirefolk",
+      "realm": "mirefall",
+      "description": "The stilt-folk of Mirefall. They love a good neighbour and hate toads.",
+      "rules": [
+        {
+          "deed": "kill",
+          "of": "mirefolk",
+          "affinity": -10,
+          "note": "You killed one of us."
+        }
+      ]
+    }
+  },
+  "routes": {
+    "abbey-font": {
+      "name": "the Font",
+      "keywords": "font mirefall rain",
+      "from": "sa_undercroft",
+      "to": "mf_landing",
+      "kind": "portal",
+      "depart": "You lean over the Font. The water rises to meet you, and the abbey is gone.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} climbs out of the font, soaked and gasping.",
+      "when": {
+        "precipitation": [
+          0.2,
+          1
+        ]
+      },
+      "closed": "The Font is still. It only opens when it's raining up above."
+    },
+    "mirefall-font": {
+      "name": "the Font",
+      "keywords": "font abbey home",
+      "from": "mf_landing",
+      "to": "sa_undercroft",
+      "kind": "portal",
+      "depart": "You step into the font, and come up in the abbey's undercroft.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} rises dripping out of the Font."
+    },
+    "whirlpool": {
+      "name": "the whirlpool",
+      "keywords": "whirlpool deep pale",
+      "from": "mf_whirlpool",
+      "to": "pd_landing",
+      "kind": "rift",
+      "depart": "You take a breath and let the whirlpool have you.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} drops out of a spiral of water into pale light."
+    }
+  },
+  "quests": {
+    "mf_water": {
+      "name": "Rising Water",
+      "start": "spade",
+      "steps": {
+        "spade": {
+          "goal": "Take Ossa's spade: ASK OSSA ABOUT SPADE.",
+          "on": {
+            "ask": "ossa",
+            "about": "spade"
+          },
+          "effects": [
+            {
+              "give": "spade"
+            }
+          ],
+          "then": "dam"
+        },
+        "dam": {
+          "goal": "Break the dam in the Reedways: USE SPADE ON DAM.",
+          "on": {
+            "use": "spade",
+            "on": "dam"
+          },
+          "effects": [
+            {
+              "text": "The dam gives way with a rush."
+            }
+          ],
+          "then": "weir"
+        },
+        "weir": {
+          "goal": "Clear the old weir: USE SPADE ON WEIR.",
+          "on": {
+            "use": "spade",
+            "on": "weir"
+          },
+          "effects": [
+            {
+              "text": "The weir runs again."
+            }
+          ],
+          "then": "sluice"
+        },
+        "sluice": {
+          "goal": "Dig out the sluice: USE SPADE ON SLUICE.",
+          "on": {
+            "use": "spade",
+            "on": "sluice"
+          },
+          "effects": [
+            {
+              "take": "spade"
+            },
+            {
+              "text": "The sluice grinds open, and the water drains out of Ploverhold."
+            }
+          ],
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Ossa: ASK OSSA ABOUT WATER.",
+          "on": {
+            "ask": "ossa",
+            "about": "water"
+          },
+          "effects": [
+            {
+              "give": "eel_spear"
+            },
+            {
+              "xp": 200
+            },
+            {
+              "reputation": {
+                "faction": "mirefolk",
+                "affinity": 15,
+                "note": "You drained Ploverhold."
+              }
+            }
+          ]
+        }
+      }
+    },
+    "mf_king": {
+      "name": "The Toad King",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill the Toad King in his court.",
+          "on": {
+            "kill": "toad_king"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Ossa: ASK OSSA ABOUT KING.",
+          "on": {
+            "ask": "ossa",
+            "about": "king"
+          },
+          "effects": [
+            {
+              "give": "toadskin_cloak"
+            },
+            {
+              "xp": 285
+            }
+          ]
+        }
+      }
+    },
+    "mf_nets": {
+      "name": "Lost Nets",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill four bog-hags.",
+          "on": {
+            "kill": "bog_hag",
+            "count": 4
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Dav: ASK DAV ABOUT NETS.",
+          "on": {
+            "ask": "dav",
+            "about": "nets"
+          },
+          "effects": [
+            {
+              "coins": 80
+            },
+            {
+              "xp": 185
+            }
+          ]
+        }
+      }
+    }
+  }
+}

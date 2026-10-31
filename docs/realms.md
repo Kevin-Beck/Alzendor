@@ -1,5 +1,7 @@
 # Realms
 
+(The realms built after this plan, levels 10 to 20, are in [zones.md](zones.md).)
+
 Realms are separate worlds, like planes in D&D or Magic: The Gathering. The
 home realm is where everyone starts: its weather ranges over everything, and
 truly extreme weather is rare. Other realms are where the real challenge is:

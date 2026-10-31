@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from alzendor.world import validate_seed
+from alzendor.world import load_seed, validate_seed
 
 from .conftest import SEED, drain, enter, set_weather, texts
 
@@ -129,7 +129,7 @@ async def test_a_storm_glass_teaches_the_rimewastes_skies(world):
     (lambda d: d["factions"]["orcs"].update(realm="faerie"), "faction orcs: unknown realm 'faerie'"),
 ])
 def test_seed_validation_checks_realms(change, message):
-    data = json.loads(SEED.read_text())
+    data = load_seed(SEED)
     change(data)
     with pytest.raises(ValueError, match=message):
         validate_seed(data)

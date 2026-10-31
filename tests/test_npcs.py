@@ -196,8 +196,7 @@ async def test_levelling_up_grants_a_point_and_no_gear(world):
     await drain(kevin)
     await kill(world, "kevin", "orc-1")
     events = await drain(kevin)
-    assert ("You reach level 2! You have a stat point to spend (TRAIN <stat>), and a talent to learn "
-            "(LEARN <name>, or the Character panel).") in texts(events)
+    assert "You reach level 2! You have a stat point to spend (TRAIN <stat>)." in texts(events)  # talents come at 3
     character = of_type(events, "character")[-1]
     assert (character["level"], character["xp"], character["xp_next"], character["points"]) == (2, 50, 200, 1)
     # Reputation lists only the factions that know you, each with its realm.

@@ -1,0 +1,678 @@
+{
+  "_note": "Gallows Moor, level 7: the clock matters. See docs/zones.md.",
+  "regions": {
+    "gallows_moor": {
+      "name": "Gallows Moor",
+      "realm": "alzendor"
+    }
+  },
+  "areas": {
+    "moor_road": {
+      "name": "the Moor Road",
+      "region": "gallows_moor"
+    },
+    "stone_circle": {
+      "name": "the Stone Circle",
+      "region": "gallows_moor"
+    },
+    "high_moor": {
+      "name": "the High Moor",
+      "region": "gallows_moor"
+    },
+    "gibbet": {
+      "name": "the Gibbet",
+      "region": "gallows_moor"
+    },
+    "crowes_hide": {
+      "name": "Crowe's Hide",
+      "region": "gallows_moor"
+    }
+  },
+  "rooms": {
+    "gm_west": {
+      "name": "West Moor",
+      "area": "moor_road",
+      "pos": [
+        150,
+        -155
+      ],
+      "description": "Bare moor, heather and wind. The Spiderwood's edge is west.",
+      "exits": {
+        "west": "hunters_camp",
+        "east": "gm_mid"
+      },
+      "features": {},
+      "terrain": "moor"
+    },
+    "gm_mid": {
+      "name": "The Moor Road",
+      "area": "moor_road",
+      "pos": [
+        200,
+        -155
+      ],
+      "description": "A track across the moor, marked by cairns.",
+      "exits": {
+        "west": "gm_west",
+        "east": "gm_road",
+        "north": "gm_circle"
+      },
+      "features": {},
+      "terrain": "moor"
+    },
+    "gm_road": {
+      "name": "Gallows Corner",
+      "area": "moor_road",
+      "pos": [
+        250,
+        -155
+      ],
+      "description": "Where the moor road meets the Hollow Path. A gibbet creaks on the rise north-east.",
+      "exits": {
+        "west": "gm_mid",
+        "south": "rh_tent",
+        "northeast": "gm_gibbet"
+      },
+      "features": {},
+      "terrain": "moor"
+    },
+    "gm_circle": {
+      "name": "The Stone Circle",
+      "area": "stone_circle",
+      "pos": [
+        200,
+        -205
+      ],
+      "description": "A ring of standing stones with the Wardens' tents inside it. Their fire is sheltered by the stones.",
+      "exits": {
+        "south": "gm_mid",
+        "northwest": "gm_stone_1",
+        "northeast": "gm_stone_3"
+      },
+      "features": {},
+      "shelter": true,
+      "safe": true,
+      "terrain": "moor"
+    },
+    "gm_stone_1": {
+      "name": "The Leaning Stone",
+      "area": "high_moor",
+      "pos": [
+        150,
+        -255
+      ],
+      "description": "A single standing stone, leaning into the wind. It hums.",
+      "exits": {
+        "southeast": "gm_circle",
+        "northeast": "gm_stone_2"
+      },
+      "features": {
+        "stone": "Holes bored through it. When the wind blows, it sings."
+      },
+      "terrain": "moor"
+    },
+    "gm_stone_2": {
+      "name": "The Tall Stone",
+      "area": "high_moor",
+      "pos": [
+        200,
+        -305
+      ],
+      "description": "The tallest stone on the moor, alone on the ridge.",
+      "exits": {
+        "southwest": "gm_stone_1",
+        "southeast": "gm_stone_3"
+      },
+      "features": {
+        "stone": "Carved with spirals. Wind moans through a hole near the top."
+      },
+      "terrain": "moor"
+    },
+    "gm_stone_3": {
+      "name": "The Split Stone",
+      "area": "high_moor",
+      "pos": [
+        250,
+        -255
+      ],
+      "description": "A stone split by lightning, both halves still standing.",
+      "exits": {
+        "southwest": "gm_circle",
+        "northwest": "gm_stone_2"
+      },
+      "features": {
+        "stone": "The wind whistles in the split."
+      },
+      "terrain": "moor"
+    },
+    "gm_gibbet": {
+      "name": "The Gibbet",
+      "area": "gibbet",
+      "pos": [
+        300,
+        -205
+      ],
+      "description": "A gibbet on the rise, an old lantern hanging from it. Hoofprints burned into the turf all round.",
+      "exits": {
+        "southwest": "gm_road",
+        "northeast": "gm_hide"
+      },
+      "features": {
+        "hoofprints": "Scorched, and fresh every morning."
+      },
+      "terrain": "moor"
+    },
+    "gm_hide": {
+      "name": "The Hide Path",
+      "area": "crowes_hide",
+      "pos": [
+        350,
+        -255
+      ],
+      "description": "A path into a stand of twisted thorn trees. Fresh horse dung.",
+      "exits": {
+        "southwest": "gm_gibbet",
+        "east": "gm_hide_in"
+      },
+      "features": {},
+      "terrain": "moor"
+    },
+    "gm_hide_in": {
+      "name": "Crowe's Hide",
+      "area": "crowes_hide",
+      "pos": [
+        375,
+        -255
+      ],
+      "description": "A hideout in the thorns: a fire, stolen saddles, and Captain Crowe.",
+      "exits": {
+        "west": "gm_hide"
+      },
+      "features": {},
+      "terrain": "moor"
+    }
+  },
+  "items": {
+    "riders_lantern_item": {
+      "name": "Rider's lantern",
+      "keywords": "lantern rider",
+      "description": "An iron lantern with no candle, still warm.",
+      "quest": true,
+      "room": "gm_gibbet"
+    }
+  },
+  "npcs": {
+    "ysolde": {
+      "name": "Warden Ysolde",
+      "label": "Warden",
+      "description": "tall and windburned, with a longbow",
+      "details": "Tall and windburned, with a longbow.",
+      "keywords": "warden ysolde",
+      "room": "gm_circle",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🏹",
+      "proper": true,
+      "topics": {
+        "work": "Three things. Ask me about the stones, the highwaymen, or the Rider.",
+        "stones": {
+          "text": "The standing stones sing when the wind is up, and the song tells us the weather to come. Stand at all three while the wind blows, and tell me what you hear.",
+          "starts": "gm_stones"
+        },
+        "highwaymen": {
+          "text": "Five of Crowe's highwaymen, and Crowe himself, in his hide past the gibbet. His pistol: dodge it.",
+          "starts": "gm_highwaymen"
+        },
+        "rider": {
+          "text": "The Hollow Rider. He rides from dusk to dawn, and nothing we have stops him. His lantern hangs on the gibbet by day. Steal it, by day, and he can't find his way.",
+          "starts": "gm_lantern"
+        }
+      },
+      "faction": "wardens",
+      "forecasts": [
+        "alzendor"
+      ]
+    },
+    "highwayman_1": {
+      "name": "Highwayman",
+      "label": "Highwayman",
+      "description": "a masked rider with a sabre",
+      "details": "A masked rider with a sabre.",
+      "keywords": "highwayman",
+      "room": "gm_road",
+      "max_hp": 90,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "sabre",
+          "period": 3000,
+          "damage": 9,
+          "hit": "{actor} cuts at {target}."
+        },
+        {
+          "name": "pistol",
+          "period": 10000,
+          "damage": 25,
+          "hit": "{actor} fires a pistol at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 15,
+      "icon": "🎩",
+      "role": "highwayman",
+      "faction": "outlaws",
+      "respawn": 300
+    },
+    "highwayman_2": {
+      "name": "Highwayman",
+      "label": "Highwayman",
+      "description": "a masked rider with a sabre",
+      "details": "A masked rider with a sabre.",
+      "keywords": "highwayman",
+      "room": "gm_hide",
+      "max_hp": 90,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "sabre",
+          "period": 3000,
+          "damage": 9,
+          "hit": "{actor} cuts at {target}."
+        },
+        {
+          "name": "pistol",
+          "period": 10000,
+          "damage": 25,
+          "hit": "{actor} fires a pistol at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 15,
+      "icon": "🎩",
+      "role": "highwayman",
+      "faction": "outlaws",
+      "respawn": 300
+    },
+    "highwayman_3": {
+      "name": "Highwayman",
+      "label": "Highwayman",
+      "description": "a masked rider with a sabre",
+      "details": "A masked rider with a sabre.",
+      "keywords": "highwayman",
+      "room": "gm_hide",
+      "max_hp": 90,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "sabre",
+          "period": 3000,
+          "damage": 9,
+          "hit": "{actor} cuts at {target}."
+        },
+        {
+          "name": "pistol",
+          "period": 10000,
+          "damage": 25,
+          "hit": "{actor} fires a pistol at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 15,
+      "icon": "🎩",
+      "role": "highwayman",
+      "faction": "outlaws",
+      "respawn": 300
+    },
+    "highwayman_4": {
+      "name": "Highwayman",
+      "label": "Highwayman",
+      "description": "a masked rider with a sabre",
+      "details": "A masked rider with a sabre.",
+      "keywords": "highwayman",
+      "room": "gm_gibbet",
+      "max_hp": 90,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "sabre",
+          "period": 3000,
+          "damage": 9,
+          "hit": "{actor} cuts at {target}."
+        },
+        {
+          "name": "pistol",
+          "period": 10000,
+          "damage": 25,
+          "hit": "{actor} fires a pistol at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 15,
+      "icon": "🎩",
+      "role": "highwayman",
+      "faction": "outlaws",
+      "respawn": 300
+    },
+    "moor_crow_1": {
+      "name": "Moor Crow",
+      "label": "Crow",
+      "description": "a crow as big as a cat",
+      "details": "A crow as big as a cat.",
+      "keywords": "moor crow",
+      "room": "gm_stone_1",
+      "max_hp": 40,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "peck",
+          "period": 2000,
+          "damage": 4,
+          "hit": "{actor} pecks at {target}."
+        }
+      ],
+      "xp": 5,
+      "icon": "🐦‍⬛",
+      "respawn": 300
+    },
+    "moor_crow_2": {
+      "name": "Moor Crow",
+      "label": "Crow",
+      "description": "a crow as big as a cat",
+      "details": "A crow as big as a cat.",
+      "keywords": "moor crow",
+      "room": "gm_stone_2",
+      "max_hp": 40,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "peck",
+          "period": 2000,
+          "damage": 4,
+          "hit": "{actor} pecks at {target}."
+        }
+      ],
+      "xp": 5,
+      "icon": "🐦‍⬛",
+      "respawn": 300
+    },
+    "captain_crowe": {
+      "name": "Captain Crowe",
+      "label": "Highwayman",
+      "description": "a gentleman thief in a ragged velvet coat",
+      "details": "A gentleman thief in a ragged velvet coat.",
+      "keywords": "crowe captain",
+      "room": "gm_hide_in",
+      "max_hp": 350,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "sabre",
+          "period": 2500,
+          "damage": 10,
+          "hit": "{actor} fences {target} back."
+        },
+        {
+          "name": "pistol shot",
+          "period": 12000,
+          "damage": 45,
+          "hit": "{actor} levels a pistol at {target} and fires!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 88,
+      "icon": "🎩",
+      "faction": "outlaws",
+      "role": "highwayman_captain",
+      "proper": true,
+      "respawn": 900,
+      "coins": 40
+    },
+    "hollow_rider": {
+      "name": "the Hollow Rider",
+      "label": "Headless Rider",
+      "description": "a headless rider on a horse of smoke",
+      "details": "A headless rider on a horse of smoke.",
+      "keywords": "hollow rider headless",
+      "room": "gm_gibbet",
+      "max_hp": 900,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "scythe",
+          "period": 13000,
+          "damage": 120,
+          "hit": "{actor} sweeps a scythe at {target}!",
+          "defend": "block"
+        },
+        {
+          "name": "trample",
+          "period": 5000,
+          "damage": 18,
+          "hit": "{actor} rides {target} down."
+        }
+      ],
+      "xp": 195,
+      "icon": "🎃",
+      "respawn": 900,
+      "active_when": {
+        "time": [
+          "dusk",
+          "night"
+        ]
+      },
+      "hide": "{actor} fades with the dawn.",
+      "emerge": "Hooves thunder out of nowhere: {actor} is here."
+    }
+  },
+  "gear": {
+    "crowes_pistol": {
+      "name": "Crowe's Pistol",
+      "kind": "Light",
+      "keywords": "pistol crowe",
+      "effect": "damage",
+      "period": 5000,
+      "window": 250,
+      "perfect_window": 80,
+      "amounts": [
+        14,
+        18,
+        30
+      ],
+      "hit": "{actor} shoots {target}.",
+      "perfect_hit": "{actor} shoots {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Crowe's Pistol finds nothing.",
+      "description": "Captain Crowe's long pistol. Slow to load, and it hates the wet.",
+      "weather": {
+        "temperature": 0.2,
+        "energy": 0.1,
+        "precipitation": "dry",
+        "tier": "blue"
+      },
+      "rarity": "rare"
+    }
+  },
+  "wearables": {
+    "warden_cloak": {
+      "name": "Warden's Cloak",
+      "keywords": "warden's cloak",
+      "place": "chest",
+      "type": "cloth",
+      "description": "A grey-green Warden's cloak, oiled against the moor rain. +1 Resilience.",
+      "rarity": "uncommon",
+      "armor": 3,
+      "stats": {
+        "resilience": 1
+      }
+    },
+    "riders_lantern": {
+      "name": "The Rider's Lantern",
+      "keywords": "the rider's lantern",
+      "place": "hand",
+      "type": "light",
+      "description": "The Hollow Rider's lantern, burning now with an ordinary flame. +1 Presence: people step back from it.",
+      "rarity": "rare",
+      "stats": {
+        "presence": 1
+      },
+      "light": true
+    }
+  },
+  "quests": {
+    "gm_stones": {
+      "name": "Stones That Sing",
+      "start": "one",
+      "steps": {
+        "one": {
+          "goal": "Stand at the Leaning Stone (north-west of the circle) while the wind is up.",
+          "on": {
+            "in": "gm_stone_1",
+            "when": {
+              "energy": [
+                0.2,
+                1
+              ]
+            }
+          },
+          "effects": [
+            {
+              "text": "The stone moans a long low note. Rain, it says, from the west."
+            }
+          ],
+          "then": "two"
+        },
+        "two": {
+          "goal": "Now the Tall Stone, on the ridge, in the wind.",
+          "on": {
+            "in": "gm_stone_2",
+            "when": {
+              "energy": [
+                0.2,
+                1
+              ]
+            }
+          },
+          "effects": [
+            {
+              "text": "A high, thin whistle. Cold coming."
+            }
+          ],
+          "then": "three"
+        },
+        "three": {
+          "goal": "And the Split Stone, in the wind.",
+          "on": {
+            "in": "gm_stone_3",
+            "when": {
+              "energy": [
+                0.2,
+                1
+              ]
+            }
+          },
+          "effects": [
+            {
+              "text": "Two notes at once. A storm, and after it, stillness."
+            }
+          ],
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Ysolde what you heard: ASK YSOLDE ABOUT STONES.",
+          "on": {
+            "ask": "ysolde",
+            "about": "stones"
+          },
+          "effects": [
+            {
+              "give": "warden_cloak"
+            },
+            {
+              "xp": 125
+            },
+            {
+              "reputation": {
+                "faction": "wardens",
+                "affinity": 8,
+                "note": "You listened to the stones for the Wardens."
+              }
+            }
+          ]
+        }
+      }
+    },
+    "gm_highwaymen": {
+      "name": "The Highwaymen",
+      "start": "band",
+      "steps": {
+        "band": {
+          "goal": "Kill five highwaymen on the moor.",
+          "on": {
+            "kill": "highwayman",
+            "count": 5
+          },
+          "then": "crowe"
+        },
+        "crowe": {
+          "goal": "Now Captain Crowe, in his hide past the gibbet.",
+          "on": {
+            "kill": "captain_crowe"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Ysolde: ASK YSOLDE ABOUT HIGHWAYMEN.",
+          "on": {
+            "ask": "ysolde",
+            "about": "highwaymen"
+          },
+          "effects": [
+            {
+              "give": "crowes_pistol"
+            },
+            {
+              "xp": 155
+            }
+          ]
+        }
+      }
+    },
+    "gm_lantern": {
+      "name": "The Rider's Lantern",
+      "start": "get",
+      "steps": {
+        "get": {
+          "goal": "By day, while the Rider is gone, take the lantern from the gibbet: GET LANTERN.",
+          "on": {
+            "have": [
+              "riders_lantern_item"
+            ]
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Bring it to Ysolde: USE LANTERN ON YSOLDE.",
+          "on": {
+            "use": "riders_lantern_item",
+            "on": "ysolde"
+          },
+          "effects": [
+            {
+              "take": "riders_lantern_item"
+            },
+            {
+              "text": "Ysolde lights it with an ordinary match, and the flame comes up ordinary and yellow. \"Keep it. He'll be riding in circles now.\""
+            },
+            {
+              "give": "riders_lantern"
+            },
+            {
+              "xp": 115
+            }
+          ]
+        }
+      }
+    }
+  }
+}

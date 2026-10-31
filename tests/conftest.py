@@ -38,6 +38,8 @@ async def world(redis):
     await redis.set("alz:clock_override", 12)
     # Nothing happens on the road unless a test asks for it.
     await redis.hset("alz:rules", "event_chance", 0)
+    # The next quest in a chain is offered at once, not a beat later; offers have a test of their own.
+    await redis.hset("alz:rules", "offer_beat_ms", 0)
     # Tests run on a mild, dry, temperate day in every realm; weather tests set their own.
     for realm in await redis.smembers("alz:realms"):
         await set_weather(redis, realm, 0, 0, -1)

@@ -1,11 +1,10 @@
 """The game rules and event delivery, against a real Redis."""
 
 import asyncio
-import json
 
 import pytest
 
-from alzendor.world import validate_seed
+from alzendor.world import load_seed, validate_seed
 
 from .conftest import SEED, drain, enter, ride, texts
 
@@ -230,10 +229,14 @@ async def test_map_shows_explored_rooms_and_glimpses_of_their_exits(world):
     assert {rid for rid, r in rooms.items() if not r["explored"]} == {"market_square", "back_alley", "cellar"}
     assert "name" not in rooms["cellar"]  # glimpsed rooms stay unnamed until visited
     assert [a["id"] for a in first["areas"]] == ["old_quarter"]
-    assert first["areas"][0]["bounds"] == [40, -20, 80, 48]
-    assert first["areas"][0]["color"] == 1  # colours go in area id order within the realm, wrapping after 6
+    assert first["areas"][0]["bounds"] == [40, -20, 100, 48]  # out to the East Gate
+    # Colours go in area id order within the realm, wrapping after 6.
+    data = load_seed(SEED)
+    home = sorted(a for a, area in data["areas"].items() if data["regions"][area["region"]].get("realm") == "alzendor")
+    assert first["areas"][0]["color"] == home.index("old_quarter") % 6 + 1
     assert {g["id"]: g["state"] for g in first["regions"]} == {
-        "harrowgate": "explored", "harrowlake": "discovered", "spiderwood": "discovered", "harrow_mountains": "discovered"}
+        "harrowgate": "explored", "harrowlake": "discovered", "spiderwood": "discovered", "harrow_mountains": "discovered",
+        "greyfold": "discovered"}
 
     await world.call("move", "kevin", "north")
     update = next(e for e in await drain(kevin) if e["type"] == "map")
@@ -259,7 +262,7 @@ async def test_rooms_list_npcs_and_players_as_cards(world):
         "id": "npc:marta", "kind": "npc", "name": "Marta", "label": "Human Innkeeper",
         "description": "round-faced, sleeves rolled up", "hp": 30, "max_hp": 30, "icon": "🍺",
         "base_disposition": "friendly", "disposition": "friendly", "faction": "The Folk of Harrowgate",
-        "attacks": [], "immortal": False,
+        "attacks": [], "immortal": False, "topics": ["millbrook", "redcaps", "work"],
     }
     assert room["safe"] is True
     assert room["features"] == ["bar", "ground", "hearth"]
@@ -360,7 +363,8 @@ async def test_hidden_regions_are_not_discovered_by_bordering(world):
     assert [e for e in events if e["type"] == "room"][-1]["room"]["id"] == "ferry_dock"
     states = region_states([e for e in events if e["type"] == "map"][-1])
     assert states == {"harrowgate": "explored", "harrowlake": "explored", "spiderwood": "discovered",
-                      "harrow_mountains": "discovered"}
+                      "harrow_mountains": "discovered", "greyfold": "discovered",
+                      "hollowcrown": "discovered"}  # the pilgrims' barge goes there
 
     # The ferry goes to Saltmere, but no glimpse of it shows.
     await world.call("look", "kevin")
@@ -421,11 +425,12 @@ async def test_players_from_before_regions_learn_them_from_where_they_have_been(
     kevin = await enter(world, "kevin")
     full = next(e for e in await drain(kevin) if e["type"] == "map")
     assert region_states(full) == {"harrowgate": "explored", "spiderwood": "explored", "harrowlake": "discovered",
-                                   "harrow_mountains": "discovered"}
+                                   "harrow_mountains": "discovered", "greyfold": "discovered", "gallows_moor": "discovered",
+                                   "deepwood": "discovered"}
 
 
 def test_seed_validation_catches_broken_maps():
-    data = json.loads(SEED.read_text())
+    data = load_seed(SEED)
     validate_seed(data)
     data["rooms"]["tavern"]["exits"]["west"] = "nowhere"
     with pytest.raises(ValueError, match="unknown room 'nowhere'"):
@@ -441,7 +446,7 @@ def test_seed_validation_catches_broken_maps():
     (lambda d: d["ambient"].append({"channel": "CITY:harrowgate", "every": 60, "texts": ["x"]}), "unknown channel 'CITY:harrowgate'"),
 ])
 def test_seed_validation_checks_regions(change, message):
-    data = json.loads(SEED.read_text())
+    data = load_seed(SEED)
     change(data)
     with pytest.raises(ValueError, match=message):
         validate_seed(data)
@@ -454,7 +459,7 @@ def test_seed_validation_checks_regions(change, message):
     (lambda rooms: rooms["frozen_lake"].update(pos=[30, -55]), "area howling_pass: its rooms are 0 units from area shattered_shore's"),
 ])
 def test_seed_validation_checks_exits_match_the_map(change, message):
-    data = json.loads(SEED.read_text())
+    data = load_seed(SEED)
     change(data["rooms"])
     with pytest.raises(ValueError, match=message):
         validate_seed(data)
@@ -470,7 +475,7 @@ def test_seed_validation_checks_exits_match_the_map(change, message):
     (lambda d: d["loadout"].append("sword"), "at most 3 slots"),
 ])
 def test_seed_validation_checks_gear(change, message):
-    data = json.loads(SEED.read_text())
+    data = load_seed(SEED)
     change(data)
     with pytest.raises(ValueError, match=message):
         validate_seed(data)

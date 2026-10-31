@@ -1,0 +1,678 @@
+{
+  "_note": "The Underdeep, level 11: dark, and the air kills. See docs/zones.md.",
+  "regions": {
+    "underdeep": {
+      "name": "the Underdeep",
+      "realm": "alzendor"
+    }
+  },
+  "areas": {
+    "old_workings": {
+      "name": "the Old Workings",
+      "region": "underdeep",
+      "exposure": {
+        "kind": "air",
+        "name": "foul air",
+        "max": 5,
+        "damage": 16,
+        "warn": "Your head swims. The air's going bad. Get to a lamp station.",
+        "hurt": "You can't get your breath. The foul air is choking you.",
+        "relief": "The pumps push clean air in. You breathe again."
+      }
+    },
+    "gloom_galleries": {
+      "name": "the Gloom Galleries",
+      "region": "underdeep",
+      "exposure": {
+        "kind": "air",
+        "name": "foul air",
+        "max": 5,
+        "damage": 16,
+        "warn": "Your head swims. The air's going bad. Get to a lamp station.",
+        "hurt": "You can't get your breath. The foul air is choking you.",
+        "relief": "The pumps push clean air in. You breathe again."
+      }
+    },
+    "black_lake": {
+      "name": "the Black Lake",
+      "region": "underdeep",
+      "exposure": {
+        "kind": "air",
+        "name": "foul air",
+        "max": 5,
+        "damage": 16,
+        "warn": "Your head swims. The air's going bad. Get to a lamp station.",
+        "hurt": "You can't get your breath. The foul air is choking you.",
+        "relief": "The pumps push clean air in. You breathe again."
+      }
+    }
+  },
+  "rooms": {
+    "ud_shaftfoot": {
+      "name": "The Shaft Foot",
+      "area": "old_workings",
+      "pos": [
+        650,
+        190
+      ],
+      "description": "The bottom of the old shaft. The cage hangs above, creaking.",
+      "exits": {
+        "up": "cc_deepface",
+        "east": "ud_lampstation",
+        "south": "ud_workings"
+      },
+      "features": {},
+      "dark": true,
+      "indoor": true
+    },
+    "ud_lampstation": {
+      "name": "Ketta's Lamp Station",
+      "area": "old_workings",
+      "pos": [
+        675,
+        190
+      ],
+      "description": "A lamp station with a hand-pump wheezing clean air in. The only light for a mile.",
+      "exits": {
+        "west": "ud_shaftfoot"
+      },
+      "features": {},
+      "indoor": true,
+      "shelter": true,
+      "safe": true
+    },
+    "ud_workings": {
+      "name": "The Old Workings",
+      "area": "old_workings",
+      "pos": [
+        650,
+        215
+      ],
+      "description": "Tunnels in every direction, timbered and sagging.",
+      "exits": {
+        "north": "ud_shaftfoot",
+        "southeast": "ud_gloom"
+      },
+      "features": {},
+      "dark": true,
+      "indoor": true
+    },
+    "ud_gloom": {
+      "name": "The Gloom Gallery",
+      "area": "gloom_galleries",
+      "pos": [
+        700,
+        265
+      ],
+      "description": "A long gallery with a dead lamp station halfway along.",
+      "exits": {
+        "northwest": "ud_workings",
+        "southeast": "ud_crawl"
+      },
+      "features": {
+        "lamp": "A dead lamp, its reservoir dry."
+      },
+      "dark": true,
+      "indoor": true
+    },
+    "ud_crawl": {
+      "name": "The Crawlway",
+      "area": "gloom_galleries",
+      "pos": [
+        725,
+        290
+      ],
+      "description": "A tunnel you have to crawl through. Scratching ahead.",
+      "exits": {
+        "northwest": "ud_gloom",
+        "southeast": "ud_tally",
+        "southwest": "ud_pump"
+      },
+      "features": {},
+      "dark": true,
+      "indoor": true
+    },
+    "ud_pump": {
+      "name": "The Pump Room",
+      "area": "gloom_galleries",
+      "pos": [
+        700,
+        315
+      ],
+      "description": "A great pump, silent. If it ran, the whole level would breathe.",
+      "exits": {
+        "northeast": "ud_crawl"
+      },
+      "features": {
+        "pump": "Its lamp-boiler is cold. Oil would start it."
+      },
+      "dark": true,
+      "indoor": true
+    },
+    "ud_tally": {
+      "name": "The Last Shift",
+      "area": "gloom_galleries",
+      "pos": [
+        750,
+        315
+      ],
+      "description": "Picks dropped where they were swung. A tally board on the wall.",
+      "exits": {
+        "northwest": "ud_crawl",
+        "southeast": "ud_shore"
+      },
+      "features": {
+        "board": "The last shift's tally. Someone has scratched DON'T DIG DEEPER under it."
+      },
+      "dark": true,
+      "indoor": true
+    },
+    "ud_shore": {
+      "name": "The Black Lake Shore",
+      "area": "black_lake",
+      "pos": [
+        800,
+        365
+      ],
+      "description": "A lake of black, still water under a cavern roof. A brazier stands cold on the shore.",
+      "exits": {
+        "northwest": "ud_tally",
+        "east": "ud_worm",
+        "northeast": "ud_mirror"
+      },
+      "features": {
+        "brazier": "A signal brazier for the boats that used to cross."
+      },
+      "dark": true,
+      "indoor": true
+    },
+    "ud_mirror": {
+      "name": "The Black Mirror",
+      "area": "black_lake",
+      "pos": [
+        825,
+        340
+      ],
+      "description": "A point where the lake is so still it shows a sky: a night sky, with a moon far too big. It isn't a reflection.",
+      "exits": {
+        "southwest": "ud_shore"
+      },
+      "features": {},
+      "dark": true,
+      "indoor": true
+    },
+    "ud_worm": {
+      "name": "The Worm's Gallery",
+      "area": "black_lake",
+      "pos": [
+        850,
+        365
+      ],
+      "description": "A tunnel bored perfectly round, as wide as a house. Something lives at the end of it.",
+      "exits": {
+        "west": "ud_shore"
+      },
+      "features": {},
+      "dark": true,
+      "indoor": true
+    }
+  },
+  "items": {
+    "lamp_oil": {
+      "name": "flask of lamp oil",
+      "keywords": "oil flask",
+      "description": "Ketta's lamp oil, thick and sweet-smelling.",
+      "quest": true
+    },
+    "tally_board": {
+      "name": "tally board",
+      "keywords": "board tally",
+      "description": "The last shift's tally board, prised off the wall.",
+      "quest": true,
+      "room": "ud_tally"
+    }
+  },
+  "npcs": {
+    "ketta": {
+      "name": "Ketta Lampwright",
+      "label": "Lampwright",
+      "description": "small, sooty, with a lamp on her hat",
+      "details": "Small, sooty, with a lamp on her hat.",
+      "keywords": "ketta lampwright",
+      "room": "ud_lampstation",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🪔",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the mask, the lamps, the shift, or the worm.",
+        "mask": {
+          "text": "Down here the air goes bad as you walk. My lamp station pumps clean air. Anywhere else you breathe what's there. Here: a mask.",
+          "starts": "ud_mask"
+        },
+        "lamps": {
+          "text": "Three dead lamp stations: the Gloom Gallery's lamp, the Pump Room's pump, the brazier on the Black Lake shore. Light them with my oil and the deep breathes again.",
+          "starts": "ud_lamps"
+        },
+        "oil": "Don't spill it.",
+        "shift": {
+          "text": "The last shift never came up. Their tally board's in the far gallery. I want to know what they found.",
+          "starts": "ud_shift"
+        },
+        "worm": {
+          "text": "The Stone Worm, at the end of its own tunnel past the lake. It ate the last shift. Nothing stops its crush. Leave it, if you've any sense.",
+          "starts": "ud_worm"
+        },
+        "lake": "The Black Lake shows a sky that isn't ours. A moon. Miners who looked too long walked in."
+      }
+    },
+    "deep_crawler_1": {
+      "name": "Deep Crawler",
+      "label": "Crawler",
+      "description": "a pale, many-legged thing as long as a cart",
+      "details": "A pale, many-legged thing as long as a cart.",
+      "keywords": "deep crawler",
+      "room": "ud_workings",
+      "max_hp": 300,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "mandibles",
+          "period": 3000,
+          "damage": 22,
+          "hit": "{actor} snaps its mandibles on {target}."
+        },
+        {
+          "name": "acid",
+          "period": 10000,
+          "damage": 50,
+          "hit": "{actor} spits acid at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🐛",
+      "role": "crawler",
+      "respawn": 300
+    },
+    "deep_crawler_2": {
+      "name": "Deep Crawler",
+      "label": "Crawler",
+      "description": "a pale, many-legged thing as long as a cart",
+      "details": "A pale, many-legged thing as long as a cart.",
+      "keywords": "deep crawler",
+      "room": "ud_gloom",
+      "max_hp": 300,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "mandibles",
+          "period": 3000,
+          "damage": 22,
+          "hit": "{actor} snaps its mandibles on {target}."
+        },
+        {
+          "name": "acid",
+          "period": 10000,
+          "damage": 50,
+          "hit": "{actor} spits acid at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🐛",
+      "role": "crawler",
+      "respawn": 300
+    },
+    "deep_crawler_3": {
+      "name": "Deep Crawler",
+      "label": "Crawler",
+      "description": "a pale, many-legged thing as long as a cart",
+      "details": "A pale, many-legged thing as long as a cart.",
+      "keywords": "deep crawler",
+      "room": "ud_crawl",
+      "max_hp": 300,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "mandibles",
+          "period": 3000,
+          "damage": 22,
+          "hit": "{actor} snaps its mandibles on {target}."
+        },
+        {
+          "name": "acid",
+          "period": 10000,
+          "damage": 50,
+          "hit": "{actor} spits acid at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🐛",
+      "role": "crawler",
+      "respawn": 300
+    },
+    "blind_one_1": {
+      "name": "Blind One",
+      "label": "Ghoul",
+      "description": "an eyeless miner-thing, head cocked, listening",
+      "details": "An eyeless miner-thing, head cocked, listening.",
+      "keywords": "blind one miner",
+      "room": "ud_pump",
+      "max_hp": 180,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "claws",
+          "period": 2500,
+          "damage": 18,
+          "hit": "{actor} claws at {target}."
+        }
+      ],
+      "xp": 11,
+      "icon": "🫥",
+      "notice": "easy",
+      "role": "blind_one",
+      "respawn": 300
+    },
+    "blind_one_2": {
+      "name": "Blind One",
+      "label": "Ghoul",
+      "description": "an eyeless miner-thing, head cocked, listening",
+      "details": "An eyeless miner-thing, head cocked, listening.",
+      "keywords": "blind one miner",
+      "room": "ud_shore",
+      "max_hp": 180,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "claws",
+          "period": 2500,
+          "damage": 18,
+          "hit": "{actor} claws at {target}."
+        }
+      ],
+      "xp": 11,
+      "icon": "🫥",
+      "notice": "easy",
+      "role": "blind_one",
+      "respawn": 300
+    },
+    "stone_worm": {
+      "name": "the Stone Worm",
+      "label": "Great Worm",
+      "description": "a worm of grey stone, its mouth a ring of grinding teeth",
+      "details": "A worm of grey stone, its mouth a ring of grinding teeth.",
+      "keywords": "stone worm",
+      "room": "ud_worm",
+      "max_hp": 2200,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "grind",
+          "period": 5000,
+          "damage": 30,
+          "hit": "{actor} grinds at {target}."
+        },
+        {
+          "name": "crush",
+          "period": 15000,
+          "damage": 150,
+          "hit": "{actor} rolls over {target}!",
+          "defend": "none"
+        }
+      ],
+      "xp": 189,
+      "icon": "🪱",
+      "notice": "fair",
+      "respawn": 1800
+    }
+  },
+  "gear": {
+    "lampwrights_flask": {
+      "name": "Lampwright's Flask",
+      "kind": "Potion",
+      "keywords": "flask lampwright",
+      "effect": "heal",
+      "period": 5000,
+      "window": 330,
+      "perfect_window": 110,
+      "amounts": [
+        14,
+        20,
+        32
+      ],
+      "hit": "{actor} drinks from the lampwright's flask.",
+      "perfect_hit": "{actor} drinks from the lampwright's flask, and it takes.",
+      "miss": "{actor} fumbles Lampwright's Flask.",
+      "whiff": "your Lampwright's Flask finds nothing.",
+      "description": "Ketta's restorative: oil-smelling, and it works.",
+      "weather": {
+        "temperature": 0,
+        "energy": -0.4,
+        "precipitation": "any",
+        "tier": "green"
+      }
+    },
+    "wormtooth": {
+      "name": "Wormtooth",
+      "kind": "Melee",
+      "keywords": "wormtooth tooth",
+      "effect": "damage",
+      "period": 4500,
+      "window": 330,
+      "perfect_window": 110,
+      "amounts": [
+        26,
+        34,
+        55
+      ],
+      "hit": "{actor} grinds the wormtooth into {target}.",
+      "perfect_hit": "{actor} grinds the wormtooth into {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Wormtooth finds nothing.",
+      "description": "One of the Stone Worm's teeth, set in a haft. Slow, and terrible.",
+      "weather": {
+        "temperature": 0,
+        "energy": -0.6,
+        "precipitation": "dry",
+        "tier": "purple"
+      },
+      "rarity": "epic"
+    }
+  },
+  "wearables": {
+    "miners_mask": {
+      "name": "Miner's Mask",
+      "keywords": "miner's mask",
+      "place": "head",
+      "type": "cloth",
+      "description": "A leather mask with a charcoal filter. Keeps off the foul air.",
+      "rarity": "uncommon",
+      "armor": 1,
+      "protects": [
+        "air"
+      ]
+    },
+    "canvas_overalls": {
+      "name": "Canvas Overalls",
+      "keywords": "canvas overalls",
+      "place": "legs",
+      "type": "cloth",
+      "description": "A miner's overalls, patched with leather. +1 Resilience.",
+      "rarity": "uncommon",
+      "armor": 4,
+      "stats": {
+        "resilience": 1
+      }
+    }
+  },
+  "quests": {
+    "ud_mask": {
+      "name": "Clean Air",
+      "start": "mask",
+      "steps": {
+        "mask": {
+          "goal": "Ask Ketta Lampwright for it: ASK KETTA ABOUT MASK.",
+          "on": {
+            "ask": "ketta",
+            "about": "mask"
+          },
+          "effects": [
+            {
+              "give": "miners_mask"
+            },
+            {
+              "text": "Ketta hands you a mask. \"WEAR MASK. Without it, five breaths and you're done.\""
+            },
+            {
+              "xp": 20
+            }
+          ]
+        }
+      }
+    },
+    "ud_lamps": {
+      "name": "Lamps in the Deep",
+      "start": "oil",
+      "steps": {
+        "oil": {
+          "goal": "Take Ketta's oil: ASK KETTA ABOUT OIL.",
+          "on": {
+            "ask": "ketta",
+            "about": "oil"
+          },
+          "effects": [
+            {
+              "give": "lamp_oil"
+            }
+          ],
+          "then": "lamp"
+        },
+        "lamp": {
+          "goal": "Relight the lamp in the Gloom Gallery: USE OIL ON LAMP.",
+          "on": {
+            "use": "lamp_oil",
+            "on": "lamp"
+          },
+          "effects": [
+            {
+              "text": "The lamp gutters and catches. A little air moves."
+            }
+          ],
+          "then": "pump"
+        },
+        "pump": {
+          "goal": "Start the Pump Room's pump: USE OIL ON PUMP.",
+          "on": {
+            "use": "lamp_oil",
+            "on": "pump"
+          },
+          "effects": [
+            {
+              "text": "The pump coughs, then thumps into life."
+            }
+          ],
+          "then": "brazier"
+        },
+        "brazier": {
+          "goal": "Light the brazier on the Black Lake shore: USE OIL ON BRAZIER.",
+          "on": {
+            "use": "lamp_oil",
+            "on": "brazier"
+          },
+          "effects": [
+            {
+              "take": "lamp_oil"
+            },
+            {
+              "text": "The brazier flares, and the black water throws it back a thousand times."
+            }
+          ],
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Ketta: ASK KETTA ABOUT LAMPS.",
+          "on": {
+            "ask": "ketta",
+            "about": "lamps"
+          },
+          "effects": [
+            {
+              "give": "lampwrights_flask"
+            },
+            {
+              "xp": 190
+            }
+          ]
+        }
+      }
+    },
+    "ud_shift": {
+      "name": "The Lost Shift",
+      "start": "get",
+      "steps": {
+        "get": {
+          "goal": "Find the last shift's tally board, deep in the galleries: GET BOARD.",
+          "on": {
+            "have": [
+              "tally_board"
+            ]
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Bring it to Ketta: USE BOARD ON KETTA.",
+          "on": {
+            "use": "tally_board",
+            "on": "ketta"
+          },
+          "effects": [
+            {
+              "take": "tally_board"
+            },
+            {
+              "text": "Ketta reads the scratched words twice. \"They dug into the worm's tunnel. Here. Keep your legs dry.\""
+            },
+            {
+              "give": "canvas_overalls"
+            },
+            {
+              "xp": 170
+            }
+          ]
+        }
+      }
+    },
+    "ud_worm": {
+      "name": "The Stone Worm",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill the Stone Worm, at the end of its tunnel past the Black Lake. Its crush can't be blocked or dodged.",
+          "on": {
+            "kill": "stone_worm"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Ketta: ASK KETTA ABOUT WORM.",
+          "on": {
+            "ask": "ketta",
+            "about": "worm"
+          },
+          "effects": [
+            {
+              "give": "wormtooth"
+            },
+            {
+              "xp": 305
+            }
+          ]
+        }
+      }
+    }
+  }
+}

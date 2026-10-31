@@ -315,7 +315,7 @@ async def use(ctx: Context, rest: str) -> None:
     await ctx.call("use_item", _thing(item), _thing(thing))
 
 
-@command("learn", "LEARN <talent or passive>", "Learn a talent from your class (at even levels) or a passive from your ancestry (at 5, 10, 15 and 20).")
+@command("learn", "LEARN <talent or passive>", "Learn a talent from your class (at levels 3, 6, 9 … 18) or a passive from your ancestry (at 5, 10, 15 and 20).")
 async def learn(ctx: Context, rest: str) -> None:
     await ctx.call("learn", _require(rest.strip(), "Learn what? The Character panel lists what you can."))
 
@@ -362,6 +362,23 @@ async def unequip(ctx: Context, rest: str) -> None:
 @command("gear", "GEAR", "List your gear and what's in your slots.", aliases=("slots", "loadout"))
 async def gear(ctx: Context, rest: str) -> None:
     await ctx.call("gear")
+
+
+@command("wear", "WEAR <item>", "Put on worn gear (head, chest, legs) or take something in your hand, e.g. WEAR TORCH.",
+         aliases=("hold", "don"))
+async def wear(ctx: Context, rest: str) -> None:
+    await ctx.call("wear", _require(_thing(rest), "Wear what? The Character panel lists your worn gear."))
+
+
+@command("remove", "REMOVE <item or place>", "Take off worn gear, or empty your hand, e.g. REMOVE HAND.", aliases=("doff",))
+async def remove(ctx: Context, rest: str) -> None:
+    await ctx.call("remove", _require(_thing(rest), "Remove what? HEAD, CHEST, LEGS, HAND, or an item's name."))
+
+
+@command("defend", "DEFEND", "Block (with a shield in hand) or dodge the next blow; time it to when the blow lands. "
+         "In the web client, the key 7.", aliases=("block", "dodge"))
+async def defend(ctx: Context, rest: str) -> None:
+    await ctx.call("defend")
 
 
 # Character ----------------------------------------------------------------------

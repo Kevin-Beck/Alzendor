@@ -1,0 +1,777 @@
+{
+  "_note": "The Cold Spine, level 10: an expedition into the cold. See docs/zones.md.",
+  "regions": {
+    "cold_spine": {
+      "name": "the Cold Spine",
+      "realm": "alzendor"
+    }
+  },
+  "areas": {
+    "spine_trailhead": {
+      "name": "the Trailhead",
+      "region": "cold_spine"
+    },
+    "icefall": {
+      "name": "the Icefall",
+      "region": "cold_spine",
+      "exposure": {
+        "kind": "cold",
+        "name": "cold",
+        "max": 6,
+        "damage": 14,
+        "worse_when": {
+          "temperature": [
+            -1,
+            -0.3
+          ]
+        },
+        "warn": "Your fingers have stopped hurting. That's bad. Find a fire.",
+        "hurt": "The cold is killing you.",
+        "relief": "You thaw out by the fire, painfully."
+      }
+    },
+    "long_ridge": {
+      "name": "the Long Ridge",
+      "region": "cold_spine",
+      "exposure": {
+        "kind": "cold",
+        "name": "cold",
+        "max": 6,
+        "damage": 14,
+        "worse_when": {
+          "temperature": [
+            -1,
+            -0.3
+          ]
+        },
+        "warn": "Your fingers have stopped hurting. That's bad. Find a fire.",
+        "hurt": "The cold is killing you.",
+        "relief": "You thaw out by the fire, painfully."
+      }
+    },
+    "frostfang_caves": {
+      "name": "the Frostfang Caves",
+      "region": "cold_spine",
+      "exposure": {
+        "kind": "cold",
+        "name": "cold",
+        "max": 6,
+        "damage": 14,
+        "worse_when": {
+          "temperature": [
+            -1,
+            -0.3
+          ]
+        },
+        "warn": "Your fingers have stopped hurting. That's bad. Find a fire.",
+        "hurt": "The cold is killing you.",
+        "relief": "You thaw out by the fire, painfully."
+      }
+    },
+    "spine_summit": {
+      "name": "the Summit",
+      "region": "cold_spine",
+      "exposure": {
+        "kind": "cold",
+        "name": "cold",
+        "max": 6,
+        "damage": 14,
+        "worse_when": {
+          "temperature": [
+            -1,
+            -0.3
+          ]
+        },
+        "warn": "Your fingers have stopped hurting. That's bad. Find a fire.",
+        "hurt": "The cold is killing you.",
+        "relief": "You thaw out by the fire, painfully."
+      }
+    }
+  },
+  "rooms": {
+    "cs_trailhead": {
+      "name": "The Spine Trailhead",
+      "area": "spine_trailhead",
+      "pos": [
+        -165,
+        -110
+      ],
+      "description": "Where the goat track gives out and the real mountain begins. Prayer flags snap in the wind.",
+      "exits": {
+        "southeast": "scree_foot",
+        "west": "cs_hut",
+        "north": "cs_icefall"
+      },
+      "features": {},
+      "terrain": "peak"
+    },
+    "cs_hut": {
+      "name": "Bergen's Hut",
+      "area": "spine_trailhead",
+      "pos": [
+        -190,
+        -110
+      ],
+      "description": "A stone hut with a fire that's never let die. Ropes, ice-axes, and frostbitten maps.",
+      "exits": {
+        "east": "cs_trailhead"
+      },
+      "features": {},
+      "indoor": true,
+      "safe": true,
+      "shelter": true
+    },
+    "cs_icefall": {
+      "name": "The Icefall",
+      "area": "icefall",
+      "pos": [
+        -165,
+        -160
+      ],
+      "description": "A frozen river of ice, cracked into blue crevasses. Fixed ropes, some cut.",
+      "exits": {
+        "south": "cs_trailhead",
+        "northwest": "cs_seracs"
+      },
+      "features": {},
+      "terrain": "peak",
+      "trap": {
+        "name": "a hidden crevasse",
+        "stat": "poise",
+        "difficulty": "fair",
+        "damage": 30,
+        "rearm": 2,
+        "hit": "The snow gives way, and you drop into a crevasse before your rope catches.",
+        "avoid": "You probe the snow, and step round a crevasse.",
+        "sprung": "{actor} drops into a crevasse!",
+        "sign": {
+          "room": "cs_trailhead",
+          "name": "flags",
+          "text": "A prayer flag marks where the last climber went into a crevasse on the icefall. The snow hides the rest."
+        }
+      }
+    },
+    "cs_seracs": {
+      "name": "The Serac Field",
+      "area": "icefall",
+      "pos": [
+        -190,
+        -185
+      ],
+      "description": "Towers of ice leaning over the path. One fell last night.",
+      "exits": {
+        "southeast": "cs_icefall",
+        "northwest": "cs_ridge"
+      },
+      "features": {},
+      "terrain": "peak",
+      "trap": {
+        "name": "a falling serac",
+        "stat": "vigor",
+        "difficulty": "fair",
+        "damage": 35,
+        "rearm": 3,
+        "hit": "A tower of ice comes down, and you're under it.",
+        "avoid": "You hear the crack and throw yourself clear.",
+        "sprung": "{actor} is buried by falling ice!",
+        "sign": {
+          "room": "cs_icefall",
+          "name": "seracs",
+          "text": "The seracs ahead lean further every day. Go fast and don't stop under them."
+        }
+      }
+    },
+    "cs_ridge": {
+      "name": "The Long Ridge",
+      "area": "long_ridge",
+      "pos": [
+        -240,
+        -235
+      ],
+      "description": "A ridge of rock and snow with a drop on both sides. The wind never stops.",
+      "exits": {
+        "southeast": "cs_seracs",
+        "northwest": "cs_knife",
+        "northeast": "cs_cairn_east"
+      },
+      "features": {},
+      "terrain": "peak"
+    },
+    "cs_cairn_east": {
+      "name": "The East Cairn",
+      "area": "long_ridge",
+      "pos": [
+        -215,
+        -260
+      ],
+      "description": "A signal cairn, built for a fire and never lit.",
+      "exits": {
+        "southwest": "cs_ridge"
+      },
+      "features": {
+        "cairn": "Dry wood packed inside, waiting for a flame."
+      },
+      "terrain": "peak"
+    },
+    "cs_knife": {
+      "name": "The Knife-Edge",
+      "area": "long_ridge",
+      "pos": [
+        -265,
+        -260
+      ],
+      "description": "The ridge narrows to a blade of snow. Something huge and white lies across it, asleep.",
+      "exits": {
+        "southeast": "cs_ridge",
+        "west": "cs_cave_mouth",
+        "north": "cs_saddle"
+      },
+      "features": {},
+      "terrain": "peak"
+    },
+    "cs_cave_mouth": {
+      "name": "Frostfang Caves",
+      "area": "frostfang_caves",
+      "pos": [
+        -315,
+        -260
+      ],
+      "description": "A cave mouth fanged with icicles. Out of the wind, at least.",
+      "exits": {
+        "east": "cs_knife",
+        "northwest": "cs_cave_fire",
+        "south": "cs_cave_deep"
+      },
+      "features": {},
+      "dark": true,
+      "terrain": "peak"
+    },
+    "cs_cave_fire": {
+      "name": "The Ice Cave",
+      "area": "frostfang_caves",
+      "pos": [
+        -340,
+        -285
+      ],
+      "description": "A cave with an old fire-pit and a stack of wood. Someone sheltered here.",
+      "exits": {
+        "southeast": "cs_cave_mouth"
+      },
+      "features": {
+        "pit": "Light it and it'll keep you alive."
+      },
+      "dark": true,
+      "shelter": true
+    },
+    "cs_cave_deep": {
+      "name": "The Deep Ice",
+      "area": "frostfang_caves",
+      "pos": [
+        -315,
+        -210
+      ],
+      "description": "Blue ice, deep under the mountain. A climber sits against the wall, frozen.",
+      "exits": {
+        "north": "cs_cave_mouth"
+      },
+      "features": {
+        "climber": "Frozen sitting up, a journal in her lap."
+      },
+      "dark": true
+    },
+    "cs_saddle": {
+      "name": "The Saddle",
+      "area": "spine_summit",
+      "pos": [
+        -265,
+        -335
+      ],
+      "description": "A saddle of snow between two peaks. A second cairn, and a dead man's pack.",
+      "exits": {
+        "south": "cs_knife",
+        "north": "cs_summit"
+      },
+      "features": {
+        "beacon": "The summit beacon: a cairn as tall as you, packed with wood.",
+        "pack": "A frozen pack. A journal sticks out."
+      },
+      "terrain": "peak"
+    },
+    "cs_summit": {
+      "name": "The Summit",
+      "area": "spine_summit",
+      "pos": [
+        -265,
+        -385
+      ],
+      "description": "The top of the Spine. The sky is huge, and in a high wind it tears open: you can see islands in the clouds through the rip.",
+      "exits": {
+        "south": "cs_saddle"
+      },
+      "features": {
+        "rip": "A tear in the sky. In a strong wind it widens enough to step through."
+      },
+      "terrain": "peak"
+    }
+  },
+  "items": {
+    "journal_1": {
+      "name": "frozen journal",
+      "keywords": "journal frozen",
+      "description": "A frozen journal. The last entry: \"Day 4. The seracs nearly had Orri. Halvard says the summit, in a gale. Why a gale?\"",
+      "quest": true,
+      "room": "cs_seracs"
+    },
+    "journal_2": {
+      "name": "frozen journal",
+      "keywords": "journal frozen",
+      "description": "A frozen journal. The last entry: \"Day 9. Fire's out. Halvard went up alone. He said the sky opens.\"",
+      "quest": true,
+      "room": "cs_cave_deep"
+    },
+    "journal_3": {
+      "name": "frozen journal",
+      "keywords": "journal frozen",
+      "description": "A frozen journal. The last entry: \"Day 11. I see it. Islands in the clouds. Halvard's gone through. I'm too cold to follow.\"",
+      "quest": true,
+      "room": "cs_saddle"
+    },
+    "flint": {
+      "name": "Bergen's flint",
+      "keywords": "flint tinder",
+      "description": "Flint, steel and dry tinder in an oilskin.",
+      "quest": true
+    }
+  },
+  "npcs": {
+    "bergen": {
+      "name": "Bergen",
+      "label": "Mountaineer",
+      "description": "a weathered climber with three fingers on one hand",
+      "details": "A weathered climber with three fingers on one hand.",
+      "keywords": "bergen",
+      "room": "cs_hut",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🧗",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the mountain, the expedition, or the cairns.",
+        "mountain": {
+          "text": "Up there, the cold kills you a step at a time. You'll want a Fur Cloak. Ask me for the cloak.",
+          "starts": "cs_cloak"
+        },
+        "cloak": "Keep it on. Fires are in my hut and in the Ice Cave. Nowhere else.",
+        "expedition": {
+          "text": "Three of Halvard's expedition went up last winter and never came down. They kept journals. One on the serac field, one in the deep ice, one on the saddle. Find out what they found.",
+          "starts": "cs_expedition"
+        },
+        "cairns": {
+          "text": "Two signal cairns, the East Cairn on the ridge and the beacon on the Saddle. Light them and the next lot can find their way. Take my flint.",
+          "starts": "cs_fire"
+        },
+        "gyre": "Halvard swore he saw islands in the sky from the summit, in a gale. He was always swearing something.",
+        "flint": "Mind your fingers."
+      }
+    },
+    "hulda": {
+      "name": "Hulda",
+      "label": "Hunter",
+      "description": "a huge woman in white furs, with a spear",
+      "details": "A huge woman in white furs, with a spear.",
+      "keywords": "hulda",
+      "room": "cs_trailhead",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🏔️",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the hunger.",
+        "hunger": {
+          "text": "The White Hunger sleeps on the Knife-Edge. Big as a house. Nothing I have has scratched it. You want to cross the ridge, you creep past it. You want to kill it, you're mad, and I'll pay.",
+          "starts": "cs_hunger"
+        }
+      }
+    },
+    "ice_troll_1": {
+      "name": "Ice Troll",
+      "label": "Troll",
+      "description": "a blue-grey troll with icicles in its beard",
+      "details": "A blue-grey troll with icicles in its beard.",
+      "keywords": "ice troll",
+      "room": "cs_seracs",
+      "max_hp": 320,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "club",
+          "period": 4000,
+          "damage": 20,
+          "hit": "{actor} clubs {target}."
+        },
+        {
+          "name": "hurl",
+          "period": 12000,
+          "damage": 55,
+          "hit": "{actor} hurls a block of ice at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🧌",
+      "role": "ice_troll",
+      "respawn": 300
+    },
+    "ice_troll_2": {
+      "name": "Ice Troll",
+      "label": "Troll",
+      "description": "a blue-grey troll with icicles in its beard",
+      "details": "A blue-grey troll with icicles in its beard.",
+      "keywords": "ice troll",
+      "room": "cs_cave_mouth",
+      "max_hp": 320,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "club",
+          "period": 4000,
+          "damage": 20,
+          "hit": "{actor} clubs {target}."
+        },
+        {
+          "name": "hurl",
+          "period": 12000,
+          "damage": 55,
+          "hit": "{actor} hurls a block of ice at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🧌",
+      "role": "ice_troll",
+      "respawn": 300
+    },
+    "frost_wyrmling_1": {
+      "name": "Frost Wyrmling",
+      "label": "Wyrm",
+      "description": "a young white wyrm, all teeth and frost",
+      "details": "A young white wyrm, all teeth and frost.",
+      "keywords": "frost wyrmling wyrm",
+      "room": "cs_ridge",
+      "max_hp": 260,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "claw",
+          "period": 2500,
+          "damage": 12,
+          "hit": "{actor} claws {target}."
+        },
+        {
+          "name": "frost breath",
+          "period": 9000,
+          "damage": 40,
+          "hit": "{actor} breathes frost over {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 17,
+      "icon": "🐉",
+      "role": "wyrmling",
+      "respawn": 300
+    },
+    "frost_wyrmling_2": {
+      "name": "Frost Wyrmling",
+      "label": "Wyrm",
+      "description": "a young white wyrm, all teeth and frost",
+      "details": "A young white wyrm, all teeth and frost.",
+      "keywords": "frost wyrmling wyrm",
+      "room": "cs_saddle",
+      "max_hp": 260,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "claw",
+          "period": 2500,
+          "damage": 12,
+          "hit": "{actor} claws {target}."
+        },
+        {
+          "name": "frost breath",
+          "period": 9000,
+          "damage": 40,
+          "hit": "{actor} breathes frost over {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 17,
+      "icon": "🐉",
+      "role": "wyrmling",
+      "respawn": 300
+    },
+    "white_hunger": {
+      "name": "the White Hunger",
+      "label": "Great Beast",
+      "description": "a white beast the size of a house, asleep across the ridge",
+      "details": "A white beast the size of a house, asleep across the ridge.",
+      "keywords": "white hunger beast yeti",
+      "room": "cs_knife",
+      "max_hp": 1700,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "swipe",
+          "period": 5000,
+          "damage": 25,
+          "hit": "{actor} swipes at {target}."
+        },
+        {
+          "name": "crush",
+          "period": 14000,
+          "damage": 110,
+          "hit": "{actor} rears up and comes down on {target}!",
+          "defend": "block"
+        }
+      ],
+      "xp": 188,
+      "icon": "🦍",
+      "notice": "hard",
+      "respawn": 1800
+    }
+  },
+  "gear": {
+    "spine_pick": {
+      "name": "Spine Pick",
+      "kind": "Melee",
+      "keywords": "pick ice spine",
+      "effect": "damage",
+      "period": 3000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        14,
+        18,
+        30
+      ],
+      "hit": "{actor} drives the ice-pick into {target}.",
+      "perfect_hit": "{actor} drives the ice-pick into {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Spine Pick finds nothing.",
+      "description": "Halvard's ice-pick. In the cold it bites deep.",
+      "weather": {
+        "temperature": -0.7,
+        "energy": 0.4,
+        "precipitation": "any",
+        "tier": "blue"
+      },
+      "rarity": "rare"
+    }
+  },
+  "wearables": {
+    "fur_cloak": {
+      "name": "Fur Cloak",
+      "keywords": "fur cloak",
+      "place": "chest",
+      "type": "cloth",
+      "description": "A heavy cloak of white fox. On the Spine, it's the difference between cold and dead. Keeps off the cold.",
+      "rarity": "uncommon",
+      "armor": 3,
+      "protects": [
+        "cold"
+      ]
+    },
+    "climbers_boots": {
+      "name": "Climber's Boots",
+      "keywords": "climber's boots",
+      "place": "legs",
+      "type": "leather",
+      "description": "Nailed boots and wool puttees. +1 Vigor.",
+      "rarity": "uncommon",
+      "armor": 5,
+      "stats": {
+        "vigor": 1
+      }
+    },
+    "hunger_pelt": {
+      "name": "White Hunger Pelt",
+      "keywords": "white hunger pelt",
+      "place": "chest",
+      "type": "cloth",
+      "description": "The pelt of the White Hunger. Nothing cold gets through it. +2 Vigor.",
+      "rarity": "epic",
+      "armor": 7,
+      "stats": {
+        "vigor": 2
+      },
+      "protects": [
+        "cold"
+      ]
+    }
+  },
+  "quests": {
+    "cs_cloak": {
+      "name": "Dressed for the Mountain",
+      "start": "cloak",
+      "steps": {
+        "cloak": {
+          "goal": "Ask Bergen for it: ASK BERGEN ABOUT CLOAK.",
+          "on": {
+            "ask": "bergen",
+            "about": "cloak"
+          },
+          "effects": [
+            {
+              "give": "fur_cloak"
+            },
+            {
+              "text": "Bergen throws you a Fur Cloak. \"Wear it. WEAR CLOAK. Above the trailhead the cold counts every step.\""
+            },
+            {
+              "xp": 20
+            }
+          ]
+        }
+      }
+    },
+    "cs_expedition": {
+      "name": "The Lost Expedition",
+      "start": "journals",
+      "steps": {
+        "journals": {
+          "goal": "Find the three frozen journals: on the serac field, in the deep ice under the Frostfang Caves, and on the Saddle.",
+          "on": {
+            "have": [
+              "journal_1",
+              "journal_2",
+              "journal_3"
+            ]
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Bring them to Bergen: ASK BERGEN ABOUT EXPEDITION.",
+          "on": {
+            "ask": "bergen",
+            "about": "expedition"
+          },
+          "effects": [
+            {
+              "take": "journal_1"
+            },
+            {
+              "take": "journal_2"
+            },
+            {
+              "take": "journal_3"
+            },
+            {
+              "text": "Bergen reads them by the fire, slowly. \"Through the sky. The fool. Here: Halvard's pick. He won't need it.\""
+            },
+            {
+              "give": "spine_pick"
+            },
+            {
+              "xp": 190
+            }
+          ]
+        }
+      }
+    },
+    "cs_fire": {
+      "name": "Fire on the Mountain",
+      "start": "flint",
+      "steps": {
+        "flint": {
+          "goal": "Take Bergen's flint: ASK BERGEN ABOUT FLINT.",
+          "on": {
+            "ask": "bergen",
+            "about": "flint"
+          },
+          "effects": [
+            {
+              "give": "flint"
+            }
+          ],
+          "then": "east"
+        },
+        "east": {
+          "goal": "Light the East Cairn, on the Long Ridge: USE FLINT ON CAIRN.",
+          "on": {
+            "use": "flint",
+            "on": "cairn"
+          },
+          "effects": [
+            {
+              "text": "The cairn catches, and roars. Its light will be seen from the trailhead."
+            }
+          ],
+          "then": "beacon"
+        },
+        "beacon": {
+          "goal": "Now the beacon on the Saddle, past the Knife-Edge: USE FLINT ON BEACON.",
+          "on": {
+            "use": "flint",
+            "on": "beacon"
+          },
+          "effects": [
+            {
+              "take": "flint"
+            },
+            {
+              "text": "The beacon goes up like a torch. The whole mountain sees it."
+            }
+          ],
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Bergen: ASK BERGEN ABOUT CAIRNS.",
+          "on": {
+            "ask": "bergen",
+            "about": "cairns"
+          },
+          "effects": [
+            {
+              "give": "climbers_boots"
+            },
+            {
+              "xp": 165
+            }
+          ]
+        }
+      }
+    },
+    "cs_hunger": {
+      "name": "The White Hunger",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill the White Hunger, on the Knife-Edge. Its crush can be blocked. Probably.",
+          "on": {
+            "kill": "white_hunger"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Hulda: ASK HULDA ABOUT HUNGER.",
+          "on": {
+            "ask": "hulda",
+            "about": "hunger"
+          },
+          "effects": [
+            {
+              "text": "Hulda stares, then laughs until she cries. \"Take the pelt. You earned it twice.\""
+            },
+            {
+              "give": "hunger_pelt"
+            },
+            {
+              "xp": 315
+            }
+          ]
+        }
+      }
+    }
+  }
+}

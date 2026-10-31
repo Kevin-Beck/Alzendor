@@ -1,0 +1,1340 @@
+{
+  "_note": "The Greyfold, levels 3-5: farmland east of Harrowgate. See docs/zones.md.",
+  "regions": {
+    "greyfold": {
+      "name": "the Greyfold",
+      "realm": "alzendor"
+    }
+  },
+  "areas": {
+    "gf_east_road": {
+      "name": "the East Road",
+      "region": "greyfold",
+      "lit": true
+    },
+    "millbrook": {
+      "name": "Millbrook",
+      "region": "greyfold",
+      "lit": true
+    },
+    "fallow_fields": {
+      "name": "the Fallow Fields",
+      "region": "greyfold"
+    },
+    "bramblewood": {
+      "name": "Bramblewood",
+      "region": "greyfold"
+    },
+    "redcap_hollow": {
+      "name": "Redcap Hollow",
+      "region": "greyfold"
+    },
+    "barrow_knoll": {
+      "name": "Barrow Knoll",
+      "region": "greyfold"
+    }
+  },
+  "rooms": {
+    "east_gate": {
+      "name": "The East Gate",
+      "area": "old_quarter",
+      "pos": [
+        100,
+        40.0
+      ],
+      "description": "A squat gatehouse in the city wall. The East Road runs out of it towards the farms of the Greyfold.",
+      "exits": {
+        "west": "back_alley",
+        "east": "gf_road"
+      },
+      "features": {
+        "gate": "Iron-bound oak, open from dawn to dusk and most of the night too. Someone has chalked a crude red cap on the arch."
+      }
+    },
+    "gf_road": {
+      "name": "The East Road",
+      "area": "gf_east_road",
+      "pos": [
+        150,
+        40
+      ],
+      "description": "A rutted road between high hedges, east out of Harrowgate. Cart tracks, and a lot of them lately turned back.",
+      "exits": {
+        "west": "east_gate",
+        "east": "gf_milestone"
+      },
+      "features": {}
+    },
+    "gf_milestone": {
+      "name": "The Crow Milestone",
+      "area": "gf_east_road",
+      "pos": [
+        200,
+        40
+      ],
+      "description": "An old milestone, black with crows.",
+      "exits": {
+        "west": "gf_road",
+        "east": "gf_crossroads"
+      },
+      "features": {
+        "milestone": "Carved: HARROWGATE I · MILLBROOK III. Crows have made it theirs."
+      }
+    },
+    "gf_crossroads": {
+      "name": "Greyfold Crossroads",
+      "area": "gf_east_road",
+      "pos": [
+        250,
+        40
+      ],
+      "description": "Four roads meet at a leaning signpost.",
+      "exits": {
+        "west": "gf_milestone",
+        "north": "gf_hollow_path",
+        "southeast": "mb_lane",
+        "east": "ff_edge"
+      },
+      "features": {
+        "signpost": "North: THE HOLLOW (someone has scratched REDCAPS under it). East: THE FALLOW FIELDS. South-east: MILLBROOK."
+      }
+    },
+    "gf_hollow_path": {
+      "name": "The Hollow Path",
+      "area": "gf_east_road",
+      "pos": [
+        250,
+        -10
+      ],
+      "description": "A sunken lane, hedged in so deep it's dusk at noon. It climbs north into Redcap Hollow.",
+      "exits": {
+        "south": "gf_crossroads",
+        "north": "rh_camp"
+      },
+      "features": {}
+    },
+    "mb_lane": {
+      "name": "Millbrook Lane",
+      "area": "millbrook",
+      "pos": [
+        300,
+        90
+      ],
+      "description": "The lane into Millbrook, past a pond full of ducks and a smell of bread.",
+      "exits": {
+        "northwest": "gf_crossroads",
+        "east": "mb_mill",
+        "south": "mb_green"
+      },
+      "features": {}
+    },
+    "mb_mill": {
+      "name": "Fenwick's Mill",
+      "area": "millbrook",
+      "pos": [
+        325,
+        90
+      ],
+      "description": "The mill wheel turns, the stones grind, and flour hangs in the air.",
+      "exits": {
+        "west": "mb_lane"
+      },
+      "features": {
+        "wheel": "It creaks. It has always creaked."
+      },
+      "indoor": true
+    },
+    "mb_green": {
+      "name": "Millbrook Green",
+      "area": "millbrook",
+      "pos": [
+        300,
+        115
+      ],
+      "description": "A village green with a maypole and a well. Everyone here knows everyone.",
+      "exits": {
+        "north": "mb_lane",
+        "east": "mb_inn",
+        "south": "mb_reeve",
+        "southwest": "bk_foot"
+      },
+      "features": {
+        "well": "Cold and deep. A bucket on a rope.",
+        "maypole": "Ribbons faded to the colour of old tea."
+      }
+    },
+    "mb_inn": {
+      "name": "The Stoat & Barrel",
+      "area": "millbrook",
+      "pos": [
+        325,
+        115
+      ],
+      "description": "A low, smoky inn with a fire that never goes out. Goodwife Ama keeps it.",
+      "exits": {
+        "west": "mb_green",
+        "east": "mb_tannery"
+      },
+      "features": {
+        "fire": "Warm enough to sleep beside, and people do."
+      },
+      "indoor": true,
+      "safe": true
+    },
+    "mb_tannery": {
+      "name": "Cobb's Tannery",
+      "area": "millbrook",
+      "pos": [
+        350,
+        115
+      ],
+      "description": "Hides on frames, pits of things you don't want to smell. Cobb doesn't notice any more.",
+      "exits": {
+        "west": "mb_inn"
+      },
+      "features": {
+        "frames": "Wolf, fox, deer. A gap where the next wolf pelts should go."
+      }
+    },
+    "mb_reeve": {
+      "name": "The Reeve's House",
+      "area": "millbrook",
+      "pos": [
+        300,
+        140
+      ],
+      "description": "A tidy house with a ledger on every surface. Reeve Halden runs Millbrook from here.",
+      "exits": {
+        "north": "mb_green",
+        "south": "mb_fen_lane"
+      },
+      "features": {
+        "ledger": "Carts robbed: seven this month. The last entry is underlined twice."
+      },
+      "indoor": true
+    },
+    "mb_fen_lane": {
+      "name": "Fen Lane",
+      "area": "millbrook",
+      "pos": [
+        300,
+        165
+      ],
+      "description": "A lane south out of Millbrook, getting wetter with every step. The fens are that way.",
+      "exits": {
+        "north": "mb_reeve"
+      },
+      "features": {}
+    },
+    "ff_edge": {
+      "name": "The Field's Edge",
+      "area": "fallow_fields",
+      "pos": [
+        300,
+        40
+      ],
+      "description": "Fields gone to seed, and a hedge with a gap in it.",
+      "exits": {
+        "west": "gf_crossroads",
+        "east": "ff_ditch",
+        "northeast": "ff_scarecrow"
+      },
+      "features": {}
+    },
+    "ff_scarecrow": {
+      "name": "The Scarecrow Field",
+      "area": "fallow_fields",
+      "pos": [
+        325,
+        15
+      ],
+      "description": "A scarecrow in a red cap. Someone thinks that's funny.",
+      "exits": {
+        "southwest": "ff_edge",
+        "north": "ff_hedge"
+      },
+      "features": {
+        "scarecrow": "The cap is a real Redcap's. The crows aren't fooled."
+      }
+    },
+    "ff_ditch": {
+      "name": "The Drainage Ditch",
+      "area": "fallow_fields",
+      "pos": [
+        350,
+        40
+      ],
+      "description": "A deep ditch of black water. Rust-red lumps show in the banks.",
+      "exits": {
+        "west": "ff_edge",
+        "northeast": "ff_orchard"
+      },
+      "features": {
+        "banks": "Bog iron: the smiths' cheap ore, if you dig for it."
+      }
+    },
+    "ff_orchard": {
+      "name": "The Old Orchard",
+      "area": "fallow_fields",
+      "pos": [
+        375,
+        15
+      ],
+      "description": "Gnarled apple trees, the ground under them rooted up and wrecked.",
+      "exits": {
+        "southwest": "ff_ditch"
+      },
+      "features": {
+        "trees": "Gouged bark at boar height."
+      }
+    },
+    "ff_hedge": {
+      "name": "The Hedge Gap",
+      "area": "fallow_fields",
+      "pos": [
+        325,
+        -10
+      ],
+      "description": "A gap in the hedge. North of it, the trees of Bramblewood.",
+      "exits": {
+        "south": "ff_scarecrow",
+        "north": "bw_edge"
+      },
+      "features": {}
+    },
+    "bw_edge": {
+      "name": "Bramblewood Edge",
+      "area": "bramblewood",
+      "pos": [
+        325,
+        -60
+      ],
+      "description": "Brambles as high as a horse, and paths through them only wolves made.",
+      "exits": {
+        "south": "ff_hedge",
+        "northeast": "bw_thicket",
+        "northwest": "bw_glade"
+      },
+      "features": {},
+      "terrain": "forest"
+    },
+    "bw_thicket": {
+      "name": "The Thicket",
+      "area": "bramblewood",
+      "pos": [
+        350,
+        -85
+      ],
+      "description": "Thorns snag at everything. Tufts of grey fur on the thorns.",
+      "exits": {
+        "southwest": "bw_edge",
+        "northeast": "bw_den"
+      },
+      "features": {},
+      "terrain": "forest"
+    },
+    "bw_glade": {
+      "name": "Fox Glade",
+      "area": "bramblewood",
+      "pos": [
+        300,
+        -85
+      ],
+      "description": "A small clearing where the light gets in. Bones under the ferns.",
+      "exits": {
+        "southeast": "bw_edge"
+      },
+      "features": {},
+      "terrain": "forest"
+    },
+    "bw_den": {
+      "name": "The Wolf Den",
+      "area": "bramblewood",
+      "pos": [
+        375,
+        -110
+      ],
+      "description": "A hollow under a fallen oak, stinking of wolf. Something big sleeps here.",
+      "exits": {
+        "southwest": "bw_thicket"
+      },
+      "features": {},
+      "terrain": "forest"
+    },
+    "rh_camp": {
+      "name": "Redcap Camp",
+      "area": "redcap_hollow",
+      "pos": [
+        250,
+        -60
+      ],
+      "description": "A bandit camp in a hollow: a cookfire, stolen barrels, and a lot of red caps.",
+      "exits": {
+        "south": "gf_hollow_path",
+        "north": "rh_tent",
+        "northwest": "rh_lookout"
+      },
+      "features": {
+        "barrels": "Millbrook ale, by the brand. All of it."
+      }
+    },
+    "rh_lookout": {
+      "name": "The Lookout",
+      "area": "redcap_hollow",
+      "pos": [
+        225,
+        -85
+      ],
+      "description": "A rock above the camp where a Redcap watches the road.",
+      "exits": {
+        "southeast": "rh_camp"
+      },
+      "features": {}
+    },
+    "rh_tent": {
+      "name": "Mags Redcap's Tent",
+      "area": "redcap_hollow",
+      "pos": [
+        250,
+        -110
+      ],
+      "description": "A big tent of stolen sailcloth. Mags Redcap's, and everyone knows it.",
+      "exits": {
+        "south": "rh_camp"
+      },
+      "features": {
+        "chest": "Locked, and heavy with other people's money."
+      }
+    },
+    "bk_foot": {
+      "name": "Knoll Foot",
+      "area": "barrow_knoll",
+      "pos": [
+        250,
+        165
+      ],
+      "description": "The foot of a grassy knoll with standing stones on top. A path winds up.",
+      "exits": {
+        "northeast": "mb_green",
+        "southwest": "bk_top"
+      },
+      "features": {}
+    },
+    "bk_top": {
+      "name": "Barrow Knoll",
+      "area": "barrow_knoll",
+      "pos": [
+        225,
+        190
+      ],
+      "description": "Standing stones round a barrow mound. The entrance gapes, and a cold air comes out of it.",
+      "exits": {
+        "northeast": "bk_foot",
+        "down": "bk_passage"
+      },
+      "features": {
+        "stones": "Worn faces, all looking at the entrance."
+      }
+    },
+    "bk_passage": {
+      "name": "The Barrow Passage",
+      "area": "barrow_knoll",
+      "pos": [
+        200,
+        215
+      ],
+      "description": "A low stone passage, sloping down.",
+      "exits": {
+        "up": "bk_top",
+        "west": "bk_hall"
+      },
+      "features": {},
+      "dark": true,
+      "indoor": true
+    },
+    "bk_hall": {
+      "name": "The Burial Hall",
+      "area": "barrow_knoll",
+      "pos": [
+        175,
+        215
+      ],
+      "description": "Niches of bones along both walls. Some niches are empty.",
+      "exits": {
+        "east": "bk_passage",
+        "north": "bk_crypt"
+      },
+      "features": {},
+      "dark": true,
+      "indoor": true
+    },
+    "bk_crypt": {
+      "name": "The Crypt",
+      "area": "barrow_knoll",
+      "pos": [
+        175,
+        190
+      ],
+      "description": "A chieftain's tomb, its lid pushed aside from inside. A pale light burns here.",
+      "exits": {
+        "south": "bk_hall"
+      },
+      "features": {},
+      "dark": true,
+      "indoor": true
+    }
+  },
+  "items": {
+    "bog_iron": {
+      "name": "lump of bog iron",
+      "keywords": "iron bog lump",
+      "description": "A rust-red lump of bog iron, heavier than it looks.",
+      "quest": true,
+      "room": "ff_ditch"
+    },
+    "grave_lantern": {
+      "name": "grave lantern",
+      "keywords": "lantern grave",
+      "description": "A bronze lantern with a pale flame that gives no heat.",
+      "quest": true,
+      "room": "bk_crypt"
+    }
+  },
+  "npcs": {
+    "halden": {
+      "name": "Reeve Halden",
+      "label": "Reeve",
+      "description": "careworn, with ink on his fingers",
+      "details": "Careworn, with ink on his fingers.",
+      "keywords": "reeve halden",
+      "room": "mb_reeve",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "📜",
+      "proper": true,
+      "topics": {
+        "work": "Work? The Redcaps are robbing every cart on the road. Ask me about the Redcaps if you've a stomach for it.",
+        "ale": "The ale stopped because the Redcaps took the last three carts. They camp in the Hollow, north of the crossroads. Tell Marta that.",
+        "redcaps": {
+          "text": "Four of them, and Mags Redcap, who leads them. Bring them down and the road's open again. The Hollow is north of the crossroads.",
+          "starts": "gf_redcaps"
+        },
+        "mags": "Mags was a drover once. Now she's the worst of them.",
+        "fen": "South of here the land goes to fen. Sister Odile keeps a chapel out there. Mad, or holy, or both.",
+        "moor": "North of the Hollow the land goes up onto Gallows Moor. The Wardens have a camp at the stone circle. Don't cross it at night."
+      }
+    },
+    "ama": {
+      "name": "Goodwife Ama",
+      "label": "Innkeeper",
+      "description": "round and red-cheeked, with a ladle",
+      "details": "Round and red-cheeked, with a ladle.",
+      "keywords": "goodwife ama",
+      "room": "mb_inn",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🍲",
+      "proper": true,
+      "topics": {
+        "work": "Lights on Barrow Knoll at night, that's what worries me. Ask me about the lights.",
+        "lights": {
+          "text": "Pale lights on the knoll after dark, and the Partridge boy came back white as milk. Take a torch into that barrow and see what's woken. Bring me something to show it's done.",
+          "starts": "gf_barrow"
+        },
+        "knoll": "South-west of the green. The barrow's on top. Nobody goes in."
+      }
+    },
+    "cobb": {
+      "name": "Cobb",
+      "label": "Tanner",
+      "description": "leathery, and so is his apron",
+      "details": "Leathery, and so is his apron.",
+      "keywords": "cobb",
+      "room": "mb_tannery",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🪓",
+      "proper": true,
+      "topics": {
+        "work": "I need wolf pelts. Ask me about pelts.",
+        "pelts": {
+          "text": "Five good pelts from the Bramblewood wolves, north past the Fallow Fields. Bring me five and I'll make you something warm.",
+          "starts": "gf_pelts"
+        },
+        "mother": "The old she-wolf in the den. Bigger than a pony, and clever. Kill her and the pack scatters."
+      }
+    },
+    "fenwick": {
+      "name": "Fenwick",
+      "label": "Miller",
+      "description": "floury to the eyebrows",
+      "details": "Floury to the eyebrows.",
+      "keywords": "fenwick",
+      "room": "mb_mill",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🌾",
+      "proper": true,
+      "topics": {
+        "work": "The boars are in my orchard. Ask me about the orchard.",
+        "orchard": {
+          "text": "Four wild boars, rooting up the orchard east of the Fallow Fields. Mind their charge: you can't stop it, only get out of the way.",
+          "starts": "gf_boars"
+        }
+      }
+    },
+    "bramble_wolf": {
+      "name": "Bramble Wolf",
+      "label": "Wolf",
+      "description": "a lean grey wolf",
+      "details": "A lean grey wolf.",
+      "keywords": "bramble wolf",
+      "room": "bw_edge",
+      "max_hp": 26,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2600,
+          "damage": 3,
+          "hit": "{actor} snaps at {target}."
+        }
+      ],
+      "xp": 8,
+      "icon": "🐺",
+      "role": "bramble_wolf",
+      "respawn": 300
+    },
+    "bramble_wolf_2": {
+      "name": "Bramble Wolf",
+      "label": "Wolf",
+      "description": "a lean grey wolf",
+      "details": "A lean grey wolf.",
+      "keywords": "bramble wolf",
+      "room": "bw_thicket",
+      "max_hp": 26,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2600,
+          "damage": 3,
+          "hit": "{actor} snaps at {target}."
+        }
+      ],
+      "xp": 8,
+      "icon": "🐺",
+      "role": "bramble_wolf",
+      "respawn": 300
+    },
+    "bramble_wolf_3": {
+      "name": "Bramble Wolf",
+      "label": "Wolf",
+      "description": "a lean grey wolf",
+      "details": "A lean grey wolf.",
+      "keywords": "bramble wolf",
+      "room": "bw_glade",
+      "max_hp": 26,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2600,
+          "damage": 3,
+          "hit": "{actor} snaps at {target}."
+        }
+      ],
+      "xp": 8,
+      "icon": "🐺",
+      "role": "bramble_wolf",
+      "respawn": 300
+    },
+    "wolf_mother": {
+      "name": "the Wolf Mother",
+      "label": "Old Wolf",
+      "description": "a huge grey she-wolf, scarred",
+      "details": "A huge grey she-wolf, scarred.",
+      "keywords": "wolf mother she-wolf",
+      "room": "bw_den",
+      "max_hp": 130,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 3000,
+          "damage": 6,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "maul",
+          "period": 12000,
+          "damage": 14,
+          "hit": "{actor} bowls {target} over and mauls them!",
+          "defend": "block"
+        }
+      ],
+      "xp": 40,
+      "icon": "🐺",
+      "respawn": 600
+    },
+    "wild_boar_1": {
+      "name": "Wild Boar",
+      "label": "Boar",
+      "description": "a bristling, tusked boar",
+      "details": "A bristling, tusked boar.",
+      "keywords": "wild boar",
+      "room": "ff_orchard",
+      "max_hp": 34,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "gore",
+          "period": 3200,
+          "damage": 4,
+          "hit": "{actor} gores {target}."
+        },
+        {
+          "name": "charge",
+          "period": 9000,
+          "damage": 9,
+          "hit": "{actor} charges into {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 10,
+      "icon": "🐗",
+      "role": "boar",
+      "respawn": 300
+    },
+    "wild_boar_2": {
+      "name": "Wild Boar",
+      "label": "Boar",
+      "description": "a bristling, tusked boar",
+      "details": "A bristling, tusked boar.",
+      "keywords": "wild boar",
+      "room": "ff_orchard",
+      "max_hp": 34,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "gore",
+          "period": 3200,
+          "damage": 4,
+          "hit": "{actor} gores {target}."
+        },
+        {
+          "name": "charge",
+          "period": 9000,
+          "damage": 9,
+          "hit": "{actor} charges into {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 10,
+      "icon": "🐗",
+      "role": "boar",
+      "respawn": 300
+    },
+    "wild_boar_3": {
+      "name": "Wild Boar",
+      "label": "Boar",
+      "description": "a bristling, tusked boar",
+      "details": "A bristling, tusked boar.",
+      "keywords": "wild boar",
+      "room": "ff_scarecrow",
+      "max_hp": 34,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "gore",
+          "period": 3200,
+          "damage": 4,
+          "hit": "{actor} gores {target}."
+        },
+        {
+          "name": "charge",
+          "period": 9000,
+          "damage": 9,
+          "hit": "{actor} charges into {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 10,
+      "icon": "🐗",
+      "role": "boar",
+      "respawn": 300
+    },
+    "redcap_1": {
+      "name": "Redcap Cutthroat",
+      "label": "Bandit",
+      "description": "a bandit in a red cap",
+      "details": "A bandit in a red cap.",
+      "keywords": "redcap cutthroat bandit",
+      "room": "rh_camp",
+      "max_hp": 32,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "knife",
+          "period": 2800,
+          "damage": 4,
+          "hit": "{actor} slashes at {target}."
+        }
+      ],
+      "xp": 10,
+      "icon": "🧢",
+      "role": "redcap",
+      "faction": "outlaws",
+      "respawn": 300
+    },
+    "redcap_2": {
+      "name": "Redcap Cutthroat",
+      "label": "Bandit",
+      "description": "a bandit in a red cap",
+      "details": "A bandit in a red cap.",
+      "keywords": "redcap cutthroat bandit",
+      "room": "rh_camp",
+      "max_hp": 32,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "knife",
+          "period": 2800,
+          "damage": 4,
+          "hit": "{actor} slashes at {target}."
+        }
+      ],
+      "xp": 10,
+      "icon": "🧢",
+      "role": "redcap",
+      "faction": "outlaws",
+      "respawn": 300
+    },
+    "redcap_3": {
+      "name": "Redcap Cutthroat",
+      "label": "Bandit",
+      "description": "a bandit in a red cap",
+      "details": "A bandit in a red cap.",
+      "keywords": "redcap cutthroat bandit",
+      "room": "rh_lookout",
+      "max_hp": 32,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "knife",
+          "period": 2800,
+          "damage": 4,
+          "hit": "{actor} slashes at {target}."
+        }
+      ],
+      "xp": 10,
+      "icon": "🧢",
+      "role": "redcap",
+      "faction": "outlaws",
+      "respawn": 300
+    },
+    "mags_redcap": {
+      "name": "Mags Redcap",
+      "label": "Bandit Chief",
+      "description": "a big woman in a bigger red cap, with a cudgel",
+      "details": "A big woman in a bigger red cap, with a cudgel.",
+      "keywords": "mags redcap chief",
+      "room": "rh_tent",
+      "max_hp": 150,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "jab",
+          "period": 3000,
+          "damage": 4,
+          "hit": "{actor} jabs {target} with the cudgel's end."
+        },
+        {
+          "name": "cudgel",
+          "period": 9000,
+          "damage": 13,
+          "hit": "{actor} brings the cudgel down on {target}!",
+          "defend": "block"
+        }
+      ],
+      "xp": 50,
+      "icon": "🧢",
+      "faction": "outlaws",
+      "role": "redcap_chief",
+      "proper": true,
+      "respawn": 600,
+      "coins": 20
+    },
+    "barrow_ghoul_1": {
+      "name": "Barrow Ghoul",
+      "label": "Ghoul",
+      "description": "a grey, starved thing that was a man",
+      "details": "A grey, starved thing that was a man.",
+      "keywords": "barrow ghoul",
+      "room": "bk_passage",
+      "max_hp": 40,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "claw",
+          "period": 3000,
+          "damage": 5,
+          "hit": "{actor} rakes {target}."
+        }
+      ],
+      "xp": 10,
+      "icon": "🧟",
+      "respawn": 300
+    },
+    "barrow_ghoul_2": {
+      "name": "Barrow Ghoul",
+      "label": "Ghoul",
+      "description": "a grey, starved thing that was a man",
+      "details": "A grey, starved thing that was a man.",
+      "keywords": "barrow ghoul",
+      "room": "bk_hall",
+      "max_hp": 40,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "claw",
+          "period": 3000,
+          "damage": 5,
+          "hit": "{actor} rakes {target}."
+        }
+      ],
+      "xp": 10,
+      "icon": "🧟",
+      "respawn": 300
+    },
+    "barrow_wight": {
+      "name": "the Barrow-Wight",
+      "label": "Wight",
+      "description": "a crowned corpse with a pale fire in its eyes",
+      "details": "A crowned corpse with a pale fire in its eyes.",
+      "keywords": "barrow wight",
+      "room": "bk_crypt",
+      "max_hp": 160,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "touch",
+          "period": 3500,
+          "damage": 6,
+          "hit": "{actor} touches {target} with a dead hand."
+        },
+        {
+          "name": "grave-chill",
+          "period": 11000,
+          "damage": 16,
+          "hit": "{actor} breathes the grave's cold over {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 50,
+      "icon": "💀",
+      "respawn": 900
+    }
+  },
+  "gear": {
+    "greyfold_billhook": {
+      "name": "Greyfold Billhook",
+      "kind": "Melee",
+      "keywords": "billhook hook",
+      "effect": "damage",
+      "period": 2600,
+      "window": 280,
+      "perfect_window": 90,
+      "amounts": [
+        6,
+        8,
+        13
+      ],
+      "hit": "{actor} hooks {target}.",
+      "perfect_hit": "{actor} hooks {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Greyfold Billhook finds nothing.",
+      "description": "Brannoc's work: a farmer's billhook with a fighting edge. Good in a mild breeze.",
+      "weather": {
+        "temperature": 0.1,
+        "energy": 0.2,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "rarity": "common"
+    },
+    "redcap_knife": {
+      "name": "Redcap Knife",
+      "kind": "Light",
+      "keywords": "knife redcap",
+      "effect": "damage",
+      "period": 1400,
+      "window": 220,
+      "perfect_window": 70,
+      "amounts": [
+        3,
+        4,
+        7
+      ],
+      "hit": "{actor} nicks {target}.",
+      "perfect_hit": "{actor} nicks {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Redcap Knife finds nothing.",
+      "description": "Mags Redcap's own knife: thin, quick and nasty. The cut keeps bleeding.",
+      "weather": {
+        "temperature": 0.2,
+        "energy": -0.3,
+        "precipitation": "dry",
+        "tier": "green"
+      },
+      "bleed": {
+        "damage": 2,
+        "beats": 3
+      }
+    }
+  },
+  "wearables": {
+    "wolfskin_hood": {
+      "name": "Wolfskin Hood",
+      "keywords": "wolfskin hood",
+      "place": "head",
+      "type": "cloth",
+      "description": "Cobb's work, from Bramblewood pelts. Warm, and a little fierce. +1 Vigor.",
+      "rarity": "uncommon",
+      "armor": 2,
+      "stats": {
+        "vigor": 1
+      }
+    },
+    "barrow_lantern": {
+      "name": "Barrow Lantern",
+      "keywords": "barrow lantern",
+      "place": "hand",
+      "type": "light",
+      "description": "The grave lantern, cleansed by Goodwife Ama's priest. Its pale flame steadies you. +1 Resilience.",
+      "rarity": "uncommon",
+      "stats": {
+        "resilience": 1
+      },
+      "light": true
+    }
+  },
+  "factions": {
+    "outlaws": {
+      "name": "The Outlaws",
+      "realm": "alzendor",
+      "description": "Redcaps, highwaymen and worse. They respect a hard fight and hate an informer.",
+      "rules": [
+        {
+          "deed": "kill",
+          "of": "outlaws",
+          "affinity": -4,
+          "respect": 2,
+          "note": "They won't forget it, but they respect a fighter."
+        },
+        {
+          "deed": "flee",
+          "of": "outlaws",
+          "respect": -3,
+          "note": "You ran from them. They'll tell everyone."
+        }
+      ]
+    }
+  },
+  "quests": {
+    "gf_newcomer": {
+      "name": "A Newcomer",
+      "start": "tavern",
+      "steps": {
+        "tavern": {
+          "goal": "You've reached Alzendor. Harrowgate's tavern is the place to find work: go there.",
+          "on": {
+            "enter": "tavern"
+          },
+          "then": "ask"
+        },
+        "ask": {
+          "goal": "Ask the innkeeper about work: ASK MARTA ABOUT WORK.",
+          "on": {
+            "ask": "marta",
+            "about": "work"
+          },
+          "effects": [
+            {
+              "xp": 20
+            }
+          ]
+        }
+      }
+    },
+    "gf_word": {
+      "name": "Word from Millbrook",
+      "start": "ask",
+      "steps": {
+        "ask": {
+          "goal": "Millbrook's ale has stopped coming. Go east out of the East Gate to Millbrook (south-east at the crossroads) and ASK HALDEN ABOUT ALE.",
+          "on": {
+            "ask": "halden",
+            "about": "ale"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Take the news back to Marta: ASK MARTA ABOUT REDCAPS.",
+          "on": {
+            "ask": "marta",
+            "about": "redcaps"
+          },
+          "effects": [
+            {
+              "text": "Marta sighs. \"Redcaps. Of course. Well, now you know where the work is.\""
+            },
+            {
+              "xp": 60
+            }
+          ]
+        }
+      }
+    },
+    "gf_iron": {
+      "name": "Bog Iron",
+      "start": "get",
+      "steps": {
+        "get": {
+          "goal": "Brannoc wants bog iron from the drainage ditch in the Fallow Fields (east at the Greyfold crossroads): GET IRON.",
+          "on": {
+            "have": [
+              "bog_iron"
+            ]
+          },
+          "then": "give"
+        },
+        "give": {
+          "goal": "Bring it to Brannoc in his smithy: USE IRON ON BRANNOC.",
+          "on": {
+            "use": "bog_iron",
+            "on": "brannoc"
+          },
+          "effects": [
+            {
+              "take": "bog_iron"
+            },
+            {
+              "text": "Brannoc grins and gets to work. By evening he hands you a billhook, still warm."
+            },
+            {
+              "give": "greyfold_billhook"
+            },
+            {
+              "xp": 70
+            }
+          ]
+        }
+      }
+    },
+    "gf_pelts": {
+      "name": "Wolf Pelts",
+      "start": "hunt",
+      "steps": {
+        "hunt": {
+          "goal": "Cobb wants five wolf pelts. Hunt the wolves of Bramblewood (north through the hedge gap in the Fallow Fields).",
+          "on": {
+            "kill": "bramble_wolf",
+            "count": 5
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Back to Cobb's tannery in Millbrook: ASK COBB ABOUT PELTS.",
+          "on": {
+            "ask": "cobb",
+            "about": "pelts"
+          },
+          "effects": [
+            {
+              "text": "Cobb counts them twice."
+            },
+            {
+              "say": "Good pelts. Here: I made this from the last lot.",
+              "by": "cobb"
+            },
+            {
+              "give": "wolfskin_hood"
+            },
+            {
+              "xp": 80
+            },
+            {
+              "start": "gf_wolfmother"
+            }
+          ]
+        }
+      }
+    },
+    "gf_wolfmother": {
+      "name": "The Wolf Mother",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "The pack will be back while the Wolf Mother lives. She dens at the far end of Bramblewood. Her maul can be blocked: watch for it.",
+          "on": {
+            "kill": "wolf_mother"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Cobb: ASK COBB ABOUT MOTHER.",
+          "on": {
+            "ask": "cobb",
+            "about": "mother"
+          },
+          "effects": [
+            {
+              "coins": 15
+            },
+            {
+              "xp": 70
+            }
+          ]
+        }
+      },
+      "giver": "cobb",
+      "offer": "But the pack'll be back while the Wolf Mother lives. She dens at the far end of Bramblewood. Kill her and they'll scatter."
+    },
+    "gf_boars": {
+      "name": "Rooting Boars",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill four wild boars in the Fallow Fields' orchard. Their charge can be dodged, not blocked.",
+          "on": {
+            "kill": "boar",
+            "count": 4
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Fenwick at the mill: ASK FENWICK ABOUT ORCHARD.",
+          "on": {
+            "ask": "fenwick",
+            "about": "orchard"
+          },
+          "effects": [
+            {
+              "coins": 15
+            },
+            {
+              "xp": 70
+            }
+          ]
+        }
+      }
+    },
+    "gf_redcaps": {
+      "name": "The Redcaps",
+      "start": "band",
+      "steps": {
+        "band": {
+          "goal": "Thin out the Redcaps in Redcap Hollow (north of the crossroads): four of them.",
+          "on": {
+            "kill": "redcap",
+            "count": 4
+          },
+          "then": "mags"
+        },
+        "mags": {
+          "goal": "Now Mags Redcap, in her tent. Block the cudgel.",
+          "on": {
+            "kill": "mags_redcap"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Reeve Halden: ASK HALDEN ABOUT MAGS.",
+          "on": {
+            "ask": "halden",
+            "about": "mags"
+          },
+          "effects": [
+            {
+              "text": "Halden writes it in his ledger and underlines it twice. \"The road's open. Take this: it was hers.\""
+            },
+            {
+              "give": "redcap_knife"
+            },
+            {
+              "coins": 20
+            },
+            {
+              "xp": 120
+            },
+            {
+              "reputation": {
+                "faction": "harrowfolk",
+                "affinity": 5,
+                "note": "The Greyfold's road is open again."
+              }
+            }
+          ]
+        }
+      }
+    },
+    "gf_barrow": {
+      "name": "Lights on the Knoll",
+      "start": "wight",
+      "steps": {
+        "wight": {
+          "goal": "Take a torch into the barrow on Barrow Knoll (south-west of Millbrook green, then DOWN), and put down whatever's woken.",
+          "on": {
+            "kill": "barrow_wight"
+          },
+          "then": "get"
+        },
+        "get": {
+          "goal": "In the crypt, the pale lantern still burns: GET LANTERN.",
+          "on": {
+            "have": [
+              "grave_lantern"
+            ]
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Bring it to Goodwife Ama at the inn: USE LANTERN ON AMA.",
+          "on": {
+            "use": "grave_lantern",
+            "on": "ama"
+          },
+          "effects": [
+            {
+              "take": "grave_lantern"
+            },
+            {
+              "text": "Ama has the priest bless it, and hands it back. \"Its light is clean now. Keep it.\""
+            },
+            {
+              "give": "barrow_lantern"
+            },
+            {
+              "xp": 120
+            }
+          ]
+        }
+      }
+    }
+  },
+  "ambient": [
+    {
+      "channel": "AREA:millbrook",
+      "every": 1200,
+      "texts": [
+        "Fenwick's mill wheel creaks round.",
+        "Ducks argue on the pond."
+      ]
+    }
+  ]
+}

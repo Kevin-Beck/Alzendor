@@ -1,0 +1,476 @@
+{
+  "_note": "The Overgrowth, level 14: a jungle of titans. See docs/zones.md.",
+  "realms": {
+    "overgrowth": {
+      "name": "the Overgrowth",
+      "description": "A jungle grown to the size of mountains, and the beasts that grew with it.",
+      "weather": {
+        "temperature": [
+          0.6,
+          0.2
+        ],
+        "energy": [
+          -0.2,
+          0.3
+        ],
+        "precipitation": [
+          0.4,
+          0.25
+        ]
+      },
+      "shrine": "og_camp"
+    }
+  },
+  "regions": {
+    "green_deep": {
+      "name": "the Green",
+      "realm": "overgrowth"
+    }
+  },
+  "areas": {
+    "canopy_camp": {
+      "name": "Canopy Camp",
+      "region": "green_deep",
+      "lit": true
+    },
+    "fern_sea": {
+      "name": "the Fern Sea",
+      "region": "green_deep"
+    },
+    "titans_path": {
+      "name": "the Titan's Path",
+      "region": "green_deep"
+    }
+  },
+  "rooms": {
+    "og_landing": {
+      "name": "The Ripple",
+      "area": "canopy_camp",
+      "pos": [
+        0,
+        0
+      ],
+      "description": "A ripple in the air between two trunks. Through it, grey mould and the Rotwood.",
+      "exits": {
+        "east": "og_camp"
+      },
+      "features": {},
+      "terrain": "forest"
+    },
+    "og_camp": {
+      "name": "Canopy Camp",
+      "area": "canopy_camp",
+      "pos": [
+        25,
+        0
+      ],
+      "description": "A camp on a branch as wide as a road, a hundred feet up. Annick Vos's maps everywhere.",
+      "exits": {
+        "west": "og_landing",
+        "southeast": "og_ferns",
+        "northeast": "og_path"
+      },
+      "features": {},
+      "safe": true,
+      "shelter": true,
+      "terrain": "forest"
+    },
+    "og_ferns": {
+      "name": "The Fern Sea",
+      "area": "fern_sea",
+      "pos": [
+        75,
+        50
+      ],
+      "description": "Ferns as tall as houses. Things purr in them.",
+      "exits": {
+        "northwest": "og_camp",
+        "southeast": "og_river"
+      },
+      "features": {},
+      "terrain": "deep_forest"
+    },
+    "og_river": {
+      "name": "The Wide River",
+      "area": "fern_sea",
+      "pos": [
+        100,
+        75
+      ],
+      "description": "A brown river a mile wide, with trees floating in it like twigs.",
+      "exits": {
+        "northwest": "og_ferns",
+        "northeast": "og_mantis"
+      },
+      "features": {},
+      "terrain": "forest"
+    },
+    "og_mantis": {
+      "name": "The Mantis Hollow",
+      "area": "fern_sea",
+      "pos": [
+        125,
+        50
+      ],
+      "description": "A hollow lined with husks. Something green and patient waits in it.",
+      "exits": {
+        "southwest": "og_river"
+      },
+      "features": {},
+      "terrain": "deep_forest"
+    },
+    "og_path": {
+      "name": "The Titan's Path",
+      "area": "titans_path",
+      "pos": [
+        75,
+        -50
+      ],
+      "description": "A road smashed flat through the jungle by something enormous. It's still here.",
+      "exits": {
+        "southwest": "og_camp",
+        "northeast": "og_ford"
+      },
+      "features": {},
+      "terrain": "forest"
+    },
+    "og_ford": {
+      "name": "The Titan Ford",
+      "area": "titans_path",
+      "pos": [
+        100,
+        -75
+      ],
+      "description": "A ford where the titans drink. The ground shakes.",
+      "exits": {
+        "southwest": "og_path",
+        "northeast": "og_overlook"
+      },
+      "features": {},
+      "terrain": "forest"
+    },
+    "og_overlook": {
+      "name": "The Overlook",
+      "area": "titans_path",
+      "pos": [
+        125,
+        -100
+      ],
+      "description": "A rock above the canopy. From here you can see the whole green world.",
+      "exits": {
+        "southwest": "og_ford"
+      },
+      "features": {},
+      "terrain": "forest"
+    }
+  },
+  "npcs": {
+    "annick": {
+      "name": "Annick Vos",
+      "label": "Explorer",
+      "description": "a sunburned explorer with a sextant and a machete",
+      "details": "A sunburned explorer with a sextant and a machete.",
+      "keywords": "annick vos",
+      "room": "og_camp",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🧭",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the chart, or the mantis.",
+        "chart": {
+          "text": "I'm charting the Green. I need eyes at three places: the Wide River, the Titan Ford, and the Overlook. Go there. Don't wake the Thunderhorns: they're not hostile, they just don't notice what they step on.",
+          "starts": "og_chart"
+        },
+        "mantis": {
+          "text": "The Mantis Queen ate my last guide. She's in the hollow past the river. Block the scythes, dodge the lunge.",
+          "starts": "og_queen"
+        }
+      }
+    },
+    "canopy_cat_1": {
+      "name": "Canopy Cat",
+      "label": "Cat",
+      "description": "a striped cat as big as a horse, watching from the ferns",
+      "details": "A striped cat as big as a horse, watching from the ferns.",
+      "keywords": "canopy cat",
+      "room": "og_ferns",
+      "max_hp": 550,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "pounce",
+          "period": 3000,
+          "damage": 36,
+          "hit": "{actor} pounces on {target}."
+        }
+      ],
+      "xp": 17,
+      "icon": "🐆",
+      "role": "canopy_cat",
+      "respawn": 300,
+      "notice": "easy"
+    },
+    "canopy_cat_2": {
+      "name": "Canopy Cat",
+      "label": "Cat",
+      "description": "a striped cat as big as a horse, watching from the ferns",
+      "details": "A striped cat as big as a horse, watching from the ferns.",
+      "keywords": "canopy cat",
+      "room": "og_ferns",
+      "max_hp": 550,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "pounce",
+          "period": 3000,
+          "damage": 36,
+          "hit": "{actor} pounces on {target}."
+        }
+      ],
+      "xp": 17,
+      "icon": "🐆",
+      "role": "canopy_cat",
+      "respawn": 300,
+      "notice": "easy"
+    },
+    "canopy_cat_3": {
+      "name": "Canopy Cat",
+      "label": "Cat",
+      "description": "a striped cat as big as a horse, watching from the ferns",
+      "details": "A striped cat as big as a horse, watching from the ferns.",
+      "keywords": "canopy cat",
+      "room": "og_river",
+      "max_hp": 550,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "pounce",
+          "period": 3000,
+          "damage": 36,
+          "hit": "{actor} pounces on {target}."
+        }
+      ],
+      "xp": 17,
+      "icon": "🐆",
+      "role": "canopy_cat",
+      "respawn": 300,
+      "notice": "easy"
+    },
+    "thunderhorn_1": {
+      "name": "Thunderhorn",
+      "label": "Titan",
+      "description": "a beast like a hill with horns, grazing",
+      "details": "A beast like a hill with horns, grazing.",
+      "keywords": "thunderhorn",
+      "room": "og_path",
+      "max_hp": 5000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "trample",
+          "period": 10000,
+          "damage": 220,
+          "hit": "{actor} turns and tramples {target} without noticing!",
+          "defend": "none"
+        }
+      ],
+      "xp": 90,
+      "icon": "🦏",
+      "role": "thunderhorn",
+      "respawn": 300,
+      "notice": "fair"
+    },
+    "thunderhorn_2": {
+      "name": "Thunderhorn",
+      "label": "Titan",
+      "description": "a beast like a hill with horns, grazing",
+      "details": "A beast like a hill with horns, grazing.",
+      "keywords": "thunderhorn",
+      "room": "og_ford",
+      "max_hp": 5000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "trample",
+          "period": 10000,
+          "damage": 220,
+          "hit": "{actor} turns and tramples {target} without noticing!",
+          "defend": "none"
+        }
+      ],
+      "xp": 90,
+      "icon": "🦏",
+      "role": "thunderhorn",
+      "respawn": 300,
+      "notice": "fair"
+    },
+    "mantis_queen": {
+      "name": "the Mantis Queen",
+      "label": "Mantis",
+      "description": "a mantis taller than a tree, very still",
+      "details": "A mantis taller than a tree, very still.",
+      "keywords": "mantis queen",
+      "room": "og_mantis",
+      "max_hp": 3500,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "scythes",
+          "period": 2500,
+          "damage": 40,
+          "hit": "{actor} slashes {target} with both scythes.",
+          "defend": "block"
+        },
+        {
+          "name": "lunge",
+          "period": 11000,
+          "damage": 140,
+          "hit": "{actor} lunges at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 251,
+      "icon": "🦗",
+      "respawn": 1800
+    }
+  },
+  "gear": {
+    "mantis_scythe": {
+      "name": "Mantis Scythe",
+      "kind": "Light",
+      "keywords": "scythe mantis",
+      "effect": "damage",
+      "period": 1700,
+      "window": 230,
+      "perfect_window": 75,
+      "amounts": [
+        18,
+        24,
+        40
+      ],
+      "hit": "{actor} scythes {target}.",
+      "perfect_hit": "{actor} scythes {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Mantis Scythe finds nothing.",
+      "description": "One of the Queen's scythes. Quick, and best in hot wet air.",
+      "weather": {
+        "temperature": 0.6,
+        "energy": -0.2,
+        "precipitation": "wet",
+        "tier": "blue"
+      },
+      "rarity": "rare"
+    }
+  },
+  "wearables": {
+    "explorers_hat": {
+      "name": "Explorer's Hat",
+      "keywords": "explorer's hat",
+      "place": "head",
+      "type": "cloth",
+      "description": "A battered hat with a compass in the band. +1 Presence, +1 Focus.",
+      "rarity": "rare",
+      "armor": 5,
+      "stats": {
+        "presence": 1,
+        "focus": 1
+      }
+    }
+  },
+  "routes": {
+    "heart-ripple": {
+      "name": "the ripple",
+      "keywords": "ripple green overgrowth jungle",
+      "from": "rw_heart",
+      "to": "og_landing",
+      "kind": "portal",
+      "depart": "You step through the ripple out of the spores and into a wall of green.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} stumbles out of the ripple."
+    },
+    "overgrowth-ripple": {
+      "name": "the ripple",
+      "keywords": "ripple rotwood home",
+      "from": "og_landing",
+      "to": "rw_heart",
+      "kind": "portal",
+      "depart": "You step back through the ripple into the grey.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} steps out of the ripple."
+    }
+  },
+  "quests": {
+    "og_chart": {
+      "name": "Charting the Green",
+      "start": "river",
+      "steps": {
+        "river": {
+          "goal": "Reach the Wide River, past the Fern Sea.",
+          "on": {
+            "enter": "og_river"
+          },
+          "then": "ford"
+        },
+        "ford": {
+          "goal": "Reach the Titan Ford. Creep past the Thunderhorns.",
+          "on": {
+            "enter": "og_ford"
+          },
+          "then": "overlook"
+        },
+        "overlook": {
+          "goal": "Reach the Overlook.",
+          "on": {
+            "enter": "og_overlook"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Annick: ASK ANNICK ABOUT CHART.",
+          "on": {
+            "ask": "annick",
+            "about": "chart"
+          },
+          "effects": [
+            {
+              "give": "explorers_hat"
+            },
+            {
+              "xp": 235
+            }
+          ]
+        }
+      }
+    },
+    "og_queen": {
+      "name": "The Mantis Queen",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill the Mantis Queen.",
+          "on": {
+            "kill": "mantis_queen"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Annick: ASK ANNICK ABOUT MANTIS.",
+          "on": {
+            "ask": "annick",
+            "about": "mantis"
+          },
+          "effects": [
+            {
+              "give": "mantis_scythe"
+            },
+            {
+              "xp": 285
+            }
+          ]
+        }
+      }
+    }
+  }
+}

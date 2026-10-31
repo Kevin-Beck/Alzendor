@@ -1,0 +1,722 @@
+{
+  "_note": "The Gyre, level 13: islands in an endless storm. See docs/zones.md.",
+  "realms": {
+    "gyre": {
+      "name": "the Gyre",
+      "description": "Islands that float in a storm that never ends.",
+      "weather": {
+        "temperature": [
+          0,
+          0.3
+        ],
+        "energy": [
+          0.8,
+          0.15
+        ],
+        "precipitation": [
+          0,
+          0.5
+        ]
+      },
+      "shrine": "gy_docks"
+    }
+  },
+  "regions": {
+    "gyre_isles": {
+      "name": "the Gyre",
+      "realm": "gyre"
+    }
+  },
+  "areas": {
+    "gyre_sky": {
+      "name": "the Open Sky",
+      "region": "gyre_isles"
+    },
+    "kitefast": {
+      "name": "Kitefast",
+      "region": "gyre_isles",
+      "lit": true
+    },
+    "shearwater": {
+      "name": "the Shearwater Isles",
+      "region": "gyre_isles"
+    },
+    "rocs_crag": {
+      "name": "the Roc's Crag",
+      "region": "gyre_isles"
+    },
+    "long_fall": {
+      "name": "the Long Fall",
+      "region": "gyre_isles"
+    }
+  },
+  "rooms": {
+    "gy_sky1": {
+      "name": "Open Sky",
+      "area": "gyre_sky",
+      "pos": [
+        100,
+        -40
+      ],
+      "description": "The skiff heels over in the wind. Below: nothing at all, for ever.",
+      "waypoint": true
+    },
+    "gy_sky2": {
+      "name": "The Squall Line",
+      "area": "gyre_sky",
+      "pos": [
+        100,
+        40
+      ],
+      "description": "Rain sideways. The skiff's kite strains.",
+      "waypoint": true
+    },
+    "gy_sky3": {
+      "name": "The Downdraught",
+      "area": "gyre_sky",
+      "pos": [
+        240,
+        -40
+      ],
+      "description": "The skiff drops like a stone, and catches.",
+      "waypoint": true
+    },
+    "gy_landing": {
+      "name": "The Tear",
+      "area": "kitefast",
+      "pos": [
+        0,
+        0
+      ],
+      "description": "A rip in the sky, stitched open with ropes. Through it, the snows of the Cold Spine.",
+      "exits": {
+        "east": "gy_docks"
+      },
+      "features": {
+        "tear": "Through it, a mountain summit."
+      }
+    },
+    "gy_docks": {
+      "name": "Kitefast Docks",
+      "area": "kitefast",
+      "pos": [
+        25,
+        0
+      ],
+      "description": "Skiffs with kites for sails, tethered to an island in the clouds.",
+      "exits": {
+        "west": "gy_landing",
+        "south": "gy_loft"
+      },
+      "features": {},
+      "safe": true
+    },
+    "gy_loft": {
+      "name": "The Kite Loft",
+      "area": "kitefast",
+      "pos": [
+        25,
+        25
+      ],
+      "description": "A loft of kite-silk and spars, out of the wind.",
+      "exits": {
+        "north": "gy_docks"
+      },
+      "features": {},
+      "indoor": true,
+      "safe": true
+    },
+    "gy_isle": {
+      "name": "Shearwater Isle",
+      "area": "shearwater",
+      "pos": [
+        150,
+        -75
+      ],
+      "description": "A wind-scoured island no bigger than a field. The edges crumble.",
+      "exits": {
+        "east": "gy_cliffs"
+      },
+      "features": {}
+    },
+    "gy_cliffs": {
+      "name": "The Gull Cliffs",
+      "area": "shearwater",
+      "pos": [
+        175,
+        -75
+      ],
+      "description": "Narrow ledges where storm-hawks nest. The wind wants you off.",
+      "exits": {
+        "west": "gy_isle"
+      },
+      "features": {},
+      "trap": {
+        "name": "a gust off the ledge",
+        "stat": "poise",
+        "difficulty": "fair",
+        "damage": 50,
+        "rearm": 2,
+        "hit": "A gust takes your feet out from under you, and the ledge's edge catches you, just.",
+        "avoid": "You flatten yourself against the rock as the gust goes by.",
+        "sprung": "{actor} is blown off the ledge!",
+        "sign": {
+          "room": "gy_isle",
+          "name": "ledges",
+          "text": "The ledges to the east are narrow, and the gusts come every few breaths."
+        }
+      }
+    },
+    "gy_crag": {
+      "name": "Roc's Crag",
+      "area": "rocs_crag",
+      "pos": [
+        150,
+        75
+      ],
+      "description": "A spire of rock in the storm, white with droppings. Bones everywhere.",
+      "exits": {
+        "northeast": "gy_nest"
+      },
+      "features": {}
+    },
+    "gy_nest": {
+      "name": "The Roc's Nest",
+      "area": "rocs_crag",
+      "pos": [
+        175,
+        50
+      ],
+      "description": "A nest of whole trees on top of the crag.",
+      "exits": {
+        "southwest": "gy_crag"
+      },
+      "features": {}
+    },
+    "gy_fall": {
+      "name": "The Long Fall",
+      "area": "long_fall",
+      "pos": [
+        300,
+        0
+      ],
+      "description": "The lowest island, where everything falls in the end. Below, far below, a grey steppe of bones.",
+      "exits": {},
+      "features": {
+        "edge": "Jump, and you'd land, eventually, on the steppe below."
+      }
+    }
+  },
+  "npcs": {
+    "tavi": {
+      "name": "Skymaster Tavi",
+      "label": "Skymaster",
+      "description": "a wiry woman roped to the dock, grinning into the wind",
+      "details": "A wiry woman roped to the dock, grinning into the wind.",
+      "keywords": "skymaster tavi",
+      "room": "gy_docks",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🪁",
+      "proper": true,
+      "topics": {
+        "work": {
+          "text": "Ask me about the kites, or the roc. Or just take a skiff: they go to Shearwater and the Crag.",
+          "explains": "Type TRAVEL here to see the skiffs and their fares."
+        },
+        "kites": {
+          "text": "Storm-hawk silk makes the best kites. Five hawks, from the Gull Cliffs on Shearwater.",
+          "starts": "gy_kites"
+        },
+        "roc": {
+          "text": "The Thunder Roc nests on its crag and takes my skiffs out of the air. Kill it and I'll make you a hero. Its dive: dodge.",
+          "starts": "gy_roc"
+        },
+        "fall": "From Shearwater, a skiff goes down to the Long Fall. People jump from there. Some say they land."
+      }
+    },
+    "storm_hawk_1": {
+      "name": "Storm Hawk",
+      "label": "Hawk",
+      "description": "a hawk with lightning in its feathers",
+      "details": "A hawk with lightning in its feathers.",
+      "keywords": "storm hawk",
+      "room": "gy_cliffs",
+      "max_hp": 450,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "dive",
+          "period": 2500,
+          "damage": 30,
+          "hit": "{actor} dives at {target}."
+        },
+        {
+          "name": "gale-strike",
+          "period": 9000,
+          "damage": 60,
+          "hit": "{actor} beats a gale at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🦅",
+      "role": "storm_hawk",
+      "respawn": 300
+    },
+    "storm_hawk_2": {
+      "name": "Storm Hawk",
+      "label": "Hawk",
+      "description": "a hawk with lightning in its feathers",
+      "details": "A hawk with lightning in its feathers.",
+      "keywords": "storm hawk",
+      "room": "gy_cliffs",
+      "max_hp": 450,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "dive",
+          "period": 2500,
+          "damage": 30,
+          "hit": "{actor} dives at {target}."
+        },
+        {
+          "name": "gale-strike",
+          "period": 9000,
+          "damage": 60,
+          "hit": "{actor} beats a gale at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🦅",
+      "role": "storm_hawk",
+      "respawn": 300
+    },
+    "storm_hawk_3": {
+      "name": "Storm Hawk",
+      "label": "Hawk",
+      "description": "a hawk with lightning in its feathers",
+      "details": "A hawk with lightning in its feathers.",
+      "keywords": "storm hawk",
+      "room": "gy_isle",
+      "max_hp": 450,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "dive",
+          "period": 2500,
+          "damage": 30,
+          "hit": "{actor} dives at {target}."
+        },
+        {
+          "name": "gale-strike",
+          "period": 9000,
+          "damage": 60,
+          "hit": "{actor} beats a gale at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🦅",
+      "role": "storm_hawk",
+      "respawn": 300
+    },
+    "storm_hawk_4": {
+      "name": "Storm Hawk",
+      "label": "Hawk",
+      "description": "a hawk with lightning in its feathers",
+      "details": "A hawk with lightning in its feathers.",
+      "keywords": "storm hawk",
+      "room": "gy_crag",
+      "max_hp": 450,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "dive",
+          "period": 2500,
+          "damage": 30,
+          "hit": "{actor} dives at {target}."
+        },
+        {
+          "name": "gale-strike",
+          "period": 9000,
+          "damage": 60,
+          "hit": "{actor} beats a gale at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🦅",
+      "role": "storm_hawk",
+      "respawn": 300
+    },
+    "wind_elemental_1": {
+      "name": "Wind Elemental",
+      "label": "Elemental",
+      "description": "a spinning shape of wind and grit",
+      "details": "A spinning shape of wind and grit.",
+      "keywords": "wind elemental",
+      "room": "gy_isle",
+      "max_hp": 600,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "buffet",
+          "period": 3000,
+          "damage": 34,
+          "hit": "{actor} buffets {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 22,
+      "icon": "🌪️",
+      "role": "wind_elemental",
+      "respawn": 300
+    },
+    "wind_elemental_2": {
+      "name": "Wind Elemental",
+      "label": "Elemental",
+      "description": "a spinning shape of wind and grit",
+      "details": "A spinning shape of wind and grit.",
+      "keywords": "wind elemental",
+      "room": "gy_fall",
+      "max_hp": 600,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "buffet",
+          "period": 3000,
+          "damage": 34,
+          "hit": "{actor} buffets {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 22,
+      "icon": "🌪️",
+      "role": "wind_elemental",
+      "respawn": 300
+    },
+    "thunder_roc": {
+      "name": "the Thunder Roc",
+      "label": "Roc",
+      "description": "a bird the size of a ship, crackling",
+      "details": "A bird the size of a ship, crackling.",
+      "keywords": "thunder roc",
+      "room": "gy_nest",
+      "max_hp": 3200,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "talons",
+          "period": 4000,
+          "damage": 45,
+          "hit": "{actor} rakes {target} with its talons."
+        },
+        {
+          "name": "thunder-dive",
+          "period": 13000,
+          "damage": 130,
+          "hit": "{actor} dives on {target} in a crack of thunder!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 286,
+      "icon": "🦅",
+      "respawn": 1800
+    }
+  },
+  "gear": {
+    "roc_glaive": {
+      "name": "Roc-feather Glaive",
+      "kind": "Melee",
+      "keywords": "glaive roc",
+      "effect": "damage",
+      "period": 2800,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        34,
+        44,
+        72
+      ],
+      "hit": "{actor} sweeps the glaive through {target}.",
+      "perfect_hit": "{actor} sweeps the glaive through {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Roc-feather Glaive finds nothing.",
+      "description": "A glaive fletched with the Roc's feathers. It loves a wild wind.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0.8,
+        "precipitation": "any",
+        "tier": "purple"
+      },
+      "rarity": "epic"
+    }
+  },
+  "wearables": {
+    "skyrigger_harness": {
+      "name": "Skyrigger's Harness",
+      "keywords": "skyrigger's harness",
+      "place": "chest",
+      "type": "leather",
+      "description": "A harness with a tether-hook. +2 Poise.",
+      "rarity": "rare",
+      "armor": 9,
+      "stats": {
+        "poise": 2
+      }
+    }
+  },
+  "routes": {
+    "skiff-shearwater": {
+      "name": "the Shearwater skiff",
+      "keywords": "skiff Shearwater",
+      "from": "gy_docks",
+      "to": "gy_isle",
+      "kind": "ferry",
+      "depart": "You cast off. The kite fills with a crack.",
+      "leave": "{actor} casts off in a skiff.",
+      "arrive": "{actor}'s skiff bumps in to the island.",
+      "by": "tavi",
+      "path": [
+        "gy_sky1"
+      ],
+      "strand": "gy_docks",
+      "events": [
+        "gyre_gust"
+      ],
+      "risk": 0.1
+    },
+    "skiff-shearwater-back": {
+      "name": "the Shearwater skiff",
+      "keywords": "skiff kitefast docks home",
+      "from": "gy_isle",
+      "to": "gy_docks",
+      "kind": "ferry",
+      "depart": "You cast off back to Kitefast.",
+      "leave": "{actor} casts off in a skiff.",
+      "arrive": "{actor}'s skiff ties up at Kitefast.",
+      "path": [
+        "gy_sky1"
+      ],
+      "strand": "gy_docks"
+    },
+    "skiff-crag": {
+      "name": "the crag skiff",
+      "keywords": "skiff crag",
+      "from": "gy_docks",
+      "to": "gy_crag",
+      "kind": "ferry",
+      "depart": "You cast off. The kite fills with a crack.",
+      "leave": "{actor} casts off in a skiff.",
+      "arrive": "{actor}'s skiff bumps in to the island.",
+      "by": "tavi",
+      "path": [
+        "gy_sky2"
+      ],
+      "strand": "gy_docks",
+      "events": [
+        "gyre_gust"
+      ],
+      "risk": 0.1
+    },
+    "skiff-crag-back": {
+      "name": "the crag skiff",
+      "keywords": "skiff kitefast docks home",
+      "from": "gy_crag",
+      "to": "gy_docks",
+      "kind": "ferry",
+      "depart": "You cast off back to Kitefast.",
+      "leave": "{actor} casts off in a skiff.",
+      "arrive": "{actor}'s skiff ties up at Kitefast.",
+      "path": [
+        "gy_sky2"
+      ],
+      "strand": "gy_docks"
+    },
+    "skiff-fall": {
+      "name": "the fall skiff",
+      "keywords": "skiff fall long",
+      "from": "gy_isle",
+      "to": "gy_fall",
+      "kind": "ferry",
+      "depart": "You steer the skiff down, and down.",
+      "leave": "{actor} drops away in a skiff.",
+      "arrive": "{actor}'s skiff lands hard on the lowest island.",
+      "path": [
+        "gy_sky3"
+      ],
+      "strand": "gy_docks"
+    },
+    "skiff-fall-back": {
+      "name": "the fall skiff",
+      "keywords": "skiff shearwater back",
+      "from": "gy_fall",
+      "to": "gy_isle",
+      "kind": "ferry",
+      "depart": "You claw the skiff back up the wind.",
+      "leave": "{actor} climbs away in a skiff.",
+      "arrive": "{actor}'s skiff lands on Shearwater.",
+      "path": [
+        "gy_sky3"
+      ],
+      "strand": "gy_docks"
+    },
+    "summit-tear": {
+      "name": "the tear in the sky",
+      "keywords": "tear sky gyre rift",
+      "from": "cs_summit",
+      "to": "gy_landing",
+      "kind": "rift",
+      "depart": "You lean into the gale, and the sky lets you in.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} tumbles through the tear.",
+      "when": {
+        "energy": [
+          0.4,
+          1
+        ]
+      },
+      "closed": "The rip in the sky is only a shimmer. It opens in a strong wind."
+    },
+    "gyre-tear": {
+      "name": "the tear",
+      "keywords": "tear spine mountain home",
+      "from": "gy_landing",
+      "to": "cs_summit",
+      "kind": "rift",
+      "depart": "You climb back through the tear, into the cold.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} drops out of the sky onto the summit."
+    },
+    "long-fall": {
+      "name": "the Long Fall",
+      "keywords": "fall jump steppe",
+      "from": "gy_fall",
+      "to": "bs_landing",
+      "kind": "rift",
+      "depart": "You step off the edge. The fall takes a very long time.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} drops out of the sky and lands, impossibly, on their feet."
+    }
+  },
+  "travel_events": {
+    "gyre_gust": {
+      "pools": [
+        "skiff-shearwater",
+        "skiff-crag"
+      ],
+      "weight": 2,
+      "text": "A gust heels the skiff right over. Your feet leave the deck.",
+      "choices": [
+        {
+          "label": "Grab the rigging",
+          "check": {
+            "stat": "poise",
+            "difficulty": "fair"
+          },
+          "success": [
+            {
+              "text": "You catch a line and hang on."
+            }
+          ],
+          "failure": [
+            {
+              "text": "You go over, and catch the hull with your fingertips. It takes a long time to climb back."
+            },
+            {
+              "hp": -40
+            },
+            {
+              "delay": 1
+            }
+          ]
+        },
+        {
+          "label": "Throw yourself flat",
+          "check": {
+            "stat": "vigor",
+            "difficulty": "fair"
+          },
+          "success": [
+            {
+              "text": "You hug the deck until it rights."
+            }
+          ],
+          "failure": [
+            {
+              "text": "You slide straight off. A tether on the kite catches you, and drags you home."
+            },
+            {
+              "hp": -30
+            },
+            {
+              "strand": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "quests": {
+    "gy_kites": {
+      "name": "Kites for the Skiffs",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill five storm-hawks (the skiff to Shearwater: TRAVEL SHEARWATER ISLE).",
+          "on": {
+            "kill": "storm_hawk",
+            "count": 5
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Tavi: ASK TAVI ABOUT KITES.",
+          "on": {
+            "ask": "tavi",
+            "about": "kites"
+          },
+          "effects": [
+            {
+              "give": "skyrigger_harness"
+            },
+            {
+              "xp": 265
+            }
+          ]
+        }
+      }
+    },
+    "gy_roc": {
+      "name": "The Thunder Roc",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill the Thunder Roc on its nest (the skiff to the Crag: TRAVEL ROC'S CRAG).",
+          "on": {
+            "kill": "thunder_roc"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Tavi: ASK TAVI ABOUT ROC.",
+          "on": {
+            "ask": "tavi",
+            "about": "roc"
+          },
+          "effects": [
+            {
+              "give": "roc_glaive"
+            },
+            {
+              "xp": 330
+            }
+          ]
+        }
+      }
+    }
+  }
+}

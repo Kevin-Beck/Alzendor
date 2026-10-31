@@ -1,0 +1,705 @@
+{
+  "_note": "Hollowcrown, level 14: the ruins of Old Harrow, and the way to the Tempest Throne. See docs/zones.md.",
+  "regions": {
+    "hollowcrown": {
+      "name": "Hollowcrown",
+      "realm": "alzendor"
+    }
+  },
+  "areas": {
+    "pilgrim_crossing": {
+      "name": "the Pilgrim Crossing",
+      "region": "hollowcrown"
+    },
+    "pilgrim_landing": {
+      "name": "Pilgrim Landing",
+      "region": "hollowcrown"
+    },
+    "drowned_streets": {
+      "name": "the Drowned Streets",
+      "region": "hollowcrown",
+      "exposure": {
+        "kind": "dread",
+        "name": "dread",
+        "max": 5,
+        "damage": 20,
+        "worse_when": {
+          "time": [
+            "dusk",
+            "night"
+          ]
+        },
+        "warn": "You hear your name whispered from every doorway. Get to a shrine.",
+        "hurt": "The dread of this place is crushing the life out of you.",
+        "relief": "The shrine's quiet holds the whispers off."
+      }
+    },
+    "crown_keep": {
+      "name": "the Crown Keep",
+      "region": "hollowcrown",
+      "exposure": {
+        "kind": "dread",
+        "name": "dread",
+        "max": 5,
+        "damage": 20,
+        "worse_when": {
+          "time": [
+            "dusk",
+            "night"
+          ]
+        },
+        "warn": "You hear your name whispered from every doorway. Get to a shrine.",
+        "hurt": "The dread of this place is crushing the life out of you.",
+        "relief": "The shrine's quiet holds the whispers off."
+      }
+    }
+  },
+  "rooms": {
+    "hc_mist": {
+      "name": "The Mist on the Lake",
+      "area": "pilgrim_crossing",
+      "pos": [
+        -640,
+        120
+      ],
+      "description": "Mist closes in. The far shore is gone, and the near one.",
+      "waypoint": true,
+      "terrain": "coast"
+    },
+    "hc_bridge": {
+      "name": "The Sunken Bridge",
+      "area": "pilgrim_crossing",
+      "pos": [
+        -590,
+        160
+      ],
+      "description": "The barge slides over a drowned bridge. Statues stand on it, up to their necks in the water.",
+      "waypoint": true,
+      "terrain": "coast"
+    },
+    "hc_landing": {
+      "name": "Pilgrim Landing",
+      "area": "pilgrim_landing",
+      "pos": [
+        -550,
+        190
+      ],
+      "description": "A stone quay, and a shrine with candles. Pilgrims pray here before they go in.",
+      "exits": {
+        "southeast": "hc_streets"
+      },
+      "features": {},
+      "shelter": true,
+      "safe": true,
+      "lit": true,
+      "terrain": "coast"
+    },
+    "hc_streets": {
+      "name": "The Drowned Streets",
+      "area": "drowned_streets",
+      "pos": [
+        -500,
+        240
+      ],
+      "description": "Streets of the old capital, ankle-deep in water. Doors open on nothing.",
+      "exits": {
+        "northwest": "hc_landing",
+        "southeast": "hc_market"
+      },
+      "features": {},
+      "terrain": "coast"
+    },
+    "hc_market": {
+      "name": "The Ghost Market",
+      "area": "drowned_streets",
+      "pos": [
+        -475,
+        265
+      ],
+      "description": "A market square. Stalls, and ghosts behind them, selling nothing.",
+      "exits": {
+        "northwest": "hc_streets",
+        "northeast": "hc_shrine",
+        "south": "hc_keepgate"
+      },
+      "features": {},
+      "terrain": "coast"
+    },
+    "hc_shrine": {
+      "name": "Shrine of Saint Wend",
+      "area": "drowned_streets",
+      "pos": [
+        -450,
+        240
+      ],
+      "description": "A little shrine with its candles still lit, after all this time.",
+      "exits": {
+        "southwest": "hc_market"
+      },
+      "features": {},
+      "shelter": true,
+      "terrain": "coast"
+    },
+    "hc_keepgate": {
+      "name": "The Keep Gate",
+      "area": "crown_keep",
+      "pos": [
+        -475,
+        315
+      ],
+      "description": "The gate of the Crown Keep, its portcullis rusted open. A ghostly guard stands at it.",
+      "exits": {
+        "north": "hc_market",
+        "southeast": "hc_hall"
+      },
+      "features": {}
+    },
+    "hc_hall": {
+      "name": "The Hall of Banners",
+      "area": "crown_keep",
+      "pos": [
+        -450,
+        340
+      ],
+      "description": "Rotten banners of every house of Old Harrow. Knights in hollow armour patrol.",
+      "exits": {
+        "northwest": "hc_keepgate",
+        "east": "hc_door"
+      },
+      "features": {}
+    },
+    "hc_door": {
+      "name": "The Sealed Door",
+      "area": "crown_keep",
+      "pos": [
+        -425,
+        340
+      ],
+      "description": "A door of black iron, sealed with three hollows: one shaped like a crown, one like a pearl, one like a star. The Crownless King stands before it.",
+      "exits": {
+        "west": "hc_hall"
+      },
+      "features": {
+        "door": "Three hollows: a crown, a pearl, a star. Behind it, the throne room, and behind that, they say, the eye of every storm."
+      }
+    }
+  },
+  "npcs": {
+    "tilde": {
+      "name": "Tilde",
+      "label": "Bargewoman",
+      "description": "a bargewoman with a long pole and a short temper",
+      "details": "A bargewoman with a long pole and a short temper.",
+      "keywords": "tilde",
+      "room": "drift_beach",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🛶",
+      "proper": true,
+      "topics": {
+        "barge": {
+          "text": "The pilgrims' barge to Hollowcrown. Ten coins.",
+          "explains": "TRAVEL PILGRIM LANDING to take it (10 coins)."
+        },
+        "hollowcrown": "Old Harrow, the drowned capital. The pilgrims go to pray. Not all come back."
+      }
+    },
+    "aveline": {
+      "name": "Mother Aveline",
+      "label": "Pilgrim",
+      "description": "an old pilgrim in grey, with a hood pulled low",
+      "details": "An old pilgrim in grey, with a hood pulled low.",
+      "keywords": "mother aveline",
+      "room": "hc_landing",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🧎",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the hood, or the knights.",
+        "pilgrims": {
+          "text": "Before you go in, take a pilgrim's hood. The dread in there counts every step. Ask me for the hood.",
+          "starts": "hc_hood"
+        },
+        "hood": "Keep it up. The shrines are safe: here, and Saint Wend's.",
+        "knights": {
+          "text": "The hollow knights still guard a king who's dead. Six of them, laid to rest, and the streets would be quieter. Block their blows: they're slow.",
+          "starts": "hc_knights"
+        }
+      }
+    },
+    "corvin": {
+      "name": "Corvin",
+      "label": "Last Herald",
+      "description": "a translucent herald with a scroll",
+      "details": "A translucent herald with a scroll.",
+      "keywords": "corvin",
+      "room": "hc_streets",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "📯",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the roll, or the throne.",
+        "roll": {
+          "text": "I keep the roll of the court, but I've forgotten their names. Three still walk: the baker in the market, the guard at the keep gate, the lady in the hall. Ask each their name, and tell me.",
+          "starts": "hc_roll"
+        },
+        "throne": {
+          "text": "The sealed door has three hollows: the Ember Crown, the Drowned Pearl, the Star Heart. Bring them, and the door opens, and the throne beyond opens onto the eye of all weather. The Crownless King won't let you near it while he walks.",
+          "starts": "hc_throne"
+        }
+      },
+      "forecasts": [
+        "alzendor"
+      ]
+    },
+    "ghost_baker": {
+      "name": "the Ghost Baker",
+      "label": "Ghost",
+      "description": "a floury ghost behind an empty stall",
+      "details": "A floury ghost behind an empty stall.",
+      "keywords": "ghost baker",
+      "room": "hc_market",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "👻",
+      "topics": {
+        "name": "Name? Bartholomew. Bartholomew Crust. I made the king's bread."
+      }
+    },
+    "ghost_guard": {
+      "name": "the Ghost Guard",
+      "label": "Ghost",
+      "description": "a ghostly guard leaning on a halberd",
+      "details": "A ghostly guard leaning on a halberd.",
+      "keywords": "ghost guard",
+      "room": "hc_keepgate",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "👻",
+      "topics": {
+        "name": "Sergeant Ulric Vane, of the gate. Still on duty."
+      }
+    },
+    "ghost_lady": {
+      "name": "the Grey Lady",
+      "label": "Ghost",
+      "description": "a lady in a grey gown, weeping",
+      "details": "A lady in a grey gown, weeping.",
+      "keywords": "grey lady",
+      "room": "hc_hall",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "👻",
+      "topics": {
+        "name": "I was Ysmay, the king's sister. Nobody has asked in three hundred years."
+      }
+    },
+    "hollow_knight_1": {
+      "name": "Hollow Knight",
+      "label": "Knight",
+      "description": "a suit of armour with nobody in it, sword raised",
+      "details": "A suit of armour with nobody in it, sword raised.",
+      "keywords": "hollow knight armour",
+      "room": "hc_streets",
+      "max_hp": 520,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "greatsword",
+          "period": 4500,
+          "damage": 40,
+          "hit": "{actor} swings a greatsword at {target}.",
+          "defend": "block"
+        },
+        {
+          "name": "cleave",
+          "period": 12000,
+          "damage": 85,
+          "hit": "{actor} heaves a great cleave at {target}!",
+          "defend": "block"
+        }
+      ],
+      "xp": 18,
+      "icon": "🛡️",
+      "role": "hollow_knight",
+      "respawn": 300
+    },
+    "hollow_knight_2": {
+      "name": "Hollow Knight",
+      "label": "Knight",
+      "description": "a suit of armour with nobody in it, sword raised",
+      "details": "A suit of armour with nobody in it, sword raised.",
+      "keywords": "hollow knight armour",
+      "room": "hc_keepgate",
+      "max_hp": 520,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "greatsword",
+          "period": 4500,
+          "damage": 40,
+          "hit": "{actor} swings a greatsword at {target}.",
+          "defend": "block"
+        },
+        {
+          "name": "cleave",
+          "period": 12000,
+          "damage": 85,
+          "hit": "{actor} heaves a great cleave at {target}!",
+          "defend": "block"
+        }
+      ],
+      "xp": 18,
+      "icon": "🛡️",
+      "role": "hollow_knight",
+      "respawn": 300
+    },
+    "hollow_knight_3": {
+      "name": "Hollow Knight",
+      "label": "Knight",
+      "description": "a suit of armour with nobody in it, sword raised",
+      "details": "A suit of armour with nobody in it, sword raised.",
+      "keywords": "hollow knight armour",
+      "room": "hc_hall",
+      "max_hp": 520,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "greatsword",
+          "period": 4500,
+          "damage": 40,
+          "hit": "{actor} swings a greatsword at {target}.",
+          "defend": "block"
+        },
+        {
+          "name": "cleave",
+          "period": 12000,
+          "damage": 85,
+          "hit": "{actor} heaves a great cleave at {target}!",
+          "defend": "block"
+        }
+      ],
+      "xp": 18,
+      "icon": "🛡️",
+      "role": "hollow_knight",
+      "respawn": 300
+    },
+    "dreadhound_1": {
+      "name": "Dreadhound",
+      "label": "Hound",
+      "description": "a hound of shadow with eyes like coals",
+      "details": "A hound of shadow with eyes like coals.",
+      "keywords": "dreadhound hound",
+      "room": "hc_market",
+      "max_hp": 300,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2000,
+          "damage": 22,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 11,
+      "icon": "🐕‍🦺",
+      "role": "dreadhound",
+      "respawn": 300
+    },
+    "dreadhound_2": {
+      "name": "Dreadhound",
+      "label": "Hound",
+      "description": "a hound of shadow with eyes like coals",
+      "details": "A hound of shadow with eyes like coals.",
+      "keywords": "dreadhound hound",
+      "room": "hc_streets",
+      "max_hp": 300,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2000,
+          "damage": 22,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 11,
+      "icon": "🐕‍🦺",
+      "role": "dreadhound",
+      "respawn": 300
+    },
+    "crownless_king": {
+      "name": "the Crownless King",
+      "label": "Dead King",
+      "description": "a king in black armour, without a crown, before the sealed door",
+      "details": "A king in black armour, without a crown, before the sealed door.",
+      "keywords": "crownless king",
+      "room": "hc_door",
+      "max_hp": 3500,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "blade",
+          "period": 5000,
+          "damage": 45,
+          "hit": "{actor} cuts at {target}.",
+          "defend": "block"
+        },
+        {
+          "name": "wail",
+          "period": 13000,
+          "damage": 140,
+          "hit": "{actor} wails for his lost crown, and {target} feels it in their bones!",
+          "defend": "none"
+        }
+      ],
+      "xp": 219,
+      "icon": "👑",
+      "notice": "hard",
+      "respawn": 1800
+    }
+  },
+  "gear": {
+    "oathkeeper": {
+      "name": "Oathkeeper",
+      "kind": "Melee",
+      "keywords": "oathkeeper sword",
+      "effect": "damage",
+      "period": 3000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        30,
+        38,
+        62
+      ],
+      "hit": "{actor} strikes {target}.",
+      "perfect_hit": "{actor} strikes {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Oathkeeper finds nothing.",
+      "description": "A hollow knight's sword, its oath fulfilled. Steady in any weather.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0,
+        "precipitation": "any",
+        "tier": "grey"
+      },
+      "rarity": "epic"
+    }
+  },
+  "wearables": {
+    "pilgrims_hood": {
+      "name": "Pilgrim's Hood",
+      "keywords": "pilgrim's hood",
+      "place": "head",
+      "type": "cloth",
+      "description": "A grey hood, blessed at every shrine on the pilgrim road. Keeps off the dread.",
+      "rarity": "uncommon",
+      "armor": 1,
+      "protects": [
+        "dread"
+      ]
+    },
+    "heralds_tabard": {
+      "name": "Herald's Tabard",
+      "keywords": "herald's tabard",
+      "place": "chest",
+      "type": "cloth",
+      "description": "Corvin's tabard, faded but whole. +2 Presence.",
+      "rarity": "rare",
+      "armor": 7,
+      "stats": {
+        "presence": 2
+      }
+    }
+  },
+  "routes": {
+    "pilgrim-barge": {
+      "name": "the pilgrims' barge",
+      "keywords": "barge pilgrims hollowcrown",
+      "from": "drift_beach",
+      "to": "hc_landing",
+      "kind": "ferry",
+      "depart": "You pay Tilde, and she poles the barge out into the mist.",
+      "leave": "{actor} boards the pilgrims' barge.",
+      "arrive": "The barge bumps against the quay, and {actor} steps ashore.",
+      "by": "tilde",
+      "fare": 10,
+      "path": [
+        "hc_mist",
+        "hc_bridge"
+      ],
+      "strand": "drift_beach"
+    },
+    "pilgrim-barge-back": {
+      "name": "the pilgrims' barge",
+      "keywords": "barge harrowlake home beach",
+      "from": "hc_landing",
+      "to": "drift_beach",
+      "kind": "ferry",
+      "depart": "You climb into the barge, and the mist takes you back.",
+      "leave": "{actor} poles away into the mist.",
+      "arrive": "The barge grounds on the beach, and {actor} climbs out.",
+      "path": [
+        "hc_bridge",
+        "hc_mist"
+      ],
+      "strand": "drift_beach"
+    }
+  },
+  "quests": {
+    "hc_hood": {
+      "name": "The Pilgrim's Way",
+      "start": "hood",
+      "steps": {
+        "hood": {
+          "goal": "Ask Mother Aveline for it: ASK AVELINE ABOUT HOOD.",
+          "on": {
+            "ask": "aveline",
+            "about": "hood"
+          },
+          "effects": [
+            {
+              "give": "pilgrims_hood"
+            },
+            {
+              "text": "Aveline draws the hood over your head. \"WEAR HOOD. And don't answer when they call your name.\""
+            },
+            {
+              "xp": 10
+            }
+          ]
+        }
+      }
+    },
+    "hc_roll": {
+      "name": "The Herald's Roll",
+      "start": "baker",
+      "steps": {
+        "baker": {
+          "goal": "Ask the baker in the Ghost Market his name: ASK BAKER ABOUT NAME.",
+          "on": {
+            "ask": "ghost_baker",
+            "about": "name"
+          },
+          "then": "guard"
+        },
+        "guard": {
+          "goal": "Ask the guard at the keep gate: ASK GUARD ABOUT NAME.",
+          "on": {
+            "ask": "ghost_guard",
+            "about": "name"
+          },
+          "then": "lady"
+        },
+        "lady": {
+          "goal": "Ask the lady in the Hall of Banners: ASK LADY ABOUT NAME.",
+          "on": {
+            "ask": "ghost_lady",
+            "about": "name"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Corvin: ASK CORVIN ABOUT ROLL.",
+          "on": {
+            "ask": "corvin",
+            "about": "roll"
+          },
+          "effects": [
+            {
+              "text": "Corvin writes the three names, and for a moment he's almost solid. \"Thank you. Wear this: a herald should be seen.\""
+            },
+            {
+              "give": "heralds_tabard"
+            },
+            {
+              "xp": 155
+            }
+          ]
+        }
+      }
+    },
+    "hc_knights": {
+      "name": "Lay the Knights to Rest",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Lay six hollow knights to rest.",
+          "on": {
+            "kill": "hollow_knight",
+            "count": 6
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Aveline: ASK AVELINE ABOUT KNIGHTS.",
+          "on": {
+            "ask": "aveline",
+            "about": "knights"
+          },
+          "effects": [
+            {
+              "give": "oathkeeper"
+            },
+            {
+              "xp": 165
+            }
+          ]
+        }
+      }
+    },
+    "hc_throne": {
+      "name": "The Sealed Throne",
+      "start": "relics",
+      "steps": {
+        "relics": {
+          "goal": "Bring the three relics: the Ember Crown (the Ember Courts), the Drowned Pearl (the Pale Deep) and the Star Heart (Starfall).",
+          "on": {
+            "have": [
+              "ember_crown",
+              "drowned_pearl",
+              "star_heart"
+            ]
+          },
+          "then": "door"
+        },
+        "door": {
+          "goal": "Set them in the sealed door, past the Crownless King: USE CROWN ON DOOR.",
+          "on": {
+            "use": "ember_crown",
+            "on": "door"
+          },
+          "effects": [
+            {
+              "take": "ember_crown"
+            },
+            {
+              "take": "drowned_pearl"
+            },
+            {
+              "take": "star_heart"
+            },
+            {
+              "text": "The crown, the pearl and the star sink into the door. It opens, and the throne room beyond is full of wind. The throne is empty. Behind it, the storm."
+            },
+            {
+              "xp": 330
+            },
+            {
+              "teleport": "tt_eye"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

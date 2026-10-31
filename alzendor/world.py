@@ -25,8 +25,8 @@ class World:
         return await self.redis.fcall(function, 0, *(str(a) for a in args))
 
     async def seed(self, path: Path) -> dict:
-        """Loads the map from a seed file and returns it (for its ambient events)."""
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        """Loads the map from a seed file (and its zone files) and returns it (for its ambient events)."""
+        data = load_seed(path)
         validate_seed(data)
         # Lua gets each realm's weather waves ready-made (see weather.py).
         weather_seed = str(data.get("rules", {}).get("weather_seed", "alzendor"))
@@ -34,6 +34,31 @@ class World:
         await self.call("seed", json.dumps({**data, "weather_params": params}))
         self.creation = creation_options(data)
         return data
+
+
+def load_seed(path: Path) -> dict:
+    """The seed file, plus every zone file in the zones/ folder beside it
+    (docs/zones.md), merged: each zone adds its own realms, regions, areas,
+    rooms, NPCs, quests and so on. A zone can't redefine anything (ids must be
+    new), so changes to existing places belong in the seed file. Keys starting
+    with _ are notes."""
+    path = Path(path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    for zone in sorted((path.parent / "zones").glob("*.json")):
+        for key, value in json.loads(zone.read_text(encoding="utf-8")).items():
+            if key.startswith("_"):
+                continue
+            if isinstance(value, dict):
+                into = data.setdefault(key, {})
+                clash = sorted(set(into) & set(value))
+                if clash:
+                    raise ValueError(f"Invalid seed map:\n  {zone.name}: {key} already has {', '.join(clash)}")
+                into.update(value)
+            elif isinstance(value, list):
+                data.setdefault(key, []).extend(value)
+            else:
+                raise ValueError(f"Invalid seed map:\n  {zone.name}: {key} must be an object or a list")
+    return data
 
 
 DIRECTIONS = ("north", "south", "east", "west", "northeast", "northwest", "southeast", "southwest", "up", "down")
@@ -45,7 +70,12 @@ SLOTS = 3  # gear slots per player, as in alzendor.lua
 DISPOSITIONS = ("hostile", "neutral", "friendly")
 DEEDS = ("kill", "clean_kill", "ambush", "flee", "defeated", "heal", "greet", "taunt")  # see deed() in alzendor.lua
 STATS = ("vigor", "poise", "focus", "presence", "resilience")  # as in alzendor.lua
-TIERS = ("grey", "green", "blue", "purple", "orange")  # see docs/weather.md
+TIERS = ("grey", "green", "blue", "purple", "orange")  # weather sensitivity 1-5, see docs/weather.md
+RARITIES = ("common", "uncommon", "rare", "epic", "legendary")
+DEFENCES = ("both", "block", "dodge", "none")  # how an NPC attack can be met, see docs/combat.md
+PLACES = ("head", "chest", "legs", "hand")  # where worn gear goes, see docs/characters.md
+WEAR_TYPES = ("cloth", "leather", "mail", "shield", "light", "orb")
+PHASES = ("dawn", "day", "dusk", "night")  # of the clock, as in alzendor.lua
 WETNESS = ("wet", "dry", "any")
 # How far an exit's line on the map may stray from its direction before it looks wrong.
 BEARING_TOLERANCE = 10
@@ -75,8 +105,8 @@ def validate_seed(data: dict) -> None:
             problems.append(f"realm {rid}: missing name")
         if realm.get("shrine") is not None and (realm["shrine"] not in rooms or rooms[realm["shrine"]].get("waypoint")):
             problems.append(f"realm {rid}: shrine {realm['shrine']!r} is not a room you can stand in")
-        if realm.get("sky", "") not in ("", "always_day", "always_night"):
-            problems.append(f"realm {rid}: sky must be always_day or always_night")
+        if realm.get("sky", "") not in ("", "always_day", "always_dusk", "always_night"):
+            problems.append(f"realm {rid}: sky must be always_day, always_dusk or always_night")
         for axis, bias in realm.get("weather", {}).items():
             if axis not in weather.AXES or not (isinstance(bias, list) and len(bias) == 2 and _in_range(bias[0]) and 0 <= bias[1] <= 1):
                 problems.append(f"realm {rid}: weather needs [centre, spread] for {', '.join(weather.AXES)} (centre -1 to 1, spread 0 to 1)")
@@ -97,6 +127,13 @@ def validate_seed(data: dict) -> None:
             problems.append(f"area {aid}: unknown region {area.get('region')!r}")
         if "climate" in area:
             problems += [f"area {aid}: {problem}" for problem in _climate_problems(area["climate"])]
+        if "exposure" in area:
+            e = area["exposure"]
+            if not e.get("kind") or not all(isinstance(e.get(k, 1), int) and e.get(k, 1) > 0 for k in ("max", "damage")):
+                problems.append(f"area {aid}: exposure needs a kind, and whole positive max and damage")
+            worse = dict(e.get("worse_when", {}))
+            problems += [f"area {aid}: exposure worse_when time {p!r} isn't a phase" for p in worse.pop("time", []) if p not in PHASES]
+            problems += [f"area {aid}: exposure worse_when {p}" for p in _ranges_problems(worse)]
     for terrain, ground in data.get("terrain_ground", {}).items():
         if ground not in ("open", "rough"):
             problems.append(f"terrain_ground {terrain}: must be open or rough")
@@ -156,7 +193,12 @@ def validate_seed(data: dict) -> None:
             problems.append(f"npc {nid}: missing name")
         problems += [f"npc {nid}: {problem}" for problem in _npc_problems(npc, factions, gear)]
         problems += [f"npc {nid}: forecasts unknown realm {r!r}" for r in npc.get("forecasts", []) if r not in realms]
-        problems += [f"npc {nid}: active_when {problem}" for problem in _ranges_problems(npc.get("active_when", {}))]
+        when = dict(npc.get("active_when", {}))
+        phases = when.pop("time", [])
+        problems += [f"npc {nid}: active_when {problem}" for problem in _ranges_problems(when)]
+        problems += [f"npc {nid}: active_when time {p!r} isn't one of {', '.join(PHASES)}" for p in phases if p not in PHASES]
+        if npc.get("notice", "fair") not in DIFFICULTIES:
+            problems.append(f"npc {nid}: notice must be one of {', '.join(DIFFICULTIES)}")
     for fid, faction in factions.items():
         if not faction.get("name"):
             problems.append(f"faction {fid}: missing name")
@@ -185,6 +227,8 @@ def validate_seed(data: dict) -> None:
         problems.append(f"rules: shrine_room {shrine!r} is not a room")
     for gid, item in gear.items():
         problems += [f"gear {gid}: {problem}" for problem in _gear_problems(item)]
+        if item.get("rarity", "common") not in RARITIES:
+            problems.append(f"gear {gid}: rarity must be one of {', '.join(RARITIES)}")
         if "weather" in item:
             problems += [f"gear {gid}: weather {problem}" for problem in _profile_problems(item["weather"])]
         elif item.get("kind") not in kinds:
@@ -203,11 +247,18 @@ def validate_seed(data: dict) -> None:
             problems.append(f"route {route_id}: goes to {place[1]!r} like route {destinations[place]}; "
                             "routes from one room need different destinations")
         destinations.setdefault(place, route_id)
+        if "quest" in route:
+            # Offered only while the player is at that step of the quest (TRAVEL lists it then).
+            steps = data.get("quests", {}).get(route["quest"], {}).get("steps", {})
+            if route.get("step") not in steps:
+                problems.append(f"route {route_id}: offered for a quest step that doesn't exist: {route['quest']!r} {route.get('step')!r}")
     for quest_id, quest in data.get("quests", {}).items():
         problems += [f"quest {quest_id}: {problem}" for problem in _quest_problems(quest, data)]
     for nid, npc in data.get("npcs", {}).items():
         for topic, said in npc.get("topics", {}).items():
-            if isinstance(said, dict) and said.get("starts") not in data.get("quests", {}):
+            if isinstance(said, dict) and not said.get("text"):
+                problems.append(f"npc {nid}: topic {topic!r} needs text")
+            if isinstance(said, dict) and "starts" in said and said["starts"] not in data.get("quests", {}):
                 problems.append(f"npc {nid}: topic {topic!r} starts unknown quest {said.get('starts')!r}")
     for event_id, event in data.get("travel_events", {}).items():
         problems += [f"travel event {event_id}: {problem}" for problem in _event_problems(event, data)]
@@ -236,6 +287,8 @@ def _npc_problems(npc: dict, factions: dict, gear: dict) -> list[str]:
             problems.append("each attack needs a name and hit text")
         if not all(isinstance(attack.get(key), int) and attack[key] > 0 for key in ("period", "damage")):
             problems.append(f"attack {attack.get('name')!r}: period and damage must be positive whole numbers")
+        if attack.get("defend", "both") not in DEFENCES:
+            problems.append(f"attack {attack.get('name')!r}: defend must be one of {', '.join(DEFENCES)}")
     problems += [f"drops unknown gear {g!r}" for g in npc.get("drops", []) if g not in gear]
     return problems
 
@@ -315,8 +368,8 @@ def _event_problems(event: dict, data: dict) -> list[str]:
     return problems
 
 
-TRIGGERS = ("ask", "get", "enter", "kill", "use", "have", "level", "in")
-QUEST_EFFECTS = EFFECTS + ("give", "take", "start", "teleport", "resume_journey", "leave_start")
+TRIGGERS = ("ask", "get", "enter", "kill", "use", "have", "level", "in", "travel")
+QUEST_EFFECTS = EFFECTS + ("give", "take", "start", "teleport", "resume_journey", "leave_start", "say", "by", "guide")
 
 
 def _quest_problems(quest: dict, data: dict) -> list[str]:
@@ -329,6 +382,8 @@ def _quest_problems(quest: dict, data: dict) -> list[str]:
         problems.append(f"start {quest.get('start')!r} is not a step")
     if quest.get("priority") and quest.get("area") not in data.get("areas", {}):
         problems.append("a priority quest needs the area it belongs to")
+    if ("giver" in quest or "offer" in quest) and (quest.get("giver") not in npcs or not quest.get("offer")):
+        problems.append("a quest's offer needs a giver (an NPC) and what they say")
     reached, todo, ends = set(), [quest.get("start")], False
     while todo:
         step_id = todo.pop()
@@ -359,16 +414,22 @@ def _quest_problems(quest: dict, data: dict) -> list[str]:
                 problems.append(f"step {step_id}: unknown item {item!r}")
         if "ask" in on and on["ask"] not in npcs:
             problems.append(f"step {step_id}: unknown NPC {on['ask']!r}")
+        if "travel" in on and on["travel"] not in data.get("routes", {}):
+            problems.append(f"step {step_id}: unknown route {on['travel']!r}")
         for effect in step.get("effects", []):
             for name, value in effect.items():
                 if name not in QUEST_EFFECTS:
                     problems.append(f"step {step_id}: unknown effect {name!r}")
-                elif name in ("give", "take") and value not in items:
+                elif name == "give" and value not in items and value not in data.get("wearables", {}) and value not in data.get("gear", {}):
+                    problems.append(f"step {step_id}: unknown item, gear or worn gear {value!r}")
+                elif name == "take" and value not in items:
                     problems.append(f"step {step_id}: unknown item {value!r}")
                 elif name == "teleport" and value not in rooms:
                     problems.append(f"step {step_id}: unknown room {value!r}")
                 elif name == "start" and value not in data.get("quests", {}):
                     problems.append(f"step {step_id}: unknown quest {value!r}")
+                elif name == "say" and effect.get("by") not in npcs:
+                    problems.append(f"step {step_id}: say needs who says it, by: an NPC")
     return problems
 
 
@@ -390,6 +451,25 @@ def _character_problems(data: dict) -> list[str]:
                 problems.append(f"class {cid}: talent {tid!r} is a kind the class can't use")
             elif talent.get("requires") and talent["requires"] not in c.get("talents", []):
                 problems.append(f"class {cid}: talent {tid!r} requires a talent outside the class")
+        problems += [f"class {cid}: unknown worn gear type {t!r}" for t in c.get("wears", []) if t not in WEAR_TYPES]
+    wearables = data.get("wearables", {})
+    for wid, w in wearables.items():
+        if not w.get("name") or w.get("place") not in PLACES or w.get("type") not in WEAR_TYPES:
+            problems.append(f"wearable {wid}: needs a name, a place ({', '.join(PLACES)}) and a type ({', '.join(WEAR_TYPES)})")
+        if w.get("rarity", "common") not in RARITIES:
+            problems.append(f"wearable {wid}: rarity must be one of {', '.join(RARITIES)}")
+        if not isinstance(w.get("armor", 0), int) or w.get("armor", 0) < 0:
+            problems.append(f"wearable {wid}: armor must be a whole number, 0 or more")
+        problems += [f"wearable {wid}: unknown stat {s!r}" for s in w.get("stats", {}) if s not in STATS]
+        if (w.get("type") in ("shield", "light", "orb")) != (w.get("place") == "hand"):
+            problems.append(f"wearable {wid}: shields, lights and orbs (and only they) go in the hand")
+        if w.get("light") and w.get("type") != "light":
+            problems.append(f"wearable {wid}: only a light gives light")
+        if not isinstance(w.get("protects", []), list):
+            problems.append(f"wearable {wid}: protects is a list of exposure kinds")
+    for owner, outfits in (("class", data.get("classes", {})), ("background", data.get("backgrounds", {}))):
+        for oid, o in outfits.items():
+            problems += [f"{owner} {oid}: unknown worn gear {w!r}" for w in o.get("outfit", []) if w not in wearables]
     for aid, a in data.get("ancestries", {}).items():
         if not a.get("name") or a.get("stat") not in STATS:
             problems.append(f"ancestry {aid}: needs a name and a stat")

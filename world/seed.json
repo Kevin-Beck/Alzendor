@@ -184,11 +184,13 @@
   "areas": {
     "old_quarter": {
       "name": "the Old Quarter",
-      "region": "harrowgate"
+      "region": "harrowgate",
+      "lit": true
     },
     "docks": {
       "name": "the Docks",
-      "region": "harrowgate"
+      "region": "harrowgate",
+      "lit": true
     },
     "high_road": {
       "name": "the High Road",
@@ -196,7 +198,8 @@
     },
     "harrowlake_village": {
       "name": "Harrowlake Village",
-      "region": "harrowlake"
+      "region": "harrowlake",
+      "lit": true
     },
     "forest_edge": {
       "name": "the Forest Edge",
@@ -208,7 +211,8 @@
     },
     "saltmere_shore": {
       "name": "the Saltmere Shore",
-      "region": "saltmere"
+      "region": "saltmere",
+      "lit": true
     },
     "shattered_shore": {
       "name": "the Shattered Shore",
@@ -236,11 +240,13 @@
     },
     "gh_slipway": {
       "name": "the Slipway",
-      "region": "gullhaven_town"
+      "region": "gullhaven_town",
+      "lit": true
     },
     "gh_quay": {
       "name": "Gullhaven Quay",
-      "region": "gullhaven_town"
+      "region": "gullhaven_town",
+      "lit": true
     },
     "gh_breakwater": {
       "name": "the Breakwater",
@@ -248,19 +254,23 @@
     },
     "cs_market": {
       "name": "Copperstall Market",
-      "region": "copperstall_town"
+      "region": "copperstall_town",
+      "lit": true
     },
     "cs_guild": {
       "name": "Guild Row",
-      "region": "copperstall_town"
+      "region": "copperstall_town",
+      "lit": true
     },
     "cs_granary": {
       "name": "the Old Granary",
-      "region": "copperstall_town"
+      "region": "copperstall_town",
+      "lit": true
     },
     "tw_hamlet": {
       "name": "Thornwick Hamlet",
-      "region": "thornwick_wood"
+      "region": "thornwick_wood",
+      "lit": true
     },
     "tw_oldwood": {
       "name": "the Old Wood",
@@ -272,15 +282,18 @@
     },
     "lw_gutters": {
       "name": "the Gutters",
-      "region": "lowwick_town"
+      "region": "lowwick_town",
+      "lit": true
     },
     "lw_square": {
       "name": "Wick Square",
-      "region": "lowwick_town"
+      "region": "lowwick_town",
+      "lit": true
     },
     "lw_roofs": {
       "name": "the Rooftops",
-      "region": "lowwick_town"
+      "region": "lowwick_town",
+      "lit": true
     }
   },
   "rooms": {
@@ -489,7 +502,8 @@
       "exits": {
         "west": "tavern",
         "north": "smithy",
-        "northwest": "market_square"
+        "northwest": "market_square",
+        "east": "east_gate"
       },
       "features": {
         "bricks": "Old bricks, scratched with a crude drawing of tusks.",
@@ -661,7 +675,8 @@
       ],
       "description": "A lean-to and a ring of stones. Snares and drying pelts hang from the branches.",
       "exits": {
-        "southwest": "woodland_path"
+        "southwest": "woodland_path",
+        "east": "gm_west"
       },
       "features": {
         "pelts": "Fox and hare pelts, drying on a line.",
@@ -717,7 +732,8 @@
       ],
       "description": "A vast hollow beneath the roots, its ceiling lost in curtains of silk. Something huge shifts in the dark.",
       "exits": {
-        "south": "web_tunnel"
+        "south": "web_tunnel",
+        "north": "dw_thornway"
       },
       "features": {
         "silk": "Curtains of silk, thick enough to climb."
@@ -1049,7 +1065,8 @@
       "terrain": "scree",
       "description": "Loose stone pours down the mountain into a fan of rubble at your feet. Splintered wood and a broken lantern lie among the rocks, fallen from the road high above.",
       "exits": {
-        "southeast": "goat_track"
+        "southeast": "goat_track",
+        "northwest": "cs_trailhead"
       },
       "features": {
         "wood": "Pieces of a coach door. Someone came down the hard way.",
@@ -1196,7 +1213,7 @@
         50,
         25
       ],
-      "description": "Canvas hangs from the rafters. The quay is east.",
+      "description": "Canvas hangs from the rafters, and the shutters are nailed shut against the wind. The quay is east.",
       "exits": {
         "west": "slipway",
         "east": "quay_end"
@@ -1204,7 +1221,8 @@
       "features": {
         "canvas": "Patched and patched again."
       },
-      "indoor": true
+      "indoor": true,
+      "dark": true
     },
     "quay_end": {
       "name": "Quay End",
@@ -1367,7 +1385,7 @@
         25,
         25
       ],
-      "description": "Your family's stall stands bare, its awning flapping. Aunt Brisa is waiting with her arms folded. The spice stalls are north, the cloth stalls east, the fountain west.",
+      "description": "Your family's stall, under a flapping awning. Aunt Brisa keeps an eye on everything, and her stall hands Wenna and Hob haul sacks and shout the prices. The spice stalls are north, the cloth stalls east, the fountain west.",
       "exits": {
         "north": "spice_stalls",
         "east": "cloth_stalls",
@@ -1463,7 +1481,7 @@
         115,
         25
       ],
-      "description": "Where the guild's weights and measures are kept. A clerk dozes. The Old Granary is east.",
+      "description": "Where the guild's weights and measures are kept, behind shutters that never open. A clerk dozes. The Old Granary is east.",
       "exits": {
         "west": "guild_lane",
         "east": "granary_yard"
@@ -1471,7 +1489,8 @@
       "features": {
         "weights": "Rows of brass weights, all stamped. One shelf is suspiciously dusty."
       },
-      "indoor": true
+      "indoor": true,
+      "dark": true
     },
     "caravan_yard": {
       "name": "The Caravan Yard",
@@ -1480,9 +1499,10 @@
         90,
         50
       ],
-      "description": "Wagons and mules, and Dace the caravan master shouting at both.",
+      "description": "Wagons and mules, and feed rats in the spilt oats. The coach stand, where the Harrowgate caravan loads, is south.",
       "exits": {
-        "north": "guild_lane"
+        "north": "guild_lane",
+        "south": "coach_stand"
       },
       "features": {
         "wagons": "One is loading for Harrowgate."
@@ -1629,7 +1649,7 @@
         115,
         0
       ],
-      "description": "Old trees, and silence. A trail climbs north to Stag's Rise.",
+      "description": "Old trees, and silence, and a canopy so thick it's dark at noon. A trail climbs north to Stag's Rise.",
       "exits": {
         "south": "snare_line",
         "north": "stags_rise"
@@ -1651,7 +1671,8 @@
           "name": "wire",
           "text": "Trapper's wire, not yours, half-buried in the leaves by the trail north. Someone has set snares in the deep oaks."
         }
-      }
+      },
+      "dark": true
     },
     "stags_rise": {
       "name": "Stag's Rise",
@@ -1819,7 +1840,7 @@
         115,
         25
       ],
-      "description": "A fine hall with a fine rug. A guard dog lies across the stairs up to the study (NORTH).",
+      "description": "A fine hall with a fine rug, every lamp out to save oil. A guard dog lies across the stairs up to the study (NORTH).",
       "exits": {
         "west": "wick_square",
         "north": "magistrates_study"
@@ -1828,7 +1849,8 @@
         "rug": "Too fine for this town.",
         "stairs": "Polished. A thread is stretched across the third step from the top, at ankle height."
       },
-      "indoor": true
+      "indoor": true,
+      "dark": true
     },
     "magistrates_study": {
       "name": "The Magistrate's Study",
@@ -1911,6 +1933,22 @@
       "description": "Lanterns, and voices. The watch has set up a checkpoint on the road.",
       "terrain": "field",
       "waypoint": true
+    },
+    "coach_stand": {
+      "name": "The Coach Stand",
+      "area": "cs_guild",
+      "pos": [
+        90,
+        75
+      ],
+      "description": "A cobbled stand at the edge of town, well away from the oats and the rats. Dace the caravan master is checking the harness on the Harrowgate caravan. The caravan yard is north.",
+      "exits": {
+        "north": "caravan_yard"
+      },
+      "features": {
+        "caravan": "Four wagons, eight mules, and a strongbox chained to the lead wagon. It's bound for Harrowgate."
+      },
+      "safe": true
     }
   },
   "items": {
@@ -2081,7 +2119,15 @@
       "disposition": "friendly",
       "faction": "harrowfolk",
       "role": "civilian",
-      "icon": "🍺"
+      "icon": "🍺",
+      "topics": {
+        "work": "Work? Millbrook's ale hasn't come in a fortnight. Ask me about Millbrook.",
+        "millbrook": {
+          "text": "Millbrook's east, out of the new East Gate past the back alley, then south-east at the crossroads. Ask Reeve Halden why the ale stopped, and come and tell me.",
+          "starts": "gf_word"
+        },
+        "redcaps": "Redcaps. Of course it's the Redcaps."
+      }
     },
     "brannoc": {
       "name": "Brannoc",
@@ -2095,7 +2141,14 @@
       "disposition": "friendly",
       "faction": "harrowfolk",
       "role": "civilian",
-      "icon": "⚒️"
+      "icon": "⚒️",
+      "topics": {
+        "work": "I'm short of iron. Ask me about iron.",
+        "iron": {
+          "text": "Bog iron, from the ditch in the Fallow Fields east of the city. Bring me a lump and I'll make you something worth carrying.",
+          "starts": "gf_iron"
+        }
+      }
     },
     "orc-1": {
       "name": "Orc Warrior",
@@ -2110,7 +2163,7 @@
       "role": "warrior",
       "icon": "👹",
       "xp": 60,
-      "respawn": 90,
+      "respawn": 300,
       "drops": [
         "greataxe"
       ],
@@ -2265,7 +2318,14 @@
       "icon": "🏹",
       "forecasts": [
         "alzendor"
-      ]
+      ],
+      "topics": {
+        "spiders": {
+          "text": "More spiders every week, and bigger. Something's driving them south out of the Deepwood, north of the silk cavern. Find out what. The Thornkin will know.",
+          "starts": "dw_intel"
+        },
+        "deepwood": "So it's a new queen. Then the Barkmother will want her dead, and so do I."
+      }
     },
     "spider-1": {
       "name": "Giant Spider",
@@ -2422,7 +2482,7 @@
       "disposition": "hostile",
       "role": "beast",
       "icon": "🐺",
-      "respawn": 90,
+      "respawn": 300,
       "xp": 40,
       "attacks": [
         {
@@ -2450,7 +2510,7 @@
       "disposition": "hostile",
       "role": "beast",
       "icon": "🐺",
-      "respawn": 90,
+      "respawn": 300,
       "xp": 40,
       "attacks": [
         {
@@ -2479,7 +2539,7 @@
       "disposition": "hostile",
       "role": "spirit",
       "icon": "👻",
-      "respawn": 180,
+      "respawn": 300,
       "xp": 90,
       "drops": [
         "rimefang"
@@ -2510,7 +2570,7 @@
       "disposition": "hostile",
       "role": "beast",
       "icon": "🦂",
-      "respawn": 120,
+      "respawn": 300,
       "xp": 60,
       "attacks": [
         {
@@ -2532,7 +2592,7 @@
       "disposition": "hostile",
       "role": "spirit",
       "icon": "🌪️",
-      "respawn": 20,
+      "respawn": 300,
       "xp": 15,
       "attacks": [
         {
@@ -2554,7 +2614,7 @@
       "disposition": "hostile",
       "role": "spirit",
       "icon": "🌪️",
-      "respawn": 20,
+      "respawn": 300,
       "xp": 15,
       "attacks": [
         {
@@ -2633,7 +2693,10 @@
       "faction": "harrowfolk",
       "icon": "🧓",
       "topics": {
-        "ferry": "Holed, is she? You want a plank from the pools, pitch from the pines, and my rope. Take it, take it. Then go and USE the plank ON the ferry.",
+        "ferry": {
+          "text": "Holed, is she? You want a plank from the pools, pitch from the pines, and my rope. Take it, take it.",
+          "explains": "Gather the plank, the pitch and the rope, then USE PLANK ON FERRY."
+        },
         "island": "Nine years I've been here. Boats come aground, and the clever ones mend them and go. I like it here.",
         "crabs": "Mind the big one in the pools. He's got opinions."
       },
@@ -2650,7 +2713,7 @@
       "disposition": "hostile",
       "icon": "🦀",
       "xp": 15,
-      "respawn": 60,
+      "respawn": 300,
       "attacks": [
         {
           "name": "claw",
@@ -2711,7 +2774,20 @@
       ],
       "topics": {
         "rocks": "Seal Rocks? Walk out along the breakwater, and mind the crabs. Go when the wind's down: they come out in the spray.",
-        "sea": "Read the sky before you read the sea, lad. Ask me about the weather."
+        "sea": "Read the sky before you read the sea. Ask me about the weather.",
+        "weather": {
+          "text": "Sky first, sea second. Feel the cold and the wind on your face, watch what's falling, mind the hour, and look at the ground under you before you trust it. Read those four, and you come home.",
+          "explains": "Your weather panel, left to right:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
+        },
+        "sensitivity": {
+          "text": "Some gear doesn't care what the sky does: a belaying pin's a belaying pin. Some's like a sail: perfect in its own wind, and worse than useless in the wrong one. Learn which is which before you need it.",
+          "explains": "Weather sensitivity: everything in your slots has a spot on the sky square where it works best. Hover over a slot to see it.\n  The pips show how touchy it is. ●○○○○ works about the same in any weather. ●●●●● is strong at its spot and weak far from it.\nRarity is something else: the colour of an item's name (common, uncommon, rare, epic, legendary) says how hard it is to come by, not how it reacts to the weather."
+        },
+        "rarity": {
+          "text": "Rare and fussy aren't the same thing. Though your fussiest gear is mostly rare.",
+          "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: ASK about SENSITIVITY."
+        },
+        "crabs": "Crabs, eh? Nasty pinchers. You got one and kept your fingers. That'll do."
       }
     },
     "vane": {
@@ -2741,7 +2817,11 @@
       "proper": true,
       "icon": "⚓",
       "topics": {
-        "passage": "The Kittiwake's done, and so's my money. I've a berth for you on a cog to the lake country. There's work there for someone who can fight. Go on.",
+        "travel": {
+          "text": "Never crossed open water? The cog sails from here, out past the strait and over to the lake country. A few days, if the weather holds, and it won't. Ride it and you're done with Gullhaven: there's nothing here to come back for. Tell me when you're ready.",
+          "explains": "Travel: coaches, ferries, caravans and portals leave from particular places. Standing in one, type TRAVEL to see every route out: where it goes, the fare, and how many stages the journey takes. Type TRAVEL and a route's name to take it. On the road you go a stage at a time, and things can happen: you'll be given choices when they do.\nThis one leaves Gullhaven for good: there's no coming back. When you're ready, type TRAVEL to see it, then TRAVEL COG."
+        },
+        "passage": "The Kittiwake's done, and so's my money. But I've a berth for you on a cog to the lake country. Ask me about travel, if you've never crossed.",
         "kittiwake": "Six years. She deserved better."
       }
     },
@@ -2755,7 +2835,7 @@
       "max_hp": 18,
       "disposition": "hostile",
       "xp": 15,
-      "respawn": 45,
+      "respawn": 300,
       "icon": "🦀",
       "attacks": [
         {
@@ -2764,7 +2844,8 @@
           "damage": 2,
           "hit": "{actor} pinches {target}."
         }
-      ]
+      ],
+      "role": "crab"
     },
     "rock_crab_2": {
       "name": "Rock Crab",
@@ -2776,7 +2857,7 @@
       "max_hp": 18,
       "disposition": "hostile",
       "xp": 15,
-      "respawn": 45,
+      "respawn": 300,
       "icon": "🦀",
       "attacks": [
         {
@@ -2785,7 +2866,8 @@
           "damage": 2,
           "hit": "{actor} pinches {target}."
         }
-      ]
+      ],
+      "role": "crab"
     },
     "wrecker": {
       "name": "Wrecker",
@@ -2797,7 +2879,7 @@
       "max_hp": 26,
       "disposition": "hostile",
       "xp": 20,
-      "respawn": 45,
+      "respawn": 300,
       "icon": "🏴‍☠️",
       "attacks": [
         {
@@ -2818,7 +2900,7 @@
       "max_hp": 40,
       "disposition": "hostile",
       "xp": 40,
-      "respawn": 60,
+      "respawn": 300,
       "icon": "🏴‍☠️",
       "attacks": [
         {
@@ -2828,7 +2910,8 @@
           "hit": "{actor} slashes at {target}."
         }
       ],
-      "proper": true
+      "proper": true,
+      "drops": []
     },
     "brisa": {
       "name": "Aunt Brisa",
@@ -2842,9 +2925,29 @@
       "proper": true,
       "icon": "👵",
       "topics": {
-        "stall": "Crates. By the fountain. Go. Then USE them ON the stall.",
-        "quarrel": "Okur and Selene, at it again. The whole market is choosing sides."
-      }
+        "stall": {
+          "text": "Crates. By the fountain. Go on, then. They won't carry themselves.",
+          "explains": "GET CRATES at the fountain (WEST), then come back and USE CRATES ON STALL."
+        },
+        "quarrel": "Okur and Selene, at it again. The whole market is choosing sides.",
+        "weather": {
+          "text": "A merchant who can't read the sky gets rained on with her silks out. Feel how cold it is and how hard the wind blows. Watch what's coming down, and whether it's day or dark, and what the road's like underfoot. Get it wrong and you've lost a week's takings. Get it right and you're selling umbrellas at a crown apiece.",
+          "explains": "Your weather panel, left to right:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
+        },
+        "sensitivity": {
+          "text": "Some goods sell in any weather: salt, rope, a good knife. Others only move when the sky's just so: furs in a frost, parasols in a heatwave. What you fight with is the same. A plain club hits as hard in a gale as in a calm. A fussy one is wonderful in its own weather and poor in any other. Know which you're carrying.",
+          "explains": "Weather sensitivity: everything in your slots has a spot on the sky square where it works best. Hover over a slot to see it.\n  The pips show how touchy it is. ●○○○○ works about the same in any weather. ●●●●● is strong at its spot and weak far from it.\nRarity is something else: the colour of an item's name (common, uncommon, rare, epic, legendary) says how hard it is to come by, not how it reacts to the weather."
+        },
+        "rarity": {
+          "text": "Rare's not the same as fussy, love. Plenty of rare things don't care about the weather, and plenty of cheap ones do. Though the fussiest are mostly rare, I'll grant you.",
+          "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: ASK about SENSITIVITY."
+        },
+        "rats": "Got one, did you? Good. They're bold this year, with the oats spilt all over the yard.",
+        "future": "What I want? This. The stall, the noise, Wenna and Hob shouting the prices over each other. We do well, the three of us, and we'll go on doing well. But you? In one week you've caught the guild's own weights being filed and cleared out its granary. You don't want to stand here all day selling pepper, and I won't have you do it. Go and see the world while you're young. Dace is taking a caravan to Harrowgate. Go and talk to him."
+      },
+      "forecasts": [
+        "copperstall"
+      ]
     },
     "okur": {
       "name": "Okur",
@@ -2888,12 +2991,13 @@
       "proper": true,
       "icon": "🎩",
       "topics": {
-        "granary": "Rats in the guild granary. Clear them out and I will see you right."
+        "granary": "Rats in the guild granary. Clear them out and I will see you right.",
+        "rats": "Rats? The granary was full of them. Or it was, I'm told."
       }
     },
     "dace": {
       "name": "Dace",
-      "room": "caravan_yard",
+      "room": "coach_stand",
       "label": "Caravan Master",
       "description": "loud, sunburnt",
       "details": "A caravan master who has been robbed on every road there is.",
@@ -2903,7 +3007,11 @@
       "proper": true,
       "icon": "🐴",
       "topics": {
-        "passage": "Harrowgate? I leave now. Ride guard and the ride is free. Bandits on the hill road, mind."
+        "travel": {
+          "text": "First time on the road? Wagons, barges, ships: they all leave from somewhere, and they all cost something, coin or work. Mine's free if you ride guard. It's the hill road and then the woods to Harrowgate, in the lake country, and there's bandits in those woods. And once you're out of Copperstall, you're out: nobody comes back this way for a stall. Say the word when you're ready.",
+          "explains": "Travel: coaches, ferries, caravans and portals leave from particular places. Standing in one, type TRAVEL to see every route out: where it goes, the fare, and how many stages the journey takes. Type TRAVEL and a route's name to take it. On the road you go a stage at a time, and things can happen: you'll be given choices when they do.\nThis one leaves Copperstall for good: there's no coming back. When you're ready, type TRAVEL to see it, then TRAVEL CARAVAN."
+        },
+        "passage": "Harrowgate, in the lake country. Ask me about travel, if you've never been on the road."
       }
     },
     "granary_rat": {
@@ -2916,7 +3024,7 @@
       "max_hp": 16,
       "disposition": "hostile",
       "xp": 15,
-      "respawn": 45,
+      "respawn": 300,
       "icon": "🐀",
       "attacks": [
         {
@@ -2937,7 +3045,7 @@
       "max_hp": 16,
       "disposition": "hostile",
       "xp": 15,
-      "respawn": 45,
+      "respawn": 300,
       "icon": "🐀",
       "attacks": [
         {
@@ -2958,14 +3066,15 @@
       "max_hp": 40,
       "disposition": "hostile",
       "xp": 40,
-      "respawn": 60,
+      "respawn": 300,
       "icon": "👑",
       "attacks": [
         {
           "name": "swarm",
           "period": 3000,
           "damage": 4,
-          "hit": "{actor} swarms over {target}."
+          "hit": "{actor} swarms over {target}.",
+          "defend": "none"
         }
       ]
     },
@@ -2984,8 +3093,24 @@
         "thornwick"
       ],
       "topics": {
-        "moonbloom": "There's a fever in the hamlet, and moonbloom is the cure. It grows in the mist pool in Fernhollow, and only opens when the air is still and damp. Ask me about the weather, and I'll show you how to tell when.",
-        "wood": "Someone's been poaching in the deep oaks. Watch your step."
+        "moonbloom": {
+          "text": "There's a fever in the hamlet, and moonbloom is the cure. It grows in the mist pool in Fernhollow, and only opens when the air is still and damp.",
+          "explains": "Moonbloom opens when there's little wind and something is falling: the dot low on the sky square, and rain in the rain bar."
+        },
+        "wood": "Someone's been poaching in the deep oaks. Watch your step.",
+        "weather": {
+          "text": "Everything that grows knows the weather. So should you. The cold and the wind, what the clouds let fall, day and night, and the ground underfoot. The moonbloom minds all four, and so do the wolves.",
+          "explains": "Your weather panel, left to right:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
+        },
+        "sensitivity": {
+          "text": "Some things thrive anywhere, like nettles. Others only in their own season, like moonbloom. Your weapons are the same: a hatchet cuts in any weather, but some things only bite when the sky is right for them.",
+          "explains": "Weather sensitivity: everything in your slots has a spot on the sky square where it works best. Hover over a slot to see it.\n  The pips show how touchy it is. ●○○○○ works about the same in any weather. ●●●●● is strong at its spot and weak far from it.\nRarity is something else: the colour of an item's name (common, uncommon, rare, epic, legendary) says how hard it is to come by, not how it reacts to the weather."
+        },
+        "rarity": {
+          "text": "Rare isn't the same as fussy. A rare herb might grow anywhere. But the fussiest ones are mostly rare.",
+          "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: ASK about SENSITIVITY."
+        },
+        "wisps": "Bog wisps. Pretty things, and they'd burn the eyes out of your head. You did well."
       }
     },
     "tobin": {
@@ -3000,7 +3125,11 @@
       "proper": true,
       "icon": "🛶",
       "topics": {
-        "passage": "Downriver? Hop on. The Spiderwood's where the money is, for a hunter."
+        "travel": {
+          "text": "Barge goes downriver, round the bend and through the rapids, to the big woods. Sit on the timber and hold on. Once you're off it, you're a long way from Thornwick. Say when.",
+          "explains": "Travel: coaches, ferries, caravans and portals leave from particular places. Standing in one, type TRAVEL to see every route out: where it goes, the fare, and how many stages the journey takes. Type TRAVEL and a route's name to take it. On the road you go a stage at a time, and things can happen: you'll be given choices when they do.\nThis one leaves Thornwick for good: there's no coming back. When you're ready, type TRAVEL to see it, then TRAVEL BARGE."
+        },
+        "passage": "Downriver? The Spiderwood's where the money is, for a hunter. Ask me about travel, if you've never ridden a barge."
       }
     },
     "bog_wisp": {
@@ -3013,14 +3142,15 @@
       "max_hp": 16,
       "disposition": "hostile",
       "xp": 15,
-      "respawn": 45,
+      "respawn": 300,
       "icon": "✨",
       "attacks": [
         {
           "name": "sting",
           "period": 2500,
           "damage": 2,
-          "hit": "{actor} stings {target} with cold light."
+          "hit": "{actor} stings {target} with cold light.",
+          "defend": "dodge"
         }
       ]
     },
@@ -3034,7 +3164,7 @@
       "max_hp": 22,
       "disposition": "hostile",
       "xp": 20,
-      "respawn": 45,
+      "respawn": 300,
       "icon": "🐺",
       "attacks": [
         {
@@ -3055,7 +3185,7 @@
       "max_hp": 22,
       "disposition": "hostile",
       "xp": 20,
-      "respawn": 45,
+      "respawn": 300,
       "icon": "🐺",
       "attacks": [
         {
@@ -3076,7 +3206,7 @@
       "max_hp": 35,
       "disposition": "neutral",
       "xp": 30,
-      "respawn": 60,
+      "respawn": 300,
       "icon": "🦌",
       "attacks": [
         {
@@ -3100,8 +3230,24 @@
       "icon": "👵",
       "topics": {
         "work": "A purse first. The drunk in Tipsy Lane. Then we talk about real work.",
-        "signet": "The magistrate's signet ring. With it, I can seal any order I like. Watch the stairs; he's not stupid."
-      }
+        "signet": "The magistrate's signet ring. With it, I can seal any order I like. Watch the stairs; he's not stupid.",
+        "weather": {
+          "text": "Rain empties the streets. Fog hides you. Cold keeps the watch indoors, and the dark's your friend. Learn the sky, the rain, the hour and the cobbles, and you'll never get caught out on a roof in a storm.",
+          "explains": "Your weather panel, left to right:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
+        },
+        "sensitivity": {
+          "text": "Some tricks work any time: a cosh is a cosh. Some only work when the weather suits them. Know your tools before you need them.",
+          "explains": "Weather sensitivity: everything in your slots has a spot on the sky square where it works best. Hover over a slot to see it.\n  The pips show how touchy it is. ●○○○○ works about the same in any weather. ●●●●● is strong at its spot and weak far from it.\nRarity is something else: the colour of an item's name (common, uncommon, rare, epic, legendary) says how hard it is to come by, not how it reacts to the weather."
+        },
+        "rarity": {
+          "text": "Rare's what it fetches. Fussy's how it works. Not the same thing, though the fussiest stuff's usually rare.",
+          "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: ASK about SENSITIVITY."
+        },
+        "rats": "Bread's safe, then. Quick hands and quicker feet. You'll do."
+      },
+      "forecasts": [
+        "lowwick"
+      ]
     },
     "joss": {
       "name": "Joss",
@@ -3115,7 +3261,11 @@
       "proper": true,
       "icon": "🛒",
       "topics": {
-        "passage": "Under the tarp. Not a sound till the city. And you never saw me."
+        "travel": {
+          "text": "Under the tarp, not a sound, down the low road and through the tollgate. The watch checks carts there, so lie still. Once you're in the city, you don't come back to Low Wick. Not with your face. Say when.",
+          "explains": "Travel: coaches, ferries, caravans and portals leave from particular places. Standing in one, type TRAVEL to see every route out: where it goes, the fare, and how many stages the journey takes. Type TRAVEL and a route's name to take it. On the road you go a stage at a time, and things can happen: you'll be given choices when they do.\nThis one leaves Low Wick for good: there's no coming back. When you're ready, type TRAVEL to see it, then TRAVEL CART."
+        },
+        "passage": "Nan's favour, is it? Ask me about travel, and I'll tell you how it goes."
       }
     },
     "guard_dog": {
@@ -3128,7 +3278,7 @@
       "max_hp": 30,
       "disposition": "hostile",
       "xp": 25,
-      "respawn": 60,
+      "respawn": 300,
       "icon": "🐕",
       "attacks": [
         {
@@ -3149,7 +3299,7 @@
       "max_hp": 24,
       "disposition": "hostile",
       "xp": 20,
-      "respawn": 45,
+      "respawn": 300,
       "icon": "🏮",
       "attacks": [
         {
@@ -3170,7 +3320,7 @@
       "max_hp": 24,
       "disposition": "hostile",
       "xp": 20,
-      "respawn": 45,
+      "respawn": 300,
       "icon": "🏮",
       "attacks": [
         {
@@ -3180,6 +3330,84 @@
           "hit": "{actor} cracks {target} with a club."
         }
       ]
+    },
+    "market_rat": {
+      "name": "Feed Rat",
+      "room": "caravan_yard",
+      "description": "a rat fat on spilled oats",
+      "details": "A rat fat on spilled oats, and not afraid of anyone.",
+      "keywords": "feed rat",
+      "label": "Rat",
+      "max_hp": 14,
+      "disposition": "hostile",
+      "xp": 15,
+      "respawn": 300,
+      "icon": "🐀",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2800,
+          "damage": 2,
+          "hit": "{actor} bites {target}."
+        }
+      ]
+    },
+    "alley_rat": {
+      "name": "Alley Rat",
+      "room": "rat_alley",
+      "description": "a mangy, bold rat",
+      "details": "Rat Alley earned its name.",
+      "keywords": "alley rat",
+      "label": "Rat",
+      "max_hp": 14,
+      "disposition": "hostile",
+      "xp": 15,
+      "respawn": 300,
+      "icon": "🐀",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2800,
+          "damage": 2,
+          "hit": "{actor} bites {target}."
+        }
+      ]
+    },
+    "wenna": {
+      "name": "Wenna",
+      "proper": true,
+      "label": "Stall Hand",
+      "description": "quick, with a pencil behind each ear",
+      "details": "Wenna has worked Aunt Brisa's stall for ten years and can add up a basket by looking at it.",
+      "keywords": "wenna",
+      "room": "stall_row",
+      "max_hp": 30,
+      "disposition": "friendly",
+      "faction": "harrowfolk",
+      "role": "civilian",
+      "icon": "🧺",
+      "topics": {
+        "stall": "Your aunt's the best trader on the row. Don't tell her I said so.",
+        "brisa": "She'll miss you. She'll never say so, mind."
+      }
+    },
+    "hob": {
+      "name": "Hob",
+      "proper": true,
+      "label": "Stall Hand",
+      "description": "broad, cheerful, and very loud",
+      "details": "Hob shouts the prices. Hob has always shouted the prices.",
+      "keywords": "hob",
+      "room": "stall_row",
+      "max_hp": 30,
+      "disposition": "friendly",
+      "faction": "harrowfolk",
+      "role": "civilian",
+      "icon": "🧺",
+      "topics": {
+        "stall": "PEPPER! FRESH PEPPER! Sorry. Habit.",
+        "brisa": "Best boss in Copperstall. Pays on time, shouts less than me."
+      }
     }
   },
   "gear": {
@@ -3244,7 +3472,8 @@
       "perfect_hit": "{actor} cuts {target} with a clean sword stroke!",
       "miss": "{actor} swings a sword at {target} and misses.",
       "whiff": "your sword cuts empty air.",
-      "description": "A plain soldier's sword. Steady in any weather, best on a mild day."
+      "description": "A plain soldier's sword. Steady in any weather, best on a mild day.",
+      "rarity": "uncommon"
     },
     "draught": {
       "name": "Healing Draught",
@@ -4557,7 +4786,8 @@
         "energy": 0.5,
         "precipitation": "wet",
         "tier": "green"
-      }
+      },
+      "rarity": "common"
     },
     "tar_flask": {
       "name": "Tar Flask",
@@ -4583,7 +4813,8 @@
         "precipitation": "dry",
         "tier": "green"
       },
-      "stagger_ms": 1200
+      "stagger_ms": 1200,
+      "rarity": "common"
     },
     "belaying_pin": {
       "name": "Belaying Pin",
@@ -4703,7 +4934,8 @@
         "precipitation": "dry",
         "tier": "green"
       },
-      "stagger_ms": 1500
+      "stagger_ms": 1500,
+      "rarity": "common"
     },
     "tonic": {
       "name": "Tonic",
@@ -4747,7 +4979,8 @@
         "energy": -0.2,
         "precipitation": "any",
         "tier": "green"
-      }
+      },
+      "rarity": "common"
     },
     "skinning_knife": {
       "name": "Skinning Knife",
@@ -4798,7 +5031,8 @@
         "precipitation": "any",
         "tier": "green"
       },
-      "stagger_ms": 1500
+      "stagger_ms": 1500,
+      "rarity": "common"
     },
     "poultice": {
       "name": "Poultice",
@@ -4868,7 +5102,8 @@
         "precipitation": "dry",
         "tier": "green"
       },
-      "stagger_ms": 1500
+      "stagger_ms": 1500,
+      "rarity": "common"
     },
     "cosh": {
       "name": "Cosh",
@@ -4972,6 +5207,12 @@
           "affinity": -3,
           "respect": -1,
           "note": "Rudeness gets noticed."
+        },
+        {
+          "deed": "kill",
+          "of": "outlaws",
+          "affinity": 2,
+          "note": "One less outlaw on the roads."
         }
       ]
     },
@@ -5220,7 +5461,13 @@
     "event_chance": 0.05,
     "event_seconds": 60,
     "level_cap": 20,
-    "respec_coins_per_level": 10
+    "respec_coins_per_level": 10,
+    "armor_k": 30,
+    "defend_cooldown_ms": 1500,
+    "defend_late_ms": 400,
+    "dodge_window_ms": 200,
+    "block_window_ms": 300,
+    "defend_perfect_ms": 60
   },
   "channels": [
     "general"
@@ -5287,6 +5534,17 @@
     },
     "marsh": {
       "precipitation": 0.1
+    },
+    "moor": {
+      "energy": 0.35
+    },
+    "peak": {
+      "temperature": -0.5,
+      "energy": 0.3
+    },
+    "ash": {
+      "temperature": 0.6,
+      "precipitation": -0.5
     }
   },
   "terrain_ground": {
@@ -5297,7 +5555,10 @@
     "marsh": "rough",
     "mountain": "rough",
     "scree": "rough",
-    "deep_forest": "rough"
+    "deep_forest": "rough",
+    "moor": "open",
+    "peak": "rough",
+    "ash": "open"
   },
   "kinds": {
     "Weapon": {
@@ -5474,7 +5735,7 @@
     },
     "gullhaven-cog": {
       "name": "the trading cog",
-      "keywords": "ferry",
+      "keywords": "ferry cog",
       "from": "quay_end",
       "to": "ferry_dock",
       "path": [
@@ -5482,37 +5743,45 @@
         "gh_strait"
       ],
       "kind": "ferry",
-      "hidden": true,
       "events": [
         "cog_squall"
       ],
       "risk": 1,
       "depart": "You shoulder your sea bag and climb aboard the cog. Gullhaven shrinks behind you.",
       "leave": "{actor} is gone.",
-      "arrive": "A trading cog ties up, and {actor} steps ashore with a sea bag."
+      "arrive": "A trading cog ties up, and {actor} steps ashore with a sea bag.",
+      "quest": "gh_leave",
+      "step": "board",
+      "by": "ardith",
+      "leaves_start": true,
+      "hidden": true
     },
     "copperstall-caravan": {
       "name": "Dace's caravan",
-      "keywords": "coach",
-      "from": "caravan_yard",
+      "keywords": "caravan coach harrowgate",
+      "from": "coach_stand",
       "to": "market_square",
       "path": [
         "cs_hill_road",
         "cs_woods"
       ],
       "kind": "coach",
-      "hidden": true,
       "events": [
         "caravan_bandits"
       ],
       "risk": 1,
       "depart": "You climb up beside Dace, and the caravan rolls out of Copperstall.",
       "leave": "{actor} is gone.",
-      "arrive": "Dace's caravan rolls into the square, and {actor} jumps down."
+      "arrive": "Dace's caravan rolls into the square, and {actor} jumps down.",
+      "quest": "cs_leave",
+      "step": "board",
+      "by": "dace",
+      "leaves_start": true,
+      "hidden": true
     },
     "thornwick-barge": {
       "name": "Tobin's barge",
-      "keywords": "ferry",
+      "keywords": "ferry barge downriver",
       "from": "smokehouse",
       "to": "woodland_path",
       "path": [
@@ -5520,18 +5789,22 @@
         "tw_rapids"
       ],
       "kind": "ferry",
-      "hidden": true,
       "events": [
         "barge_snag"
       ],
       "risk": 1,
       "depart": "You climb onto the timber, and Tobin poles off downriver.",
       "leave": "{actor} is gone.",
-      "arrive": "{actor} climbs off a timber barge at the river bank and walks up into the wood."
+      "arrive": "{actor} climbs off a timber barge at the river bank and walks up into the wood.",
+      "quest": "tw_leave",
+      "step": "board",
+      "by": "tobin",
+      "leaves_start": true,
+      "hidden": true
     },
     "lowwick-cart": {
       "name": "Joss's cart",
-      "keywords": "coach",
+      "keywords": "coach cart",
       "from": "cart_yard",
       "to": "back_alley",
       "path": [
@@ -5539,14 +5812,18 @@
         "lw_tollgate"
       ],
       "kind": "coach",
-      "hidden": true,
       "events": [
         "checkpoint"
       ],
       "risk": 1,
       "depart": "You curl up under the tarpaulin among the turnips, and the cart jolts off.",
       "leave": "{actor} is gone.",
-      "arrive": "{actor} rolls out from under a tarpaulin in the back alley, and the cart is gone."
+      "arrive": "{actor} rolls out from under a tarpaulin in the back alley, and the cart is gone.",
+      "quest": "lw_hot",
+      "step": "board",
+      "by": "joss",
+      "leaves_start": true,
+      "hidden": true
     }
   },
   "travel_events": {
@@ -6656,7 +6933,9 @@
         "tar": {
           "goal": "Hedda needs tar for the hull. Go NORTH to the tar pits and GET TAR.",
           "on": {
-            "get": "tar-g"
+            "have": [
+              "tar-g"
+            ]
           },
           "then": "caulk"
         },
@@ -6671,13 +6950,23 @@
               "take": "tar-g"
             },
             {
-              "text": "You work the tar into the sprung seams. Hedda nods: \"Good. Now, about my anchor chain...\""
+              "text": "You work the tar into the sprung seams."
             },
             {
-              "xp": 50
+              "say": "Good. That'll hold her. Take this torch: the sail loft's shutters are nailed up, and it's black as pitch in there.",
+              "by": "hedda"
             },
             {
-              "start": "gh_chain"
+              "give": "torch"
+            },
+            {
+              "guide": "Hold the torch to see in the dark: WEAR TORCH."
+            },
+            {
+              "xp": 40
+            },
+            {
+              "start": "gh_sky"
             }
           ]
         }
@@ -6685,20 +6974,14 @@
     },
     "gh_chain": {
       "name": "Lost Chain",
-      "start": "ask",
+      "start": "chain",
       "steps": {
-        "ask": {
-          "goal": "The anchor chain went over at Seal Rocks. Old Pell, in the Salted Gull (EAST, then NORTH), knows the way: ASK PELL ABOUT ROCKS. Ask him about the WEATHER too.",
-          "on": {
-            "ask": "pell",
-            "about": "rocks"
-          },
-          "then": "chain"
-        },
         "chain": {
-          "goal": "Walk out along the breakwater (east of the Quay Steps) to Seal Rocks and GET CHAIN. Crabs bite: press 4, 3 or 2 to use your slots on whatever you target (Tab).",
+          "goal": "Hedda's anchor chain went over at Seal Rocks: find it there and GET CHAIN.",
           "on": {
-            "get": "chain-g"
+            "have": [
+              "chain-g"
+            ]
           },
           "then": "return"
         },
@@ -6713,17 +6996,20 @@
               "take": "chain-g"
             },
             {
-              "text": "Hedda hefts the chain. \"That'll pay for the tar. Listen: I've seen lights down in the cove at night.\""
+              "say": "That'll pay for the tar, and then some.",
+              "by": "hedda"
             },
             {
-              "xp": 100
+              "xp": 80
             },
             {
               "start": "gh_wreckers"
             }
           ]
         }
-      }
+      },
+      "giver": "pell",
+      "offer": "Hedda was in here asking after you. Her anchor chain went over at Seal Rocks in the storm, and she could sell it, if someone fetched it back."
     },
     "gh_wreckers": {
       "name": "Wreckers",
@@ -6747,38 +7033,56 @@
               "take": "lantern-g"
             },
             {
-              "text": "Vane turns the lantern over. \"Proof. Good. You've done this town a service.\" He counts out a reward."
+              "say": "Proof. Good. You've done this town a service.",
+              "by": "vane"
+            },
+            {
+              "text": "He counts out a reward."
             },
             {
               "coins": 10
             },
             {
-              "xp": 150
+              "xp": 120
+            },
+            {
+              "give": "wreckers_tricorne"
             },
             {
               "start": "gh_leave"
             }
           ]
         }
-      }
+      },
+      "giver": "hedda",
+      "offer": "Listen. I've seen lights down in Wreckers' Cove at night, south of Seal Rocks. False lights, to draw ships onto the rocks. I'd not be surprised if that's what did for the Kittiwake. Find out who."
     },
     "gh_leave": {
       "name": "Paid Off",
       "start": "ask",
       "steps": {
         "ask": {
-          "goal": "Captain Ardith is waiting at Quay End. ASK ARDITH ABOUT PASSAGE.",
+          "goal": "Captain Ardith is waiting at Quay End. Ask her about the crossing: ASK ARDITH ABOUT TRAVEL.",
           "on": {
             "ask": "ardith",
-            "about": "passage"
+            "about": "travel"
+          },
+          "then": "board"
+        },
+        "board": {
+          "goal": "When you're ready to leave Gullhaven for good, type TRAVEL at Quay End, then TRAVEL COG.",
+          "on": {
+            "travel": "gullhaven-cog"
           },
           "effects": [
             {
-              "leave_start": "gullhaven-cog"
+              "start": "gf_newcomer"
             }
           ]
         }
-      }
+      },
+      "giver": "vane",
+      "offer": "Captain Ardith was asking after you. She's at Quay End, and she says she's found you a berth off this rock."
     },
     "cs_stall": {
       "name": "Opening the Stall",
@@ -6787,7 +7091,9 @@
         "crates": {
           "goal": "Aunt Brisa wants your goods out. Go WEST to the fountain and GET CRATES.",
           "on": {
-            "get": "crates-m"
+            "have": [
+              "crates-m"
+            ]
           },
           "then": "stall"
         },
@@ -6802,13 +7108,14 @@
               "take": "crates-m"
             },
             {
-              "text": "Your stall is open. Within a minute, the shouting starts across the market."
+              "say": "There. Open for business. And hear that? The shouting's started across the market already.",
+              "by": "brisa"
             },
             {
-              "xp": 50
+              "xp": 40
             },
             {
-              "start": "cs_weight"
+              "start": "cs_sky"
             }
           ]
         }
@@ -6835,9 +7142,11 @@
           "then": "search"
         },
         "search": {
-          "goal": "Someone swapped the guild's weights. Search the counting house on Guild Row (LOOK at things) and GET what's wrong.",
+          "goal": "Someone swapped the guild's weights. Search the counting house on Guild Row: it's dark, so WEAR TORCH, then LOOK at things and GET what's wrong.",
           "on": {
-            "get": "weight-m"
+            "have": [
+              "weight-m"
+            ]
           },
           "then": "show"
         },
@@ -6852,61 +7161,100 @@
               "take": "weight-m"
             },
             {
-              "text": "Thorne weighs it in his palm. \"Filed. Both of them have been cheating with the guild's own weights.\" The quarrel ends in two fines."
+              "say": "Filed. Both of them have been cheating with the guild's own weights. Two fines, and an end to it.",
+              "by": "thorne"
             },
             {
-              "xp": 100
+              "xp": 80
+            },
+            {
+              "give": "guild_cap"
             },
             {
               "start": "cs_rats"
             }
           ]
         }
-      }
+      },
+      "giver": "brisa",
+      "offer": "Now, that shouting. Okur and Selene each swear the other's scales are crooked, and the whole market's choosing sides. Go and hear Okur out, at the spice stalls."
     },
     "cs_rats": {
       "name": "Rats in the Granary",
       "start": "king",
       "steps": {
         "king": {
-          "goal": "Thorne wants the guild granary cleared: east of the counting house, then DOWN. Kill the Rat King.",
+          "goal": "Clear the guild granary: east of the counting house, then DOWN. Kill the Rat King.",
           "on": {
             "kill": "rat_king"
           },
           "effects": [
             {
               "text": "The squeaking stops. The granary is quiet."
+            }
+          ],
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Thorne, in the Guild Hall: ASK THORNE ABOUT RATS.",
+          "on": {
+            "ask": "thorne",
+            "about": "rats"
+          },
+          "effects": [
+            {
+              "say": "The Rat King himself? Well, well. Here, for your trouble.",
+              "by": "thorne"
             },
             {
               "coins": 10
             },
             {
-              "xp": 150
+              "xp": 120
             },
             {
               "start": "cs_leave"
             }
           ]
         }
-      }
+      },
+      "giver": "thorne",
+      "offer": "While you're here. Rats have got into the guild granary, east of the counting house and down the steps. Clear them out, their king most of all, and I'll see you right."
     },
     "cs_leave": {
-      "name": "The Caravan",
-      "start": "ask",
+      "name": "Your Own Road",
+      "start": "aunt",
       "steps": {
-        "ask": {
-          "goal": "Your aunt can run the stall. You want more. Dace, in the caravan yard south of Guild Row, leaves for Harrowgate: ASK DACE ABOUT PASSAGE.",
+        "aunt": {
+          "goal": "Ask Aunt Brisa what she really wants, at Stall Row: ASK BRISA ABOUT FUTURE.",
+          "on": {
+            "ask": "brisa",
+            "about": "future"
+          },
+          "then": "dace"
+        },
+        "dace": {
+          "goal": "Dace's caravan loads at the coach stand, south of the caravan yard. Ask him how it works: ASK DACE ABOUT TRAVEL.",
           "on": {
             "ask": "dace",
-            "about": "passage"
+            "about": "travel"
+          },
+          "then": "board"
+        },
+        "board": {
+          "goal": "When you're ready to leave Copperstall for good, type TRAVEL at the coach stand, then TRAVEL CARAVAN.",
+          "on": {
+            "travel": "copperstall-caravan"
           },
           "effects": [
             {
-              "leave_start": "copperstall-caravan"
+              "start": "gf_newcomer"
             }
           ]
         }
-      }
+      },
+      "giver": "thorne",
+      "offer": "You've done more for this guild in a week than half my members do in a year. But you're wasted behind a stall, and I think your aunt knows it. Go and ask her what she really wants."
     },
     "tw_snares": {
       "name": "Checking the Snares",
@@ -6926,13 +7274,13 @@
           },
           "effects": [
             {
-              "text": "Poachers, and their snares. Your own woods are not safe any more."
+              "text": "Poachers, and their snares. Your own woods are not safe any more. And it's black as night under these oaks: without a light, you can only feel your way back. Maud, the healer in the hamlet, will have a torch."
             },
             {
-              "xp": 50
+              "xp": 40
             },
             {
-              "start": "tw_bloom"
+              "start": "tw_sky"
             }
           ]
         }
@@ -6940,26 +7288,10 @@
     },
     "tw_bloom": {
       "name": "Moonbloom",
-      "start": "ask",
+      "start": "bloom",
       "steps": {
-        "ask": {
-          "goal": "Maud the healer (back at the hamlet, NORTH of the lodge) wants something: ASK MAUD ABOUT MOONBLOOM.",
-          "on": {
-            "ask": "maud",
-            "about": "moonbloom"
-          },
-          "then": "weather"
-        },
-        "weather": {
-          "goal": "Learn to read the sky: ASK MAUD ABOUT WEATHER. Then type WEATHER to see when it will be still and damp.",
-          "on": {
-            "ask": "maud",
-            "about": "weather"
-          },
-          "then": "bloom"
-        },
         "bloom": {
-          "goal": "Be at the mist pool in Fernhollow (east of the snare line) while the air is still and damp, and the moonbloom will open. Bog wisps guard the way.",
+          "goal": "Be at the mist pool in Fernhollow (east of the snare line) while the air is still and damp: little wind, and something falling. Then the moonbloom will open. Bog wisps guard the way.",
           "on": {
             "in": "mist_pool",
             "when": {
@@ -6994,24 +7326,30 @@
               "take": "moonbloom-t"
             },
             {
-              "text": "Maud brews it at once. \"The fever will break by morning. Now, there's talk of a white hart on Stag's Rise...\""
+              "text": "Maud brews it at once."
             },
             {
-              "xp": 100
+              "say": "The fever will break by morning. Thank you.",
+              "by": "maud"
+            },
+            {
+              "xp": 80
             },
             {
               "start": "tw_hart"
             }
           ]
         }
-      }
+      },
+      "giver": "maud",
+      "offer": "There's a fever in the hamlet, and moonbloom is the cure. It grows in the mist pool in Fernhollow, and only opens when the air is still and damp. Will you fetch me one?"
     },
     "tw_hart": {
       "name": "The White Hart",
       "start": "hunt",
       "steps": {
         "hunt": {
-          "goal": "Hunt the white hart on Stag's Rise, NORTH of the deep oaks. The wolves are hunting it too.",
+          "goal": "Hunt the white hart on Stag's Rise, through the deep oaks (keep your torch lit) and NORTH. The wolves are hunting it too.",
           "on": {
             "kill": "white_hart"
           },
@@ -7020,28 +7358,40 @@
               "text": "The white hart falls. Its hide would fetch a fortune in the city."
             },
             {
-              "xp": 150
+              "xp": 120
+            },
+            {
+              "give": "hart_leggings"
             },
             {
               "start": "tw_leave"
             }
           ]
         }
-      }
+      },
+      "giver": "maud",
+      "offer": "Now, there's talk of a white hart on Stag's Rise, through the deep oaks and north. Its hide would set you up for a year. The wolves are after it too, so don't dawdle."
     },
     "tw_leave": {
       "name": "Downriver",
       "start": "ask",
       "steps": {
         "ask": {
-          "goal": "Sell the hide in the big woods. Tobin, at the smokehouse, takes his barge downriver: ASK TOBIN ABOUT PASSAGE.",
+          "goal": "Sell the hide in the big woods. Tobin, at the smokehouse, takes his barge downriver: ASK TOBIN ABOUT TRAVEL.",
           "on": {
             "ask": "tobin",
-            "about": "passage"
+            "about": "travel"
+          },
+          "then": "board"
+        },
+        "board": {
+          "goal": "When you're ready to leave Thornwick for good, type TRAVEL at the smokehouse, then TRAVEL BARGE.",
+          "on": {
+            "travel": "thornwick-barge"
           },
           "effects": [
             {
-              "leave_start": "thornwick-barge"
+              "start": "gf_newcomer"
             }
           ]
         }
@@ -7069,13 +7419,13 @@
               "take": "purse-u"
             },
             {
-              "text": "Nan weighs it, and smiles with all four teeth. \"Good. Now, real work: ASK me about the SIGNET.\""
+              "xp": 40
             },
             {
-              "xp": 50
+              "text": "Nan weighs it, and smiles with all four teeth."
             },
             {
-              "start": "lw_signet"
+              "start": "lw_sky"
             }
           ]
         }
@@ -7083,20 +7433,14 @@
     },
     "lw_signet": {
       "name": "The Signet",
-      "start": "ask",
+      "start": "steal",
       "steps": {
-        "ask": {
-          "goal": "ASK NAN ABOUT SIGNET.",
-          "on": {
-            "ask": "nan",
-            "about": "signet"
-          },
-          "then": "steal"
-        },
         "steal": {
-          "goal": "Steal the magistrate's signet. His house is east of Wick Square, the study up the stairs (NORTH). Deal with the dog, and LOOK at the stairs before you climb.",
+          "goal": "Steal the magistrate's signet. His house is east of Wick Square, dark inside (WEAR TORCH), the study up the stairs (NORTH). Deal with the dog, and LOOK at the stairs before you climb.",
           "on": {
-            "get": "signet-u"
+            "have": [
+              "signet-u"
+            ]
           },
           "then": "back"
         },
@@ -7111,17 +7455,26 @@
               "take": "signet-u"
             },
             {
-              "text": "Nan pockets it. Then the bells start. \"The watch. They know it was one of mine. You need to be gone, tonight.\""
+              "text": "Nan pockets it. Then the bells start."
             },
             {
-              "xp": 100
+              "say": "The watch. They know it was one of mine. You need to be gone, tonight.",
+              "by": "nan"
+            },
+            {
+              "xp": 80
+            },
+            {
+              "give": "burglars_hood"
             },
             {
               "start": "lw_hot"
             }
           ]
         }
-      }
+      },
+      "giver": "nan",
+      "offer": "Now, real work. The magistrate's signet ring. With it, I can seal any order I like. Watch the stairs; he's not stupid."
     },
     "lw_hot": {
       "name": "Too Hot",
@@ -7135,21 +7488,254 @@
           "then": "joss"
         },
         "joss": {
-          "goal": "Joss the carter owes Nan a favour: ASK JOSS ABOUT PASSAGE.",
+          "goal": "Joss the carter owes Nan a favour: ASK JOSS ABOUT TRAVEL.",
           "on": {
             "ask": "joss",
-            "about": "passage"
+            "about": "travel"
+          },
+          "then": "board"
+        },
+        "board": {
+          "goal": "When you're ready to leave Low Wick for good, type TRAVEL in the cart yard, then TRAVEL CART.",
+          "on": {
+            "travel": "lowwick-cart"
           },
           "effects": [
             {
-              "xp": 150
+              "xp": 120
             },
             {
-              "leave_start": "lowwick-cart"
+              "start": "gf_newcomer"
+            }
+          ]
+        }
+      },
+      "giver": "nan",
+      "offer": "Over the rooftops: through the magistrate's study and east, and down to the cart yard. Joss the carter owes me a favour. Go!"
+    },
+    "gh_sky": {
+      "name": "Reading the Sky",
+      "start": "sky",
+      "steps": {
+        "sky": {
+          "goal": "Learn to read the sky: ASK PELL ABOUT WEATHER (in the Salted Gull: EAST through the sail loft, EAST, then NORTH).",
+          "on": {
+            "ask": "pell",
+            "about": "weather"
+          },
+          "then": "touchy"
+        },
+        "touchy": {
+          "goal": "Ask how the weather works on your gear: ASK PELL ABOUT SENSITIVITY.",
+          "on": {
+            "ask": "pell",
+            "about": "sensitivity"
+          },
+          "then": "fight"
+        },
+        "fight": {
+          "goal": "Rock crabs crowd Seal Rocks, out along the breakwater east of the Quay Steps. Kill one. Target it (Tab, or click it), then press 4, 3 or 2 as each slot's ball touches the edge. When it swings at you, watch its marker slide along the bar on its card, and press 7 just as it lands: you dodge, or block if you've a shield in hand. Time it well and it takes the whole blow. Not every blow can be dodged or blocked.",
+          "on": {
+            "kill": "crab"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Back to Old Pell in the Salted Gull: ASK PELL ABOUT CRABS.",
+          "on": {
+            "ask": "pell",
+            "about": "crabs"
+          },
+          "effects": [
+            {
+              "xp": 60
+            },
+            {
+              "guide": "Each new level gives you a stat point to spend: TRAIN <stat>, or use the Character panel."
+            },
+            {
+              "start": "gh_chain"
+            }
+          ]
+        }
+      },
+      "giver": "hedda",
+      "offer": "Now go and see Old Pell, in the Salted Gull, east through the sail loft. Nobody reads the sky better, and you'll need to, where you're going."
+    },
+    "cs_sky": {
+      "name": "Market Weather",
+      "start": "sky",
+      "steps": {
+        "sky": {
+          "goal": "Learn to read the sky: ASK BRISA ABOUT WEATHER (here at Stall Row).",
+          "on": {
+            "ask": "brisa",
+            "about": "weather"
+          },
+          "then": "touchy"
+        },
+        "touchy": {
+          "goal": "Ask how the weather works on your gear: ASK BRISA ABOUT SENSITIVITY.",
+          "on": {
+            "ask": "brisa",
+            "about": "sensitivity"
+          },
+          "effects": [
+            {
+              "say": "And take this torch. Thorne keeps the counting house shuttered, and you'll want to see in there.",
+              "by": "brisa"
+            },
+            {
+              "give": "torch"
+            }
+          ],
+          "then": "fight"
+        },
+        "fight": {
+          "goal": "Feed rats are in the oats in the caravan yard (EAST twice, then SOUTH). Kill one. Target it (Tab, or click it), then press 4, 3 or 2 as each slot's ball touches the edge. When it swings at you, watch its marker slide along the bar on its card, and press 7 just as it lands: you dodge, or block if you've a shield in hand. Time it well and it takes the whole blow. Not every blow can be dodged or blocked.",
+          "on": {
+            "kill": "market_rat"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Back to Aunt Brisa at Stall Row (NORTH, WEST twice): ASK BRISA ABOUT RATS.",
+          "on": {
+            "ask": "brisa",
+            "about": "rats"
+          },
+          "effects": [
+            {
+              "xp": 60
+            },
+            {
+              "guide": "Each new level gives you a stat point to spend: TRAIN <stat>, or use the Character panel."
+            },
+            {
+              "start": "cs_weight"
+            }
+          ]
+        }
+      },
+      "giver": "brisa",
+      "offer": "Before you go meddling in that, learn the sky. Ask me about the weather."
+    },
+    "tw_sky": {
+      "name": "Signs in the Sky",
+      "start": "sky",
+      "steps": {
+        "sky": {
+          "goal": "Learn to read the sky: ASK MAUD ABOUT WEATHER (in her hut, NORTH of the lodge).",
+          "on": {
+            "ask": "maud",
+            "about": "weather"
+          },
+          "then": "touchy"
+        },
+        "touchy": {
+          "goal": "Ask how the weather works on your gear: ASK MAUD ABOUT SENSITIVITY.",
+          "on": {
+            "ask": "maud",
+            "about": "sensitivity"
+          },
+          "effects": [
+            {
+              "say": "And here: a torch, for the deep oaks. Hold it, and you'll see the ways on.",
+              "by": "maud"
+            },
+            {
+              "give": "torch"
+            },
+            {
+              "guide": "Hold the torch to see in the dark: WEAR TORCH."
+            }
+          ],
+          "then": "fight"
+        },
+        "fight": {
+          "goal": "Bog wisps haunt Fern Bog, east of the snare line. Kill one: you can't block light, only dodge it. Target it (Tab, or click it), then press 4, 3 or 2 as each slot's ball touches the edge. When it swings at you, watch its marker slide along the bar on its card, and press 7 just as it lands: you dodge, or block if you've a shield in hand. Time it well and it takes the whole blow. Not every blow can be dodged or blocked.",
+          "on": {
+            "kill": "bog_wisp"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Back to Maud, in her hut: ASK MAUD ABOUT WISPS.",
+          "on": {
+            "ask": "maud",
+            "about": "wisps"
+          },
+          "effects": [
+            {
+              "xp": 60
+            },
+            {
+              "guide": "Each new level gives you a stat point to spend: TRAIN <stat>, or use the Character panel."
+            },
+            {
+              "start": "tw_bloom"
             }
           ]
         }
       }
+    },
+    "lw_sky": {
+      "name": "Gutter Weather",
+      "start": "sky",
+      "steps": {
+        "sky": {
+          "goal": "Learn to read the sky: ASK NAN ABOUT WEATHER (here in the den).",
+          "on": {
+            "ask": "nan",
+            "about": "weather"
+          },
+          "then": "touchy"
+        },
+        "touchy": {
+          "goal": "Ask how the weather works on your gear: ASK NAN ABOUT SENSITIVITY.",
+          "on": {
+            "ask": "nan",
+            "about": "sensitivity"
+          },
+          "effects": [
+            {
+              "say": "And take a torch. The magistrate keeps his house dark, the miser.",
+              "by": "nan"
+            },
+            {
+              "give": "torch"
+            }
+          ],
+          "then": "fight"
+        },
+        "fight": {
+          "goal": "Rats in Rat Alley (EAST) have been at Nan's bread. Kill one. Target it (Tab, or click it), then press 4, 3 or 2 as each slot's ball touches the edge. When it swings at you, watch its marker slide along the bar on its card, and press 7 just as it lands: you dodge, or block if you've a shield in hand. Time it well and it takes the whole blow. Not every blow can be dodged or blocked.",
+          "on": {
+            "kill": "alley_rat"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Back to Nan in the den (WEST): ASK NAN ABOUT RATS.",
+          "on": {
+            "ask": "nan",
+            "about": "rats"
+          },
+          "effects": [
+            {
+              "xp": 60
+            },
+            {
+              "guide": "Each new level gives you a stat point to spend: TRAIN <stat>, or use the Character panel."
+            },
+            {
+              "start": "lw_signet"
+            }
+          ]
+        }
+      },
+      "giver": "nan",
+      "offer": "Good. Before real work, you learn the sky. Ask me about the weather."
     }
   },
   "classes": {
@@ -7177,6 +7763,18 @@
         "earthbreaker",
         "unbroken",
         "executioner"
+      ],
+      "wears": [
+        "cloth",
+        "leather",
+        "mail",
+        "shield",
+        "light"
+      ],
+      "outfit": [
+        "mail_shirt",
+        "leather_breeches",
+        "round_shield"
       ]
     },
     "mage": {
@@ -7205,6 +7803,15 @@
         "absolute_zero",
         "sunlance",
         "ember_shield"
+      ],
+      "wears": [
+        "cloth",
+        "light",
+        "orb"
+      ],
+      "outfit": [
+        "travelling_robe",
+        "apprentice_orb"
       ]
     },
     "rogue": {
@@ -7231,6 +7838,15 @@
         "assassinate",
         "thousand_cuts",
         "vanishing_act"
+      ],
+      "wears": [
+        "cloth",
+        "leather",
+        "light"
+      ],
+      "outfit": [
+        "leather_jerkin",
+        "leather_breeches"
       ]
     }
   },
@@ -7298,7 +7914,10 @@
       "start": "slipway",
       "arrive": "ferry_dock",
       "quest": "gh_tar",
-      "intro": "The storm nearly drowned you all. Now your ship, the Kittiwake, sits on the slipway at Gullhaven with her hull sprung, and Hedda the shipwright says she'll never cross an ocean again. Your old life is ending. Hedda needs a hand first, though. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)"
+      "intro": "The storm nearly drowned you all. Now your ship, the Kittiwake, sits on the slipway at Gullhaven with her hull sprung, and Hedda the shipwright says she'll never cross an ocean again. Your old life is ending. Hedda needs a hand first, though. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)",
+      "outfit": [
+        "knitted_cap"
+      ]
     },
     "merchant": {
       "name": "Merchant",
@@ -7323,7 +7942,10 @@
       "start": "stall_row",
       "arrive": "market_square",
       "quest": "cs_stall",
-      "intro": "Your first day running the family stall in Copperstall Market, alone. Aunt Brisa is watching, the market is loud, and across the square two merchants are about to come to blows. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)"
+      "intro": "Your first day running the family stall in Copperstall Market, alone. Aunt Brisa is watching, the market is loud, and across the square two merchants are about to come to blows. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)",
+      "outfit": [
+        "velvet_hat"
+      ]
     },
     "woodsman": {
       "name": "Woodsman",
@@ -7344,7 +7966,10 @@
       "start": "hunters_lodge",
       "arrive": "woodland_path",
       "quest": "tw_snares",
-      "intro": "Your last season in Thornwick. The game is thin, the old wood is quiet, and this morning you found your snares cut. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)"
+      "intro": "Your last season in Thornwick. The game is thin, the old wood is quiet, and this morning you found your snares cut. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)",
+      "outfit": [
+        "hunters_hood"
+      ]
     },
     "street_urchin": {
       "name": "Street Urchin",
@@ -7369,7 +7994,167 @@
       "start": "gutter_den",
       "arrive": "back_alley",
       "quest": "lw_lift",
-      "intro": "Low Wick is a small town, and you've run out of pockets to pick in it. Nan Gristle, who runs the gutter kids, has a job for you. One more, she says. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)"
+      "intro": "Low Wick is a small town, and you've run out of pockets to pick in it. Nan Gristle, who runs the gutter kids, has a job for you. One more, she says. (Your quest is in the Quests panel. Type LOOK to look around, and move with NORTH, SOUTH, EAST and WEST.)",
+      "outfit": [
+        "patched_breeches"
+      ]
+    }
+  },
+  "wearables": {
+    "torch": {
+      "name": "Pitch Torch",
+      "keywords": "torch",
+      "place": "hand",
+      "type": "light",
+      "light": true,
+      "rarity": "common",
+      "description": "A stick wrapped in pitch-soaked rag. It lights the way in the dark, but it's a hand you can't put a shield in."
+    },
+    "round_shield": {
+      "name": "Round Shield",
+      "keywords": "shield round",
+      "place": "hand",
+      "type": "shield",
+      "armor": 1,
+      "block": 1,
+      "rarity": "common",
+      "description": "Limewood and an iron boss. With it in hand, DEFEND (7) blocks instead of dodging: a wider window to time it."
+    },
+    "apprentice_orb": {
+      "name": "Apprentice's Orb",
+      "keywords": "orb glass",
+      "place": "hand",
+      "type": "orb",
+      "stats": {
+        "focus": 1
+      },
+      "rarity": "common",
+      "description": "A cloudy glass ball that hums when the sky turns. +1 Focus while you hold it."
+    },
+    "mail_shirt": {
+      "name": "Mail Shirt",
+      "keywords": "mail shirt hauberk",
+      "place": "chest",
+      "type": "mail",
+      "armor": 5,
+      "rarity": "common",
+      "description": "Riveted rings to the hip. Heavy, and worth it."
+    },
+    "leather_jerkin": {
+      "name": "Leather Jerkin",
+      "keywords": "jerkin leather",
+      "place": "chest",
+      "type": "leather",
+      "armor": 3,
+      "rarity": "common",
+      "description": "Boiled leather, scuffed and supple."
+    },
+    "travelling_robe": {
+      "name": "Travelling Robe",
+      "keywords": "robe",
+      "place": "chest",
+      "type": "cloth",
+      "armor": 1,
+      "stats": {
+        "resilience": 1
+      },
+      "rarity": "common",
+      "description": "Heavy wool, stitched with weather-signs against the wet. +1 Resilience."
+    },
+    "leather_breeches": {
+      "name": "Leather Breeches",
+      "keywords": "breeches leather",
+      "place": "legs",
+      "type": "leather",
+      "armor": 2,
+      "rarity": "common",
+      "description": "Patched at both knees."
+    },
+    "knitted_cap": {
+      "name": "Knitted Cap",
+      "keywords": "cap knitted",
+      "place": "head",
+      "type": "cloth",
+      "armor": 1,
+      "rarity": "common",
+      "description": "Oily wool that keeps the spray off."
+    },
+    "velvet_hat": {
+      "name": "Velvet Hat",
+      "keywords": "hat velvet",
+      "place": "head",
+      "type": "cloth",
+      "stats": {
+        "presence": 1
+      },
+      "rarity": "uncommon",
+      "description": "Plum velvet with a brass pin: you look like someone worth dealing with. +1 Presence."
+    },
+    "hunters_hood": {
+      "name": "Hunter's Hood",
+      "keywords": "hood hunter",
+      "place": "head",
+      "type": "cloth",
+      "armor": 1,
+      "rarity": "common",
+      "description": "Mottled green, to sit unseen in the bracken."
+    },
+    "patched_breeches": {
+      "name": "Patched Breeches",
+      "keywords": "breeches patched",
+      "place": "legs",
+      "type": "cloth",
+      "armor": 1,
+      "rarity": "common",
+      "description": "More patch than breeches, with a pocket nobody knows about."
+    },
+    "wreckers_tricorne": {
+      "name": "Wrecker's Tricorne",
+      "keywords": "tricorne hat",
+      "place": "head",
+      "type": "cloth",
+      "armor": 2,
+      "stats": {
+        "presence": 1
+      },
+      "rarity": "uncommon",
+      "description": "Taken off the wreckers' chief. Salt-stained, and still a little menacing. +1 Presence."
+    },
+    "guild_cap": {
+      "name": "Guildsman's Cap",
+      "keywords": "cap guild",
+      "place": "head",
+      "type": "cloth",
+      "armor": 1,
+      "stats": {
+        "presence": 1
+      },
+      "rarity": "uncommon",
+      "description": "Thorne's thanks: the cap of a trusted guild member. +1 Presence."
+    },
+    "hart_leggings": {
+      "name": "Hart-hide Leggings",
+      "keywords": "leggings hart hide",
+      "place": "legs",
+      "type": "leather",
+      "armor": 3,
+      "stats": {
+        "vigor": 1
+      },
+      "rarity": "rare",
+      "description": "Pale hide from the white hart, light and tough. +1 Vigor."
+    },
+    "burglars_hood": {
+      "name": "Cat Burglar's Hood",
+      "keywords": "hood burglar",
+      "place": "head",
+      "type": "cloth",
+      "armor": 1,
+      "stats": {
+        "poise": 1
+      },
+      "rarity": "uncommon",
+      "description": "Nan's gift: soft black wool, for rooftops. +1 Poise."
     }
   }
 }

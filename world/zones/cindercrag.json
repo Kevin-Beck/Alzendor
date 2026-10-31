@@ -1,0 +1,533 @@
+{
+  "_note": "Cindercrag Quarry, levels 6-7: some rooms are the enemy. See docs/zones.md.",
+  "regions": {
+    "cindercrag": {
+      "name": "Cindercrag",
+      "realm": "alzendor"
+    }
+  },
+  "areas": {
+    "quarry_gate": {
+      "name": "the Quarry Gate",
+      "region": "cindercrag"
+    },
+    "slag_run": {
+      "name": "the Slag Run",
+      "region": "cindercrag"
+    },
+    "steam_galleries": {
+      "name": "the Steam Galleries",
+      "region": "cindercrag"
+    }
+  },
+  "rooms": {
+    "cc_road": {
+      "name": "The Quarry Road",
+      "area": "quarry_gate",
+      "pos": [
+        450,
+        15
+      ],
+      "description": "A road of crushed stone climbing east to the quarry. Smoke hangs over it.",
+      "exits": {
+        "west": "ff_orchard",
+        "east": "cc_gate"
+      },
+      "features": {},
+      "terrain": "mountain"
+    },
+    "cc_gate": {
+      "name": "The Quarry Gate",
+      "area": "quarry_gate",
+      "pos": [
+        500,
+        15
+      ],
+      "description": "The foreman's camp behind a barricade of carts. A fire, tents, and tired quarrymen.",
+      "exits": {
+        "west": "cc_road",
+        "east": "cc_slagrun"
+      },
+      "features": {
+        "barricade": "Scorched where the Slagborn threw fire at it.",
+        "caravan": "A big wagon with an awning, loading for the Ash Road east."
+      },
+      "shelter": true,
+      "safe": true
+    },
+    "cc_slagrun": {
+      "name": "The Slag Run",
+      "area": "slag_run",
+      "pos": [
+        550,
+        15
+      ],
+      "description": "A long trench of slag heaps, warm underfoot. Little soot-black figures watch from the heaps.",
+      "exits": {
+        "west": "cc_gate",
+        "northeast": "cc_kilns"
+      },
+      "features": {},
+      "terrain": "mountain"
+    },
+    "cc_kilns": {
+      "name": "The Old Kilns",
+      "area": "slag_run",
+      "pos": [
+        575,
+        -10
+      ],
+      "description": "Beehive kilns, some still glowing. The Slagborn live in them.",
+      "exits": {
+        "southwest": "cc_slagrun",
+        "north": "cc_pit",
+        "southeast": "cc_tip"
+      },
+      "features": {},
+      "terrain": "mountain"
+    },
+    "cc_pit": {
+      "name": "The Ogre's Pit",
+      "area": "slag_run",
+      "pos": [
+        575,
+        -60
+      ],
+      "description": "A pit gouged out of the rock, strewn with crushed carts. Brakka lives here.",
+      "exits": {
+        "south": "cc_kilns"
+      },
+      "features": {},
+      "terrain": "mountain"
+    },
+    "cc_tip": {
+      "name": "The Slag Tip",
+      "area": "slag_run",
+      "pos": [
+        600,
+        15
+      ],
+      "description": "The edge of the tip, where the slag goes over. A tunnel leads down into the galleries.",
+      "exits": {
+        "northwest": "cc_kilns",
+        "southeast": "cc_gallery"
+      },
+      "features": {
+        "tunnel": "Steam rolls out of it in hot gusts."
+      },
+      "terrain": "mountain"
+    },
+    "cc_gallery": {
+      "name": "The Steam Gallery",
+      "area": "steam_galleries",
+      "pos": [
+        650,
+        65
+      ],
+      "description": "A long gallery where vents in the floor blast scalding steam. Don't stop.",
+      "exits": {
+        "northwest": "cc_tip",
+        "east": "cc_vents",
+        "south": "cc_deepface"
+      },
+      "features": {},
+      "indoor": true,
+      "trap": {
+        "name": "a steam vent",
+        "stat": "poise",
+        "difficulty": "fair",
+        "damage": 18,
+        "rearm": 2,
+        "hit": "A vent blasts scalding steam all over you.",
+        "avoid": "You time the vents and dart between them.",
+        "sprung": "{actor} is caught in a blast of steam!",
+        "sign": {
+          "room": "cc_tip",
+          "name": "steam",
+          "text": "Steam rolls out of the tunnel in gusts, regular as breathing. Down there, the vents go off one after another."
+        }
+      }
+    },
+    "cc_vents": {
+      "name": "The Vent Hall",
+      "area": "steam_galleries",
+      "pos": [
+        675,
+        65
+      ],
+      "description": "A hall of vents, hissing in turn. The far gallery is beyond.",
+      "exits": {
+        "west": "cc_gallery",
+        "east": "cc_survey"
+      },
+      "features": {
+        "vents": "They blow in a rhythm, if you can catch it."
+      },
+      "indoor": true,
+      "trap": {
+        "name": "the vent hall's vents",
+        "stat": "poise",
+        "difficulty": "fair",
+        "damage": 22,
+        "rearm": 2,
+        "hit": "Two vents go off at once, and you're in the middle.",
+        "avoid": "You read their rhythm and slip through.",
+        "sprung": "{actor} vanishes in a cloud of steam!",
+        "sign": {
+          "room": "cc_gallery",
+          "name": "hiss",
+          "text": "The hall ahead hisses like a kettle. Cross it quickly, or carefully, or both."
+        }
+      }
+    },
+    "cc_survey": {
+      "name": "The Far Gallery",
+      "area": "steam_galleries",
+      "pos": [
+        700,
+        65
+      ],
+      "description": "A dead-end gallery, quiet after the vents. A surveyor's camp, long abandoned.",
+      "exits": {
+        "west": "cc_vents"
+      },
+      "features": {
+        "camp": "A bedroll, a dead lamp, and a case of instruments."
+      },
+      "indoor": true
+    },
+    "cc_deepface": {
+      "name": "The Deep Face",
+      "area": "steam_galleries",
+      "pos": [
+        650,
+        115
+      ],
+      "description": "The deepest face of the quarry. A shaft, with a rusted cage, goes down into the dark.",
+      "exits": {
+        "north": "cc_gallery"
+      },
+      "features": {
+        "shaft": "The old miners' shaft. It goes a long way down. The air from it smells bad."
+      },
+      "indoor": true
+    }
+  },
+  "items": {
+    "survey_case": {
+      "name": "survey case",
+      "keywords": "case survey instruments",
+      "description": "A brass-cornered case of surveying instruments, warm from the steam.",
+      "quest": true,
+      "room": "cc_survey"
+    }
+  },
+  "npcs": {
+    "dunstan": {
+      "name": "Foreman Dunstan",
+      "label": "Foreman",
+      "description": "a broad man with a burned beard and a clipboard",
+      "details": "A broad man with a burned beard and a clipboard.",
+      "keywords": "foreman dunstan",
+      "room": "cc_gate",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "⛏️",
+      "proper": true,
+      "topics": {
+        "work": "The Slagborn took my quarry. Ask me about the survey, the raiders, or Brakka.",
+        "survey": {
+          "text": "My surveyor went into the Steam Galleries for the deep-face survey and never came out. The case is in the far gallery. Don't fight the vents: get through them.",
+          "starts": "cc_survey"
+        },
+        "raiders": {
+          "text": "Six of the little soot-devils, and the rest might think twice. Mind the fire-pots: dodge them.",
+          "starts": "cc_raiders"
+        },
+        "brakka": {
+          "text": "An ogre. Throws boulders. He's in a pit north of the kilns, and you don't have to go near him. If you do, block the boulders, and good luck.",
+          "starts": "cc_ogre"
+        },
+        "caravan": "The Ash Road caravan goes east from here, to the Emberwaste. Saffa runs it. You'd want a reason to go.",
+        "shaft": "The old shaft at the Deep Face goes down into the Underdeep. The air down there kills. Don't."
+      }
+    },
+    "slagborn_1": {
+      "name": "Slagborn Raider",
+      "label": "Slagborn",
+      "description": "a small soot-black raider with a hot pick",
+      "details": "A small soot-black raider with a hot pick.",
+      "keywords": "slagborn raider",
+      "room": "cc_slagrun",
+      "max_hp": 70,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "pick",
+          "period": 3000,
+          "damage": 7,
+          "hit": "{actor} swings a glowing pick at {target}."
+        }
+      ],
+      "xp": 17,
+      "icon": "👺",
+      "role": "slagborn",
+      "respawn": 300
+    },
+    "slagborn_2": {
+      "name": "Slagborn Raider",
+      "label": "Slagborn",
+      "description": "a small soot-black raider with a hot pick",
+      "details": "A small soot-black raider with a hot pick.",
+      "keywords": "slagborn raider",
+      "room": "cc_kilns",
+      "max_hp": 70,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "pick",
+          "period": 3000,
+          "damage": 7,
+          "hit": "{actor} swings a glowing pick at {target}."
+        }
+      ],
+      "xp": 17,
+      "icon": "👺",
+      "role": "slagborn",
+      "respawn": 300
+    },
+    "slagborn_3": {
+      "name": "Slagborn Raider",
+      "label": "Slagborn",
+      "description": "a small soot-black raider with a hot pick",
+      "details": "A small soot-black raider with a hot pick.",
+      "keywords": "slagborn raider",
+      "room": "cc_kilns",
+      "max_hp": 70,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "pick",
+          "period": 3000,
+          "damage": 7,
+          "hit": "{actor} swings a glowing pick at {target}."
+        }
+      ],
+      "xp": 17,
+      "icon": "👺",
+      "role": "slagborn",
+      "respawn": 300
+    },
+    "slagborn_4": {
+      "name": "Slagborn Raider",
+      "label": "Slagborn",
+      "description": "a small soot-black raider with a hot pick",
+      "details": "A small soot-black raider with a hot pick.",
+      "keywords": "slagborn raider",
+      "room": "cc_tip",
+      "max_hp": 70,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "pick",
+          "period": 3000,
+          "damage": 7,
+          "hit": "{actor} swings a glowing pick at {target}."
+        }
+      ],
+      "xp": 17,
+      "icon": "👺",
+      "role": "slagborn",
+      "respawn": 300
+    },
+    "slagborn_thrower": {
+      "name": "Slagborn Fire-thrower",
+      "label": "Slagborn",
+      "description": "a slagborn with a sack of fire-pots",
+      "details": "A slagborn with a sack of fire-pots.",
+      "keywords": "slagborn fire thrower",
+      "room": "cc_slagrun",
+      "max_hp": 60,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "fire-pot",
+          "period": 8000,
+          "damage": 14,
+          "hit": "{actor} hurls a fire-pot at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 17,
+      "icon": "👺",
+      "role": "slagborn",
+      "respawn": 300
+    },
+    "brakka": {
+      "name": "Brakka",
+      "label": "Ogre",
+      "description": "an ogre with a boulder in each hand",
+      "details": "An ogre with a boulder in each hand.",
+      "keywords": "brakka ogre",
+      "room": "cc_pit",
+      "max_hp": 450,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "slam",
+          "period": 5000,
+          "damage": 10,
+          "hit": "{actor} slams a fist down on {target}."
+        },
+        {
+          "name": "boulder",
+          "period": 13000,
+          "damage": 65,
+          "hit": "{actor} hurls a boulder at {target}!",
+          "defend": "block"
+        }
+      ],
+      "xp": 147,
+      "icon": "🗿",
+      "proper": true,
+      "respawn": 900
+    }
+  },
+  "gear": {
+    "quarry_maul": {
+      "name": "Quarry Maul",
+      "kind": "Melee",
+      "keywords": "maul quarry",
+      "effect": "damage",
+      "period": 3200,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        10,
+        13,
+        21
+      ],
+      "hit": "{actor} brings the maul down on {target}.",
+      "perfect_hit": "{actor} brings the maul down on {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Quarry Maul finds nothing.",
+      "description": "A quarryman's maul, rebalanced for heads instead of stone. It likes the heat.",
+      "weather": {
+        "temperature": 0.5,
+        "energy": -0.2,
+        "precipitation": "dry",
+        "tier": "green"
+      }
+    }
+  },
+  "wearables": {
+    "quarry_cap": {
+      "name": "Quarryman's Cap",
+      "keywords": "quarryman's cap",
+      "place": "head",
+      "type": "cloth",
+      "description": "A padded leather-and-felt cap that has stopped a few falling rocks. +1 Vigor.",
+      "rarity": "uncommon",
+      "armor": 3,
+      "stats": {
+        "vigor": 1
+      }
+    }
+  },
+  "quests": {
+    "cc_survey": {
+      "name": "The Lost Survey",
+      "start": "get",
+      "steps": {
+        "get": {
+          "goal": "Get through the Steam Galleries (from the Slag Tip) to the far gallery: GET CASE.",
+          "on": {
+            "have": [
+              "survey_case"
+            ]
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Bring it back to Foreman Dunstan: USE CASE ON DUNSTAN.",
+          "on": {
+            "use": "survey_case",
+            "on": "dunstan"
+          },
+          "effects": [
+            {
+              "take": "survey_case"
+            },
+            {
+              "text": "Dunstan opens it, and goes quiet. \"His notes. He went down the shaft. Here: you've earned a proper tool.\""
+            },
+            {
+              "give": "quarry_maul"
+            },
+            {
+              "xp": 175
+            }
+          ]
+        }
+      }
+    },
+    "cc_raiders": {
+      "name": "Slagborn Raiders",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill six Slagborn on the Slag Run and in the kilns.",
+          "on": {
+            "kill": "slagborn",
+            "count": 6
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Dunstan: ASK DUNSTAN ABOUT RAIDERS.",
+          "on": {
+            "ask": "dunstan",
+            "about": "raiders"
+          },
+          "effects": [
+            {
+              "give": "quarry_cap"
+            },
+            {
+              "xp": 145
+            }
+          ]
+        }
+      }
+    },
+    "cc_ogre": {
+      "name": "The Quarry Ogre",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill Brakka, in his pit north of the kilns. Block the boulders.",
+          "on": {
+            "kill": "brakka"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Dunstan: ASK DUNSTAN ABOUT BRAKKA.",
+          "on": {
+            "ask": "dunstan",
+            "about": "brakka"
+          },
+          "effects": [
+            {
+              "coins": 40
+            },
+            {
+              "xp": 200
+            }
+          ]
+        }
+      }
+    }
+  }
+}

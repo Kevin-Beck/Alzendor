@@ -136,9 +136,14 @@ Gear without its own profile uses its kind's default: weapons and melee sit
 in the middle (they like a neutral day), spells sit high on energy (they
 like energetic weather), and potions sit in the middle.
 
-**Tiers** are colours, from the default up to exceptionally rare:
+The **tier** is the gear's **weather sensitivity**, shown to players as one
+to five dots (●○○○○ to ●●●●●), never as a colour: colours belong to
+**rarity**, which is separate ([characters.md](characters.md), "Rarity and
+weather sensitivity"). Rarity defaults to the tier's (grey common, green
+uncommon, blue rare, purple epic, orange legendary), and the seed can set it
+apart (`rarity`): the sensitive pieces are usually rare, but not always.
 
-| Tier | At its spot | Far away (radius R and beyond) | R | Wet/dry effect |
+| Tier (sensitivity) | At its spot | Far away (radius R and beyond) | R | Wet/dry effect |
 |---|---|---|---|---|
 | Grey | +15% | −15% | 2.0 | ±10% |
 | Green | +25% | −20% | 1.5 | ±15% |
@@ -202,15 +207,29 @@ that by up to half, softened by Resilience.
 
 ### Seeing the way
 
-In heavy precipitation (intensity ≥ ½) you can't see far:
+In heavy precipitation (intensity ≥ ½), in a dark room, or outdoors at
+night away from a town's lamps, you can't see far:
 
 - `look` and the exit buttons only show exits to rooms you've already been
   to (and say other ways are hidden by the rain or snow), and the map shows
   no glimpses of unexplored rooms.
 - Entering a region doesn't discover the regions bordering it.
 
-The exits are still there. You can walk any direction and find the way for
-real, and once the weather clears, discovery happens again as you move.
+The exits are still there. In rain or snow you can walk any direction and
+find the way for real, and once the weather clears, discovery happens again
+as you move. In the dark you can only feel your way back along ways you know,
+until you hold a light (a torch in your hand, [characters.md](characters.md),
+"Worn gear"). Dark rooms (`"dark": true`: caves, shuttered lofts) are dark at
+any hour and also hide what's on the floor; areas with `"lit": true` (towns)
+are never dark. A light doesn't help in heavy rain.
+
+### Exposure
+
+In the dangerous places ([zones.md](zones.md)), some weather makes exposure
+worse: a step on the Cold Spine counts double in freezing weather, in the
+Emberwaste when it's hot, in the Rotwood when it's wet, and on the Bone
+Steppe in a high wind. Resilience sometimes shrugs a step off, as it softens
+everything else the weather does.
 
 ### NPCs
 
@@ -307,25 +326,33 @@ moment:
 
 Weather is only fair if it's readable:
 
-- **The weather panel** (always visible) shows the grid with the current
-  point as a dot (a blurred patch without lore), the forecast as a trail of
-  fading dots, the precipitation as a vertical bar to the right of the grid,
-  the snow and mud on the ground, and a one-line summary.
+- **The weather panel** (always visible) is four columns, always in the same
+  order, each with its heading, so you find each thing by where it is rather
+  than by reading: **Sky** (the grid, with the current point as a dot, a
+  blurred patch without lore, and the forecast as a trail of fading dots),
+  **Rain** (a vertical bar: what's falling and how hard), **Time** (a
+  day/night wheel turning under a marker, with how long until dusk or
+  daylight) and **Ground** (road, open or rough footing, and any snow or
+  mud). A line below sums it up in words.
 - **Slots are always visible.** Each one shows its gear and a ▲ or ▼ with the
   weather's effect, so you can see at a glance how your loadout suits the
   conditions.
-- **The tooltip** for gear (on slots and in the inventory) shows what it is
-  and how it works, then the same grid with its spot shaded in its tier
-  colour, its wet/dry bar (filled for wet, empty for dry, half for any) and
-  the current weather dot on top. Below that is **Current conditions**, one
-  line per modifier, ending in the numbers you'll actually get:
+- **The tooltip** for gear (on slots, in the inventory, and on talents in the
+  Character panel before you learn them) shows its name in its rarity's
+  colour, what it is and does, then **Weather sensitivity** with its dots,
+  the same grid with its spot shaded, its wet/dry bar (filled for wet, empty
+  for dry, half for any) and the current weather dot on top. Below that is
+  **Right now**, one line per modifier, ending in the numbers you'll
+  actually get:
 
   ```
-  Firebolt · Spell · blue
+  Firebolt
+  Rare · Spell
   A bolt of fire that loves a hot, wild sky and hates the wet.
-  Every 4.0 s · ±300 ms (perfect ±100) · 8 / 10 / 16 damage
-  [grid: its spot in Tempest, shaded blue; today's dot nearby] [bar: empty, wants dry]
-  Current conditions · Harrowgate
+  8 / 10 / 16 damage (opener / hit / perfect) · every 4.0 s
+  Weather sensitivity ●●●○○
+  [grid: its spot in Tempest, shaded; today's dot nearby] [bar: empty, wants dry]
+  Right now · Harrowgate
   Hot and gusty, light rain
     Weather: near its spot                      +20%
     Rain (it wants dry)                         −2%

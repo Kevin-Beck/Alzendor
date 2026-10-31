@@ -1,0 +1,707 @@
+{
+  "_note": "The Rotwood, level 13: a forest dying of something that spreads. See docs/zones.md.",
+  "regions": {
+    "rotwood": {
+      "name": "the Rotwood",
+      "realm": "alzendor"
+    }
+  },
+  "areas": {
+    "blight_edge": {
+      "name": "the Blight Edge",
+      "region": "rotwood"
+    },
+    "rotting_groves": {
+      "name": "the Rotting Groves",
+      "region": "rotwood",
+      "exposure": {
+        "kind": "spores",
+        "name": "spores",
+        "max": 5,
+        "damage": 18,
+        "worse_when": {
+          "precipitation": [
+            0.2,
+            1
+          ]
+        },
+        "warn": "There's mould in your throat. You need clean air: a burned clearing.",
+        "hurt": "The spores are growing in your lungs.",
+        "relief": "The burned ground is clean. You cough the spores out."
+      }
+    },
+    "fungal_heart": {
+      "name": "the Fungal Heart",
+      "region": "rotwood",
+      "exposure": {
+        "kind": "spores",
+        "name": "spores",
+        "max": 5,
+        "damage": 18,
+        "worse_when": {
+          "precipitation": [
+            0.2,
+            1
+          ]
+        },
+        "warn": "There's mould in your throat. You need clean air: a burned clearing.",
+        "hurt": "The spores are growing in your lungs.",
+        "relief": "The burned ground is clean. You cough the spores out."
+      }
+    }
+  },
+  "rooms": {
+    "rw_outpost": {
+      "name": "The Warden Outpost",
+      "area": "blight_edge",
+      "pos": [
+        425,
+        -305
+      ],
+      "description": "A palisade at the edge of the blight, behind a firebreak. Wardens in masks.",
+      "exits": {
+        "southwest": "gm_hide_in",
+        "east": "rw_edge"
+      },
+      "features": {},
+      "shelter": true,
+      "safe": true,
+      "lit": true,
+      "terrain": "forest"
+    },
+    "rw_edge": {
+      "name": "The Blight Edge",
+      "area": "blight_edge",
+      "pos": [
+        450,
+        -305
+      ],
+      "description": "Where the healthy trees stop. Past here every trunk is furred with grey mould.",
+      "exits": {
+        "west": "rw_outpost",
+        "northeast": "rw_groves"
+      },
+      "features": {},
+      "terrain": "forest"
+    },
+    "rw_groves": {
+      "name": "The Rotting Groves",
+      "area": "rotting_groves",
+      "pos": [
+        500,
+        -355
+      ],
+      "description": "Trees soft as bread, sagging. The air is thick with drifting spores.",
+      "exits": {
+        "southwest": "rw_edge",
+        "northwest": "rw_burnt",
+        "northeast": "rw_bloom",
+        "east": "rw_elkrun"
+      },
+      "features": {},
+      "terrain": "deep_forest"
+    },
+    "rw_burnt": {
+      "name": "The Burned Clearing",
+      "area": "rotting_groves",
+      "pos": [
+        475,
+        -380
+      ],
+      "description": "A clearing the Wardens burned. Black, bare, and clean.",
+      "exits": {
+        "southeast": "rw_groves"
+      },
+      "features": {},
+      "shelter": true,
+      "terrain": "forest"
+    },
+    "rw_bloom": {
+      "name": "Bloom Hollow",
+      "area": "rotting_groves",
+      "pos": [
+        525,
+        -380
+      ],
+      "description": "A hollow full of pale fungal blooms the size of tents, pulsing.",
+      "exits": {
+        "southwest": "rw_groves"
+      },
+      "features": {
+        "bloom": "A bloom-heart: the thing that spreads the spores. It would burn."
+      },
+      "terrain": "deep_forest"
+    },
+    "rw_elkrun": {
+      "name": "The Elk Run",
+      "area": "rotting_groves",
+      "pos": [
+        550,
+        -355
+      ],
+      "description": "A trail trampled flat by something big and rotten.",
+      "exits": {
+        "west": "rw_groves",
+        "northeast": "rw_weeping"
+      },
+      "features": {},
+      "terrain": "deep_forest"
+    },
+    "rw_weeping": {
+      "name": "The Weeping Glade",
+      "area": "rotting_groves",
+      "pos": [
+        575,
+        -380
+      ],
+      "description": "Trees weeping grey slime around a pulsing heart of fungus.",
+      "exits": {
+        "southwest": "rw_elkrun",
+        "northeast": "rw_mould"
+      },
+      "features": {
+        "heart": "A second bloom-heart, bigger, slick with slime."
+      },
+      "terrain": "deep_forest"
+    },
+    "rw_mould": {
+      "name": "The Mould Wall",
+      "area": "fungal_heart",
+      "pos": [
+        625,
+        -430
+      ],
+      "description": "A wall of fungus, with a way through like a throat.",
+      "exits": {
+        "southwest": "rw_weeping",
+        "northeast": "rw_heart"
+      },
+      "features": {},
+      "terrain": "deep_forest"
+    },
+    "rw_heart": {
+      "name": "The Fungal Heart",
+      "area": "fungal_heart",
+      "pos": [
+        650,
+        -455
+      ],
+      "description": "The middle of the blight: a mound of fungus that breathes. Through the spore-haze beyond, a green and living jungle that shouldn't be there.",
+      "exits": {
+        "southwest": "rw_mould"
+      },
+      "features": {
+        "core": "The Mind's core, pulsing. Fire would hurt it.",
+        "jungle": "A green so bright it hurts, through a ripple in the air."
+      },
+      "terrain": "deep_forest"
+    }
+  },
+  "items": {
+    "firepots": {
+      "name": "Pim's fire-pots",
+      "keywords": "firepots pots fire",
+      "description": "Clay pots of Pim's oil, with fuses.",
+      "quest": true
+    }
+  },
+  "npcs": {
+    "maelis": {
+      "name": "Warden-Captain Maelis",
+      "label": "Warden-Captain",
+      "description": "a grim woman in a mask, her eyes red-rimmed",
+      "details": "A grim woman in a mask, her eyes red-rimmed.",
+      "keywords": "warden-captain maelis",
+      "room": "rw_outpost",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🛡️",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the wardens, or the mind.",
+        "wardens": {
+          "text": "Six of my Wardens went in without masks. They're out there still, walking. Put them down. Please.",
+          "starts": "rw_wardens"
+        },
+        "mind": {
+          "text": "There's something at the heart of it. It thinks. Pim calls it the Mycelial Mind. Its spore-burst can't be stopped, only survived. Kill it and the blight dies.",
+          "starts": "rw_mind"
+        }
+      },
+      "faction": "wardens"
+    },
+    "pim": {
+      "name": "Pim",
+      "label": "Herbalist",
+      "description": "a round little man in three masks",
+      "details": "A round little man in three masks.",
+      "keywords": "pim",
+      "room": "rw_outpost",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🍄",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the mask, or the bloom.",
+        "mask": {
+          "text": "Five breaths in there and the spores take root. A mask, my own design. Ask me for the mask.",
+          "starts": "rw_mask"
+        },
+        "bloom": {
+          "text": "The bloom-hearts spread it. Burn three: the one in Bloom Hollow, the heart in the Weeping Glade, and the core at the Fungal Heart. Take my fire-pots.",
+          "starts": "rw_bloom"
+        },
+        "firepots": "Throw, don't hold."
+      }
+    },
+    "spore_shambler_1": {
+      "name": "Spore Shambler",
+      "label": "Shambler",
+      "description": "a Warden, or what's left of one, sprouting grey fungus",
+      "details": "A Warden, or what's left of one, sprouting grey fungus.",
+      "keywords": "spore shambler warden",
+      "room": "rw_groves",
+      "max_hp": 420,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "slam",
+          "period": 3500,
+          "damage": 26,
+          "hit": "{actor} slams into {target}."
+        },
+        {
+          "name": "spore-cough",
+          "period": 9000,
+          "damage": 45,
+          "hit": "{actor} coughs a cloud of spores at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 18,
+      "icon": "🧟",
+      "role": "shambler",
+      "respawn": 300
+    },
+    "spore_shambler_2": {
+      "name": "Spore Shambler",
+      "label": "Shambler",
+      "description": "a Warden, or what's left of one, sprouting grey fungus",
+      "details": "A Warden, or what's left of one, sprouting grey fungus.",
+      "keywords": "spore shambler warden",
+      "room": "rw_elkrun",
+      "max_hp": 420,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "slam",
+          "period": 3500,
+          "damage": 26,
+          "hit": "{actor} slams into {target}."
+        },
+        {
+          "name": "spore-cough",
+          "period": 9000,
+          "damage": 45,
+          "hit": "{actor} coughs a cloud of spores at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 18,
+      "icon": "🧟",
+      "role": "shambler",
+      "respawn": 300
+    },
+    "spore_shambler_3": {
+      "name": "Spore Shambler",
+      "label": "Shambler",
+      "description": "a Warden, or what's left of one, sprouting grey fungus",
+      "details": "A Warden, or what's left of one, sprouting grey fungus.",
+      "keywords": "spore shambler warden",
+      "room": "rw_bloom",
+      "max_hp": 420,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "slam",
+          "period": 3500,
+          "damage": 26,
+          "hit": "{actor} slams into {target}."
+        },
+        {
+          "name": "spore-cough",
+          "period": 9000,
+          "damage": 45,
+          "hit": "{actor} coughs a cloud of spores at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 18,
+      "icon": "🧟",
+      "role": "shambler",
+      "respawn": 300
+    },
+    "spore_shambler_4": {
+      "name": "Spore Shambler",
+      "label": "Shambler",
+      "description": "a Warden, or what's left of one, sprouting grey fungus",
+      "details": "A Warden, or what's left of one, sprouting grey fungus.",
+      "keywords": "spore shambler warden",
+      "room": "rw_mould",
+      "max_hp": 420,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "slam",
+          "period": 3500,
+          "damage": 26,
+          "hit": "{actor} slams into {target}."
+        },
+        {
+          "name": "spore-cough",
+          "period": 9000,
+          "damage": 45,
+          "hit": "{actor} coughs a cloud of spores at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 18,
+      "icon": "🧟",
+      "role": "shambler",
+      "respawn": 300
+    },
+    "rot_elk_1": {
+      "name": "Rot Elk",
+      "label": "Elk",
+      "description": "a huge elk, its antlers grown into fungus",
+      "details": "A huge elk, its antlers grown into fungus.",
+      "keywords": "rot elk",
+      "room": "rw_weeping",
+      "max_hp": 380,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "kick",
+          "period": 3000,
+          "damage": 18,
+          "hit": "{actor} kicks {target}."
+        },
+        {
+          "name": "charge",
+          "period": 10000,
+          "damage": 70,
+          "hit": "{actor} lowers its antlers and charges {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 17,
+      "icon": "🦌",
+      "role": "rot_elk",
+      "respawn": 300
+    },
+    "rot_elk_2": {
+      "name": "Rot Elk",
+      "label": "Elk",
+      "description": "a huge elk, its antlers grown into fungus",
+      "details": "A huge elk, its antlers grown into fungus.",
+      "keywords": "rot elk",
+      "room": "rw_groves",
+      "max_hp": 380,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "kick",
+          "period": 3000,
+          "damage": 18,
+          "hit": "{actor} kicks {target}."
+        },
+        {
+          "name": "charge",
+          "period": 10000,
+          "damage": 70,
+          "hit": "{actor} lowers its antlers and charges {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 17,
+      "icon": "🦌",
+      "role": "rot_elk",
+      "respawn": 300
+    },
+    "mycelial_mind": {
+      "name": "the Mycelial Mind",
+      "label": "Fungal Mind",
+      "description": "a breathing mound of fungus with something like a face",
+      "details": "A breathing mound of fungus with something like a face.",
+      "keywords": "mycelial mind mound",
+      "room": "rw_heart",
+      "max_hp": 3000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "tendril",
+          "period": 4000,
+          "damage": 25,
+          "hit": "{actor} lashes {target} with a tendril."
+        },
+        {
+          "name": "spore-burst",
+          "period": 15000,
+          "damage": 110,
+          "hit": "{actor} bursts, and spores engulf {target}!",
+          "defend": "none"
+        }
+      ],
+      "xp": 211,
+      "icon": "🍄",
+      "respawn": 1800
+    }
+  },
+  "gear": {
+    "pims_tincture": {
+      "name": "Pim's Tincture",
+      "kind": "Potion",
+      "keywords": "tincture pim",
+      "effect": "heal",
+      "period": 5000,
+      "window": 330,
+      "perfect_window": 110,
+      "amounts": [
+        20,
+        28,
+        45
+      ],
+      "hit": "{actor} drinks Pim's tincture.",
+      "perfect_hit": "{actor} drinks Pim's tincture, and it takes.",
+      "miss": "{actor} fumbles Pim's Tincture.",
+      "whiff": "your Pim's Tincture finds nothing.",
+      "description": "Bitter, and it clears the lungs. Works best in still air.",
+      "weather": {
+        "temperature": 0.1,
+        "energy": -0.5,
+        "precipitation": "any",
+        "tier": "green"
+      }
+    },
+    "mycelial_lash": {
+      "name": "Mycelial Lash",
+      "kind": "Melee",
+      "keywords": "lash mycelial",
+      "effect": "damage",
+      "period": 3500,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        30,
+        40,
+        65
+      ],
+      "hit": "{actor} lashes {target}.",
+      "perfect_hit": "{actor} lashes {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Mycelial Lash finds nothing.",
+      "description": "A tendril of the Mind, dried and braided. It likes the damp.",
+      "weather": {
+        "temperature": 0.2,
+        "energy": -0.3,
+        "precipitation": "wet",
+        "tier": "purple"
+      },
+      "rarity": "epic"
+    }
+  },
+  "wearables": {
+    "spore_mask": {
+      "name": "Spore Mask",
+      "keywords": "spore mask",
+      "place": "head",
+      "type": "cloth",
+      "description": "Pim's mask: herbs in a cloth beak. Keeps off the spores.",
+      "rarity": "uncommon",
+      "armor": 1,
+      "protects": [
+        "spores"
+      ]
+    },
+    "captains_mantle": {
+      "name": "Warden-Captain's Mantle",
+      "keywords": "warden-captain's mantle",
+      "place": "chest",
+      "type": "cloth",
+      "description": "Maelis's own mantle, green and grey. +2 Resilience.",
+      "rarity": "rare",
+      "armor": 6,
+      "stats": {
+        "resilience": 2
+      }
+    }
+  },
+  "quests": {
+    "rw_mask": {
+      "name": "Clean Breath",
+      "start": "mask",
+      "steps": {
+        "mask": {
+          "goal": "Ask Pim for it: ASK PIM ABOUT MASK.",
+          "on": {
+            "ask": "pim",
+            "about": "mask"
+          },
+          "effects": [
+            {
+              "give": "spore_mask"
+            },
+            {
+              "text": "Pim fits the mask on you. \"WEAR MASK. And breathe through your nose.\""
+            },
+            {
+              "xp": 15
+            }
+          ]
+        }
+      }
+    },
+    "rw_bloom": {
+      "name": "Burn the Bloom",
+      "start": "pots",
+      "steps": {
+        "pots": {
+          "goal": "Take Pim's fire-pots: ASK PIM ABOUT FIREPOTS.",
+          "on": {
+            "ask": "pim",
+            "about": "firepots"
+          },
+          "effects": [
+            {
+              "give": "firepots"
+            }
+          ],
+          "then": "one"
+        },
+        "one": {
+          "goal": "Burn the bloom-heart in Bloom Hollow: USE FIREPOTS ON BLOOM.",
+          "on": {
+            "use": "firepots",
+            "on": "bloom"
+          },
+          "effects": [
+            {
+              "text": "The bloom shrieks as it burns."
+            }
+          ],
+          "then": "two"
+        },
+        "two": {
+          "goal": "Burn the heart in the Weeping Glade: USE FIREPOTS ON HEART.",
+          "on": {
+            "use": "firepots",
+            "on": "heart"
+          },
+          "effects": [
+            {
+              "text": "Slime boils. The glade stops weeping."
+            }
+          ],
+          "then": "three"
+        },
+        "three": {
+          "goal": "Burn the core at the Fungal Heart: USE FIREPOTS ON CORE.",
+          "on": {
+            "use": "firepots",
+            "on": "core"
+          },
+          "effects": [
+            {
+              "take": "firepots"
+            },
+            {
+              "text": "The core blackens. The whole Rotwood shudders."
+            }
+          ],
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Pim: ASK PIM ABOUT BLOOM.",
+          "on": {
+            "ask": "pim",
+            "about": "bloom"
+          },
+          "effects": [
+            {
+              "give": "pims_tincture"
+            },
+            {
+              "xp": 170
+            }
+          ]
+        }
+      }
+    },
+    "rw_wardens": {
+      "name": "Infected Wardens",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Put down six spore shamblers.",
+          "on": {
+            "kill": "shambler",
+            "count": 6
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Maelis: ASK MAELIS ABOUT WARDENS.",
+          "on": {
+            "ask": "maelis",
+            "about": "wardens"
+          },
+          "effects": [
+            {
+              "give": "captains_mantle"
+            },
+            {
+              "xp": 170
+            },
+            {
+              "reputation": {
+                "faction": "wardens",
+                "affinity": 10,
+                "note": "You gave the lost Wardens rest."
+              }
+            }
+          ]
+        }
+      }
+    },
+    "rw_mind": {
+      "name": "The Mind in the Mould",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill the Mycelial Mind, at the Fungal Heart.",
+          "on": {
+            "kill": "mycelial_mind"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Maelis: ASK MAELIS ABOUT MIND.",
+          "on": {
+            "ask": "maelis",
+            "about": "mind"
+          },
+          "effects": [
+            {
+              "give": "mycelial_lash"
+            },
+            {
+              "xp": 280
+            }
+          ]
+        }
+      }
+    }
+  }
+}

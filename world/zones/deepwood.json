@@ -1,0 +1,524 @@
+{
+  "_note": "The Deepwood, level 9: the first boss you can lose to. See docs/zones.md.",
+  "regions": {
+    "deepwood": {
+      "name": "the Deepwood",
+      "realm": "alzendor"
+    }
+  },
+  "areas": {
+    "thornway": {
+      "name": "the Thornway",
+      "region": "deepwood"
+    },
+    "webwood": {
+      "name": "the Webwood",
+      "region": "deepwood"
+    },
+    "weavers_hollow": {
+      "name": "the Weaver's Hollow",
+      "region": "deepwood"
+    }
+  },
+  "rooms": {
+    "dw_thornway": {
+      "name": "The Thornway",
+      "area": "thornway",
+      "pos": [
+        40,
+        -310
+      ],
+      "description": "A path through thorn trees, kept open by someone. Old trees close in above.",
+      "exits": {
+        "south": "silk_cavern",
+        "northwest": "dw_grove",
+        "north": "dw_hollow"
+      },
+      "features": {},
+      "terrain": "deep_forest"
+    },
+    "dw_grove": {
+      "name": "Thornkin Grove",
+      "area": "thornway",
+      "pos": [
+        15,
+        -335
+      ],
+      "description": "A ring of living thorn, and inside it the Thornkin, bark-skinned and slow-spoken.",
+      "exits": {
+        "southeast": "dw_thornway",
+        "northwest": "dw_webwood"
+      },
+      "features": {},
+      "terrain": "forest",
+      "shelter": true,
+      "safe": true
+    },
+    "dw_webwood": {
+      "name": "The Webwood",
+      "area": "webwood",
+      "pos": [
+        -35,
+        -385
+      ],
+      "description": "Webs from trunk to trunk, thick as sailcloth. No light gets through.",
+      "exits": {
+        "southeast": "dw_grove",
+        "northwest": "dw_cocoons"
+      },
+      "features": {},
+      "dark": true,
+      "terrain": "deep_forest"
+    },
+    "dw_cocoons": {
+      "name": "Cocoon Hall",
+      "area": "webwood",
+      "pos": [
+        -60,
+        -410
+      ],
+      "description": "Cocoons hang in rows. Some are deer. Some aren't.",
+      "exits": {
+        "southeast": "dw_webwood"
+      },
+      "features": {},
+      "dark": true,
+      "terrain": "deep_forest"
+    },
+    "dw_hollow": {
+      "name": "The Weaver's Hollow",
+      "area": "weavers_hollow",
+      "pos": [
+        40,
+        -385
+      ],
+      "description": "A hollow under roots like ribs. The webs here are silver and thrum.",
+      "exits": {
+        "south": "dw_thornway",
+        "northeast": "dw_queen"
+      },
+      "features": {},
+      "dark": true,
+      "terrain": "deep_forest"
+    },
+    "dw_queen": {
+      "name": "The Queen's Web",
+      "area": "weavers_hollow",
+      "pos": [
+        65,
+        -410
+      ],
+      "description": "A web the size of a church, and in it, the Weaver Queen.",
+      "exits": {
+        "southwest": "dw_hollow",
+        "northeast": "dw_heart"
+      },
+      "features": {},
+      "dark": true,
+      "terrain": "deep_forest"
+    },
+    "dw_heart": {
+      "name": "The Heartwood",
+      "area": "weavers_hollow",
+      "pos": [
+        90,
+        -435
+      ],
+      "description": "An oak older than the city, and quiet. Sunlight, at last, from a gap in the canopy.",
+      "exits": {
+        "southwest": "dw_queen"
+      },
+      "features": {},
+      "terrain": "forest"
+    }
+  },
+  "npcs": {
+    "barkmother": {
+      "name": "the Barkmother",
+      "label": "Thornkin Elder",
+      "description": "bark-skinned, mossy, older than she looks",
+      "details": "Bark-skinned, mossy, older than she looks.",
+      "keywords": "the barkmother",
+      "room": "dw_grove",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🌳",
+      "proper": true,
+      "topics": {
+        "work": "The Weaver's brood eats our groves. Ask me about the spiders, the brood, or the queen.",
+        "spiders": "A new queen came. The Weaver. She drives the old spiders south, into your Spiderwood, and breeds her own here. Tell the Warden that.",
+        "brood": {
+          "text": "Eight of her deep spiders. Their web-shot can only be dodged.",
+          "starts": "dw_brood"
+        },
+        "queen": {
+          "text": "The Weaver Queen, in her web past the hollow. She is old and patient, and her venom kills. Dodge it. Many have not.",
+          "starts": "dw_queen"
+        }
+      },
+      "faction": "thornkin"
+    },
+    "deep_spider_1": {
+      "name": "Deep Spider",
+      "label": "Spider",
+      "description": "a spider the size of a pony, eyes like wet coal",
+      "details": "A spider the size of a pony, eyes like wet coal.",
+      "keywords": "deep spider",
+      "room": "dw_webwood",
+      "max_hp": 140,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "fangs",
+          "period": 2800,
+          "damage": 12,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "web-shot",
+          "period": 8000,
+          "damage": 18,
+          "hit": "{actor} shoots a sticky web at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🕷️",
+      "role": "deep_spider",
+      "faction": "spiders",
+      "respawn": 300
+    },
+    "deep_spider_2": {
+      "name": "Deep Spider",
+      "label": "Spider",
+      "description": "a spider the size of a pony, eyes like wet coal",
+      "details": "A spider the size of a pony, eyes like wet coal.",
+      "keywords": "deep spider",
+      "room": "dw_cocoons",
+      "max_hp": 140,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "fangs",
+          "period": 2800,
+          "damage": 12,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "web-shot",
+          "period": 8000,
+          "damage": 18,
+          "hit": "{actor} shoots a sticky web at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🕷️",
+      "role": "deep_spider",
+      "faction": "spiders",
+      "respawn": 300
+    },
+    "deep_spider_3": {
+      "name": "Deep Spider",
+      "label": "Spider",
+      "description": "a spider the size of a pony, eyes like wet coal",
+      "details": "A spider the size of a pony, eyes like wet coal.",
+      "keywords": "deep spider",
+      "room": "dw_cocoons",
+      "max_hp": 140,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "fangs",
+          "period": 2800,
+          "damage": 12,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "web-shot",
+          "period": 8000,
+          "damage": 18,
+          "hit": "{actor} shoots a sticky web at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🕷️",
+      "role": "deep_spider",
+      "faction": "spiders",
+      "respawn": 300
+    },
+    "deep_spider_4": {
+      "name": "Deep Spider",
+      "label": "Spider",
+      "description": "a spider the size of a pony, eyes like wet coal",
+      "details": "A spider the size of a pony, eyes like wet coal.",
+      "keywords": "deep spider",
+      "room": "dw_hollow",
+      "max_hp": 140,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "fangs",
+          "period": 2800,
+          "damage": 12,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "web-shot",
+          "period": 8000,
+          "damage": 18,
+          "hit": "{actor} shoots a sticky web at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🕷️",
+      "role": "deep_spider",
+      "faction": "spiders",
+      "respawn": 300
+    },
+    "deep_spider_5": {
+      "name": "Deep Spider",
+      "label": "Spider",
+      "description": "a spider the size of a pony, eyes like wet coal",
+      "details": "A spider the size of a pony, eyes like wet coal.",
+      "keywords": "deep spider",
+      "room": "dw_thornway",
+      "max_hp": 140,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "fangs",
+          "period": 2800,
+          "damage": 12,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "web-shot",
+          "period": 8000,
+          "damage": 18,
+          "hit": "{actor} shoots a sticky web at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🕷️",
+      "role": "deep_spider",
+      "faction": "spiders",
+      "respawn": 300
+    },
+    "thornback": {
+      "name": "Thornback",
+      "label": "Beast",
+      "description": "a boar-like beast covered in thorns",
+      "details": "A boar-like beast covered in thorns.",
+      "keywords": "thornback",
+      "room": "dw_webwood",
+      "max_hp": 180,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "spines",
+          "period": 4000,
+          "damage": 15,
+          "hit": "{actor} rams {target} with its spines.",
+          "defend": "block"
+        }
+      ],
+      "xp": 21,
+      "icon": "🦔",
+      "respawn": 300
+    },
+    "weaver_queen": {
+      "name": "the Weaver Queen",
+      "label": "Spider Queen",
+      "description": "a vast, silver spider, very still",
+      "details": "A vast, silver spider, very still.",
+      "keywords": "weaver queen spider",
+      "room": "dw_queen",
+      "max_hp": 650,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 4000,
+          "damage": 18,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "venom",
+          "period": 11000,
+          "damage": 60,
+          "hit": "{actor} strikes at {target} with venom-dripping fangs!",
+          "defend": "dodge"
+        },
+        {
+          "name": "web shroud",
+          "period": 15000,
+          "damage": 25,
+          "hit": "{actor} wraps {target} in silver silk.",
+          "defend": "none"
+        }
+      ],
+      "xp": 176,
+      "icon": "🕷️",
+      "faction": "spiders",
+      "respawn": 1200
+    }
+  },
+  "gear": {
+    "weavers_fang": {
+      "name": "Weaver's Fang",
+      "kind": "Light",
+      "keywords": "fang weaver",
+      "effect": "damage",
+      "period": 1500,
+      "window": 220,
+      "perfect_window": 70,
+      "amounts": [
+        7,
+        10,
+        16
+      ],
+      "hit": "{actor} stabs {target}.",
+      "perfect_hit": "{actor} stabs {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Weaver's Fang finds nothing.",
+      "description": "One of the Weaver Queen's fangs, still venomous. Best in still, damp air.",
+      "weather": {
+        "temperature": -0.1,
+        "energy": -0.5,
+        "precipitation": "wet",
+        "tier": "blue"
+      },
+      "rarity": "rare",
+      "bleed": {
+        "damage": 4,
+        "beats": 3
+      }
+    }
+  },
+  "wearables": {
+    "thornkin_leggings": {
+      "name": "Thornkin Leggings",
+      "keywords": "thornkin leggings",
+      "place": "legs",
+      "type": "cloth",
+      "description": "Woven bark, light and tough. +1 Poise.",
+      "rarity": "uncommon",
+      "armor": 4,
+      "stats": {
+        "poise": 1
+      }
+    }
+  },
+  "factions": {
+    "thornkin": {
+      "name": "The Thornkin",
+      "realm": "alzendor",
+      "description": "The slow bark-folk of the Deepwood. They value patience and hate fire.",
+      "rules": [
+        {
+          "deed": "kill",
+          "of": "spiders",
+          "affinity": 2,
+          "note": "One less spider in the old wood."
+        }
+      ]
+    }
+  },
+  "quests": {
+    "dw_intel": {
+      "name": "Into the Deepwood",
+      "start": "ask",
+      "steps": {
+        "ask": {
+          "goal": "Something is driving the spiders south. Go north through the Spiderwood's silk cavern into the Deepwood, and ASK BARKMOTHER ABOUT SPIDERS.",
+          "on": {
+            "ask": "barkmother",
+            "about": "spiders"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Wren, at the hunters' camp: ASK WREN ABOUT DEEPWOOD.",
+          "on": {
+            "ask": "wren",
+            "about": "deepwood"
+          },
+          "effects": [
+            {
+              "xp": 100
+            }
+          ]
+        }
+      }
+    },
+    "dw_brood": {
+      "name": "The Weaver's Brood",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill eight deep spiders in the Deepwood.",
+          "on": {
+            "kill": "deep_spider",
+            "count": 8
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell the Barkmother: ASK BARKMOTHER ABOUT BROOD.",
+          "on": {
+            "ask": "barkmother",
+            "about": "brood"
+          },
+          "effects": [
+            {
+              "give": "thornkin_leggings"
+            },
+            {
+              "xp": 150
+            }
+          ]
+        }
+      }
+    },
+    "dw_queen": {
+      "name": "The Weaver Queen",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill the Weaver Queen, in her web past the Weaver's Hollow. Dodge the venom.",
+          "on": {
+            "kill": "weaver_queen"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell the Barkmother: ASK BARKMOTHER ABOUT QUEEN.",
+          "on": {
+            "ask": "barkmother",
+            "about": "queen"
+          },
+          "effects": [
+            {
+              "give": "weavers_fang"
+            },
+            {
+              "xp": 210
+            },
+            {
+              "reputation": {
+                "faction": "thornkin",
+                "affinity": 15,
+                "note": "You killed the Weaver."
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

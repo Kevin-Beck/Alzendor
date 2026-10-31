@@ -15,6 +15,7 @@
     --area-1: #4f7fb8; --area-2: #d9822b; --area-3: #3f9a5a; --area-4: #8e5bb5; --area-5: #c25a7c; --area-6: #2f8f8f;
     --tier-grey: #8b857b; --tier-green: #3f9a5a; --tier-blue: #3d7cc9; --tier-purple: #8e5bb5; --tier-orange: #d9822b;
     --up: #3f8a33; --down: #b8402e; --wet: #3d7cc9; --route: #b07a1f;
+    --day: #f2cf6b; --dusk: #e39a52; --night: #2c3566; --spot: #b07a1f;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -27,6 +28,7 @@
       --area-1: #6f9fd8; --area-2: #f0a050; --area-3: #5fbf7a; --area-4: #b48ae0; --area-5: #e07fa0; --area-6: #5fc0c0;
       --tier-grey: #9a958c; --tier-green: #5fbf7a; --tier-blue: #6fa6e8; --tier-purple: #b48ae0; --tier-orange: #f0a050;
       --up: #6fbf5a; --down: #ef6a55; --wet: #6fa6e8; --route: #e0a845;
+      --day: #d9b450; --dusk: #c97f3c; --night: #1d2350; --spot: #e0a845;
     }
   }
   :root[data-theme="dark"] {
@@ -39,6 +41,7 @@
     --area-1: #6f9fd8; --area-2: #f0a050; --area-3: #5fbf7a; --area-4: #b48ae0; --area-5: #e07fa0; --area-6: #5fc0c0;
       --tier-grey: #9a958c; --tier-green: #5fbf7a; --tier-blue: #6fa6e8; --tier-purple: #b48ae0; --tier-orange: #f0a050;
       --up: #6fbf5a; --down: #ef6a55; --wet: #6fa6e8; --route: #e0a845;
+      --day: #d9b450; --dusk: #c97f3c; --night: #1d2350; --spot: #e0a845;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
@@ -103,6 +106,7 @@
   .t-say { color: var(--say); } .t-emote { color: var(--emote); }
   .t-arrive, .t-leave, .t-item { color: var(--move); }
   .t-system, .t-error { color: var(--system); } .t-tell { color: var(--tell); }
+  .t-guide { color: var(--muted); white-space: pre-wrap; border-left: 3px solid var(--accent); padding-left: 8px; margin: 2px 0 4px; }
   .t-chat { color: var(--chat); } .t-ambient { color: var(--ambient); font-style: italic; }
   #latest { position: absolute; right: 16px; bottom: 8px; background: var(--panel); box-shadow: 0 2px 8px rgba(0, 0, 0, .15); }
   form#command { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-top: 1px solid var(--border); background: var(--panel); }
@@ -210,6 +214,14 @@
   .card.friendly { border-left: 3px solid var(--hp-good); }
   .card .tag { font-size: 11px; color: var(--muted); }
   #room-area .safe { color: var(--hp-good); }
+  /* Exposure: how much more of the cold (or the air, the heat…) you can take. */
+  #exposure { display: flex; align-items: center; gap: 8px; margin: -2px 0 8px; font-size: 12px; }
+  #exposure .meter { flex: 1; height: 8px; margin: 0; }
+  #exposure .meter .fill { left: 0; background: var(--hp-mid); }
+  #exposure.over .meter .fill { background: var(--hp-low); }
+  #exposure.over .what { color: var(--hp-low); font-weight: bold; }
+  #exposure .sub { color: var(--muted); }
+  .tag.deadly, .badge-d.deadly { color: var(--hp-low); font-weight: bold; }
 
   /* Weather: the temperature/energy grid with the current point, the forecast
      trail, and a precipitation bar beside it. The same grid shows a gear's spot. */
@@ -266,6 +278,79 @@
   .t-weather_report { white-space: pre-wrap; color: var(--wet); }
   #exits .hidden-ways { font-size: 12px; color: var(--muted); font-style: italic; align-self: center; }
   .boon.off { opacity: .6; }
+
+  /* The weather panel: four columns, always in the same order. */
+  .wxcols { display: flex; gap: 10px; align-items: flex-start; }
+  .wxcol { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; }
+  .wxcol:last-child { flex: 1; align-items: flex-start; }
+  .wxhead { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .wxval { font-size: 11px; color: var(--text); text-align: center; max-width: 76px; line-height: 1.25; }
+  .wxcol:last-child .wxval { text-align: left; max-width: none; }
+  #wx-grid { width: 96px; height: 96px; border: 1px solid var(--border); border-radius: 6px; background: var(--map-bg); }
+  #wx-grid text { font-family: system-ui, sans-serif; fill: var(--muted); }
+  #wx-precip-bar { width: 12px; height: 72px; border: 1px solid var(--border); border-radius: 6px; background: var(--hp-track); position: relative; overflow: hidden; }
+  #wx-precip-bar .fill { position: absolute; left: 0; right: 0; bottom: 0; background: var(--wet); transition: height .6s; }
+  #wx-wheel { width: 64px; height: 64px; }
+  .ground-icon { font-size: 26px; line-height: 1; height: 34px; display: grid; place-items: center; }
+  #weather-panel .about { margin-top: 8px; font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
+  #weather-panel .about .main { color: var(--text); }
+  #weather-panel .about .sub { color: var(--muted); }
+  #weather-panel .about .warn { color: var(--system); }
+
+  /* The combat panel. Your health is the faint fill behind it, rising from the
+     bottom; as you're hit it drops past the target and the slots. */
+  #combat-panel { position: relative; isolation: isolate; overflow: hidden; }
+  #hp-wash { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  #hp-wash .level, #hp-wash .trail { position: absolute; left: 0; right: 0; bottom: 0; }
+  /* Opaque (mixed with the panel colour), so the red trail only shows above the level. */
+  #hp-wash .level { background: color-mix(in srgb, var(--hp-good) 10%, var(--panel)); transition: height .35s ease-out, background .3s;
+    border-top: 2px solid color-mix(in srgb, var(--hp-good) 45%, var(--panel)); }
+  #hp-wash .trail { background: color-mix(in srgb, var(--hp-low) 22%, var(--panel)); transition: height .9s ease-in .5s; }
+  #hp-wash.mid .level { background: color-mix(in srgb, var(--hp-mid) 12%, var(--panel)); border-top-color: color-mix(in srgb, var(--hp-mid) 55%, var(--panel)); }
+  #hp-wash.low .level { background: color-mix(in srgb, var(--hp-low) 12%, var(--panel)); border-top-color: color-mix(in srgb, var(--hp-low) 65%, var(--panel)); }
+  #combat-panel.struck #hp-wash .level { animation: wash .5s; }
+  @keyframes wash { from { background: color-mix(in srgb, var(--hp-low) 35%, var(--panel)); } }
+  #entities { max-height: 132px; overflow-y: auto; margin-bottom: 8px; }
+  #entities .card { padding: 4px 8px; margin-bottom: 4px; background: color-mix(in srgb, var(--bg) 85%, transparent); }
+  #entities .card .desc { display: none; }
+  #entities .mini { display: flex; gap: 3px; margin-top: 3px; }
+  #entities .mini span { flex: 1; height: 3px; border-radius: 2px; background: var(--hp-track); overflow: hidden; }
+  #entities .mini i { display: block; height: 100%; width: 0; background: var(--hp-low); }
+  /* The target pops up between the room's list and your slots, in a space of its own. */
+  #target-card { min-height: 150px; margin: 0 0 8px; }
+  #target-card .tcard { animation: pop .18s ease-out; background: color-mix(in srgb, var(--bg) 88%, transparent); }
+  @keyframes pop { from { transform: scale(.96); opacity: 0; } }
+  .thp { position: relative; height: 12px; margin-top: 8px; border-radius: 6px; background: var(--hp-track); overflow: hidden; }
+  .thp .trail, .thp .fill { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 6px; }
+  .thp .trail { background: color-mix(in srgb, var(--hp-low) 45%, transparent); transition: width .9s ease-in .4s; }
+  .thp .fill { background: var(--hp-good); transition: width .25s ease-out; }
+  .thp .fill.mid { background: var(--hp-mid); } .thp .fill.low { background: var(--hp-low); }
+  .thp-text { font-size: 11px; color: var(--muted); text-align: right; }
+  /* An enemy's attack: its marker slides to the end of the bar, where the blow
+     lands; the shaded end is your window to block or dodge. */
+  .attack .track { position: relative; height: 8px; overflow: visible; }
+  .attack .fill { border-radius: 4px; background: color-mix(in srgb, var(--hp-low) 55%, transparent); }
+  .attack .window { position: absolute; top: -2px; bottom: -2px; right: 0; border-radius: 0 4px 4px 0;
+    background: color-mix(in srgb, var(--accent) 35%, transparent); border-left: 1px solid var(--accent); }
+  .attack .marker { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
+    background: var(--hp-low); box-shadow: 0 0 0 2px var(--panel); left: 0; }
+  .attack.mine .row b { color: var(--hp-low); font-weight: bold; }
+  .attack .how { font-size: 10px; }
+  #defend-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 11px; color: var(--muted); }
+  #defend-row .key { min-width: 18px; padding: 0 4px; font-weight: bold; font-size: 11px; }
+  #defend-row .key.listening { border-color: var(--accent); color: var(--accent); }
+  #defend-row .label { font-weight: bold; text-transform: uppercase; letter-spacing: .06em; color: var(--text); }
+  #defend-row .cool { flex: 1; height: 6px; border-radius: 3px; background: var(--hp-track); overflow: hidden; }
+  #defend-row .cool .fill { height: 100%; width: 100%; background: var(--accent); }
+  #defend-row .result { min-width: 64px; text-align: right; font-weight: bold; color: var(--text); }
+  #defend-row.flash .label { color: var(--up); }
+
+  /* Rarity: the colour of a thing's name. Weather sensitivity: dots. */
+  .r-common { color: var(--tier-grey); } .r-uncommon { color: var(--tier-green); } .r-rare { color: var(--tier-blue); }
+  .r-epic { color: var(--tier-purple); } .r-legendary { color: var(--tier-orange); }
+  .pips { letter-spacing: 1px; color: var(--accent); white-space: nowrap; }
+  #tip .tagline { color: var(--muted); margin: 1px 0 4px; }
+  #tip .stats-line { margin-top: 4px; }
 
   /* Inventory and character panels. */
   dialog {
@@ -324,6 +409,7 @@
 
   @media (max-width: 760px) {
     header { flex-wrap: wrap; row-gap: 6px; }
+    #panel-buttons { flex-wrap: wrap; }
     main { display: flex; flex-direction: column; overflow-y: auto; }
     #left { flex: none; }
     #map-wrap { flex: none !important; height: 42vh; border-bottom: 1px solid var(--border); }
@@ -392,7 +478,7 @@
         ▸ <span class="name" id="target-name"></span>
         <button id="target-clear" type="button" aria-label="Clear target">×</button>
       </span>
-      <input id="input" placeholder="Type a command — Tab picks a target, 4 3 2 use your slots" maxlength="500" aria-label="Command">
+      <input id="input" placeholder="Type a command — Tab picks a target, 4 3 2 use your slots, 7 blocks or dodges" maxlength="500" aria-label="Command">
       <button type="submit">Send</button>
     </form>
   </section>
@@ -401,28 +487,43 @@
     <section>
       <div id="room-name">—</div>
       <div id="room-area"></div>
+      <div id="exposure" class="hidden" role="status"></div>
       <div id="exits"></div>
     </section>
+    <!-- Weather, left to right: the sky (temperature across, energy up), what's
+         falling, the time of day, and the ground underfoot. -->
     <section id="weather-panel" class="hidden">
       <h2>Weather <span class="hint" id="wx-place"></span></h2>
-      <div class="wx">
-        <svg id="wx-grid" role="img" aria-label="The weather: temperature across, energy up"></svg>
-        <div class="precip" title="Precipitation"><div class="fill" id="wx-precip"></div></div>
-        <div class="about" id="wx-about"></div>
+      <div class="wxcols">
+        <div class="wxcol"><div class="wxhead">Sky</div><svg id="wx-grid" role="img" aria-label="The weather: temperature across, energy up"></svg></div>
+        <div class="wxcol"><div class="wxhead">Rain</div><div class="precip" id="wx-precip-bar"><div class="fill" id="wx-precip"></div></div>
+          <div class="wxval" id="wx-precip-text"></div></div>
+        <div class="wxcol"><div class="wxhead">Time</div><svg id="wx-wheel" role="img" aria-label="Time of day"></svg>
+          <div class="wxval" id="wx-time-text"></div></div>
+        <div class="wxcol"><div class="wxhead">Ground</div><div class="ground-icon" id="wx-ground-icon"></div>
+          <div class="wxval" id="wx-ground-text"></div></div>
+      </div>
+      <div class="about" id="wx-about"></div>
+    </section>
+    <!-- Combat, top to bottom: who's here, your target, your slots and defence.
+         Your health fills the panel from the bottom, faintly, behind it all. -->
+    <section id="combat-panel">
+      <div id="hp-wash" aria-hidden="true"><div class="trail"></div><div class="level"></div></div>
+      <h2>Here <span class="hint">Tab to target</span></h2>
+      <ul id="entities"></ul>
+      <div id="target-card" aria-live="polite"></div>
+      <h2>Slots <span class="hint" id="slot-hint">4 3 2 use your slots · hover for details</span></h2>
+      <div id="timings" role="group" aria-label="Your slots"></div>
+      <div id="defend-row" title="Block (with a shield in hand) or dodge the next blow: press as the enemy's marker reaches the end of its bar.">
+        <button type="button" class="key" id="defend-key" title="Change the key">7</button>
+        <span class="label" id="defend-label">Dodge</span>
+        <div class="cool"><div class="fill" id="defend-cool"></div></div>
+        <span class="result" id="defend-result"></span>
       </div>
     </section>
     <section id="quest-panel" class="hidden">
       <h2>Quest <span class="hint" id="quest-name"></span></h2>
       <div id="quest-goal"></div>
-    </section>
-    <section id="combat-panel">
-      <h2>Loadout <span class="hint">4 3 2 use your slots · hover for details</span></h2>
-      <div id="timings" role="group" aria-label="Your slots"></div>
-      <div id="target-card" aria-live="polite"></div>
-    </section>
-    <section>
-      <h2>Here <span class="hint">Tab to target</span></h2>
-      <ul id="entities"></ul>
     </section>
     <section>
       <h2>On the ground</h2>
@@ -479,6 +580,7 @@ let wx = null;          // the weather where you are (the latest `weather` event
 let journey = null;     // a journey in progress: the latest `journey` event (route, kind, stage, stages, at, pos, name)
 let travelEvent = null; // a travel event waiting for your choice, and the log card showing it
 let quests = [];        // your quests (the latest `quests` event), active first
+let exposure = null;    // the cold (or foul air, heat…) wearing you down here: the latest `exposure` event
 const history = [];
 let historyIndex = 0;
 
@@ -684,10 +786,15 @@ function show(event) {
   if (event.type === "travel_event") return showTravelEvent(event);
   if (event.type === "quests") { quests = event.quests; return renderQuests(); }
   if (event.type === "intro") return line(event.text, "intro");
-  if (event.type === "character") { character = event; renderCharacter(); return renderTarget(); }
+  if (event.type === "character") { character = event; renderCharacter(); renderDefend(); return renderTarget(); }
   if (event.type === "npc_timing") return applyNpcTiming(event);
   if (event.type === "dispositions") return applyDispositions(event.dispositions);
-  if (event.type === "combat" && event.entity_id && event.target === "pc:" + me) struck();
+  if (event.type === "defend") return showDefend(event);
+  if (event.type === "exposure") { exposure = event.kind ? event : null; return renderExposure(); }
+  if (event.type === "combat" && event.entity_id && event.target === "pc:" + me) {
+    if (event.defended) defendResult(event.perfect ? "Perfect!" : event.defended === "block" ? "Blocked" : "Dodged", true);
+    if (event.damage > 0) struck();
+  }
   if ((event.type === "combat" || event.type === "heal") && (event.actor === me || event.channel === "PLAYER:" + me)) showResult(event);
   if (event.type === "room") return showRoom(event.room, event.text, event.cause);
   if (room && event.channel === "ROOM:" + room.id) updateRoom(event);
@@ -702,9 +809,10 @@ function updateRoom(event) {
   const cards = room.entities;
   if (event.type === "arrive" && event.entity && event.actor !== me) {
     room.entities = [...cards.filter((c) => c.id !== event.entity.id), event.entity].sort(byCardOrder);
+    autoTarget();
   } else if ((event.type === "leave" || event.type === "death") && event.entity_id) {
     room.entities = cards.filter((c) => c.id !== event.entity_id);
-    if (target === event.entity_id) setTarget(null);
+    if (target === event.entity_id) { setTarget(null); autoTarget(); }
   } else if (event.type === "entity" && event.entity.id === "pc:" + me) {
     room.self = event.entity;
     showSelf(event.entity);
@@ -735,6 +843,7 @@ function showRoom(snapshot, text, cause) {
   showSelf(snapshot.self);
   if (moved) setTarget(null);
   else if (target && !room.entities.some((c) => c.id === target)) setTarget(null);
+  autoTarget();
 
   const midWalk = walk && cause === "move" && advanceWalk(snapshot.id, snapshot.step_ms);
   if (!unchanged && !(snapshot.waypoint && cause === "travel")) { // a waypoint's line comes with the journey
@@ -773,7 +882,9 @@ function renderPanels() {
     b.onclick = () => { stopWalk(); sendCmd("move " + dir); };
     return b;
   }));
-  if (room && room.exits_hidden) {
+  if (room && room.dark) {
+    $("exits").append(el("span", "hidden-ways", "too dark to see the ways on: hold a light (WEAR TORCH)"));
+  } else if (room && room.exits_hidden) {
     $("exits").append(el("span", "hidden-ways", `other ways hidden by the ${(wx && wx.falling) || "weather"}`));
   }
   for (const r of (room && room.routes) || []) {
@@ -787,6 +898,27 @@ function renderPanels() {
   if (room && room.scents) $("exits").append(el("span", "hidden-ways", `you smell something to the ${room.scents.join(", ")}`));
   renderEntities();
   renderGround();
+}
+
+function renderExposure() {
+  const box = $("exposure");
+  box.classList.toggle("hidden", !exposure);
+  if (!exposure) return;
+  const e = exposure;
+  const meter = el("div", "meter"), fill = el("div", "fill");
+  fill.style.width = Math.min(100, (100 * e.level) / e.max) + "%";
+  meter.append(fill);
+  box.classList.toggle("over", e.level > e.max);
+  box.title = `${capital(e.name)}: each step out here wears you down. Past the end of the bar it hurts. Shelter clears it`
+    + (e.protected ? `; your ${e.protected} keeps it off.` : "; the right gear keeps it off.");
+  box.replaceChildren(el("span", "what", capital(e.name)), meter,
+    el("span", "sub", e.protected ? `kept off by your ${e.protected}` : e.level > e.max ? "it hurts: find shelter" : `${e.level} / ${e.max}`));
+}
+
+// Whether an NPC hits hard enough to matter: any blow of 40% of your health or more.
+function deadly(card) {
+  const max = room && room.self ? room.self.max_hp : 100;
+  return card.kind === "npc" && (card.attacks || []).some((a) => a.damage >= 0.4 * max);
 }
 
 // Travel events: a card in the log with a button for each choice. The journey
@@ -852,9 +984,22 @@ function renderEntities() {
     top.append(el("span", "name", card.name), el("span", "label", card.label));
     if (card.asleep) top.append(el("span", "tag", "asleep"));
     else if (card.kind === "npc" && disposition(card) !== "neutral") top.append(el("span", "tag", disposition(card)));
+    if (deadly(card)) top.append(el("span", "tag deadly", "deadly"));
+    if (card.wary && !card.fight) top.append(el("span", "tag", "watchful"));
     b.append(top);
     if (card.description) b.append(el("div", "desc", card.description));
     b.append(healthBar(card.hp, card.max_hp));
+    // A fighting NPC's blows coming, small: the target card shows them in full.
+    if (card.fight) {
+      const mini = el("div", "mini");
+      for (const a of card.fight.attacks) {
+        const bar = el("span"), fill = el("i");
+        Object.assign(fill.dataset, { next: a.next_ms, period: a.period_ms });
+        bar.append(fill);
+        mini.append(bar);
+      }
+      b.append(mini);
+    }
     b.onclick = () => { setTarget(card.id === target ? null : card.id); $("input").focus(); };
     li.append(b);
     return li;
@@ -913,6 +1058,16 @@ function setTarget(id) {
   $("target-name").textContent = card ? card.name : "";
   $("target-name").style.color = card ? `var(--${card.kind})` : "";
   renderEntities();
+}
+
+// With nothing targeted, the first hostile here, or else the first friendly
+// NPC (never a neutral one or a player: a slot pressed by habit would start a fight).
+function autoTarget() {
+  if (target || !room) return;
+  // Never something deadly or watchful that isn't already after you: sneaking past it is the point.
+  const npcs = room.entities.filter((c) => c.kind === "npc" && (c.fight || !(deadly(c) || c.wary)));
+  const card = npcs.find((c) => disposition(c) === "hostile") || npcs.find((c) => disposition(c) === "friendly");
+  if (card) setTarget(card.id);
 }
 
 function cycleTarget(step) {
@@ -1081,17 +1236,40 @@ function showResult(event) {
   }, 900);
 }
 
-// Your own health, in the header.
+// Your own health: in the header, and as the faint fill behind the combat
+// panel. The red trail behind the fill lags, so you can see how fast it's going.
+let washPct = null;
 function showSelf(card) {
   if (!card) return;
   $("me-hp").replaceChildren(healthBar(card.hp, card.max_hp));
   $("me-hp").classList.remove("hidden");
+  const pct = card.max_hp > 0 ? Math.max(0, Math.min(100, (100 * card.hp) / card.max_hp)) : 0;
+  const wash = $("hp-wash");
+  wash.className = pct <= 25 ? "low" : pct <= 50 ? "mid" : "";
+  wash.title = `Your health: ${card.hp} / ${card.max_hp}`;
+  setLevel(wash.querySelector(".level"), wash.querySelector(".trail"), pct, washPct, "height");
+  washPct = pct;
+}
+
+// Moves a health fill to pct. Its trail follows slowly when it falls, and
+// jumps when it rises (or on the first draw).
+function setLevel(fill, trail, pct, before, prop) {
+  const jump = before === null || pct > before;
+  for (const node of jump ? [fill, trail] : []) node.style.transition = "none";
+  fill.style[prop] = pct + "%";
+  trail.style[prop] = pct + "%";
+  if (jump) {
+    void fill.offsetWidth;
+    fill.style.transition = trail.style.transition = "";
+  }
 }
 
 function struck() {
-  $("me-hp").classList.remove("struck");
-  void $("me-hp").offsetWidth; // restart the animation
-  $("me-hp").classList.add("struck");
+  for (const node of [$("me-hp"), $("combat-panel")]) {
+    node.classList.remove("struck");
+    void node.offsetWidth; // restart the animation
+    node.classList.add("struck");
+  }
 }
 
 // The target card ------------------------------------------------------------------------
@@ -1133,59 +1311,155 @@ function nameOf(id) {
   return card ? card.name : "someone";
 }
 
+let targetCard = null; // the target card on screen: { id, box, head, fill, trail, text, rest, pct }
+
+const DEFEND_WORDS = { both: "block or dodge", block: "block only", dodge: "dodge only", none: "can't be blocked or dodged" };
+
 function renderTarget() {
   const card = target && room ? room.entities.find((c) => c.id === target) : null;
   if (!card) {
-    const hint = room && room.entities.length ? "No target. Press Tab (or click a card below) to pick one." : "";
+    targetCard = null;
+    const hint = room && room.entities.length ? "No target. Press Tab (or click someone above) to pick one." : "";
     return $("target-card").replaceChildren(...(hint ? [el("p", "empty", hint)] : []));
   }
+  if (!targetCard || targetCard.id !== card.id) {
+    // A new target pops up; after that the card is updated in place, so its health bar animates.
+    const v = { id: card.id, box: el("div"), head: el("div", "head"), bar: el("div", "thp"), fill: el("div", "fill"),
+      trail: el("div", "trail"), text: el("div", "thp-text"), rest: el("div"), pct: null };
+    v.bar.append(v.trail, v.fill);
+    v.bar.setAttribute("role", "meter");
+    v.bar.setAttribute("aria-label", "Target's health");
+    v.box.append(v.head, v.bar, v.text, v.rest);
+    $("target-card").replaceChildren(v.box);
+    targetCard = v;
+  }
+  const v = targetCard;
   const mood = card.kind === "npc" ? disposition(card) : "pc";
-  const box = el("div", `tcard ${card.kind} ${mood}`);
-  const head = el("div", "head");
+  v.box.className = `tcard ${card.kind} ${mood}`;
   const who = el("div", "who");
   who.append(el("div", "name", card.name), el("div", "label", card.kind === "pc" ? `${card.label}, level ${card.level || 1}` : card.label));
   if (card.asleep) who.append(el("span", "badge-d asleep", "asleep"));
   else if (card.kind === "npc") who.append(el("span", `badge-d ${mood}`, mood + (card.immortal ? " · practice" : "")));
-  head.append(portrait(card), who);
-  box.append(head, healthBar(card.hp, card.max_hp));
-  if (card.description) box.append(el("div", "desc", card.description));
+  if (deadly(card)) who.append(" ", el("span", "badge-d deadly", `deadly · hits for up to ${Math.max(...card.attacks.map((a) => a.damage))}`));
+  v.head.replaceChildren(portrait(card), who);
+  // Health runs out from right to left.
+  const pct = card.max_hp > 0 ? Math.max(0, Math.min(100, (100 * card.hp) / card.max_hp)) : 0;
+  v.fill.className = "fill" + (pct <= 25 ? " low" : pct <= 50 ? " mid" : "");
+  setLevel(v.fill, v.trail, pct, v.pct, "width");
+  v.pct = pct;
+  v.bar.setAttribute("aria-valuenow", String(card.hp));
+  v.bar.setAttribute("aria-valuemax", String(card.max_hp));
+  v.text.textContent = `${card.hp} / ${card.max_hp}`;
+  const rest = [];
+  if (card.description) rest.push(el("div", "desc", card.description));
   if (card.faction) {
     const known = character && character.factions.find((f) => f.name === card.faction);
-    box.append(el("div", "standing", known
+    rest.push(el("div", "standing", known
       ? `${card.faction}: ${known.affinity_label}, ${known.respect_label}`
       : `${card.faction}: they don't know you yet`));
   }
-  if (card.topics) box.append(el("div", "standing", `Ask about: ${card.topics.join(", ")} (ASK ${card.name.split(" ").pop().toUpperCase()} ABOUT …)`));
+  if (card.topics) rest.push(el("div", "standing", `Ask about: ${card.topics.join(", ")} (ASK ${card.name.split(" ").pop().toUpperCase()} ABOUT …)`));
   if (card.kind === "npc" && card.attacks && card.attacks.length) {
+    // Each attack: a marker sliding to the end of its bar, where the blow lands.
+    // The shaded end is your window to block or dodge it (DEFEND).
     const fight = card.fight;
+    const mine = fight && fight.target === "pc:" + me;
+    const defence = character && character.defence;
     const list = el("div", "attacks");
     card.attacks.forEach((attack, i) => {
-      const row = el("div", "attack");
+      const row = el("div", "attack" + (mine ? " mine" : ""));
       const top = el("div", "row");
-      const label = el("b", "", attack.name);
-      top.append(label, el("span", "", `${attack.damage} dmg · every ${(attack.period_ms / 1000).toFixed(0)}s`));
+      top.append(el("b", "", attack.name), el("span", "how", `${attack.damage} dmg · ${DEFEND_WORDS[attack.defend || "both"]}`));
       const track = el("div", "track");
       const fill = el("div", "fill");
       const timer = fight && fight.attacks[i];
-      if (timer) Object.assign(fill.dataset, { next: timer.next_ms, period: timer.period_ms });
+      const canMeet = defence && (attack.defend === "both" || attack.defend === defence.mode || !attack.defend);
+      if (timer && mine && canMeet) {
+        const zone = el("div", "window");
+        zone.style.width = Math.min(50, (100 * defence.window_ms) / attack.period_ms) + "%";
+        track.append(zone);
+      }
       track.append(fill);
+      if (timer) {
+        const marker = el("div", "marker");
+        for (const node of [fill, marker]) Object.assign(node.dataset, { next: timer.next_ms, period: timer.period_ms });
+        track.append(marker);
+      }
       row.append(top, track);
       list.append(row);
     });
-    box.append(list);
-    if (fight && fight.target) box.append(el("div", "fighting", `Fighting ${nameOf(fight.target)}`));
+    rest.push(list);
+    if (fight && fight.target) rest.push(el("div", "fighting", `Fighting ${nameOf(fight.target)}`));
   }
-  $("target-card").replaceChildren(box);
+  v.rest.replaceChildren(...rest);
 }
 
-// Fills each NPC attack bar up to its next blow.
+// Moves every NPC attack marker (and the small bars in the room list) towards
+// its next blow. They're drawn for when a press sent now would arrive, so
+// pressing DEFEND as a marker reaches the end meets the blow.
 function drawNpcTimers() {
-  const t = serverNow();
-  for (const fill of document.querySelectorAll("#target-card .attack .fill")) {
-    if (!fill.dataset.next) continue;
-    const left = Number(fill.dataset.next) - t;
-    fill.style.width = Math.max(0, Math.min(100, 100 * (1 - left / Number(fill.dataset.period)))) + "%";
+  const t = arrivalTime();
+  for (const node of document.querySelectorAll("#target-card .attack [data-next], #entities .mini [data-next]")) {
+    const left = Number(node.dataset.next) - t;
+    const pct = Math.max(0, Math.min(100, 100 * (1 - left / Number(node.dataset.period))));
+    if (node.classList.contains("marker")) node.style.left = pct + "%";
+    else node.style.width = pct + "%";
   }
+}
+
+// Defence: DEFEND (the 7 key, or one you choose) blocks with a shield in hand,
+// or dodges without. Then it needs a moment before it's ready again.
+const keys = { defend: store.get("alz.key.defend") || "7" };
+
+function renderDefend() {
+  const d = character && character.defence;
+  $("defend-key").textContent = keys.defend;
+  $("defend-label").textContent = d && d.mode === "block" ? "Block" : "Dodge";
+  $("slot-hint").textContent = `4 3 2 use your slots · ${keys.defend} ${d && d.mode === "block" ? "blocks" : "dodges"} · hover for details`;
+}
+
+function defend() {
+  stopWalk();
+  sendCmd("defend");
+}
+
+function defendResult(text, good) {
+  const row = $("defend-row");
+  $("defend-result").textContent = text;
+  row.classList.toggle("flash", good);
+  clearTimeout(defendResult.timer);
+  defendResult.timer = setTimeout(() => { $("defend-result").textContent = ""; row.classList.remove("flash"); }, 1200);
+}
+
+function showDefend(event) {
+  if (!event.ready) return defendResult("Too soon", false);
+  const fill = $("defend-cool");
+  fill.style.transition = "none";
+  fill.style.width = "0%";
+  void fill.offsetWidth;
+  fill.style.transition = `width ${event.cooldown_ms}ms linear`;
+  fill.style.width = "100%";
+}
+
+$("defend-key").addEventListener("click", () => {
+  $("defend-key").classList.add("listening");
+  $("defend-key").textContent = "…";
+  $("defend-row").title = "Press the key you want for DEFEND (Esc to keep the old one).";
+});
+
+// While choosing a new key for DEFEND, the next key pressed is it.
+function chooseDefendKey(e) {
+  if (!$("defend-key").classList.contains("listening")) return false;
+  e.preventDefault();
+  e.stopPropagation();
+  const k = e.key;
+  if (k !== "Escape" && k.length === 1 && k !== " " && !Object.values(SLOT_KEYS).includes(k)) {
+    keys.defend = k;
+    store.set("alz.key.defend", k);
+  }
+  $("defend-key").classList.remove("listening");
+  renderDefend();
+  return true;
 }
 
 // Inventory and character panels -----------------------------------------------------------
@@ -1202,10 +1476,12 @@ function amountsText(g, amounts) {
   return g.effect === "heal" ? `heals ${amounts.join(" / ")}` : `${amounts.join(" / ")} damage`;
 }
 
+// "uncommon spell ●●○○○ · every 2.5s · 4 / 6 damage"
 function gearLine(g) {
-  const tier = g.weather ? ` · ${g.weather.tier}` : "";
-  return `${g.kind.toLowerCase()}${tier} · every ${(g.period_ms / 1000).toFixed(1)}s · ±${g.grace_ms}ms · ${amountsText(g, g.amounts.slice(1))}`
-    + (g.targets === "ally" ? " · you or an ally" : "");
+  const line = el("div", "sub");
+  line.append(`${g.rarity || "common"} ${g.kind.toLowerCase()} `, pips(g.sensitivity || 1),
+    ` · every ${(g.period_ms / 1000).toFixed(1)}s · ${amountsText(g, g.amounts.slice(1))}` + (g.targets === "ally" ? " · you or an ally" : ""));
+  return line;
 }
 
 // "now: 6 / 9 damage ▲12%"
@@ -1226,9 +1502,11 @@ function renderInventory() {
   kit.slots.forEach((gid, i) => {
     const li = el("li");
     const info = el("div", "grow");
-    info.append(el("div", "", `${i + 1} · ${gid && byId[gid] ? byId[gid].name : "Empty"}`));
+    const name = el("div", "", `${i + 1} · `);
+    name.append(gid && byId[gid] ? rarityName(byId[gid]) : "Empty");
+    info.append(name);
     if (gid && byId[gid]) {
-      info.append(el("div", "sub", gearLine(byId[gid])), nowLine(byId[gid]));
+      info.append(gearLine(byId[gid]), nowLine(byId[gid]));
       withTip(li, () => gearTip(byId[gid]));
     }
     li.append(info);
@@ -1239,7 +1517,7 @@ function renderInventory() {
   for (const g of kit.gear) {
     const li = el("li");
     const info = el("div", "grow");
-    info.append(el("div", "", g.name), el("div", "sub", gearLine(g)), nowLine(g));
+    info.append(rarityName(g, "div"), gearLine(g), nowLine(g));
     li.append(info);
     withTip(li, () => gearTip(g));
     for (let n = 1; n <= kit.slots.length; n++) {
@@ -1283,13 +1561,14 @@ function renderCharacter() {
   xp.append(fill);
   const summary = el("div", "");
   if (c.class) summary.append(el("div", "identity", `${c.ancestry} ${c.class} · ${c.background}`));
-  summary.append(el("div", "", `Level ${c.level}${c.level >= c.level_cap ? " (the cap)" : ""} · ${c.xp} / ${c.xp_next} experience · health ${c.hp} / ${c.max_hp}`), xp);
+  const self = (room && room.self) || c; // the room's card is kept current through a fight
+  summary.append(el("div", "", `Level ${c.level}${c.level >= c.level_cap ? " (the cap)" : ""} · ${c.xp} / ${c.xp_next} experience · health ${self.hp} / ${self.max_hp}`), xp);
   const statRows = el("ul", "rows");
   for (const name of c.stat_order || Object.keys(c.stats)) {
     const value = c.stats[name], trained = c.trained ? c.trained[name] : value;
     const li = el("li");
     const info = el("div", "grow");
-    const extra = value !== trained ? ` (${trained} trained, +${value - trained} from your ancestry, boons and buffs)` : "";
+    const extra = value !== trained ? ` (${trained} trained, +${value - trained} from your ancestry, gear, boons and buffs)` : "";
     info.append(el("div", "", `${capital(name)} ${value}${extra}`), el("div", "sub", c.stat_info[name] || ""));
     const train = button("+", () => sendCmd("train " + name), "Spend a point on " + name);
     train.disabled = !c.points;
@@ -1297,27 +1576,19 @@ function renderCharacter() {
     statRows.append(li);
   }
   const parts = [summary, el("h3", "", c.points ? `Stats · ${c.points} point${c.points > 1 ? "s" : ""} to spend` : "Stats"), statRows];
-  if (c.boons && c.boons.length) {
-    const boonRows = el("ul", "rows");
-    for (const b of c.boons) {
-      const li = el("li", "boon" + (b.active ? "" : " off"));
-      const info = el("div", "grow");
-      const need = [b.affinity !== undefined && `affinity ${b.affinity}`, b.respect !== undefined && `respect ${b.respect}`].filter(Boolean).join(" and ");
-      info.append(el("div", "", `+${b.amount} ${capital(b.stat)} · ${b.faction}`),
-        el("div", "sub", b.active ? b.note : `At ${need} or more.`));
-      li.append(info, el("span", "sub", b.active ? "active" : "locked"));
-      boonRows.append(li);
-    }
-    parts.push(el("h3", "", "Boons · stat bonuses from the factions that rate you"), boonRows);
-  }
+  if (c.worn) parts.push(...wornSection(c));
   if (c.talents) {
     // Talents in rank order; locked ranks say what opens them.
     const rows = el("ul", "rows");
     for (const t of [...c.talents].sort((a, b) => a.rank - b.rank)) {
       const li = el("li", t.learned ? "" : "off");
       const info = el("div", "grow");
-      info.append(el("div", "", `${t.name} · rank ${t.rank} · ${t.kind.toLowerCase()}`), el("div", "sub", t.locked && !t.learned ? `${t.description} (${t.locked})` : t.description));
+      const name = el("div", "");
+      name.append(rarityName(t), ` · rank ${t.rank} · ${t.kind.toLowerCase()} `, pips(t.sensitivity || 1));
+      info.append(name, el("div", "sub", t.locked && !t.learned ? `${t.description} (${t.locked})` : t.description));
       li.append(info);
+      // Hover (or tap) for everything about it, before you choose.
+      withTip(li, () => gearTip(t, [`Talent rank ${t.rank}`, t.learned ? "learned" : t.locked ? t.locked : null]));
       if (t.learned) li.append(el("span", "sub", "learned"));
       else {
         const b = button("Learn", () => sendCmd("learn " + t.name), "LEARN " + t.name.toUpperCase());
@@ -1326,7 +1597,7 @@ function renderCharacter() {
       }
       rows.append(li);
     }
-    parts.push(el("h3", "", `Talents · ${c.talent_picks > 0 ? c.talent_picks + " to learn" : "one at every even level"}`), rows);
+    parts.push(el("h3", "", `Talents · ${c.talent_picks > 0 ? c.talent_picks + " to learn" : "one every third level (3, 6, 9 … 18)"} · hover for details`), rows);
   }
   if (c.passives) {
     const rows = el("ul", "rows");
@@ -1364,10 +1635,52 @@ function renderCharacter() {
   decorateSlots();
 }
 
+// Worn gear: one row per place (head, chest, legs, hand), then everything else
+// you own that you could put on.
+function wornSection(c) {
+  const rows = el("ul", "rows");
+  for (const place of c.places) {
+    const w = c.worn[place];
+    const li = el("li");
+    const info = el("div", "grow");
+    const name = el("div", "", `${PLACE_NAMES[place]} · `);
+    name.append(w ? rarityName(w) : el("span", "sub", place === "hand" ? "empty: a torch, a shield or an orb goes here" : "nothing"));
+    info.append(name);
+    if (w) {
+      const bits = [w.armor ? `armour ${w.armor}` : "", ...Object.entries(w.stats || {}).map(([k, n]) => `${signed(n)} ${k}`),
+        w.light ? "lights the way" : "", w.type === "shield" ? "lets you block" : ""].filter(Boolean);
+      if (bits.length) info.append(el("div", "sub", bits.join(" · ")));
+      withTip(li, () => wearTip(w));
+    }
+    li.append(info);
+    if (w) li.append(button(place === "hand" ? "Put away" : "Take off", () => sendCmd("remove " + place)));
+    rows.append(li);
+  }
+  const parts = [el("h3", "", `Worn · armour ${c.armor}, takes ${c.armor_pct}% off each blow`), rows];
+  const spare = c.wardrobe.filter((w) => !w.worn);
+  if (spare.length) {
+    const more = el("ul", "rows");
+    for (const w of spare) {
+      const li = el("li", w.usable ? "" : "off");
+      const info = el("div", "grow");
+      info.append(rarityName(w, "div"), el("div", "sub", `${PLACE_NAMES[w.place]} · ${w.type}${w.usable ? "" : " · your class can't use it"}`));
+      li.append(info);
+      withTip(li, () => wearTip(w));
+      const b = button(w.place === "hand" ? "Hold" : "Wear", () => sendCmd("wear " + w.id), `WEAR ${w.name.toUpperCase()}`);
+      b.disabled = !w.usable;
+      li.append(b);
+      more.append(li);
+    }
+    parts.push(el("h3", "", "Also yours"), more);
+  }
+  return parts;
+}
+
 // Reputation: the factions that know you (and so that you know of), grouped by
-// realm, home first (the server sends them in that order).
+// realm, home first (the server sends them in that order), then the boons they give.
 function renderReputation() {
   if (!character) return;
+  const c = character;
   const parts = [el("p", "sub", "How much each people likes you (affinity) and how much they respect you.")];
   let rows = null, realm;
   for (const f of character.factions) {
@@ -1386,6 +1699,21 @@ function renderReputation() {
     rows.append(li);
   }
   if (!character.factions.length) parts.push(el("p", "empty", "No one has formed an opinion of you yet."));
+  // Only the boons of peoples you know of.
+  const boons = (c.boons || []).filter((b) => c.factions.some((f) => f.name === b.faction));
+  if (boons.length) {
+    const boonRows = el("ul", "rows");
+    for (const b of boons) {
+      const li = el("li", "boon" + (b.active ? "" : " off"));
+      const info = el("div", "grow");
+      const need = [b.affinity !== undefined && `affinity ${b.affinity}`, b.respect !== undefined && `respect ${b.respect}`].filter(Boolean).join(" and ");
+      info.append(el("div", "", `+${b.amount} ${capital(b.stat)} · ${b.faction}`),
+        el("div", "sub", b.active ? b.note : `At ${need} or more.`));
+      li.append(info, el("span", "sub", b.active ? "active" : "locked"));
+      boonRows.append(li);
+    }
+    parts.push(el("h3", "", "Boons · stat bonuses from the factions that rate you"), boonRows);
+  }
   $("reputation-body").replaceChildren(...parts);
 }
 
@@ -1405,13 +1733,6 @@ for (const dialog of document.querySelectorAll("dialog")) {
 // works best (its spot, shaded in its tier's colour) against today's weather.
 
 const TIER_RADIUS = { grey: 2.0, green: 1.5, blue: 1.1, purple: 0.8, orange: 0.5 }; // as in alzendor.lua
-const TIER_NOTE = {
-  grey: "Grey: a basic piece. The weather nudges it a little, like anything of its kind.",
-  green: "Green: better near its spot, a little worse away from it.",
-  blue: "Blue: much better near its spot, clearly worse away from it.",
-  purple: "Purple: a specialist. Strong at its spot, poor elsewhere.",
-  orange: "Orange: only works at its spot, where it is devastating. Useless anywhere else.",
-};
 const ZONES = [["Gale", -0.95, -0.82, "start"], ["Tempest", 0.95, -0.82, "end"], ["Rime", -0.95, 0.93, "start"], ["Scorch", 0.95, 0.93, "end"]];
 let gradients = 0;
 
@@ -1451,7 +1772,7 @@ function drawWeatherGrid(svg, { here = null, exact = true, trail = [], spot = nu
   svgEl("text", { x: 0.97, y: 0.06, "font-size": 0.13, "text-anchor": "end" }, svg).textContent = "hot";
   if (spot) {
     const id = `spot-${++gradients}`;
-    const color = `var(--tier-${tier})`;
+    const color = "var(--spot)";
     const defs = svgEl("defs", {}, svg);
     const grad = svgEl("radialGradient", { id }, defs);
     svgEl("stop", { offset: "0%", "stop-color": color, "stop-opacity": 0.55 }, grad);
@@ -1485,26 +1806,83 @@ function duration(minutes) {
 function renderWeather() {
   $("weather-panel").classList.toggle("hidden", !wx);
   if (!wx) return;
-  $("wx-place").textContent = (wx.realm ? capital(wx.realm) + " · " : "") + wx.place + (wx.indoor ? " · indoors, always mild" : "");
+  wx.received = performance.now();
+  $("wx-place").textContent = (wx.realm ? capital(wx.realm) + " · " : "") + wx.place + (wx.indoor ? " · indoors" : "");
+  // Sky: the point on the grid, and the forecast trail.
   const svg = $("wx-grid");
   drawWeatherGrid(svg, { here: wx, exact: wx.exact, trail: wx.forecast || [] });
   const title = wx.forecast ? wx.forecast.filter((_, i) => i % 2 === 1).map((f) => `In ${duration(f.minutes)}: ${f.summary}`).join("\n") : "";
   svgEl("title", {}, svg).textContent = `Now: ${wx.summary}` + (title ? "\n" + title : "");
-  $("wx-precip").style.height = (wx.precipitation > 0 ? Math.max(6, 100 * wx.intensity) : 0) + "%";
-  const about = [el("div", "main", capital(wx.summary))];
-  if (wx.clock) about.push(el("div", "sub", `${String(wx.clock.hour).padStart(2, "0")}:00 · ${wx.clock.phase}`));
-  if (wx.heading) about.push(el("div", "sub", "Skyreading: " + wx.heading.text));
-  if (wx.zone && wx.zone !== "Temperate") about.push(el("span", "zone-tag", wx.zone));
-  if (wx.indoor) about.push(el("div", "sub", "Indoors: it never changes in here."));
+  // Rain: how hard it's coming down.
+  const wet = wx.precipitation > 0 ? wx.intensity : 0;
+  $("wx-precip").style.height = (wet > 0 ? Math.max(8, 100 * wet) : 0) + "%";
+  const how = wet <= 0 ? "Dry" : `${wet < 0.15 ? "Light" : wet < 0.5 ? "Steady" : "Heavy"} ${wx.falling || "rain"}`;
+  $("wx-precip-text").textContent = how;
+  $("wx-precip-bar").title = wx.indoor ? "Indoors: always dry" : how;
+  // Ground: the footing, and what the weather has left on it.
+  const footing = wx.indoor ? ["🏠", "Indoors"] : { road: ["🛤️", "Road · quick"], open: ["🌾", "Open ground"],
+    rough: ["⛰️", "Rough · slow"] }[wx.footing] || ["🌾", "Open ground"];
+  $("wx-ground-icon").textContent = footing[0];
   const depth = (v) => (v < 0.25 ? "a little" : v < 0.5 ? "some" : v < 0.75 ? "deep" : "very deep");
-  if (wx.ground && wx.ground.snow >= 0.05) about.push(el("div", "sub", `Snow: ${depth(wx.ground.snow)}. Slows travel.`));
-  if (wx.ground && wx.ground.mud >= 0.05) about.push(el("div", "sub", `Mud: ${depth(wx.ground.mud)}. Slows travel.`));
-  if (wx.visibility === "poor") about.push(el("div", "warn", `You can't see far in the ${wx.falling || "dark"}.`));
+  const ground = [footing[1]];
+  if (wx.ground && wx.ground.snow >= 0.05) ground.push(`Snow: ${depth(wx.ground.snow)}`);
+  if (wx.ground && wx.ground.mud >= 0.05) ground.push(`Mud: ${depth(wx.ground.mud)}`);
+  $("wx-ground-text").replaceChildren(...ground.map((t) => el("div", "", t)));
+  // Below: what it all means, in words.
+  const about = [el("div", "main", capital(wx.summary) + (wx.zone && wx.zone !== "Temperate" ? ` · ${wx.zone}` : ""))];
+  if (wx.heading) about.push(el("div", "sub", "Skyreading: " + wx.heading.text));
+  if (wx.visibility === "poor") about.push(el("div", "warn", (room && room.dark) || !wx.falling
+    ? "Too dark to see the ways on: hold a light (WEAR TORCH)." : `You can't see far in the ${wx.falling}.`));
   if (!wx.indoor) {
     if (!wx.exact) about.push(el("div", "sub", "Roughly: you can't read these skies. Someone local could teach you (ASK <name> ABOUT WEATHER)."));
     else if (wx.forecast) about.push(el("div", "sub", `Forecast ${duration(wx.forecast[wx.forecast.length - 1].minutes)} ahead (dotted). Hover the grid.`));
   }
   $("wx-about").replaceChildren(...about);
+  drawWheel();
+  clearInterval(renderWeather.timer);
+  if (wx.clock && wx.clock.day_ms) renderWeather.timer = setInterval(drawWheel, 1000);
+}
+
+// The time of day: a disc of day, dusk, night and dawn that turns under the
+// marker at the top, and how long until the light changes (in real minutes).
+const PHASES = [[5, 7, "--dusk"], [7, 18, "--day"], [18, 20, "--dusk"], [20, 29, "--night"]];
+
+function clockNow() {
+  const c = wx && wx.clock;
+  if (!c) return null;
+  const day = c.day_ms ? (c.day + (performance.now() - wx.received) / c.day_ms) % 1 : c.day;
+  return { ...c, day, hour: day * 24 };
+}
+
+function drawWheel() {
+  const svg = $("wx-wheel"), c = clockNow();
+  svg.setAttribute("viewBox", "-1 -1 2 2");
+  svg.replaceChildren();
+  if (!c) return;
+  const disc = svgEl("g", { transform: `rotate(${-c.day * 360})` }, svg);
+  const at = (h, r) => { const a = (h / 24) * 2 * Math.PI; return [r * Math.sin(a), -r * Math.cos(a)]; };
+  for (const [from, to, color] of PHASES) {
+    const [x1, y1] = at(from, 0.9), [x2, y2] = at(to, 0.9);
+    svgEl("path", { d: `M0 0 L${x1} ${y1} A0.9 0.9 0 ${to - from > 12 ? 1 : 0} 1 ${x2} ${y2} Z`, fill: `var(${color})` }, disc);
+  }
+  const [sx, sy] = at(12, 0.55), [mx, my] = at(0, 0.55);
+  svgEl("circle", { cx: sx, cy: sy, r: 0.16, fill: "#fff6d0", stroke: "#c99a2e", "stroke-width": 0.05 }, disc);
+  svgEl("circle", { cx: mx, cy: my, r: 0.13, fill: "#dfe4f5" }, disc);
+  svgEl("circle", { cx: 0, cy: 0, r: 0.9, fill: "none", stroke: "var(--border)", "stroke-width": 0.06 }, svg);
+  svgEl("path", { d: "M-0.16 -1 L0.16 -1 L0 -0.72 Z", fill: "var(--text)" }, svg);
+  const light = c.phase === "day" || c.phase === "dawn";
+  const next = light ? 18 : 5;
+  const hours = (next - c.hour + 24) % 24;
+  let when = "";
+  if (c.sky) when = c.sky === "always_day" ? "The sun never sets here" : "Night never ends here";
+  else if (!c.day_ms) when = "The clock is stopped";
+  else {
+    const minutes = (hours / 24) * c.day_ms / 60000;
+    when = `${light ? "Dusk" : "Daylight"} in ${minutes < 1 ? "under a minute" : Math.round(minutes) + " min"}`;
+  }
+  const clockText = `${String(Math.floor(c.hour)).padStart(2, "0")}:${String(Math.floor((c.hour % 1) * 60)).padStart(2, "0")}`;
+  $("wx-time-text").replaceChildren(el("div", "", `${capital(c.phase)} · ${clockText}`), el("div", "", when));
+  svgEl("title", {}, svg).textContent = `${capital(c.phase)}, ${clockText}. ${when}.`;
 }
 
 // Tooltips ------------------------------------------------------------------------------
@@ -1542,33 +1920,52 @@ function signed(n) {
   return (n > 0 ? "+" : n < 0 ? "−" : "±") + Math.abs(n);
 }
 
-// What a piece of gear is and how it works, then what today's weather does to it.
-function gearTip(g) {
-  const tier = g.weather ? g.weather.tier : "grey";
-  const head = el("div");
-  head.append(el("span", "name", g.name), ` · ${g.kind} · `, el("span", `tier tier-${tier}`, tier));
-  const parts = [head];
-  if (g.description) parts.push(el("div", "sub", g.description));
-  parts.push(el("div", "", `Every ${(g.period_ms / 1000).toFixed(1)} s · ±${g.grace_ms} ms (perfect ±${g.perfect_ms}) · `
-    + amountsText(g, g.amounts) + (g.targets === "ally" ? " · you or an ally" : "")));
+// Weather sensitivity, 1-5, as dots; rarity, as the colour of the name.
+const SENSITIVITY = ["", "barely cares about the weather", "a little better near its spot", "clearly better near its spot, worse away",
+  "strong at its spot, poor elsewhere", "only works at its spot"];
+
+function pips(n) {
+  const span = el("span", "pips", "●".repeat(n) + "○".repeat(5 - n));
+  span.title = `Weather sensitivity ${n} of 5: ${SENSITIVITY[n]}`;
+  return span;
+}
+
+function rarityName(thing, tag = "span") {
+  return el(tag, `name r-${thing.rarity || "common"}`, thing.name);
+}
+
+// What a piece of gear (or a talent) is and does, how much the weather moves
+// it, and what today's weather does to it.
+function gearTip(g, extra = []) {
+  const parts = [rarityName(g, "div"),
+    el("div", "tagline", [capital(g.rarity || "common"), g.kind, ...extra].filter(Boolean).join(" · "))];
+  if (g.description) parts.push(el("div", "", g.description));
+  parts.push(el("div", "stats-line", `${amountsText(g, g.amounts)} (opener / hit / perfect) · every ${(g.period_ms / 1000).toFixed(1)} s`
+    + (g.targets === "ally" ? " · you or an ally" : "")),
+  el("div", "sub", `Timing: ±${g.grace_ms} ms to hit, ±${g.perfect_ms} ms for perfect`
+    + (g.stagger_ms ? ` · staggers ${g.stagger_ms} ms` : "")
+    + (g.bleed ? ` · bleeds ${g.bleed.damage} a blow for ${g.bleed.beats}` : "")));
   if (g.weather) {
+    const n = g.sensitivity || 1;
+    const head = el("h4", "");
+    head.append("Weather sensitivity ", pips(n));
+    parts.push(head);
     const row = el("div", "wx");
     const svg = document.createElementNS(SVG, "svg");
-    drawWeatherGrid(svg, { here: wx, exact: wx ? wx.exact : true, spot: g.weather, tier });
+    drawWeatherGrid(svg, { here: wx, exact: wx ? wx.exact : true, spot: g.weather, tier: g.weather.tier });
     const bar = el("div", "precip");
-    bar.title = { wet: "Wants wet weather", dry: "Wants dry weather", any: "Doesn't mind rain" }[g.weather.precipitation];
     const fill = el("div", "fill");
     fill.style.height = { wet: "100%", dry: "0%", any: "50%" }[g.weather.precipitation];
     bar.append(fill);
     const about = el("div", "about");
-    const wants = { wet: "Wants it wet: stronger the harder it rains or snows.", dry: "Wants it dry: weaker in rain or snow.",
-      any: "Doesn't mind rain or dry." }[g.weather.precipitation];
-    about.append(el("div", "", `Best: ${spotName(g.weather)}`), el("div", "sub", wants), el("div", "sub", TIER_NOTE[tier]));
+    about.append(el("div", "", `Best: ${spotName(g.weather)}`),
+      el("div", "sub", { wet: "Wants it wet.", dry: "Wants it dry.", any: "Doesn't mind rain." }[g.weather.precipitation]),
+      el("div", "sub", capital(SENSITIVITY[n]) + "."));
     row.append(svg, bar, about);
     parts.push(row);
   }
   if (g.now && wx) {
-    parts.push(el("h4", "", `Current conditions · ${wx.place}`), el("div", "sub", capital(wx.summary)));
+    parts.push(el("h4", "", `Right now · ${wx.place}`));
     for (const m of g.now.mods) {
       const row = el("div", "mod");
       const good = m.on === "resilience" || (m.on === "period" ? m.pct < 0 : m.pct > 0);
@@ -1577,9 +1974,24 @@ function gearTip(g) {
       row.append(el("span", "", m.label), el("span", m.pct === 0 ? "" : good ? "up" : "down", value));
       parts.push(row);
     }
-    parts.push(el("div", "result", `→ ${amountsText(g, g.now.amounts)} · every ${(g.now.period_ms / 1000).toFixed(1)} s · `
-      + `±${g.now.grace_ms} ms (perfect ±${g.now.perfect_ms})`));
+    parts.push(el("div", "result", `→ ${amountsText(g, g.now.amounts)} · every ${(g.now.period_ms / 1000).toFixed(1)} s`));
   }
+  return parts;
+}
+
+const PLACE_NAMES = { head: "Head", chest: "Chest", legs: "Legs", hand: "Hand" };
+
+// Worn gear: what it is, its armour and stats, and what holding it does.
+function wearTip(w) {
+  const parts = [rarityName(w, "div"), el("div", "tagline", `${capital(w.rarity || "common")} · ${capital(w.type)} · ${PLACE_NAMES[w.place]}`)];
+  if (w.description) parts.push(el("div", "", w.description));
+  const bits = [];
+  if (w.armor) bits.push(`Armour ${w.armor}`);
+  for (const [stat, n] of Object.entries(w.stats || {})) bits.push(`${signed(n)} ${capital(stat)}`);
+  if (w.light) bits.push("Lights the way in the dark");
+  if (w.type === "shield") bits.push("DEFEND blocks instead of dodging");
+  if (bits.length) parts.push(el("div", "stats-line", bits.join(" · ")));
+  if (w.usable === false) parts.push(el("div", "sub", "Your class can't use this."));
   return parts;
 }
 
@@ -2218,8 +2630,10 @@ $("command").addEventListener("submit", (e) => {
 const SLOT_KEYS = { 1: "4", 2: "3", 3: "2" };
 
 function slotKey(e) {
+  if (chooseDefendKey(e)) return true;
   const n = Number(Object.keys(SLOT_KEYS).find((slot) => SLOT_KEYS[slot] === e.key));
-  if (!n || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return false;
+  const guard = e.key === keys.defend;
+  if ((!n && !guard) || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return false;
   if ($("world").classList.contains("hidden") || document.querySelector("dialog[open]")) return false;
   const field = e.target;
   if (field === $("input")) {
@@ -2229,7 +2643,8 @@ function slotKey(e) {
     return false;
   }
   e.preventDefault();
-  useSlot(n);
+  if (guard) defend();
+  else useSlot(n);
   return true;
 }
 

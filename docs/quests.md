@@ -149,9 +149,19 @@ quests follow.
   add `when` (weather ranges and time phases); states (`have`, `level`, `in`)
   are checked after anything happens and on every weather tick, so a quest
   that waits on the weather moves on when it turns.
+  `travel` a route fires when the player takes it.
 - **Effects:** experience, coins, items, reputation, discover a region,
-  start another quest, teleport (end of a starting realm), resume a
-  journey (end of a marooning).
+  start another quest, teleport, resume a journey (end of a marooning),
+  `say` (`by` an NPC: spoken to the room if they're there) and `guide`
+  (an explanation in game terms, set apart in the log).
+- **Offers:** a quest with a `giver` and an `offer` that another quest
+  starts is offered out loud by the giver a beat after the last one is
+  handed in (`offer_beat_ms`, default 2500; `alz:quest_offers` holds the
+  due times, `tick` delivers them), and starts then. Without them it starts
+  at once.
+- **Quest routes:** a route with `quest` and `step` is offered (listed by
+  `TRAVEL`, and takeable) only to a player at that step; `leaves_start`
+  takes the starting realm off their map. The starting realms end this way.
 - **State:** `PLAYER:<id>:quest:<qid>` holds the step and counters;
   `PLAYER:<id>:quests` lists active and finished quests. Progress is checked
   in the same atomic Lua call as the action that triggered it, from `deed()`
@@ -162,7 +172,8 @@ quests follow.
 - **Using items:** `USE <item> ON <thing>` (slots stay `USE <number>`).
 - **NPC topics:** NPCs get `topics` in the seed (`{"work": "The rats are at
   it again…", "starts": "rats"}`), answered through `ASK <npc> ABOUT
-  <topic>`. The target card lists an NPC's topics so talking is never a
+  <topic>`. People talk in their own words; a topic's `explains` follows as
+  guide text with the commands and mechanics. The target card lists an NPC's topics so talking is never a
   guessing game.
 - **Priority quests:** a quest marked `priority` (being marooned) is pinned
   in the panel, and it ends, failed, if you leave its area any way but by

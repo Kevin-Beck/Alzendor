@@ -1,0 +1,835 @@
+{
+  "_note": "The Emberwaste, level 12: a journey into heat. See docs/zones.md.",
+  "regions": {
+    "emberwaste": {
+      "name": "the Emberwaste",
+      "realm": "alzendor"
+    }
+  },
+  "areas": {
+    "ash_road": {
+      "name": "the Ash Road",
+      "region": "emberwaste"
+    },
+    "caravanserai": {
+      "name": "the Caravanserai",
+      "region": "emberwaste",
+      "lit": true
+    },
+    "glass_barrens": {
+      "name": "the Glass Barrens",
+      "region": "emberwaste",
+      "exposure": {
+        "kind": "heat",
+        "name": "heat",
+        "max": 6,
+        "damage": 15,
+        "worse_when": {
+          "temperature": [
+            0.5,
+            1
+          ]
+        },
+        "warn": "Your tongue is like leather and the world is swimming. Get into shade.",
+        "hurt": "The heat is cooking you.",
+        "relief": "Shade, and water. You come back to yourself."
+      }
+    },
+    "caldera": {
+      "name": "the Caldera",
+      "region": "emberwaste",
+      "exposure": {
+        "kind": "heat",
+        "name": "heat",
+        "max": 6,
+        "damage": 15,
+        "worse_when": {
+          "temperature": [
+            0.5,
+            1
+          ]
+        },
+        "warn": "Your tongue is like leather and the world is swimming. Get into shade.",
+        "hurt": "The heat is cooking you.",
+        "relief": "Shade, and water. You come back to yourself."
+      }
+    }
+  },
+  "rooms": {
+    "ash_road_1": {
+      "name": "The Ash Road",
+      "area": "ash_road",
+      "pos": [
+        620,
+        -90
+      ],
+      "description": "The road east gets greyer, then black. Ash drifts across it.",
+      "waypoint": true,
+      "terrain": "ash"
+    },
+    "ash_road_2": {
+      "name": "The Cinder Flats",
+      "area": "ash_road",
+      "pos": [
+        780,
+        -110
+      ],
+      "description": "Flat black ground to the horizon. The heat comes up through your boots.",
+      "waypoint": true,
+      "terrain": "ash"
+    },
+    "ash_road_3": {
+      "name": "The Glass Gate",
+      "area": "ash_road",
+      "pos": [
+        890,
+        -60
+      ],
+      "description": "Two pillars of black glass, and beyond them the Emberwaste.",
+      "waypoint": true,
+      "terrain": "ash"
+    },
+    "ew_serai": {
+      "name": "The Caravanserai",
+      "area": "caravanserai",
+      "pos": [
+        950,
+        0
+      ],
+      "description": "A walled caravanserai of black stone, with shade, a cistern and tired camels.",
+      "exits": {
+        "east": "ew_well",
+        "south": "ew_tent"
+      },
+      "features": {},
+      "shelter": true,
+      "safe": true,
+      "terrain": "ash"
+    },
+    "ew_well": {
+      "name": "The Dry Well",
+      "area": "caravanserai",
+      "pos": [
+        975,
+        0
+      ],
+      "description": "A well that's been dry for a year. Saffa sits on its rim, counting water-skins.",
+      "exits": {
+        "west": "ew_serai",
+        "northeast": "ew_barrens",
+        "southeast": "ew_rim"
+      },
+      "features": {
+        "well": "Dry as bone."
+      },
+      "terrain": "ash"
+    },
+    "ew_tent": {
+      "name": "Ithren's Tent",
+      "area": "caravanserai",
+      "pos": [
+        950,
+        25
+      ],
+      "description": "A tent of red silk, much mended. Its owner was somebody once.",
+      "exits": {
+        "north": "ew_serai"
+      },
+      "features": {},
+      "indoor": true
+    },
+    "ew_barrens": {
+      "name": "The Glass Barrens",
+      "area": "glass_barrens",
+      "pos": [
+        1025,
+        -50
+      ],
+      "description": "Ground fused to black glass, cracked like ice. The air shimmers.",
+      "exits": {
+        "southwest": "ew_well",
+        "northeast": "ew_spring"
+      },
+      "features": {},
+      "terrain": "ash"
+    },
+    "ew_spring": {
+      "name": "The Glass Spring",
+      "area": "glass_barrens",
+      "pos": [
+        1050,
+        -75
+      ],
+      "description": "A spring that bubbles up hot through glass, in the shade of an ash-rock.",
+      "exits": {
+        "southwest": "ew_barrens",
+        "southeast": "ew_dunes"
+      },
+      "features": {
+        "spring": "Hot, but drinkable once it cools."
+      },
+      "terrain": "ash",
+      "shelter": true
+    },
+    "ew_dunes": {
+      "name": "The Ash Dunes",
+      "area": "glass_barrens",
+      "pos": [
+        1075,
+        -50
+      ],
+      "description": "Dunes of grey ash. Things move under them.",
+      "exits": {
+        "northwest": "ew_spring"
+      },
+      "features": {},
+      "terrain": "ash"
+    },
+    "ew_rim": {
+      "name": "The Caldera Rim",
+      "area": "caldera",
+      "pos": [
+        1025,
+        50
+      ],
+      "description": "The rim of a vast crater, smoking. A path winds down.",
+      "exits": {
+        "northwest": "ew_well",
+        "southeast": "ew_hotspring"
+      },
+      "features": {},
+      "terrain": "ash"
+    },
+    "ew_hotspring": {
+      "name": "The Sulphur Pool",
+      "area": "caldera",
+      "pos": [
+        1050,
+        75
+      ],
+      "description": "A yellow pool, steaming. Salamanders bask on its edge.",
+      "exits": {
+        "northwest": "ew_rim",
+        "southeast": "ew_heart"
+      },
+      "features": {
+        "pool": "Under the sulphur crust, clean hot water."
+      },
+      "terrain": "ash"
+    },
+    "ew_heart": {
+      "name": "The Caldera's Heart",
+      "area": "caldera",
+      "pos": [
+        1075,
+        100
+      ],
+      "description": "The crater floor, glowing in its cracks. Something stands here like a hill of slag. Behind it, the air tears open onto fire and spires.",
+      "exits": {
+        "northwest": "ew_hotspring"
+      },
+      "features": {
+        "tear": "A rift onto a city of black glass and fire."
+      },
+      "terrain": "ash"
+    }
+  },
+  "items": {
+    "water_skins": {
+      "name": "water-skins",
+      "keywords": "skins water",
+      "description": "A bundle of empty water-skins.",
+      "quest": true
+    }
+  },
+  "npcs": {
+    "teodor": {
+      "name": "Teodor",
+      "label": "Caravaneer",
+      "description": "a caravaneer in a dust-veil",
+      "details": "A caravaneer in a dust-veil.",
+      "keywords": "teodor",
+      "room": "cc_gate",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🐪",
+      "proper": true,
+      "topics": {
+        "caravan": {
+          "text": "The Ash Road to the Emberwaste. Fifteen coins and you ride with the water barrels.",
+          "explains": "TRAVEL CARAVANSERAI to take it (15 coins)."
+        },
+        "emberwaste": "Hot enough to kill you. Saffa keeps the caravanserai out there."
+      }
+    },
+    "saffa": {
+      "name": "Saffa",
+      "label": "Caravan-mistress",
+      "description": "a woman in a white veil with a whip on her belt",
+      "details": "A woman in a white veil with a whip on her belt.",
+      "keywords": "saffa",
+      "room": "ew_well",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🧕",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the wraps, the water, or the wyrms.",
+        "wraps": {
+          "text": "Out there the heat cooks you a step at a time. Wraps, wet, over your head. Ask me for the wraps.",
+          "starts": "ew_wraps"
+        },
+        "water": {
+          "text": "The well's dry. Take these skins to the Glass Spring in the barrens and the Sulphur Pool in the caldera, fill them, and bring them back.",
+          "starts": "ew_water"
+        },
+        "skins": "Don't drink from them.",
+        "wyrms": {
+          "text": "Ash wyrms. Five of them, and the road's safe for a season. They come up under you: dodge.",
+          "starts": "ew_wyrms"
+        }
+      }
+    },
+    "ithren": {
+      "name": "Ithren",
+      "label": "Exile",
+      "description": "a woman with ember-red eyes and a court accent",
+      "details": "A woman with ember-red eyes and a court accent.",
+      "keywords": "ithren",
+      "room": "ew_tent",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🔥",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the courts.",
+        "courts": {
+          "text": "The Ember Courts. My home, before the Ashen Duke had me thrown out. The rift's in the caldera's heart. Tell the gatekeeper, Ruuk, that Ithren sends you, and he'll let you in.",
+          "starts": "ew_exile"
+        },
+        "duke": "The Ashen Duke. He'll steal the Ember Crown one day. Mark me."
+      }
+    },
+    "ash_wyrm_1": {
+      "name": "Ash Wyrm",
+      "label": "Wyrm",
+      "description": "a long grey wyrm that swims through the ash",
+      "details": "A long grey wyrm that swims through the ash.",
+      "keywords": "ash wyrm",
+      "room": "ew_barrens",
+      "max_hp": 380,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 3500,
+          "damage": 24,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "burrow-strike",
+          "period": 11000,
+          "damage": 60,
+          "hit": "{actor} bursts out of the ash under {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 23,
+      "icon": "🐍",
+      "role": "ash_wyrm",
+      "respawn": 300
+    },
+    "ash_wyrm_2": {
+      "name": "Ash Wyrm",
+      "label": "Wyrm",
+      "description": "a long grey wyrm that swims through the ash",
+      "details": "A long grey wyrm that swims through the ash.",
+      "keywords": "ash wyrm",
+      "room": "ew_dunes",
+      "max_hp": 380,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 3500,
+          "damage": 24,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "burrow-strike",
+          "period": 11000,
+          "damage": 60,
+          "hit": "{actor} bursts out of the ash under {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 23,
+      "icon": "🐍",
+      "role": "ash_wyrm",
+      "respawn": 300
+    },
+    "ash_wyrm_3": {
+      "name": "Ash Wyrm",
+      "label": "Wyrm",
+      "description": "a long grey wyrm that swims through the ash",
+      "details": "A long grey wyrm that swims through the ash.",
+      "keywords": "ash wyrm",
+      "room": "ew_rim",
+      "max_hp": 380,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 3500,
+          "damage": 24,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "burrow-strike",
+          "period": 11000,
+          "damage": 60,
+          "hit": "{actor} bursts out of the ash under {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 23,
+      "icon": "🐍",
+      "role": "ash_wyrm",
+      "respawn": 300
+    },
+    "cinder_salamander_1": {
+      "name": "Cinder Salamander",
+      "label": "Salamander",
+      "description": "a lizard of living coals",
+      "details": "A lizard of living coals.",
+      "keywords": "cinder salamander",
+      "room": "ew_hotspring",
+      "max_hp": 260,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "flame",
+          "period": 2500,
+          "damage": 20,
+          "hit": "{actor} breathes flame at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 17,
+      "icon": "🦎",
+      "role": "salamander",
+      "respawn": 300
+    },
+    "cinder_salamander_2": {
+      "name": "Cinder Salamander",
+      "label": "Salamander",
+      "description": "a lizard of living coals",
+      "details": "A lizard of living coals.",
+      "keywords": "cinder salamander",
+      "room": "ew_dunes",
+      "max_hp": 260,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "flame",
+          "period": 2500,
+          "damage": 20,
+          "hit": "{actor} breathes flame at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 17,
+      "icon": "🦎",
+      "role": "salamander",
+      "respawn": 300
+    },
+    "cinder_colossus": {
+      "name": "the Cinder Colossus",
+      "label": "Colossus",
+      "description": "a giant of slag and fire, standing guard before the rift",
+      "details": "A giant of slag and fire, standing guard before the rift.",
+      "keywords": "cinder colossus giant",
+      "room": "ew_heart",
+      "max_hp": 2500,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "fist",
+          "period": 5000,
+          "damage": 35,
+          "hit": "{actor} swings a fist of slag at {target}."
+        },
+        {
+          "name": "stomp",
+          "period": 14000,
+          "damage": 160,
+          "hit": "{actor} stamps down on {target}!",
+          "defend": "block"
+        }
+      ],
+      "xp": 248,
+      "icon": "🌋",
+      "notice": "fair",
+      "respawn": 1800
+    }
+  },
+  "gear": {
+    "glass_blade": {
+      "name": "Glass Blade",
+      "kind": "Light",
+      "keywords": "glass blade knife",
+      "effect": "damage",
+      "period": 1600,
+      "window": 220,
+      "perfect_window": 70,
+      "amounts": [
+        9,
+        12,
+        20
+      ],
+      "hit": "{actor} slashes {target}.",
+      "perfect_hit": "{actor} slashes {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Glass Blade finds nothing.",
+      "description": "A knife of black glass from the barrens. Sharpest in the heat.",
+      "weather": {
+        "temperature": 0.8,
+        "energy": -0.3,
+        "precipitation": "dry",
+        "tier": "blue"
+      },
+      "rarity": "rare"
+    }
+  },
+  "wearables": {
+    "desert_wraps": {
+      "name": "Desert Wraps",
+      "keywords": "desert wraps",
+      "place": "head",
+      "type": "cloth",
+      "description": "Wet linen wraps for the head and face. Keeps off the heat.",
+      "rarity": "uncommon",
+      "armor": 1,
+      "protects": [
+        "heat"
+      ]
+    },
+    "wyrmscale_vest": {
+      "name": "Wyrmscale Vest",
+      "keywords": "wyrmscale vest",
+      "place": "chest",
+      "type": "leather",
+      "description": "Ash-wyrm scales riveted to leather. +1 Resilience.",
+      "rarity": "rare",
+      "armor": 7,
+      "stats": {
+        "resilience": 1
+      }
+    }
+  },
+  "routes": {
+    "ash-road": {
+      "name": "the Ash Road caravan",
+      "keywords": "caravan ash road emberwaste",
+      "from": "cc_gate",
+      "to": "ew_serai",
+      "kind": "coach",
+      "depart": "You pay Teodor and climb onto the water wagon. The caravan grinds east.",
+      "leave": "{actor} climbs aboard the Ash Road caravan.",
+      "arrive": "The caravan creaks into the caravanserai, and {actor} climbs down, coughing ash.",
+      "by": "teodor",
+      "fare": 15,
+      "path": [
+        "ash_road_1",
+        "ash_road_2",
+        "ash_road_3"
+      ],
+      "strand": "cc_road",
+      "risk": 0.15,
+      "events": [
+        "ash_storm",
+        "glass_mirage"
+      ]
+    },
+    "ash-road-back": {
+      "name": "the Ash Road caravan",
+      "keywords": "caravan ash road quarry cindercrag",
+      "from": "ew_serai",
+      "to": "cc_gate",
+      "kind": "coach",
+      "depart": "You climb onto an empty water wagon heading back west.",
+      "leave": "{actor} rides west with the empty wagons.",
+      "arrive": "The caravan rolls in to the quarry gate, and {actor} climbs down.",
+      "fare": 15,
+      "path": [
+        "ash_road_3",
+        "ash_road_2",
+        "ash_road_1"
+      ],
+      "strand": "cc_road",
+      "risk": 0.1,
+      "events": [
+        "ash_storm"
+      ]
+    }
+  },
+  "travel_events": {
+    "ash_storm": {
+      "pools": [
+        "ash-road",
+        "ash-road-back"
+      ],
+      "weight": 3,
+      "text": "A wall of ash rolls across the flats towards the caravan. The camels groan and kneel.",
+      "choices": [
+        {
+          "label": "Get under the wagon and cover your face",
+          "check": {
+            "stat": "resilience",
+            "difficulty": "fair"
+          },
+          "success": [
+            {
+              "text": "You ride it out, breathing through cloth. It passes."
+            },
+            {
+              "delay": 1
+            }
+          ],
+          "failure": [
+            {
+              "text": "The ash gets in your lungs. You cough blood for an hour."
+            },
+            {
+              "hp": -30
+            },
+            {
+              "delay": 1
+            }
+          ]
+        },
+        {
+          "label": "Push the camels on through it",
+          "check": {
+            "stat": "vigor",
+            "difficulty": "hard"
+          },
+          "success": [
+            {
+              "text": "You drag them through, and come out the far side ahead of schedule."
+            },
+            {
+              "hasten": 1
+            }
+          ],
+          "failure": [
+            {
+              "text": "A camel bolts and you go after it. The storm swallows you both."
+            },
+            {
+              "hp": -45
+            },
+            {
+              "delay": 2
+            }
+          ]
+        }
+      ]
+    },
+    "glass_mirage": {
+      "pools": [
+        "ash-road"
+      ],
+      "weight": 2,
+      "text": "Off to the south, a lake shimmers, with palms and white walls. The drivers won't look at it.",
+      "choices": [
+        {
+          "label": "Ask the drivers about it",
+          "success": [
+            {
+              "text": "\"The Glass Prophet's city. It isn't there. People who go to it aren't, either.\""
+            },
+            {
+              "xp": 100
+            }
+          ]
+        },
+        {
+          "label": "Walk towards it",
+          "check": {
+            "stat": "focus",
+            "difficulty": "hard"
+          },
+          "success": [
+            {
+              "text": "You see through it in time: just heat and glass. You walk back, shaking."
+            },
+            {
+              "xp": 200
+            }
+          ],
+          "failure": [
+            {
+              "text": "You walk for an hour before you understand. The caravan has gone on without you."
+            },
+            {
+              "strand": true
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "quests": {
+    "ew_wraps": {
+      "name": "Out of the Sun",
+      "start": "wraps",
+      "steps": {
+        "wraps": {
+          "goal": "Ask Saffa for it: ASK SAFFA ABOUT WRAPS.",
+          "on": {
+            "ask": "saffa",
+            "about": "wraps"
+          },
+          "effects": [
+            {
+              "give": "desert_wraps"
+            },
+            {
+              "text": "Saffa wets the wraps and ties them on you herself. \"WEAR WRAPS out there. Shade at the Glass Spring and here. Nowhere else.\""
+            },
+            {
+              "xp": 20
+            }
+          ]
+        }
+      }
+    },
+    "ew_water": {
+      "name": "Water for the Caravanserai",
+      "start": "skins",
+      "steps": {
+        "skins": {
+          "goal": "Take the skins: ASK SAFFA ABOUT SKINS.",
+          "on": {
+            "ask": "saffa",
+            "about": "skins"
+          },
+          "effects": [
+            {
+              "give": "water_skins"
+            }
+          ],
+          "then": "spring"
+        },
+        "spring": {
+          "goal": "Fill them at the Glass Spring, north-east in the barrens: USE SKINS ON SPRING.",
+          "on": {
+            "use": "water_skins",
+            "on": "spring"
+          },
+          "effects": [
+            {
+              "text": "The skins fill, hot and heavy."
+            }
+          ],
+          "then": "pool"
+        },
+        "pool": {
+          "goal": "And at the Sulphur Pool in the caldera: USE SKINS ON POOL.",
+          "on": {
+            "use": "water_skins",
+            "on": "pool"
+          },
+          "effects": [
+            {
+              "text": "You break the crust and fill the rest."
+            }
+          ],
+          "then": "back"
+        },
+        "back": {
+          "goal": "Bring them back to Saffa: USE SKINS ON SAFFA.",
+          "on": {
+            "use": "water_skins",
+            "on": "saffa"
+          },
+          "effects": [
+            {
+              "take": "water_skins"
+            },
+            {
+              "text": "Saffa weighs each one. \"Enough for a month. Here: glass from the barrens, for your trouble.\""
+            },
+            {
+              "give": "glass_blade"
+            },
+            {
+              "xp": 205
+            }
+          ]
+        }
+      }
+    },
+    "ew_wyrms": {
+      "name": "Ash Wyrm Bounty",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill five ash wyrms in the barrens and the caldera.",
+          "on": {
+            "kill": "ash_wyrm",
+            "count": 5
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Saffa: ASK SAFFA ABOUT WYRMS.",
+          "on": {
+            "ask": "saffa",
+            "about": "wyrms"
+          },
+          "effects": [
+            {
+              "give": "wyrmscale_vest"
+            },
+            {
+              "xp": 205
+            }
+          ]
+        }
+      }
+    },
+    "ew_exile": {
+      "name": "The Exile's Word",
+      "start": "ruuk",
+      "steps": {
+        "ruuk": {
+          "goal": "Get past the Cinder Colossus to the rift in the caldera's heart, cross into the Ember Courts, and ASK RUUK ABOUT ITHREN.",
+          "on": {
+            "ask": "ruuk",
+            "about": "ithren"
+          },
+          "effects": [
+            {
+              "text": "Ruuk's ember eyes flare. \"Ithren lives? Then you may pass, friend of hers.\""
+            },
+            {
+              "xp": 165
+            },
+            {
+              "reputation": {
+                "faction": "ember_court",
+                "respect": 10,
+                "note": "A friend of the exile Ithren."
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

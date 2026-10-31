@@ -1,0 +1,501 @@
+{
+  "_note": "Starfall, level 19: where the stars come down. See docs/zones.md.",
+  "realms": {
+    "starfall": {
+      "name": "Starfall",
+      "description": "Where the stars come down. Hot, wild, and on fire.",
+      "weather": {
+        "temperature": [
+          0.6,
+          0.3
+        ],
+        "energy": [
+          0.6,
+          0.3
+        ],
+        "precipitation": [
+          -0.5,
+          0.3
+        ]
+      },
+      "shrine": "st_observatory"
+    }
+  },
+  "regions": {
+    "crater_field": {
+      "name": "the Crater Field",
+      "realm": "starfall"
+    }
+  },
+  "areas": {
+    "observatory": {
+      "name": "the Observatory",
+      "region": "crater_field",
+      "lit": true
+    },
+    "craters": {
+      "name": "the Craters",
+      "region": "crater_field"
+    },
+    "heart_of_fall": {
+      "name": "the Heart of the Fall",
+      "region": "crater_field"
+    }
+  },
+  "rooms": {
+    "st_landing": {
+      "name": "The Star Road",
+      "area": "observatory",
+      "pos": [
+        0,
+        0
+      ],
+      "description": "A road of glass out of a crater, under a sky full of falling lights.",
+      "exits": {
+        "east": "st_observatory"
+      },
+      "features": {}
+    },
+    "st_observatory": {
+      "name": "The Observatory",
+      "area": "observatory",
+      "pos": [
+        25,
+        0
+      ],
+      "description": "A domed observatory with a roof that's been patched a hundred times.",
+      "exits": {
+        "west": "st_landing",
+        "northeast": "st_field1"
+      },
+      "features": {},
+      "indoor": true,
+      "safe": true,
+      "shelter": true
+    },
+    "st_field1": {
+      "name": "The Crater Field",
+      "area": "craters",
+      "pos": [
+        75,
+        -50
+      ],
+      "description": "Fresh craters, smoking. Another star comes down as you watch.",
+      "exits": {
+        "southwest": "st_observatory",
+        "northeast": "st_field2"
+      },
+      "features": {},
+      "trap": {
+        "name": "a falling star",
+        "stat": "poise",
+        "difficulty": "fair",
+        "damage": 60,
+        "rearm": 5,
+        "hit": "A star comes down beside you, and the blast throws you.",
+        "avoid": "You see it coming and run.",
+        "sprung": "{actor} is caught by a falling star!",
+        "sign": {
+          "room": "st_observatory",
+          "name": "sky",
+          "text": "Stars fall all the time out there. Watch the sky, and keep moving."
+        }
+      }
+    },
+    "st_field2": {
+      "name": "The Glass Craters",
+      "area": "craters",
+      "pos": [
+        100,
+        -75
+      ],
+      "description": "Craters glazed to glass. Crystal things grow in them.",
+      "exits": {
+        "southwest": "st_field1",
+        "southeast": "st_field3"
+      },
+      "features": {},
+      "trap": {
+        "name": "a falling star",
+        "stat": "poise",
+        "difficulty": "fair",
+        "damage": 60,
+        "rearm": 5,
+        "hit": "A star comes down beside you, and the blast throws you.",
+        "avoid": "You see it coming and run.",
+        "sprung": "{actor} is caught by a falling star!",
+        "sign": {
+          "room": "st_field1",
+          "name": "streaks",
+          "text": "Stars fall all the time out there. Watch the sky, and keep moving."
+        }
+      }
+    },
+    "st_field3": {
+      "name": "The Burning Ground",
+      "area": "craters",
+      "pos": [
+        125,
+        -50
+      ],
+      "description": "Ground on fire, and the sky raining fire on it.",
+      "exits": {
+        "northwest": "st_field2",
+        "southeast": "st_heart"
+      },
+      "features": {},
+      "trap": {
+        "name": "a falling star",
+        "stat": "poise",
+        "difficulty": "fair",
+        "damage": 60,
+        "rearm": 5,
+        "hit": "A star comes down beside you, and the blast throws you.",
+        "avoid": "You see it coming and run.",
+        "sprung": "{actor} is caught by a falling star!",
+        "sign": {
+          "room": "st_field2",
+          "name": "glow",
+          "text": "Stars fall all the time out there. Watch the sky, and keep moving."
+        }
+      }
+    },
+    "st_heart": {
+      "name": "The Heart of the Fall",
+      "area": "heart_of_fall",
+      "pos": [
+        175,
+        0
+      ],
+      "description": "The biggest crater, and in it the Fallen Star, still burning, still alive.",
+      "exits": {
+        "northwest": "st_field3"
+      },
+      "features": {}
+    }
+  },
+  "items": {
+    "star_heart": {
+      "name": "Star Heart",
+      "keywords": "heart star",
+      "description": "The Fallen Star's heart, still warm. One of three relics.",
+      "quest": true,
+      "room": "st_heart"
+    }
+  },
+  "npcs": {
+    "ilun": {
+      "name": "Ilun",
+      "label": "Star-reader",
+      "description": "an old star-reader with burned eyebrows",
+      "details": "An old star-reader with burned eyebrows.",
+      "keywords": "ilun",
+      "room": "st_observatory",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🔭",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the shards, or the heart.",
+        "shards": {
+          "text": "The crystal golems grow from starshards. Break four and bring me what's left.",
+          "starts": "st_shards"
+        },
+        "heart": {
+          "text": "The Fallen Star is alive, and angry. Its heart is a relic of yours, I think. Its starfire can't be stopped. Its ray can be dodged.",
+          "starts": "st_heart"
+        }
+      }
+    },
+    "crystal_golem_1": {
+      "name": "Crystal Golem",
+      "label": "Golem",
+      "description": "a golem of starshard crystal, humming",
+      "details": "A golem of starshard crystal, humming.",
+      "keywords": "crystal golem",
+      "room": "st_field1",
+      "max_hp": 1300,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "crush",
+          "period": 4000,
+          "damage": 70,
+          "hit": "{actor} crushes {target}.",
+          "defend": "block"
+        },
+        {
+          "name": "shard-burst",
+          "period": 12000,
+          "damage": 160,
+          "hit": "{actor} bursts into shards at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "💎",
+      "role": "crystal_golem",
+      "respawn": 300
+    },
+    "crystal_golem_2": {
+      "name": "Crystal Golem",
+      "label": "Golem",
+      "description": "a golem of starshard crystal, humming",
+      "details": "A golem of starshard crystal, humming.",
+      "keywords": "crystal golem",
+      "room": "st_field2",
+      "max_hp": 1300,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "crush",
+          "period": 4000,
+          "damage": 70,
+          "hit": "{actor} crushes {target}.",
+          "defend": "block"
+        },
+        {
+          "name": "shard-burst",
+          "period": 12000,
+          "damage": 160,
+          "hit": "{actor} bursts into shards at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "💎",
+      "role": "crystal_golem",
+      "respawn": 300
+    },
+    "crystal_golem_3": {
+      "name": "Crystal Golem",
+      "label": "Golem",
+      "description": "a golem of starshard crystal, humming",
+      "details": "A golem of starshard crystal, humming.",
+      "keywords": "crystal golem",
+      "room": "st_field2",
+      "max_hp": 1300,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "crush",
+          "period": 4000,
+          "damage": 70,
+          "hit": "{actor} crushes {target}.",
+          "defend": "block"
+        },
+        {
+          "name": "shard-burst",
+          "period": 12000,
+          "damage": 160,
+          "hit": "{actor} bursts into shards at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "💎",
+      "role": "crystal_golem",
+      "respawn": 300
+    },
+    "crystal_golem_4": {
+      "name": "Crystal Golem",
+      "label": "Golem",
+      "description": "a golem of starshard crystal, humming",
+      "details": "A golem of starshard crystal, humming.",
+      "keywords": "crystal golem",
+      "room": "st_field3",
+      "max_hp": 1300,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "crush",
+          "period": 4000,
+          "damage": 70,
+          "hit": "{actor} crushes {target}.",
+          "defend": "block"
+        },
+        {
+          "name": "shard-burst",
+          "period": 12000,
+          "damage": 160,
+          "hit": "{actor} bursts into shards at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "💎",
+      "role": "crystal_golem",
+      "respawn": 300
+    },
+    "star_spawn_1": {
+      "name": "Star-spawn",
+      "label": "Spawn",
+      "description": "a little burning thing, born from a fallen star",
+      "details": "A little burning thing, born from a fallen star.",
+      "keywords": "star-spawn",
+      "room": "st_field1",
+      "max_hp": 900,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "flare",
+          "period": 2500,
+          "damage": 50,
+          "hit": "{actor} flares at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 14,
+      "icon": "✨",
+      "role": "star_spawn",
+      "respawn": 300
+    },
+    "star_spawn_2": {
+      "name": "Star-spawn",
+      "label": "Spawn",
+      "description": "a little burning thing, born from a fallen star",
+      "details": "A little burning thing, born from a fallen star.",
+      "keywords": "star-spawn",
+      "room": "st_field3",
+      "max_hp": 900,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "flare",
+          "period": 2500,
+          "damage": 50,
+          "hit": "{actor} flares at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 14,
+      "icon": "✨",
+      "role": "star_spawn",
+      "respawn": 300
+    },
+    "fallen_star": {
+      "name": "the Fallen Star",
+      "label": "Star",
+      "description": "a star, fallen and furious",
+      "details": "A star, fallen and furious.",
+      "keywords": "fallen star",
+      "room": "st_heart",
+      "max_hp": 7500,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "ray",
+          "period": 4000,
+          "damage": 75,
+          "hit": "{actor} fires a ray of light at {target}.",
+          "defend": "dodge"
+        },
+        {
+          "name": "starfire",
+          "period": 13000,
+          "damage": 260,
+          "hit": "{actor} blazes with starfire!",
+          "defend": "none"
+        }
+      ],
+      "xp": 290,
+      "icon": "🌟",
+      "respawn": 1800
+    }
+  },
+  "wearables": {
+    "starwoven_robe": {
+      "name": "Starwoven Robe",
+      "keywords": "starwoven robe",
+      "place": "chest",
+      "type": "cloth",
+      "description": "A robe woven with starlight. +3 Focus.",
+      "rarity": "epic",
+      "armor": 13,
+      "stats": {
+        "focus": 3
+      }
+    }
+  },
+  "routes": {
+    "star-road": {
+      "name": "the star road",
+      "keywords": "road crater steppe home",
+      "from": "st_landing",
+      "to": "bs_crater",
+      "kind": "rift",
+      "depart": "You climb out of the crater, and the steppe wind hits you.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} climbs out of the crater."
+    }
+  },
+  "quests": {
+    "st_shards": {
+      "name": "Starshards",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Break four crystal golems.",
+          "on": {
+            "kill": "crystal_golem",
+            "count": 4
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Ilun: ASK ILUN ABOUT SHARDS.",
+          "on": {
+            "ask": "ilun",
+            "about": "shards"
+          },
+          "effects": [
+            {
+              "give": "starwoven_robe"
+            },
+            {
+              "xp": 265
+            }
+          ]
+        }
+      }
+    },
+    "st_heart": {
+      "name": "The Star Heart",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Put out the Fallen Star.",
+          "on": {
+            "kill": "fallen_star"
+          },
+          "then": "get"
+        },
+        "get": {
+          "goal": "Take its heart: GET HEART.",
+          "on": {
+            "have": [
+              "star_heart"
+            ]
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Show Ilun: ASK ILUN ABOUT HEART.",
+          "on": {
+            "ask": "ilun",
+            "about": "heart"
+          },
+          "effects": [
+            {
+              "text": "Ilun holds it up to the dome. \"A crown, a pearl, a star. Old Harrow's door. Go home, and finish it.\""
+            },
+            {
+              "xp": 340
+            }
+          ]
+        }
+      }
+    }
+  }
+}

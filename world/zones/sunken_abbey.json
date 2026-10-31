@@ -1,0 +1,543 @@
+{
+  "_note": "The Sunken Abbey, level 8: dark halls and a door to Mirefall. See docs/zones.md.",
+  "regions": {
+    "sunken_abbey": {
+      "name": "the Sunken Abbey",
+      "realm": "alzendor"
+    }
+  },
+  "areas": {
+    "abbey_gate": {
+      "name": "the Gatehouse",
+      "region": "sunken_abbey"
+    },
+    "cloister": {
+      "name": "the Cloister",
+      "region": "sunken_abbey"
+    },
+    "flooded_nave": {
+      "name": "the Flooded Nave",
+      "region": "sunken_abbey"
+    }
+  },
+  "rooms": {
+    "sa_path": {
+      "name": "The Abbey Path",
+      "area": "abbey_gate",
+      "pos": [
+        450,
+        340
+      ],
+      "description": "A path along the sea cliffs to a half-drowned abbey.",
+      "exits": {
+        "west": "sf_mire",
+        "east": "sa_gate"
+      },
+      "features": {},
+      "terrain": "coast"
+    },
+    "sa_gate": {
+      "name": "The Gatehouse",
+      "area": "abbey_gate",
+      "pos": [
+        475,
+        340
+      ],
+      "description": "The abbey's gatehouse, still dry. A lamp burns for travellers. Brother Aldous lives here.",
+      "exits": {
+        "west": "sa_path",
+        "east": "sa_cloister"
+      },
+      "features": {},
+      "indoor": true,
+      "safe": true,
+      "shelter": true
+    },
+    "sa_cloister": {
+      "name": "The Cloister",
+      "area": "cloister",
+      "pos": [
+        525,
+        340
+      ],
+      "description": "A ruined cloister. The sea comes in at high tide; seaweed hangs from the arches.",
+      "exits": {
+        "west": "sa_gate",
+        "southeast": "sa_garden",
+        "south": "sa_nave"
+      },
+      "features": {},
+      "terrain": "coast"
+    },
+    "sa_garden": {
+      "name": "The Drowned Garden",
+      "area": "cloister",
+      "pos": [
+        550,
+        365
+      ],
+      "description": "The monks' garden, gone to salt and kelp.",
+      "exits": {
+        "northwest": "sa_cloister",
+        "northeast": "sa_study"
+      },
+      "features": {},
+      "terrain": "coast"
+    },
+    "sa_study": {
+      "name": "The Abbot's Study",
+      "area": "cloister",
+      "pos": [
+        575,
+        340
+      ],
+      "description": "A study at the top of a broken stair, books swollen with damp. The Abbot never left.",
+      "exits": {
+        "southwest": "sa_garden"
+      },
+      "features": {
+        "desk": "A ledger lies open, as if he just stepped away."
+      }
+    },
+    "sa_nave": {
+      "name": "The Flooded Nave",
+      "area": "flooded_nave",
+      "pos": [
+        525,
+        415
+      ],
+      "description": "Knee-deep black water in a vast nave. Things move in it.",
+      "exits": {
+        "north": "sa_cloister",
+        "southeast": "sa_undercroft",
+        "east": "sa_belfry"
+      },
+      "features": {},
+      "dark": true
+    },
+    "sa_belfry": {
+      "name": "The Sunken Belfry",
+      "area": "flooded_nave",
+      "pos": [
+        575,
+        415
+      ],
+      "description": "The bell tower, fallen in. The great bell lies half in the water.",
+      "exits": {
+        "west": "sa_nave"
+      },
+      "features": {
+        "bell": "Saint Hesk's bell. Cracked, but it would ring."
+      },
+      "dark": true
+    },
+    "sa_undercroft": {
+      "name": "The Undercroft",
+      "area": "flooded_nave",
+      "pos": [
+        550,
+        440
+      ],
+      "description": "A vaulted crypt under the nave. In the middle, a stone font fills and empties with no tide.",
+      "exits": {
+        "northwest": "sa_nave"
+      },
+      "features": {
+        "font": "The water in it reflects a grey sky that isn't this one. When it rains outside, it stirs."
+      },
+      "dark": true
+    }
+  },
+  "items": {
+    "abbots_ledger": {
+      "name": "Abbot's ledger",
+      "keywords": "ledger book abbot",
+      "description": "A water-stained ledger. The last page is a list of names.",
+      "quest": true,
+      "room": "sa_study"
+    },
+    "bell_mallet": {
+      "name": "bell mallet",
+      "keywords": "mallet",
+      "description": "A heavy wooden mallet, made for one bell.",
+      "quest": true
+    }
+  },
+  "npcs": {
+    "aldous": {
+      "name": "Brother Aldous",
+      "label": "Monk",
+      "description": "an old monk with salt-white hair",
+      "details": "An old monk with salt-white hair.",
+      "keywords": "brother aldous",
+      "room": "sa_gate",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "✝️",
+      "proper": true,
+      "topics": {
+        "work": "My brothers drowned, and won't lie still. Ask me about the brothers, the ledger, or the bell.",
+        "brothers": {
+          "text": "Six of them walk the cloister and the nave. Put them to rest. Their dirge can't be blocked; step away from it.",
+          "starts": "sa_brothers"
+        },
+        "ledger": {
+          "text": "The Abbot's ledger is in his study. So is the Abbot. His wail kills the living, and nothing turns it. Creep in, take the ledger, creep out.",
+          "starts": "sa_ledger"
+        },
+        "bell": {
+          "text": "Ring Saint Hesk's bell, in the drowned belfry. It's said the Font answers. Ask me for the mallet.",
+          "starts": "sa_bell"
+        },
+        "mallet": "The bell mallet. Mind you don't drop it in the nave.",
+        "font": "The Font in the undercroft. When it rains, it opens onto Mirefall, they say, where the rain never stops. I've never dared."
+      }
+    },
+    "drowned_monk_1": {
+      "name": "Drowned Monk",
+      "label": "Drowned Monk",
+      "description": "a monk, grey and dripping, eyes milky",
+      "details": "A monk, grey and dripping, eyes milky.",
+      "keywords": "drowned monk",
+      "room": "sa_cloister",
+      "max_hp": 120,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "grip",
+          "period": 3000,
+          "damage": 10,
+          "hit": "{actor} grips {target} with cold fingers."
+        },
+        {
+          "name": "dirge",
+          "period": 9000,
+          "damage": 22,
+          "hit": "{actor} chants a drowned dirge at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🧟",
+      "role": "drowned_monk",
+      "respawn": 300
+    },
+    "drowned_monk_2": {
+      "name": "Drowned Monk",
+      "label": "Drowned Monk",
+      "description": "a monk, grey and dripping, eyes milky",
+      "details": "A monk, grey and dripping, eyes milky.",
+      "keywords": "drowned monk",
+      "room": "sa_garden",
+      "max_hp": 120,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "grip",
+          "period": 3000,
+          "damage": 10,
+          "hit": "{actor} grips {target} with cold fingers."
+        },
+        {
+          "name": "dirge",
+          "period": 9000,
+          "damage": 22,
+          "hit": "{actor} chants a drowned dirge at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🧟",
+      "role": "drowned_monk",
+      "respawn": 300
+    },
+    "drowned_monk_3": {
+      "name": "Drowned Monk",
+      "label": "Drowned Monk",
+      "description": "a monk, grey and dripping, eyes milky",
+      "details": "A monk, grey and dripping, eyes milky.",
+      "keywords": "drowned monk",
+      "room": "sa_nave",
+      "max_hp": 120,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "grip",
+          "period": 3000,
+          "damage": 10,
+          "hit": "{actor} grips {target} with cold fingers."
+        },
+        {
+          "name": "dirge",
+          "period": 9000,
+          "damage": 22,
+          "hit": "{actor} chants a drowned dirge at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🧟",
+      "role": "drowned_monk",
+      "respawn": 300
+    },
+    "drowned_monk_4": {
+      "name": "Drowned Monk",
+      "label": "Drowned Monk",
+      "description": "a monk, grey and dripping, eyes milky",
+      "details": "A monk, grey and dripping, eyes milky.",
+      "keywords": "drowned monk",
+      "room": "sa_undercroft",
+      "max_hp": 120,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "grip",
+          "period": 3000,
+          "damage": 10,
+          "hit": "{actor} grips {target} with cold fingers."
+        },
+        {
+          "name": "dirge",
+          "period": 9000,
+          "damage": 22,
+          "hit": "{actor} chants a drowned dirge at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🧟",
+      "role": "drowned_monk",
+      "respawn": 300
+    },
+    "nave_eel_1": {
+      "name": "Nave Eel",
+      "label": "Eel",
+      "description": "a black eel as thick as your leg",
+      "details": "A black eel as thick as your leg.",
+      "keywords": "nave eel",
+      "room": "sa_nave",
+      "max_hp": 80,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2000,
+          "damage": 8,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 11,
+      "icon": "🐍",
+      "respawn": 300
+    },
+    "nave_eel_2": {
+      "name": "Nave Eel",
+      "label": "Eel",
+      "description": "a black eel as thick as your leg",
+      "details": "A black eel as thick as your leg.",
+      "keywords": "nave eel",
+      "room": "sa_nave",
+      "max_hp": 80,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2000,
+          "damage": 8,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 11,
+      "icon": "🐍",
+      "respawn": 300
+    },
+    "abbots_shade": {
+      "name": "the Abbot's Shade",
+      "label": "Shade",
+      "description": "the Abbot's ghost, bent over his desk",
+      "details": "The Abbot's ghost, bent over his desk.",
+      "keywords": "abbot shade ghost",
+      "room": "sa_study",
+      "max_hp": 800,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "touch",
+          "period": 4000,
+          "damage": 15,
+          "hit": "{actor} lays a cold hand on {target}."
+        },
+        {
+          "name": "wail",
+          "period": 12000,
+          "damage": 80,
+          "hit": "{actor} wails, and the sound goes through {target}!",
+          "defend": "none"
+        }
+      ],
+      "xp": 161,
+      "icon": "👻",
+      "notice": "fair",
+      "respawn": 900
+    }
+  },
+  "gear": {
+    "holy_water": {
+      "name": "Holy Water",
+      "kind": "Potion",
+      "keywords": "holy water",
+      "effect": "heal",
+      "period": 4500,
+      "window": 320,
+      "perfect_window": 100,
+      "amounts": [
+        12,
+        16,
+        26
+      ],
+      "hit": "{actor} sprinkles holy water.",
+      "perfect_hit": "{actor} sprinkles holy water, and it takes.",
+      "miss": "{actor} fumbles Holy Water.",
+      "whiff": "your Holy Water finds nothing.",
+      "description": "From the abbey's last clean font. Heals, and better in the rain.",
+      "weather": {
+        "temperature": 0,
+        "energy": -0.1,
+        "precipitation": "wet",
+        "tier": "green"
+      }
+    }
+  },
+  "wearables": {
+    "abbey_habit": {
+      "name": "Abbey Habit",
+      "keywords": "abbey habit",
+      "place": "chest",
+      "type": "cloth",
+      "description": "A monk's habit of thick wool, blessed. +1 Focus.",
+      "rarity": "uncommon",
+      "armor": 3,
+      "stats": {
+        "focus": 1
+      }
+    }
+  },
+  "quests": {
+    "sa_brothers": {
+      "name": "Drowned Brothers",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Put six drowned monks to rest, in the cloister and the nave.",
+          "on": {
+            "kill": "drowned_monk",
+            "count": 6
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Aldous: ASK ALDOUS ABOUT BROTHERS.",
+          "on": {
+            "ask": "aldous",
+            "about": "brothers"
+          },
+          "effects": [
+            {
+              "give": "abbey_habit"
+            },
+            {
+              "xp": 170
+            }
+          ]
+        }
+      }
+    },
+    "sa_ledger": {
+      "name": "The Abbot's Ledger",
+      "start": "get",
+      "steps": {
+        "get": {
+          "goal": "Creep into the Abbot's Study, past his shade: GET LEDGER.",
+          "on": {
+            "have": [
+              "abbots_ledger"
+            ]
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Bring it to Aldous: USE LEDGER ON ALDOUS.",
+          "on": {
+            "use": "abbots_ledger",
+            "on": "aldous"
+          },
+          "effects": [
+            {
+              "take": "abbots_ledger"
+            },
+            {
+              "text": "Aldous reads the names, and nods at each. \"Now I can pray for them properly. Take this.\""
+            },
+            {
+              "give": "holy_water"
+            },
+            {
+              "xp": 150
+            }
+          ]
+        }
+      }
+    },
+    "sa_bell": {
+      "name": "The Bell of Saint Hesk",
+      "start": "mallet",
+      "steps": {
+        "mallet": {
+          "goal": "Ask Aldous for the bell mallet: ASK ALDOUS ABOUT MALLET.",
+          "on": {
+            "ask": "aldous",
+            "about": "mallet"
+          },
+          "effects": [
+            {
+              "give": "bell_mallet"
+            }
+          ],
+          "then": "ring"
+        },
+        "ring": {
+          "goal": "Ring the sunken bell, in the dark belfry east of the nave: USE MALLET ON BELL.",
+          "on": {
+            "use": "bell_mallet",
+            "on": "bell"
+          },
+          "effects": [
+            {
+              "take": "bell_mallet"
+            },
+            {
+              "text": "The bell booms under the water. Below you, in the undercroft, something stirs in the Font."
+            }
+          ],
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Aldous: ASK ALDOUS ABOUT FONT.",
+          "on": {
+            "ask": "aldous",
+            "about": "font"
+          },
+          "effects": [
+            {
+              "text": "\"Then it's true. In the rain, the Font opens onto Mirefall. Go if you must. Come back if you can.\""
+            },
+            {
+              "xp": 170
+            }
+          ]
+        }
+      }
+    }
+  }
+}

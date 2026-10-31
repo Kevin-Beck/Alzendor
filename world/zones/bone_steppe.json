@@ -1,0 +1,546 @@
+{
+  "_note": "The Bone Steppe, level 18: cold wind and giant bones. See docs/zones.md.",
+  "realms": {
+    "bone_steppe": {
+      "name": "the Bone Steppe",
+      "description": "A cold, windy grassland strewn with the bones of things the size of hills.",
+      "weather": {
+        "temperature": [
+          -0.6,
+          0.2
+        ],
+        "energy": [
+          0.6,
+          0.25
+        ],
+        "precipitation": [
+          -0.6,
+          0.2
+        ]
+      },
+      "shrine": "bs_yurts"
+    }
+  },
+  "regions": {
+    "steppe": {
+      "name": "the Bone Steppe",
+      "realm": "bone_steppe"
+    }
+  },
+  "areas": {
+    "clan_camp": {
+      "name": "the Clan Camp",
+      "region": "steppe",
+      "lit": true
+    },
+    "ribcage_hills": {
+      "name": "the Ribcage Hills",
+      "region": "steppe",
+      "exposure": {
+        "kind": "cold",
+        "name": "cold",
+        "max": 6,
+        "damage": 25,
+        "worse_when": {
+          "energy": [
+            0.5,
+            1
+          ]
+        },
+        "warn": "The wind cuts through you. Get to the yurts.",
+        "hurt": "The steppe wind is freezing you to death.",
+        "relief": "The yurt's stove thaws you."
+      }
+    },
+    "marrow_pit": {
+      "name": "the Marrow Pit",
+      "region": "steppe",
+      "exposure": {
+        "kind": "cold",
+        "name": "cold",
+        "max": 6,
+        "damage": 25,
+        "worse_when": {
+          "energy": [
+            0.5,
+            1
+          ]
+        },
+        "warn": "The wind cuts through you. Get to the yurts.",
+        "hurt": "The steppe wind is freezing you to death.",
+        "relief": "The yurt's stove thaws you."
+      }
+    }
+  },
+  "rooms": {
+    "bs_landing": {
+      "name": "Where the Sky Fell",
+      "area": "clan_camp",
+      "pos": [
+        0,
+        0
+      ],
+      "description": "A crater in the grass where fallers from the sky land. The clan keeps it soft with hay.",
+      "exits": {
+        "east": "bs_yurts"
+      },
+      "features": {}
+    },
+    "bs_yurts": {
+      "name": "The Clan Yurts",
+      "area": "clan_camp",
+      "pos": [
+        25,
+        0
+      ],
+      "description": "Felt yurts in a ring, smoke from every one. Horses with frost in their manes.",
+      "exits": {
+        "west": "bs_landing",
+        "northeast": "bs_ribs"
+      },
+      "features": {},
+      "safe": true,
+      "shelter": true
+    },
+    "bs_ribs": {
+      "name": "The Ribcage Hills",
+      "area": "ribcage_hills",
+      "pos": [
+        75,
+        -50
+      ],
+      "description": "Hills that are ribs, each as tall as a tower.",
+      "exits": {
+        "southwest": "bs_yurts",
+        "northeast": "bs_spine"
+      },
+      "features": {}
+    },
+    "bs_spine": {
+      "name": "The Great Spine",
+      "area": "ribcage_hills",
+      "pos": [
+        100,
+        -75
+      ],
+      "description": "A spine of vertebrae running to the horizon. Drakes nest in the gaps.",
+      "exits": {
+        "southwest": "bs_ribs",
+        "southeast": "bs_skull"
+      },
+      "features": {}
+    },
+    "bs_skull": {
+      "name": "Skull Hill",
+      "area": "ribcage_hills",
+      "pos": [
+        125,
+        -50
+      ],
+      "description": "A skull the size of a castle. The wind howls through its eyes.",
+      "exits": {
+        "northwest": "bs_spine",
+        "southeast": "bs_pit"
+      },
+      "features": {}
+    },
+    "bs_pit": {
+      "name": "The Marrow Pit",
+      "area": "marrow_pit",
+      "pos": [
+        175,
+        0
+      ],
+      "description": "A pit full of bone-marrow gone to stone, and something huge rising out of it.",
+      "exits": {
+        "northwest": "bs_skull",
+        "southeast": "bs_crater"
+      },
+      "features": {}
+    },
+    "bs_crater": {
+      "name": "The Crater Rim",
+      "area": "marrow_pit",
+      "pos": [
+        200,
+        25
+      ],
+      "description": "The rim of a fresh crater. At the bottom, the ground glows, and the sky above it is full of falling stars.",
+      "exits": {
+        "northwest": "bs_pit"
+      },
+      "features": {
+        "crater": "Down there, a realm where the stars come down."
+      }
+    }
+  },
+  "npcs": {
+    "temur": {
+      "name": "Khagan Temur",
+      "label": "Khagan",
+      "description": "a broad man in furs with a horse-tail standard",
+      "details": "A broad man in furs with a horse-tail standard.",
+      "keywords": "khagan temur",
+      "room": "bs_yurts",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🐎",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the drakes, or the titan.",
+        "drakes": {
+          "text": "Bone-drakes take our horses. Five of them, from the Ribcage Hills. Their breath: dodge it.",
+          "starts": "bs_ride"
+        },
+        "titan": {
+          "text": "The Marrow Titan is rising out of its pit. If it walks, the steppe dies. Block its stomp, if you can.",
+          "starts": "bs_titan"
+        },
+        "fire": {
+          "text": "My shaman's fire goes to your city, if you want to go home.",
+          "explains": "TRAVEL TEMPLE STEPS to take it."
+        }
+      },
+      "faction": "steppe_clans"
+    },
+    "bone_drake_1": {
+      "name": "Bone Drake",
+      "label": "Drake",
+      "description": "a dragon of bare bone, wings creaking",
+      "details": "A dragon of bare bone, wings creaking.",
+      "keywords": "bone drake",
+      "room": "bs_ribs",
+      "max_hp": 1000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 3000,
+          "damage": 58,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "bone-breath",
+          "period": 11000,
+          "damage": 140,
+          "hit": "{actor} breathes a storm of bone splinters at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🐉",
+      "role": "bone_drake",
+      "respawn": 300
+    },
+    "bone_drake_2": {
+      "name": "Bone Drake",
+      "label": "Drake",
+      "description": "a dragon of bare bone, wings creaking",
+      "details": "A dragon of bare bone, wings creaking.",
+      "keywords": "bone drake",
+      "room": "bs_spine",
+      "max_hp": 1000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 3000,
+          "damage": 58,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "bone-breath",
+          "period": 11000,
+          "damage": 140,
+          "hit": "{actor} breathes a storm of bone splinters at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🐉",
+      "role": "bone_drake",
+      "respawn": 300
+    },
+    "bone_drake_3": {
+      "name": "Bone Drake",
+      "label": "Drake",
+      "description": "a dragon of bare bone, wings creaking",
+      "details": "A dragon of bare bone, wings creaking.",
+      "keywords": "bone drake",
+      "room": "bs_spine",
+      "max_hp": 1000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 3000,
+          "damage": 58,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "bone-breath",
+          "period": 11000,
+          "damage": 140,
+          "hit": "{actor} breathes a storm of bone splinters at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🐉",
+      "role": "bone_drake",
+      "respawn": 300
+    },
+    "bone_drake_4": {
+      "name": "Bone Drake",
+      "label": "Drake",
+      "description": "a dragon of bare bone, wings creaking",
+      "details": "A dragon of bare bone, wings creaking.",
+      "keywords": "bone drake",
+      "room": "bs_skull",
+      "max_hp": 1000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 3000,
+          "damage": 58,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "bone-breath",
+          "period": 11000,
+          "damage": 140,
+          "hit": "{actor} breathes a storm of bone splinters at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 19,
+      "icon": "🐉",
+      "role": "bone_drake",
+      "respawn": 300
+    },
+    "steppe_wolf_1": {
+      "name": "Steppe Wolf",
+      "label": "Wolf",
+      "description": "a white wolf the size of a pony",
+      "details": "A white wolf the size of a pony.",
+      "keywords": "steppe wolf",
+      "room": "bs_ribs",
+      "max_hp": 650,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2000,
+          "damage": 40,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 13,
+      "icon": "🐺",
+      "role": "steppe_wolf",
+      "respawn": 300
+    },
+    "steppe_wolf_2": {
+      "name": "Steppe Wolf",
+      "label": "Wolf",
+      "description": "a white wolf the size of a pony",
+      "details": "A white wolf the size of a pony.",
+      "keywords": "steppe wolf",
+      "room": "bs_skull",
+      "max_hp": 650,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2000,
+          "damage": 40,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 13,
+      "icon": "🐺",
+      "role": "steppe_wolf",
+      "respawn": 300
+    },
+    "marrow_titan": {
+      "name": "the Marrow Titan",
+      "label": "Titan",
+      "description": "a giant of stone-hard marrow, rising out of the pit",
+      "details": "A giant of stone-hard marrow, rising out of the pit.",
+      "keywords": "marrow titan",
+      "room": "bs_pit",
+      "max_hp": 6000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "fist",
+          "period": 4500,
+          "damage": 70,
+          "hit": "{actor} swings a fist at {target}."
+        },
+        {
+          "name": "stomp",
+          "period": 14000,
+          "damage": 220,
+          "hit": "{actor} stomps on {target}!",
+          "defend": "block"
+        }
+      ],
+      "xp": 290,
+      "icon": "🗿",
+      "respawn": 1800
+    }
+  },
+  "gear": {
+    "marrowbone_maul": {
+      "name": "Marrowbone Maul",
+      "kind": "Melee",
+      "keywords": "maul marrowbone",
+      "effect": "damage",
+      "period": 4000,
+      "window": 320,
+      "perfect_window": 110,
+      "amounts": [
+        64,
+        80,
+        130
+      ],
+      "hit": "{actor} smashes {target}.",
+      "perfect_hit": "{actor} smashes {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Marrowbone Maul finds nothing.",
+      "description": "The Titan's knucklebone on a haft. In cold wind it shakes the ground.",
+      "weather": {
+        "temperature": -0.6,
+        "energy": 0.6,
+        "precipitation": "dry",
+        "tier": "purple"
+      },
+      "rarity": "epic"
+    }
+  },
+  "wearables": {
+    "steppe_furs": {
+      "name": "Steppe Furs",
+      "keywords": "steppe furs",
+      "place": "chest",
+      "type": "leather",
+      "description": "Clan furs over hardened leather. Keeps off the cold. +2 Vigor.",
+      "rarity": "epic",
+      "armor": 12,
+      "stats": {
+        "vigor": 2
+      },
+      "protects": [
+        "cold"
+      ]
+    }
+  },
+  "factions": {
+    "steppe_clans": {
+      "name": "The Steppe Clans",
+      "realm": "bone_steppe",
+      "description": "The horse clans of the Bone Steppe. They respect strength and keep their word.",
+      "rules": [
+        {
+          "deed": "kill",
+          "of": "steppe_clans",
+          "affinity": -15,
+          "note": "You killed a clansman."
+        }
+      ]
+    }
+  },
+  "routes": {
+    "steppe-fire": {
+      "name": "the shaman's fire",
+      "keywords": "fire shaman home harrowgate",
+      "from": "bs_yurts",
+      "to": "temple_steps",
+      "kind": "portal",
+      "depart": "The clan shaman throws a handful of bone-dust on the fire. You step into the smoke, and out onto Harrowgate's temple steps.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} steps out of a wisp of smoke on the temple steps.",
+      "by": "temur"
+    },
+    "crater-road": {
+      "name": "the crater road",
+      "keywords": "crater starfall stars",
+      "from": "bs_crater",
+      "to": "st_landing",
+      "kind": "rift",
+      "depart": "You climb down into the crater, and the sky changes.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} climbs out of a crater under a burning sky."
+    }
+  },
+  "quests": {
+    "bs_ride": {
+      "name": "Ride with the Clan",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill five bone-drakes in the Ribcage Hills.",
+          "on": {
+            "kill": "bone_drake",
+            "count": 5
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Temur: ASK TEMUR ABOUT DRAKES.",
+          "on": {
+            "ask": "temur",
+            "about": "drakes"
+          },
+          "effects": [
+            {
+              "give": "steppe_furs"
+            },
+            {
+              "xp": 260
+            },
+            {
+              "reputation": {
+                "faction": "steppe_clans",
+                "affinity": 15,
+                "respect": 10,
+                "note": "You rode with the clan."
+              }
+            }
+          ]
+        }
+      }
+    },
+    "bs_titan": {
+      "name": "The Marrow Titan",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill the Marrow Titan in its pit.",
+          "on": {
+            "kill": "marrow_titan"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Temur: ASK TEMUR ABOUT TITAN.",
+          "on": {
+            "ask": "temur",
+            "about": "titan"
+          },
+          "effects": [
+            {
+              "give": "marrowbone_maul"
+            },
+            {
+              "xp": 350
+            }
+          ]
+        }
+      }
+    }
+  }
+}

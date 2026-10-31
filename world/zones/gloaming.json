@@ -1,0 +1,505 @@
+{
+  "_note": "The Gloaming, level 17: fey bargains at endless dusk. See docs/zones.md.",
+  "realms": {
+    "gloaming": {
+      "name": "the Gloaming",
+      "description": "A realm stuck at dusk, ruled by the fey, where every bargain has a catch.",
+      "weather": {
+        "temperature": [
+          0.1,
+          0.3
+        ],
+        "energy": [
+          -0.3,
+          0.3
+        ],
+        "precipitation": [
+          0,
+          0.5
+        ]
+      },
+      "sky": "always_dusk",
+      "shrine": "gl_market"
+    }
+  },
+  "regions": {
+    "thornlands": {
+      "name": "the Thornlands",
+      "realm": "gloaming"
+    }
+  },
+  "areas": {
+    "thorn_market": {
+      "name": "the Thorn Market",
+      "region": "thornlands",
+      "lit": true
+    },
+    "briar_maze": {
+      "name": "the Briar Maze",
+      "region": "thornlands"
+    },
+    "erlking_hall": {
+      "name": "the Erlking's Hall",
+      "region": "thornlands"
+    }
+  },
+  "rooms": {
+    "gl_landing": {
+      "name": "The Moon Arch",
+      "area": "thorn_market",
+      "pos": [
+        0,
+        0
+      ],
+      "description": "A white arch. Through it, moonlight and lanterns.",
+      "exits": {
+        "east": "gl_market"
+      },
+      "features": {
+        "arch": "Back to Hollowmoon."
+      }
+    },
+    "gl_market": {
+      "name": "The Thorn Market",
+      "area": "thorn_market",
+      "pos": [
+        25,
+        0
+      ],
+      "description": "A market under rose-thorn awnings. Everything is for sale, and nothing for money.",
+      "exits": {
+        "west": "gl_landing",
+        "south": "gl_stalls",
+        "northeast": "gl_maze1"
+      },
+      "features": {},
+      "safe": true,
+      "shelter": true
+    },
+    "gl_stalls": {
+      "name": "The Strange Stalls",
+      "area": "thorn_market",
+      "pos": [
+        25,
+        25
+      ],
+      "description": "Three stalls. A candle-maker, a nettle-seller, and a moth in a coat.",
+      "exits": {
+        "north": "gl_market"
+      },
+      "features": {},
+      "safe": true
+    },
+    "gl_maze1": {
+      "name": "The Briar Maze",
+      "area": "briar_maze",
+      "pos": [
+        75,
+        -50
+      ],
+      "description": "Walls of briar higher than your head, and paths that weren't there a moment ago.",
+      "exits": {
+        "southwest": "gl_market",
+        "northeast": "gl_maze2"
+      },
+      "features": {}
+    },
+    "gl_maze2": {
+      "name": "Deeper in the Briars",
+      "area": "briar_maze",
+      "pos": [
+        100,
+        -75
+      ],
+      "description": "The thorns lean in. One catches your sleeve and holds.",
+      "exits": {
+        "southwest": "gl_maze1",
+        "southeast": "gl_maze3"
+      },
+      "features": {},
+      "trap": {
+        "name": "the briars",
+        "stat": "poise",
+        "difficulty": "fair",
+        "damage": 55,
+        "rearm": 3,
+        "hit": "The briars close round you and tear.",
+        "avoid": "You slip between the thorns as they close.",
+        "sprung": "{actor} is caught in the briars!",
+        "sign": {
+          "room": "gl_maze1",
+          "name": "thorns",
+          "text": "The briars ahead move when you're not looking. Go carefully."
+        }
+      }
+    },
+    "gl_maze3": {
+      "name": "The Maze's Heart",
+      "area": "briar_maze",
+      "pos": [
+        125,
+        -50
+      ],
+      "description": "A clearing with a sundial that only shows dusk.",
+      "exits": {
+        "northwest": "gl_maze2",
+        "northeast": "gl_hall"
+      },
+      "features": {}
+    },
+    "gl_hall": {
+      "name": "The Erlking's Hall",
+      "area": "erlking_hall",
+      "pos": [
+        175,
+        -100
+      ],
+      "description": "A hall of living antler and bark, hung with trophies. Some of them are people.",
+      "exits": {
+        "southwest": "gl_maze3",
+        "east": "gl_court"
+      },
+      "features": {}
+    },
+    "gl_court": {
+      "name": "The Hunting Court",
+      "area": "erlking_hall",
+      "pos": [
+        200,
+        -100
+      ],
+      "description": "Where the Erlking holds his hunt. Horns sound from nowhere.",
+      "exits": {
+        "west": "gl_hall"
+      },
+      "features": {}
+    }
+  },
+  "npcs": {
+    "herald": {
+      "name": "the Thorn Herald",
+      "label": "Herald",
+      "description": "a fey with antlers and a smile with too many teeth",
+      "details": "A fey with antlers and a smile with too many teeth.",
+      "keywords": "the thorn herald",
+      "room": "gl_market",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🦌",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about riddles, or the hunt.",
+        "riddles": {
+          "text": "Three riddles, and the Queen's favour is yours. What burns but is not fire? What follows but never walks? What answers but never speaks? Ask the stallholders: Tallow, Nettle and Moth. Ask the right one about the right thing.",
+          "starts": "gl_riddles"
+        },
+        "hunt": {
+          "text": "The Erlking hunts mortals for sport. Hunt him instead. His horn can't be stopped; his spear can be dodged.",
+          "starts": "gl_hunt"
+        }
+      },
+      "faction": "fey_court"
+    },
+    "tallow": {
+      "name": "Tallow",
+      "label": "Fey",
+      "description": "a candle-maker made of wax",
+      "details": "A candle-maker made of wax.",
+      "keywords": "tallow",
+      "room": "gl_stalls",
+      "max_hp": 400,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🧚",
+      "proper": true,
+      "topics": {
+        "candle": "A candle burns but is not fire? No, child: a candle is fire. Try Moth.",
+        "shadow": "What follows but never walks? Your shadow. Correct.",
+        "echo": "Not mine to answer."
+      },
+      "faction": "fey_court"
+    },
+    "nettle": {
+      "name": "Nettle",
+      "label": "Fey",
+      "description": "a thin fey selling stinging herbs",
+      "details": "A thin fey selling stinging herbs.",
+      "keywords": "nettle",
+      "room": "gl_stalls",
+      "max_hp": 400,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🧚",
+      "proper": true,
+      "topics": {
+        "candle": "Not mine.",
+        "shadow": "Not mine.",
+        "echo": "What answers but never speaks? An echo. Correct."
+      },
+      "faction": "fey_court"
+    },
+    "moth": {
+      "name": "Moth",
+      "label": "Fey",
+      "description": "a moth in a velvet coat",
+      "details": "A moth in a velvet coat.",
+      "keywords": "moth",
+      "room": "gl_stalls",
+      "max_hp": 400,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🧚",
+      "proper": true,
+      "topics": {
+        "candle": "What burns but is not fire? Love, child. A moth would know. Correct.",
+        "shadow": "Not mine.",
+        "echo": "Not mine."
+      },
+      "faction": "fey_court"
+    },
+    "thorn_knight_1": {
+      "name": "Thorn Knight",
+      "label": "Fey Knight",
+      "description": "a knight in armour of thorns, watching",
+      "details": "A knight in armour of thorns, watching.",
+      "keywords": "thorn knight",
+      "room": "gl_maze1",
+      "max_hp": 900,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "lance",
+          "period": 4000,
+          "damage": 55,
+          "hit": "{actor} drives a thorned lance at {target}.",
+          "defend": "block"
+        }
+      ],
+      "xp": 22,
+      "icon": "🌹",
+      "role": "thorn_knight",
+      "respawn": 300,
+      "notice": "fair"
+    },
+    "thorn_knight_2": {
+      "name": "Thorn Knight",
+      "label": "Fey Knight",
+      "description": "a knight in armour of thorns, watching",
+      "details": "A knight in armour of thorns, watching.",
+      "keywords": "thorn knight",
+      "room": "gl_maze3",
+      "max_hp": 900,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "lance",
+          "period": 4000,
+          "damage": 55,
+          "hit": "{actor} drives a thorned lance at {target}.",
+          "defend": "block"
+        }
+      ],
+      "xp": 22,
+      "icon": "🌹",
+      "role": "thorn_knight",
+      "respawn": 300,
+      "notice": "fair"
+    },
+    "thorn_knight_3": {
+      "name": "Thorn Knight",
+      "label": "Fey Knight",
+      "description": "a knight in armour of thorns, watching",
+      "details": "A knight in armour of thorns, watching.",
+      "keywords": "thorn knight",
+      "room": "gl_hall",
+      "max_hp": 900,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "lance",
+          "period": 4000,
+          "damage": 55,
+          "hit": "{actor} drives a thorned lance at {target}.",
+          "defend": "block"
+        }
+      ],
+      "xp": 22,
+      "icon": "🌹",
+      "role": "thorn_knight",
+      "respawn": 300,
+      "notice": "fair"
+    },
+    "erlking": {
+      "name": "the Erlking",
+      "label": "Fey Lord",
+      "description": "a lord of the hunt, antlered, with a spear and a horn",
+      "details": "A lord of the hunt, antlered, with a spear and a horn.",
+      "keywords": "erlking",
+      "room": "gl_court",
+      "max_hp": 5000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "spear",
+          "period": 3500,
+          "damage": 60,
+          "hit": "{actor} thrusts his spear at {target}.",
+          "defend": "dodge"
+        },
+        {
+          "name": "hunting horn",
+          "period": 13000,
+          "damage": 170,
+          "hit": "{actor} sounds his horn, and the hunt rides through {target}!",
+          "defend": "none"
+        }
+      ],
+      "xp": 302,
+      "icon": "🦌",
+      "respawn": 1800,
+      "faction": "fey_court"
+    }
+  },
+  "gear": {
+    "wild_hunt_spear": {
+      "name": "Wild Hunt Spear",
+      "kind": "Light",
+      "keywords": "spear hunt wild",
+      "effect": "damage",
+      "period": 2000,
+      "window": 230,
+      "perfect_window": 75,
+      "amounts": [
+        26,
+        34,
+        56
+      ],
+      "hit": "{actor} spears {target}.",
+      "perfect_hit": "{actor} spears {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Wild Hunt Spear finds nothing.",
+      "description": "The Erlking's spear. It wants to hunt, in any weather.",
+      "weather": {
+        "temperature": 0,
+        "energy": 0.3,
+        "precipitation": "any",
+        "tier": "green"
+      },
+      "rarity": "epic"
+    }
+  },
+  "wearables": {
+    "thornweave_mantle": {
+      "name": "Thornweave Mantle",
+      "keywords": "thornweave mantle",
+      "place": "chest",
+      "type": "cloth",
+      "description": "A mantle of rose-thorn, soft as silk to the wearer. +2 Presence, +2 Poise.",
+      "rarity": "epic",
+      "armor": 10,
+      "stats": {
+        "presence": 2,
+        "poise": 2
+      }
+    }
+  },
+  "factions": {
+    "fey_court": {
+      "name": "The Fey Court",
+      "realm": "gloaming",
+      "description": "The fey of the Gloaming. They keep their bargains to the letter, and expect you to.",
+      "rules": [
+        {
+          "deed": "kill",
+          "of": "fey_court",
+          "affinity": -5,
+          "respect": 3,
+          "note": "A bold thing, to kill a fey."
+        }
+      ]
+    }
+  },
+  "quests": {
+    "gl_riddles": {
+      "name": "Three Riddles",
+      "start": "one",
+      "steps": {
+        "one": {
+          "goal": "What burns but is not fire? Ask the right stallholder about the candle.",
+          "on": {
+            "ask": "moth",
+            "about": "candle"
+          },
+          "then": "two"
+        },
+        "two": {
+          "goal": "What follows but never walks? Ask the right one about the shadow.",
+          "on": {
+            "ask": "tallow",
+            "about": "shadow"
+          },
+          "then": "three"
+        },
+        "three": {
+          "goal": "What answers but never speaks? Ask the right one about the echo.",
+          "on": {
+            "ask": "nettle",
+            "about": "echo"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell the Herald: ASK HERALD ABOUT RIDDLES.",
+          "on": {
+            "ask": "herald",
+            "about": "riddles"
+          },
+          "effects": [
+            {
+              "give": "thornweave_mantle"
+            },
+            {
+              "xp": 275
+            },
+            {
+              "reputation": {
+                "faction": "fey_court",
+                "affinity": 15,
+                "note": "You answered the Queen's riddles."
+              }
+            }
+          ]
+        }
+      }
+    },
+    "gl_hunt": {
+      "name": "The Erlking's Hunt",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Hunt the Erlking, in his Hunting Court past the Briar Maze.",
+          "on": {
+            "kill": "erlking"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell the Herald: ASK HERALD ABOUT HUNT.",
+          "on": {
+            "ask": "herald",
+            "about": "hunt"
+          },
+          "effects": [
+            {
+              "give": "wild_hunt_spear"
+            },
+            {
+              "xp": 360
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,430 @@
+{
+  "_note": "The Tempest Throne, level 20: the eye of every storm. See docs/zones.md.",
+  "realms": {
+    "tempest_throne": {
+      "name": "the Tempest Throne",
+      "description": "The eye of every storm: the place the weather comes from.",
+      "weather": {
+        "temperature": [
+          0,
+          1
+        ],
+        "energy": [
+          0.5,
+          0.5
+        ],
+        "precipitation": [
+          0.3,
+          0.7
+        ]
+      },
+      "shrine": "tt_eye"
+    }
+  },
+  "regions": {
+    "storm_eye": {
+      "name": "the Eye of the Storm",
+      "realm": "tempest_throne"
+    }
+  },
+  "areas": {
+    "four_winds": {
+      "name": "the Four Winds",
+      "region": "storm_eye",
+      "exposure": {
+        "kind": "storm",
+        "name": "the storm",
+        "max": 5,
+        "damage": 30,
+        "warn": "The storm is tearing at you. Back to the Eye.",
+        "hurt": "The storm is tearing you apart.",
+        "relief": "In the Eye, it's perfectly calm."
+      }
+    },
+    "storm_throne": {
+      "name": "the Storm Throne",
+      "region": "storm_eye",
+      "exposure": {
+        "kind": "storm",
+        "name": "the storm",
+        "max": 5,
+        "damage": 30,
+        "warn": "The storm is tearing at you. Back to the Eye.",
+        "hurt": "The storm is tearing you apart.",
+        "relief": "In the Eye, it's perfectly calm."
+      }
+    }
+  },
+  "rooms": {
+    "tt_eye": {
+      "name": "The Eye",
+      "area": "four_winds",
+      "pos": [
+        0,
+        0
+      ],
+      "description": "Perfect calm, under a circle of blue sky, with the storm a wall all round. An old woman waits.",
+      "exits": {
+        "west": "tt_rime",
+        "east": "tt_scorch",
+        "south": "tt_gale",
+        "north": "tt_tempest"
+      },
+      "features": {},
+      "safe": true,
+      "shelter": true
+    },
+    "tt_rime": {
+      "name": "The Rime Wind",
+      "area": "four_winds",
+      "pos": [
+        -75,
+        0
+      ],
+      "description": "Snow and ice, sideways, for ever.",
+      "exits": {
+        "east": "tt_eye"
+      },
+      "features": {}
+    },
+    "tt_scorch": {
+      "name": "The Scorch Wind",
+      "area": "four_winds",
+      "pos": [
+        75,
+        0
+      ],
+      "description": "Dead-still heat that cracks stone.",
+      "exits": {
+        "west": "tt_eye"
+      },
+      "features": {}
+    },
+    "tt_gale": {
+      "name": "The Gale Wind",
+      "area": "four_winds",
+      "pos": [
+        0,
+        75
+      ],
+      "description": "Freezing wind, howling.",
+      "exits": {
+        "north": "tt_eye"
+      },
+      "features": {}
+    },
+    "tt_tempest": {
+      "name": "The Tempest Wind",
+      "area": "four_winds",
+      "pos": [
+        0,
+        -75
+      ],
+      "description": "Hot rain, lightning, chaos.",
+      "exits": {
+        "south": "tt_eye",
+        "north": "tt_stair"
+      },
+      "features": {}
+    },
+    "tt_stair": {
+      "name": "The Stair of Storms",
+      "area": "storm_throne",
+      "pos": [
+        0,
+        -150
+      ],
+      "description": "A stair of cloud up to the throne.",
+      "exits": {
+        "south": "tt_tempest",
+        "north": "tt_throne"
+      },
+      "features": {}
+    },
+    "tt_throne": {
+      "name": "The Storm Throne",
+      "area": "storm_throne",
+      "pos": [
+        0,
+        -175
+      ],
+      "description": "The throne of all weather, and the Storm King on it.",
+      "exits": {
+        "south": "tt_stair"
+      },
+      "features": {}
+    }
+  },
+  "npcs": {
+    "weatherwitch": {
+      "name": "the Weatherwitch",
+      "label": "Witch",
+      "description": "an old woman with eyes like a changing sky",
+      "details": "An old woman with eyes like a changing sky.",
+      "keywords": "the weatherwitch",
+      "room": "tt_eye",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🌀",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the winds, or the king.",
+        "winds": {
+          "text": "Four lords of the winds guard the Storm King: Rime, Scorch, Gale and Tempest. Break them, and he's alone.",
+          "starts": "tt_winds"
+        },
+        "king": {
+          "text": "The Storm King is the weather, gone mad with power. Bring him down, and the weather is just weather again.",
+          "starts": "tt_king"
+        },
+        "home": {
+          "text": "When you want to go home, the way is open.",
+          "explains": "TRAVEL TEMPLE STEPS to go home."
+        }
+      }
+    },
+    "rime_lord": {
+      "name": "the Rime Lord",
+      "label": "Wind Lord",
+      "description": "a lord of the wind, shaped of weather",
+      "details": "A lord of the wind, shaped of weather.",
+      "keywords": "the rime lord",
+      "room": "tt_rime",
+      "max_hp": 4000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "buffet",
+          "period": 3500,
+          "damage": 55,
+          "hit": "{actor} buffets {target}."
+        },
+        {
+          "name": "blizzard",
+          "period": 12000,
+          "damage": 150,
+          "hit": "{actor} buries {target} in a blizzard!",
+          "defend": "none"
+        }
+      ],
+      "xp": 66,
+      "icon": "🌬️",
+      "role": "wind_lord",
+      "respawn": 1800
+    },
+    "scorch_lord": {
+      "name": "the Scorch Lord",
+      "label": "Wind Lord",
+      "description": "a lord of the wind, shaped of weather",
+      "details": "A lord of the wind, shaped of weather.",
+      "keywords": "the scorch lord",
+      "room": "tt_scorch",
+      "max_hp": 4000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "buffet",
+          "period": 3500,
+          "damage": 55,
+          "hit": "{actor} buffets {target}."
+        },
+        {
+          "name": "sunstrike",
+          "period": 12000,
+          "damage": 150,
+          "hit": "{actor} strikes {target} with the sun!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 66,
+      "icon": "🌬️",
+      "role": "wind_lord",
+      "respawn": 1800
+    },
+    "gale_lord": {
+      "name": "the Gale Lord",
+      "label": "Wind Lord",
+      "description": "a lord of the wind, shaped of weather",
+      "details": "A lord of the wind, shaped of weather.",
+      "keywords": "the gale lord",
+      "room": "tt_gale",
+      "max_hp": 4000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "buffet",
+          "period": 3500,
+          "damage": 55,
+          "hit": "{actor} buffets {target}."
+        },
+        {
+          "name": "gale",
+          "period": 12000,
+          "damage": 150,
+          "hit": "{actor} hurls {target} on the gale!",
+          "defend": "block"
+        }
+      ],
+      "xp": 66,
+      "icon": "🌬️",
+      "role": "wind_lord",
+      "respawn": 1800
+    },
+    "tempest_lord": {
+      "name": "the Tempest Lord",
+      "label": "Wind Lord",
+      "description": "a lord of the wind, shaped of weather",
+      "details": "A lord of the wind, shaped of weather.",
+      "keywords": "the tempest lord",
+      "room": "tt_tempest",
+      "max_hp": 4000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "buffet",
+          "period": 3500,
+          "damage": 55,
+          "hit": "{actor} buffets {target}."
+        },
+        {
+          "name": "lightning",
+          "period": 12000,
+          "damage": 150,
+          "hit": "{actor} calls lightning on {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 66,
+      "icon": "🌬️",
+      "role": "wind_lord",
+      "respawn": 1800
+    },
+    "storm_king": {
+      "name": "the Storm King",
+      "label": "King of Weather",
+      "description": "the weather itself, on a throne, with a crown of lightning",
+      "details": "The weather itself, on a throne, with a crown of lightning.",
+      "keywords": "storm king",
+      "room": "tt_throne",
+      "max_hp": 12000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "hail",
+          "period": 5000,
+          "damage": 80,
+          "hit": "{actor} pelts {target} with hail.",
+          "defend": "block"
+        },
+        {
+          "name": "thunder",
+          "period": 12000,
+          "damage": 280,
+          "hit": "{actor} brings down the thunder on {target}!",
+          "defend": "dodge"
+        },
+        {
+          "name": "eye-wall",
+          "period": 20000,
+          "damage": 400,
+          "hit": "{actor} closes the eye-wall on {target}!",
+          "defend": "none"
+        }
+      ],
+      "xp": 263,
+      "icon": "⛈️",
+      "respawn": 1800
+    }
+  },
+  "wearables": {
+    "crown_of_storms": {
+      "name": "Crown of Storms",
+      "keywords": "crown of storms",
+      "place": "head",
+      "type": "cloth",
+      "description": "The Storm King's crown, quiet now. +2 to every stat.",
+      "rarity": "legendary",
+      "armor": 10,
+      "stats": {
+        "vigor": 2,
+        "poise": 2,
+        "focus": 2,
+        "presence": 2,
+        "resilience": 2
+      }
+    }
+  },
+  "routes": {
+    "witch-door": {
+      "name": "the Weatherwitch's door",
+      "keywords": "door home harrowgate witch",
+      "from": "tt_eye",
+      "to": "temple_steps",
+      "kind": "portal",
+      "depart": "The Weatherwitch opens a door in the calm, and you step out onto Harrowgate's temple steps.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} steps out of a door that isn't there, smelling of rain.",
+      "by": "weatherwitch"
+    }
+  },
+  "quests": {
+    "tt_winds": {
+      "name": "The Four Winds",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Break the four wind lords: Rime, Scorch, Gale and Tempest.",
+          "on": {
+            "kill": "wind_lord",
+            "count": 4
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell the Weatherwitch: ASK WEATHERWITCH ABOUT WINDS.",
+          "on": {
+            "ask": "weatherwitch",
+            "about": "winds"
+          },
+          "effects": [
+            {
+              "xp": 210
+            }
+          ]
+        }
+      }
+    },
+    "tt_king": {
+      "name": "The Storm King",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Bring down the Storm King, up the Stair of Storms beyond the Tempest Wind.",
+          "on": {
+            "kill": "storm_king"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell the Weatherwitch: ASK WEATHERWITCH ABOUT KING.",
+          "on": {
+            "ask": "weatherwitch",
+            "about": "king"
+          },
+          "effects": [
+            {
+              "text": "The storm wall falls quiet. The Weatherwitch puts the crown in your hands. \"It's only weather now. Go home.\""
+            },
+            {
+              "give": "crown_of_storms"
+            },
+            {
+              "xp": 265
+            }
+          ]
+        }
+      }
+    }
+  }
+}

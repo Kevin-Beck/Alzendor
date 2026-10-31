@@ -7,7 +7,7 @@ import random
 import pytest
 
 from alzendor import weather
-from alzendor.world import validate_seed
+from alzendor.world import load_seed, validate_seed
 
 from .conftest import SEED, drain, enter, set_weather, texts
 
@@ -186,7 +186,7 @@ async def test_heavy_rain_hides_new_ways_and_neighbouring_regions(world):
     assert len(of_type(events, "room")[-1]["room"]["exits"]) == 5
     assert "smithy" in {r["id"] for r in of_type(events, "map")[0]["rooms"]}
     await world.call("move", "kevin", "east")
-    assert set(await world.redis.hkeys("PLAYER:kevin:regions")) == {"harrowgate", "harrowlake", "spiderwood", "harrow_mountains"}
+    assert set(await world.redis.hkeys("PLAYER:kevin:regions")) == {"harrowgate", "harrowlake", "spiderwood", "harrow_mountains", "greyfold"}
 
 
 async def test_spiders_keep_out_of_the_rain(world):
@@ -306,7 +306,7 @@ async def test_no_changing_gear_mid_fight(world):
     (lambda d: d["terrain_weather"]["forest"].update(humidity=1), "unknown axis 'humidity'"),
 ])
 def test_seed_validation_checks_weather(change, message):
-    data = json.loads(SEED.read_text())
+    data = load_seed(SEED)
     change(data)
     with pytest.raises(ValueError, match=message):
         validate_seed(data)

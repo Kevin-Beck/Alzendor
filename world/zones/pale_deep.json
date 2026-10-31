@@ -1,0 +1,537 @@
+{
+  "_note": "The Pale Deep, level 16: a realm under the sea. See docs/zones.md.",
+  "realms": {
+    "pale_deep": {
+      "name": "the Pale Deep",
+      "description": "A realm under the sea, lit by things that glow.",
+      "weather": {
+        "temperature": [
+          -0.4,
+          0.2
+        ],
+        "energy": [
+          -0.3,
+          0.3
+        ],
+        "precipitation": [
+          0.4,
+          0.2
+        ]
+      },
+      "shrine": "pd_bell"
+    }
+  },
+  "regions": {
+    "deep_sea": {
+      "name": "the Pale Deep",
+      "realm": "pale_deep"
+    }
+  },
+  "areas": {
+    "air_bells": {
+      "name": "the Air Bells",
+      "region": "deep_sea",
+      "lit": true
+    },
+    "kelp_abyss": {
+      "name": "the Kelp Abyss",
+      "region": "deep_sea",
+      "exposure": {
+        "kind": "breath",
+        "name": "breath",
+        "max": 4,
+        "damage": 22,
+        "warn": "Your lungs are burning. Get to an air bell.",
+        "hurt": "You're drowning.",
+        "relief": "You gasp in the bell's air."
+      }
+    },
+    "trench": {
+      "name": "the Leviathan's Trench",
+      "region": "deep_sea",
+      "exposure": {
+        "kind": "breath",
+        "name": "breath",
+        "max": 4,
+        "damage": 22,
+        "warn": "Your lungs are burning. Get to an air bell.",
+        "hurt": "You're drowning.",
+        "relief": "You gasp in the bell's air."
+      }
+    }
+  },
+  "rooms": {
+    "pd_landing": {
+      "name": "The Whirl's End",
+      "area": "air_bells",
+      "pos": [
+        0,
+        0
+      ],
+      "description": "Where the whirlpool lets out: a bubble of air on the sea floor, and pale light everywhere.",
+      "exits": {
+        "east": "pd_bell"
+      },
+      "features": {},
+      "shelter": true
+    },
+    "pd_bell": {
+      "name": "The Great Air Bell",
+      "area": "air_bells",
+      "pos": [
+        25,
+        0
+      ],
+      "description": "A huge bronze bell on the sea floor, full of air. The merrow court sits inside it.",
+      "exits": {
+        "west": "pd_landing",
+        "southeast": "pd_kelp",
+        "northeast": "pd_trench"
+      },
+      "features": {},
+      "indoor": true,
+      "safe": true,
+      "shelter": true
+    },
+    "pd_kelp": {
+      "name": "The Kelp Abyss",
+      "area": "kelp_abyss",
+      "pos": [
+        75,
+        50
+      ],
+      "description": "Kelp forests going down into the black. A small air-bell hangs empty on a chain.",
+      "exits": {
+        "northwest": "pd_bell",
+        "southeast": "pd_angler"
+      },
+      "features": {
+        "buoy": "An empty air-bell on a chain. It could be filled."
+      },
+      "dark": true
+    },
+    "pd_angler": {
+      "name": "The Angler's Lair",
+      "area": "kelp_abyss",
+      "pos": [
+        100,
+        75
+      ],
+      "description": "A lair at the bottom of the abyss, lit by a single dangling lure.",
+      "exits": {
+        "northwest": "pd_kelp"
+      },
+      "features": {},
+      "dark": true
+    },
+    "pd_trench": {
+      "name": "The Trench Edge",
+      "area": "trench",
+      "pos": [
+        75,
+        -50
+      ],
+      "description": "The edge of a trench so deep it has no bottom.",
+      "exits": {
+        "southwest": "pd_bell",
+        "northeast": "pd_reach"
+      },
+      "features": {}
+    },
+    "pd_reach": {
+      "name": "The Leviathan's Reach",
+      "area": "trench",
+      "pos": [
+        100,
+        -75
+      ],
+      "description": "The trench wall, and something moving along it, longer than a street.",
+      "exits": {
+        "southwest": "pd_trench",
+        "northeast": "pd_wreck"
+      },
+      "features": {}
+    },
+    "pd_wreck": {
+      "name": "The Sunken Galleon",
+      "area": "trench",
+      "pos": [
+        125,
+        -100
+      ],
+      "description": "A galleon on a ledge, its hold full of air casks.",
+      "exits": {
+        "southwest": "pd_reach"
+      },
+      "features": {
+        "cask": "An air cask, still sealed. It could fill a bell."
+      }
+    }
+  },
+  "items": {
+    "bellows": {
+      "name": "bellows",
+      "keywords": "bellows",
+      "description": "Merrow bellows of sharkskin.",
+      "quest": true
+    },
+    "drowned_pearl": {
+      "name": "Drowned Pearl",
+      "keywords": "pearl drowned",
+      "description": "A black pearl the size of a fist. One of three relics.",
+      "quest": true,
+      "room": "pd_angler"
+    }
+  },
+  "npcs": {
+    "ysse": {
+      "name": "Queen Ysse",
+      "label": "Merrow Queen",
+      "description": "a merrow with a crown of coral and a tail like a sword",
+      "details": "A merrow with a crown of coral and a tail like a sword.",
+      "keywords": "queen ysse",
+      "room": "pd_bell",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🧜",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the deep (for a helm), the bells, or the pearl.",
+        "deep": {
+          "text": "You'll drown out there without a helm. Ask me for the helm.",
+          "starts": "pd_helm"
+        },
+        "helm": "Breathe slowly.",
+        "bells": {
+          "text": "Our air bells are failing. Fill the buoy-bell in the Kelp Abyss, and bring air from the galleon's casks. Take these bellows.",
+          "starts": "pd_bells"
+        },
+        "bellows": "Pump, don't puff.",
+        "pearl": {
+          "text": "The Angler Queen swallowed the Drowned Pearl. Kill her and it's yours: it opens something, in your world.",
+          "starts": "pd_pearl"
+        }
+      }
+    },
+    "glass_eel_1": {
+      "name": "Glass Eel",
+      "label": "Eel",
+      "description": "a see-through eel with a glowing spine",
+      "details": "A see-through eel with a glowing spine.",
+      "keywords": "glass eel",
+      "room": "pd_kelp",
+      "max_hp": 700,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2500,
+          "damage": 44,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 15,
+      "icon": "🐍",
+      "role": "glass_eel",
+      "respawn": 300
+    },
+    "glass_eel_2": {
+      "name": "Glass Eel",
+      "label": "Eel",
+      "description": "a see-through eel with a glowing spine",
+      "details": "A see-through eel with a glowing spine.",
+      "keywords": "glass eel",
+      "room": "pd_kelp",
+      "max_hp": 700,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2500,
+          "damage": 44,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 15,
+      "icon": "🐍",
+      "role": "glass_eel",
+      "respawn": 300
+    },
+    "glass_eel_3": {
+      "name": "Glass Eel",
+      "label": "Eel",
+      "description": "a see-through eel with a glowing spine",
+      "details": "A see-through eel with a glowing spine.",
+      "keywords": "glass eel",
+      "room": "pd_trench",
+      "max_hp": 700,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2500,
+          "damage": 44,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 15,
+      "icon": "🐍",
+      "role": "glass_eel",
+      "respawn": 300
+    },
+    "glass_eel_4": {
+      "name": "Glass Eel",
+      "label": "Eel",
+      "description": "a see-through eel with a glowing spine",
+      "details": "A see-through eel with a glowing spine.",
+      "keywords": "glass eel",
+      "room": "pd_wreck",
+      "max_hp": 700,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 2500,
+          "damage": 44,
+          "hit": "{actor} bites {target}."
+        }
+      ],
+      "xp": 15,
+      "icon": "🐍",
+      "role": "glass_eel",
+      "respawn": 300
+    },
+    "leviathan": {
+      "name": "the Leviathan",
+      "label": "Leviathan",
+      "description": "something longer than a street, sliding past",
+      "details": "Something longer than a street, sliding past.",
+      "keywords": "the leviathan",
+      "room": "pd_reach",
+      "max_hp": 9000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "swallow",
+          "period": 15000,
+          "damage": 400,
+          "hit": "{actor} opens its mouth around {target}!",
+          "defend": "none"
+        }
+      ],
+      "xp": 190,
+      "icon": "🐋",
+      "notice": "hard",
+      "respawn": 1800
+    },
+    "angler_queen": {
+      "name": "the Angler Queen",
+      "label": "Angler",
+      "description": "a fish as big as a house, all teeth below a lure",
+      "details": "A fish as big as a house, all teeth below a lure.",
+      "keywords": "angler queen",
+      "room": "pd_angler",
+      "max_hp": 4200,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 4000,
+          "damage": 55,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "lure",
+          "period": 12000,
+          "damage": 160,
+          "hit": "{actor}'s lure flares, and she snaps at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 228,
+      "icon": "🐟",
+      "respawn": 1800
+    }
+  },
+  "gear": {
+    "tideglass_trident": {
+      "name": "Tideglass Trident",
+      "kind": "Melee",
+      "keywords": "trident tideglass",
+      "effect": "damage",
+      "period": 3000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        44,
+        56,
+        92
+      ],
+      "hit": "{actor} spears {target}.",
+      "perfect_hit": "{actor} spears {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Tideglass Trident finds nothing.",
+      "description": "A trident of tideglass. In cold wet weather it's unstoppable.",
+      "weather": {
+        "temperature": -0.4,
+        "energy": -0.2,
+        "precipitation": "wet",
+        "tier": "purple"
+      },
+      "rarity": "epic"
+    }
+  },
+  "wearables": {
+    "diving_helm": {
+      "name": "Diving Helm",
+      "keywords": "diving helm",
+      "place": "head",
+      "type": "cloth",
+      "description": "A merrow helm of glass and sealskin, full of air. Keeps you breathing.",
+      "rarity": "rare",
+      "armor": 2,
+      "protects": [
+        "breath"
+      ]
+    }
+  },
+  "routes": {
+    "deep-whirlpool": {
+      "name": "the whirlpool",
+      "keywords": "whirlpool mirefall up home",
+      "from": "pd_landing",
+      "to": "mf_whirlpool",
+      "kind": "rift",
+      "depart": "You swim up into the spiral, and it spits you out into the rain.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} bursts up out of the whirlpool."
+    }
+  },
+  "quests": {
+    "pd_helm": {
+      "name": "Under the Sea",
+      "start": "helm",
+      "steps": {
+        "helm": {
+          "goal": "Ask Ysse for a helm: ASK YSSE ABOUT HELM.",
+          "on": {
+            "ask": "ysse",
+            "about": "helm"
+          },
+          "effects": [
+            {
+              "give": "diving_helm"
+            },
+            {
+              "text": "\"WEAR HELM. Four breaths without it, and you're ours.\""
+            },
+            {
+              "xp": 15
+            }
+          ]
+        }
+      }
+    },
+    "pd_bells": {
+      "name": "Air for the Bells",
+      "start": "bellows",
+      "steps": {
+        "bellows": {
+          "goal": "Take the bellows: ASK YSSE ABOUT BELLOWS.",
+          "on": {
+            "ask": "ysse",
+            "about": "bellows"
+          },
+          "effects": [
+            {
+              "give": "bellows"
+            }
+          ],
+          "then": "cask"
+        },
+        "cask": {
+          "goal": "Draw air from the galleon's casks, past the Leviathan: USE BELLOWS ON CASK.",
+          "on": {
+            "use": "bellows",
+            "on": "cask"
+          },
+          "effects": [
+            {
+              "text": "The bellows swell with old air."
+            }
+          ],
+          "then": "buoy"
+        },
+        "buoy": {
+          "goal": "Fill the buoy-bell in the Kelp Abyss: USE BELLOWS ON BUOY.",
+          "on": {
+            "use": "bellows",
+            "on": "buoy"
+          },
+          "effects": [
+            {
+              "take": "bellows"
+            },
+            {
+              "text": "The bell fills, and lifts on its chain."
+            }
+          ],
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Ysse: ASK YSSE ABOUT BELLS.",
+          "on": {
+            "ask": "ysse",
+            "about": "bells"
+          },
+          "effects": [
+            {
+              "give": "tideglass_trident"
+            },
+            {
+              "xp": 220
+            }
+          ]
+        }
+      }
+    },
+    "pd_pearl": {
+      "name": "The Drowned Pearl",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill the Angler Queen, at the bottom of the Kelp Abyss.",
+          "on": {
+            "kill": "angler_queen"
+          },
+          "then": "get"
+        },
+        "get": {
+          "goal": "Take the pearl: GET PEARL.",
+          "on": {
+            "have": [
+              "drowned_pearl"
+            ]
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Show Ysse: ASK YSSE ABOUT PEARL.",
+          "on": {
+            "ask": "ysse",
+            "about": "pearl"
+          },
+          "effects": [
+            {
+              "text": "\"Keep it. There's a door in a drowned city of yours. It will know what to do.\""
+            },
+            {
+              "xp": 285
+            }
+          ]
+        }
+      }
+    }
+  }
+}

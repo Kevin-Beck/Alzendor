@@ -43,12 +43,16 @@ slot, and owns a talent pool.
 ### Talents
 
 Talents are slot abilities: gear you learn instead of find. You choose one at
-**every even level** (2, 4 … 20: ten in all).
+**every third level** (3, 6, 9, 12, 15 and 18: six in all).
 
-- **Ranks:** your first three picks are rank 1. From your fourth, rank 2 is
-  open too; from your eighth (around level 16), rank 3. Rank 2 is a little
+- **Ranks:** your first two picks are rank 1. From your third (level 9),
+  rank 2 is open too; from your fifth (level 15), rank 3. Rank 2 is a little
   stronger than rank 1, rank 3 clearly stronger, but rank 1 talents stay
   useful forever.
+- **Look before you choose.** Hovering a talent in the Character panel shows
+  everything about it before you learn it: what it does, its beat and
+  windows, its rarity, its weather sensitivity and spot, and what today's
+  weather would do to it.
 - **A grab bag, not a tree.** Almost nothing requires anything else. A link
   exists only where it's needed to make sense (Chain Lightning needs Spark).
 - **Ten tools for three slots.** The point is flexibility: every talent has
@@ -135,15 +139,60 @@ your body. It gives:
 ## Levelling
 
 - The level cap is **20**, and the experience curve stays `100 × level`.
-- **Every level:** a stat point (as now).
-- **Even levels:** a talent.
+- **Every level:** a stat point (as now). Level 2 is only that: a small first
+  level-up, so a new player meets one thing at a time.
+- **Levels 3, 6, 9, 12, 15, 18:** a talent.
 - **Levels 5, 10, 15, 20:** an ancestry passive.
 - No gear or items for levelling up: the `levels` table's gear and perks go.
   Gear comes from loot, backgrounds and the world.
 - Picks don't have to be spent at once; the Character button shows a badge
   while you have one waiting. `LEARN <talent or passive>` takes one, or use
   the Character panel, which shows the talent ranks as rows (locked ranks
-  greyed: "opens after 3 talents") and the ancestry pool.
+  greyed: "opens after 2 talents") and the ancestry pool.
+
+## Worn gear
+
+Besides the three slots, a character wears and carries things: **head**,
+**chest**, **legs** and a **hand**. Worn gear is never used like a slot; it's
+what you have on.
+
+- **Armour** is mostly what worn gear is for, and style: each piece adds to
+  your armour, and armour takes `armor / (armor + armor_k)` off every blow
+  (`armor_k` is 30: a fighter's starting 9 takes 23%). Some pieces add a stat
+  too (+1 Presence for a fine hat), so the world can be balanced around gear
+  adding some stats on top of the points from levelling.
+- **The hand** holds one special thing: a **torch** (a light: you see the
+  ways on in the dark), a **shield** (DEFEND blocks instead of dodging,
+  with a wider window; see [combat.md](combat.md)), or an **orb** (a mage's
+  focus). One hand means a choice: in a dark cave, the fighter's shield goes
+  on the back and the torch comes out.
+- **By class:** each piece has a type, and a class wears some types only
+  (`wears`): fighters cloth, leather, mail, shields and lights; rogues cloth,
+  leather and lights; mages cloth, lights and orbs.
+- **Starting clothes:** the class's `outfit` (a fighter's mail shirt,
+  breeches and round shield) and the background's (a sailor's knitted cap)
+  are put on at creation. More comes from quests (`give`), such as the
+  starting realms' rewards.
+- `WEAR <item>` and `REMOVE <item or place>`, or the Character panel's Worn
+  section. Armour can't change mid-fight; the hand can.
+- Data: `alz:wearables` (the catalog), `PLAYER:<id>:wardrobe` (what you own),
+  `PLAYER:<id>:worn` (place to item) and `PLAYER:<id>:worn_stats` (the sum,
+  which `stat()` adds in).
+
+## Rarity and weather sensitivity
+
+Two different things, shown two different ways:
+
+- **Rarity** is how unusual a thing is: common, uncommon, rare, epic or
+  legendary. It's the colour of its name.
+- **Weather sensitivity** is how much the weather moves it, from one dot
+  (barely cares) to five (only works at its spot). It's the dots
+  (●●●○○) in its tooltip, with its spot on the weather grid.
+
+They're set separately: a plain sailor's boathook is common but touchy about
+the wet, and a rare blade can be steady in any weather. The really sensitive
+pieces are usually rare, so rarity defaults to the sensitivity's level
+(the gear's `tier`, [weather.md](weather.md)) unless the seed says otherwise.
 
 ### Respec
 
@@ -175,17 +224,34 @@ tutorial.
 
 - **A realm of its own** (`"starting": true`), cut off from the world, with
   its own mild weather and the clock. Three or four areas of 5–10 rooms each.
-- **What it teaches**, in order, through the story: moving and the map;
-  looking and features; talking to NPCs (`ASK <name> ABOUT <topic>`) and
-  taking a quest; picking things up and using them; equipping and the
-  slots; a first fight; the weather (a quest that only works in the right
-  weather); resting in a safe place; and, at the end, a journey with a
+- **What it teaches**, in order, through the story: first a small quest
+  (moving, looking, asking, getting and using things). Then a **lesson** from
+  a local (Pell, Aunt Brisa, Maud, Nan): `ASK … ABOUT WEATHER` explains the
+  weather panel, `ASK … ABOUT SENSITIVITY` explains weather sensitivity and
+  rarity (and hands you a torch), and a first fight with something weak
+  teaches the slots and blocking or dodging (7). You go back and tell them
+  how it went, and that makes **level 2**: a stat point, nothing more. Then a dark room that needs the torch, the
+  realm's longer quests and harder fights, and **level 3** with the first
+  talent, once you've seen the weather at work. At the end, a journey with a
   scripted travel event.
-- **Two levels:** the quests give about 300 experience, enough to reach
-  level 3, so you leave with a talent picked and your stats started.
-- **Leaving:** the last quest ends with a journey out (a ship, a caravan, a
-  cart), which arrives in Alzendor. The starting realm then disappears from
-  your map's realm buttons: you can't go back.
+- **Two levels:** the quests give 40 (the first), 60 (the lesson), 80 and
+  120: exactly the 300 to reach level 3 with nothing else, and a little more
+  with the fights on the way.
+- **People hand you the next job.** When a quest is handed in, the person
+  says so, and a beat later (`offer_beat_ms`, 2.5 s) offers the next one out
+  loud; it starts then. A quest that ends in a fight away from them has a
+  last step to go back and tell them, so the handover happens face to face.
+- **Two voices.** People talk like people who live there ("a merchant who
+  can't read the sky gets rained on with her silks out"). What that means
+  in game terms (the four parts of the weather panel, the sensitivity pips,
+  how travel works) follows as **guide text**, set apart in the log.
+- **Leaving:** the last quest's operator (a captain, a carter, a caravan
+  master) explains travel when you `ASK … ABOUT TRAVEL`: where routes leave
+  from, `TRAVEL` to list them, fares and stages, and that this one is for
+  good. Only then does `TRAVEL` show the way out, and you take it yourself
+  (`TRAVEL COG`, `CARAVAN`, `BARGE` or `CART`). The journey arrives in
+  Alzendor, and the starting realm disappears from your map's realm buttons:
+  you can't go back.
 - Factions inside a starting realm (rival stallholders, a gang) show on your
   Reputation tab under that realm.
 
@@ -198,10 +264,12 @@ season.*
   Gullhaven Quay (the Salted Gull tavern, the harbourmaster); the Breakwater
   and Seal Rocks (outdoors, exposed to the weather); Wreckers' Cove (a cave).
 - **Caulk and Tar:** the shipwright needs tar from the pits for the hull
-  (moving, looking, asking, getting, using an item on something).
-- **Lost Chain:** the anchor chain went over at Seal Rocks. The old bosun
-  teaches you to read the sky (forecast lore), and you row out when it's
-  calm enough; rock crabs on the rocks (first fights).
+  (moving, looking, asking, getting, using an item on something). She gives
+  you a torch: the sail loft on the way to the quay is shuttered and pitch
+  dark.
+- **Reading the Sky:** Old Pell teaches the sky and weather sensitivity; a
+  rock crab on Seal Rocks is the first fight.
+- **Lost Chain:** the anchor chain went over at Seal Rocks; bring it back.
 - **Wreckers:** false lights in the cove at night. Find the wreckers and
   their leader, then turn them in to the harbourmaster or take a cut
   (reputation with the town or the wreckers).
@@ -214,15 +282,23 @@ season.*
 *Your family's stall, your first day running it alone, and a market about to
 boil over.*
 
-- **Areas:** Copperstall Market (the stalls); Guild Row (the counting house,
-  the guildmaster); the Caravan Yard; the Old Granary (cellars).
+- **Areas:** Copperstall Market (the stalls, where Aunt Brisa works with
+  Wenna and Hob); Guild Row (the counting house, the guildmaster, the
+  caravan yard and, south of it, the coach stand where Dace loads); the Old
+  Granary (cellars).
 - **Opening the Stall:** fetch your crates and set out your goods.
+- **Market Weather:** Aunt Brisa's lesson, a torch, and a feed rat in the
+  caravan yard.
 - **Short Weight:** the spice sellers and the cloth sellers accuse each other
   of crooked scales. Investigate (look at features, ask around), calm a
   crowd (Presence), and decide whom to side with: two small factions.
-- **Rats in the Granary:** the guild's grain is being eaten; first fights.
-- **Out:** guard a caravan to the city. The road is ambushed (surprise
-  combat, scripted), arriving at Harrowgate's market square.
+- **Rats in the Granary:** the guild's grain is being eaten; kill the Rat
+  King and tell Thorne.
+- **Your Own Road:** Thorne thinks you're wasted behind a stall and sends you
+  to ask your aunt what she really wants. She wants the stall, with Wenna
+  and Hob, for good, and wants you to go and see the world. Dace explains the
+  road, and you take his caravan to the city when you're ready. The road is
+  ambushed (scripted), arriving at Harrowgate's market square.
 
 ### Thornwick (Woodsman)
 
@@ -231,7 +307,10 @@ boil over.*
 - **Areas:** Thornwick Hamlet (the lodge, the smokehouse); the Old Wood;
   Fernhollow (a misty bog); Stag's Rise (a hill above the trees).
 - **Checking the Snares:** walk your snare line, and find a poacher's trap
-  laid on it (traps and their signs).
+  laid on it (traps and their signs). It ends under the deep oaks, dark even
+  at noon: without a light you can only go back.
+- **Signs in the Sky:** Maud's lesson, a torch, and a bog wisp (it can be
+  dodged, not blocked).
 - **Moonbloom:** the healer needs a flower that only opens in still, damp
   weather in Fernhollow. Read the forecast and be there when it opens.
 - **The White Hart:** hunt an elusive deer on Stag's Rise, and deal with
@@ -246,6 +325,8 @@ boil over.*
 - **Areas:** the Gutters (alleys); Low Wick Square (the magistrate's house,
   the stocks); the Watch House; the Rooftops.
 - **Lifting:** Nan Gristle, who runs the gutter kids, wants a drunk's purse.
+- **Gutter Weather:** Nan's lesson, a torch for the magistrate's dark house,
+  and a rat in Rat Alley.
 - **The Signet:** steal the magistrate's signet ring. Get past the dog, and
   look at the stairs before you climb: a tripwire bell (a trap, with its
   sign on the stairs) guards the study.
@@ -283,8 +364,10 @@ after; backgrounds plug into travel events whenever both exist.
 - NPCs don't walk rounds yet, so Low Wick's study is guarded by a trap
   instead of a patrol.
 - Starting realms have no factions of their own yet.
-- Quest XP is 50, 100 and 150 in every starting realm: exactly the 300 to
-  reach level 3, whether or not you fight everything on the way.
+- Quest XP was 50, 100 and 150; with the lesson it's 40, 60, 80 and 120.
+- Level 2 came too fast, with too much to take in at once (the weather grid,
+  talents, ranks). Now talents start at level 3, the lesson explains the
+  weather panel before any talent choice, and level 2 is just a stat point.
 - A starting realm's `shrine` is where you began: dying in the tutorial
   doesn't throw you out of it.
 - Existing characters aren't wiped by a script: any account without a

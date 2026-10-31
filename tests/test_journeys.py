@@ -37,23 +37,35 @@ async def test_each_step_takes_the_time_to_cross_the_ground(world):
 # The clock --------------------------------------------------------------------
 
 
-async def test_night_hides_the_ways_you_dont_know_outdoors(world):
+async def test_night_hides_the_ways_you_dont_know_in_the_wilds(world):
     await world.redis.set("alz:clock_override", 23)
     kevin = await enter(world, "kevin")
     events = await drain(kevin)
-    assert of_type(events, "weather")[-1]["clock"] == {"hour": 23, "phase": "night"}
+    clock = of_type(events, "weather")[-1]["clock"]
+    assert (clock["hour"], clock["phase"], round(clock["day"], 6)) == (23, "night", round(23 / 24, 6))
     assert "It is night." not in texts(events)[0]  # the tavern is indoors
 
-    await walk(world, "kevin", "north")
+    await walk(world, "kevin", "north")  # the market square: a town, with its lamps lit
+    room = of_type(await drain(kevin), "room")[-1]
+    assert len(room["room"]["exits"]) == 5 and "It is night." in room["text"]
+
+    await walk(world, "kevin", "north", "north", "north")  # out of the north gate, into the wilds
     events = await drain(kevin)
     room = of_type(events, "room")[-1]
-    assert room["room"]["exits"] == ["south"]  # only the way back to the tavern
+    assert room["room"]["exits"] == ["south"]  # only the way back to the gate
     assert "(the darkness hides any other ways on)" in room["text"] and "It is night." in room["text"]
     assert of_type(events, "weather")[-1]["visibility"] == "poor"
+    await world.call("move", "kevin", "northwest")
+    assert texts(await drain(kevin)) == ["It's too dark to find a way northwest. You need a light in your hand: WEAR a torch."]
 
+    await world.redis.sadd("PLAYER:kevin:wardrobe", "torch")
+    await world.call("wear", "kevin", "torch")
+    assert len(of_type(await drain(kevin), "room")[-1]["room"]["exits"]) == 4
+
+    await world.call("remove", "kevin", "hand")
     await world.redis.sadd("PLAYER:kevin:perks", "starsight")
     await world.call("look", "kevin")
-    assert len(of_type(await drain(kevin), "room")[-1]["room"]["exits"]) > 1
+    assert len(of_type(await drain(kevin), "room")[-1]["room"]["exits"]) == 4
 
 
 async def test_a_realm_can_have_its_own_sky(world):

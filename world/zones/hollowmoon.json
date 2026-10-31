@@ -1,0 +1,628 @@
+{
+  "_note": "Hollowmoon, level 12: always night. See docs/zones.md.",
+  "realms": {
+    "hollowmoon": {
+      "name": "Hollowmoon",
+      "description": "A realm of endless night under a moon far too big.",
+      "weather": {
+        "temperature": [
+          -0.5,
+          0.2
+        ],
+        "energy": [
+          -0.6,
+          0.2
+        ],
+        "precipitation": [
+          -0.3,
+          0.4
+        ]
+      },
+      "sky": "always_night",
+      "shrine": "hm_square"
+    }
+  },
+  "regions": {
+    "moonlands": {
+      "name": "the Moonlands",
+      "realm": "hollowmoon"
+    }
+  },
+  "areas": {
+    "lanternhold": {
+      "name": "Lanternhold",
+      "region": "moonlands",
+      "lit": true
+    },
+    "silverwood": {
+      "name": "the Silverwood",
+      "region": "moonlands"
+    },
+    "moonwell": {
+      "name": "the Moonwell",
+      "region": "moonlands"
+    }
+  },
+  "rooms": {
+    "hm_landing": {
+      "name": "The Mirror Pool",
+      "area": "lanternhold",
+      "pos": [
+        0,
+        0
+      ],
+      "description": "A still pool that shows a cavern roof instead of the sky. Lanterns all round it.",
+      "exits": {
+        "east": "hm_square"
+      },
+      "features": {
+        "pool": "Through it, the Underdeep's Black Lake."
+      }
+    },
+    "hm_square": {
+      "name": "Lantern Square",
+      "area": "lanternhold",
+      "pos": [
+        25,
+        0
+      ],
+      "description": "A square hung with a thousand lanterns. The shadows outside them move.",
+      "exits": {
+        "west": "hm_landing",
+        "south": "hm_inn",
+        "northeast": "hm_wood"
+      },
+      "features": {},
+      "safe": true
+    },
+    "hm_inn": {
+      "name": "The Wick & Moth",
+      "area": "lanternhold",
+      "pos": [
+        25,
+        25
+      ],
+      "description": "An inn so bright with candles it hurts.",
+      "exits": {
+        "north": "hm_square"
+      },
+      "features": {},
+      "indoor": true,
+      "safe": true
+    },
+    "hm_wood": {
+      "name": "The Silverwood",
+      "area": "silverwood",
+      "pos": [
+        75,
+        -50
+      ],
+      "description": "Trees with silver bark under the huge moon. A dead lantern hangs from a branch.",
+      "exits": {
+        "southwest": "hm_square",
+        "northeast": "hm_glade",
+        "east": "hm_path"
+      },
+      "features": {
+        "lantern": "A dead lantern on a hook."
+      },
+      "terrain": "forest"
+    },
+    "hm_glade": {
+      "name": "Moth Glade",
+      "area": "silverwood",
+      "pos": [
+        100,
+        -75
+      ],
+      "description": "A glade full of white moths the size of hands. A lamp-post stands dark.",
+      "exits": {
+        "southwest": "hm_wood",
+        "northeast": "hm_well"
+      },
+      "features": {
+        "post": "A lamp-post, its glass cracked, its wick dry."
+      },
+      "terrain": "forest"
+    },
+    "hm_path": {
+      "name": "The Shadowed Path",
+      "area": "silverwood",
+      "pos": [
+        125,
+        -50
+      ],
+      "description": "A path where the moonlight doesn't reach. Something follows you along it.",
+      "exits": {
+        "west": "hm_wood"
+      },
+      "features": {},
+      "terrain": "forest"
+    },
+    "hm_well": {
+      "name": "The Moonwell",
+      "area": "moonwell",
+      "pos": [
+        150,
+        -125
+      ],
+      "description": "A well full of moonlight instead of water. Its lamp has gone out.",
+      "exits": {
+        "southwest": "hm_glade",
+        "northeast": "hm_den",
+        "northwest": "hm_moongate"
+      },
+      "features": {
+        "lamp": "The well's lamp, cold."
+      }
+    },
+    "hm_den": {
+      "name": "The Eclipse Den",
+      "area": "moonwell",
+      "pos": [
+        175,
+        -150
+      ],
+      "description": "A den in a hill, black as the space between stars.",
+      "exits": {
+        "southwest": "hm_well"
+      },
+      "features": {}
+    },
+    "hm_moongate": {
+      "name": "The Moon Gate",
+      "area": "moonwell",
+      "pos": [
+        125,
+        -150
+      ],
+      "description": "An arch of white stone. Through it, a sky stuck at sunset and a smell of roses.",
+      "exits": {
+        "southeast": "hm_well"
+      },
+      "features": {
+        "arch": "Through it, a twilight realm of thorns."
+      }
+    }
+  },
+  "items": {
+    "moon_oil": {
+      "name": "moon-oil",
+      "keywords": "oil moon",
+      "description": "A flask of oil that glows faintly blue.",
+      "quest": true
+    }
+  },
+  "npcs": {
+    "siel": {
+      "name": "Siel",
+      "label": "Lantern-keeper",
+      "description": "a pale young man with a lantern on a pole",
+      "details": "A pale young man with a lantern on a pole.",
+      "keywords": "siel",
+      "room": "hm_square",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🏮",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the lanterns, the hunt, or the hound.",
+        "lanterns": {
+          "text": "Three lights have gone out: the lantern in the Silverwood, the post in Moth Glade, the lamp at the Moonwell. Every dark one lets the stalkers closer. Take moon-oil.",
+          "starts": "hm_lanterns"
+        },
+        "oil": "It burns cold. Don't touch the flame.",
+        "hunt": {
+          "text": "The shadow-stalkers hunt anyone outside the lights. Four of them. They watch before they strike: if you see one first, you choose.",
+          "starts": "hm_hunt"
+        },
+        "hound": {
+          "text": "The Eclipse Hound swallowed the last lantern-keeper. It dens past the Moonwell. Its eclipse can only be dodged.",
+          "starts": "hm_hound"
+        }
+      }
+    },
+    "shadow_stalker_1": {
+      "name": "Shadow Stalker",
+      "label": "Shadow",
+      "description": "a shape of darker dark, watching",
+      "details": "A shape of darker dark, watching.",
+      "keywords": "shadow stalker",
+      "room": "hm_path",
+      "max_hp": 500,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "rake",
+          "period": 2500,
+          "damage": 32,
+          "hit": "{actor} rakes {target} out of nowhere."
+        }
+      ],
+      "xp": 17,
+      "icon": "👤",
+      "role": "stalker",
+      "respawn": 300,
+      "notice": "fair"
+    },
+    "shadow_stalker_2": {
+      "name": "Shadow Stalker",
+      "label": "Shadow",
+      "description": "a shape of darker dark, watching",
+      "details": "A shape of darker dark, watching.",
+      "keywords": "shadow stalker",
+      "room": "hm_wood",
+      "max_hp": 500,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "rake",
+          "period": 2500,
+          "damage": 32,
+          "hit": "{actor} rakes {target} out of nowhere."
+        }
+      ],
+      "xp": 17,
+      "icon": "👤",
+      "role": "stalker",
+      "respawn": 300,
+      "notice": "fair"
+    },
+    "shadow_stalker_3": {
+      "name": "Shadow Stalker",
+      "label": "Shadow",
+      "description": "a shape of darker dark, watching",
+      "details": "A shape of darker dark, watching.",
+      "keywords": "shadow stalker",
+      "room": "hm_glade",
+      "max_hp": 500,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "rake",
+          "period": 2500,
+          "damage": 32,
+          "hit": "{actor} rakes {target} out of nowhere."
+        }
+      ],
+      "xp": 17,
+      "icon": "👤",
+      "role": "stalker",
+      "respawn": 300,
+      "notice": "fair"
+    },
+    "shadow_stalker_4": {
+      "name": "Shadow Stalker",
+      "label": "Shadow",
+      "description": "a shape of darker dark, watching",
+      "details": "A shape of darker dark, watching.",
+      "keywords": "shadow stalker",
+      "room": "hm_well",
+      "max_hp": 500,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "rake",
+          "period": 2500,
+          "damage": 32,
+          "hit": "{actor} rakes {target} out of nowhere."
+        }
+      ],
+      "xp": 17,
+      "icon": "👤",
+      "role": "stalker",
+      "respawn": 300,
+      "notice": "fair"
+    },
+    "moon_moth_1": {
+      "name": "Moon Moth",
+      "label": "Moth",
+      "description": "a white moth as big as a dog",
+      "details": "A white moth as big as a dog.",
+      "keywords": "moon moth",
+      "room": "hm_glade",
+      "max_hp": 350,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "dust",
+          "period": 8000,
+          "damage": 45,
+          "hit": "{actor} beats a cloud of moon-dust at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 13,
+      "icon": "🦋",
+      "role": "moth",
+      "respawn": 300
+    },
+    "moon_moth_2": {
+      "name": "Moon Moth",
+      "label": "Moth",
+      "description": "a white moth as big as a dog",
+      "details": "A white moth as big as a dog.",
+      "keywords": "moon moth",
+      "room": "hm_glade",
+      "max_hp": 350,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "dust",
+          "period": 8000,
+          "damage": 45,
+          "hit": "{actor} beats a cloud of moon-dust at {target}.",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 13,
+      "icon": "🦋",
+      "role": "moth",
+      "respawn": 300
+    },
+    "eclipse_hound": {
+      "name": "the Eclipse Hound",
+      "label": "Hound",
+      "description": "a hound so black the moonlight bends round it",
+      "details": "A hound so black the moonlight bends round it.",
+      "keywords": "eclipse hound",
+      "room": "hm_den",
+      "max_hp": 3000,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 4000,
+          "damage": 40,
+          "hit": "{actor} bites {target}."
+        },
+        {
+          "name": "eclipse",
+          "period": 14000,
+          "damage": 120,
+          "hit": "{actor} swallows the light, and lunges at {target}!",
+          "defend": "dodge"
+        }
+      ],
+      "xp": 231,
+      "icon": "🐺",
+      "respawn": 1800
+    }
+  },
+  "gear": {
+    "moonsilver_dirk": {
+      "name": "Moonsilver Dirk",
+      "kind": "Light",
+      "keywords": "dirk moonsilver",
+      "effect": "damage",
+      "period": 1300,
+      "window": 220,
+      "perfect_window": 70,
+      "amounts": [
+        14,
+        19,
+        31
+      ],
+      "hit": "{actor} flicks the dirk at {target}.",
+      "perfect_hit": "{actor} flicks the dirk at {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Moonsilver Dirk finds nothing.",
+      "description": "A dirk of moonsilver. Strongest in still, cold night air.",
+      "weather": {
+        "temperature": -0.5,
+        "energy": -0.6,
+        "precipitation": "dry",
+        "tier": "blue"
+      },
+      "rarity": "rare"
+    },
+    "eclipse_fang": {
+      "name": "Eclipse Fang",
+      "kind": "Melee",
+      "keywords": "fang eclipse",
+      "effect": "damage",
+      "period": 3000,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        36,
+        46,
+        76
+      ],
+      "hit": "{actor} tears into {target}.",
+      "perfect_hit": "{actor} tears into {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Eclipse Fang finds nothing.",
+      "description": "A fang of the Eclipse Hound. In the cold it bites like the dark itself.",
+      "weather": {
+        "temperature": -0.6,
+        "energy": -0.4,
+        "precipitation": "any",
+        "tier": "purple"
+      },
+      "rarity": "epic"
+    }
+  },
+  "wearables": {
+    "nightweave_hood": {
+      "name": "Nightweave Hood",
+      "keywords": "nightweave hood",
+      "place": "head",
+      "type": "cloth",
+      "description": "A hood woven from shadow. +2 Poise.",
+      "rarity": "rare",
+      "armor": 4,
+      "stats": {
+        "poise": 2
+      }
+    }
+  },
+  "routes": {
+    "black-mirror": {
+      "name": "the Black Mirror",
+      "keywords": "mirror lake moon hollowmoon",
+      "from": "ud_mirror",
+      "to": "hm_landing",
+      "kind": "portal",
+      "depart": "You step onto the still water, and fall up into moonlight.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} climbs out of the Mirror Pool, dry."
+    },
+    "mirror-pool": {
+      "name": "the Mirror Pool",
+      "keywords": "pool mirror underdeep home lake",
+      "from": "hm_landing",
+      "to": "ud_mirror",
+      "kind": "portal",
+      "depart": "You step into the pool, and fall down into the dark.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} rises out of the Black Lake."
+    },
+    "moon-gate": {
+      "name": "the Moon Gate",
+      "keywords": "gate moon gloaming arch",
+      "from": "hm_moongate",
+      "to": "gl_landing",
+      "kind": "portal",
+      "depart": "You walk through the arch, and the sun is setting.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} steps out of a moonlit arch."
+    }
+  },
+  "quests": {
+    "hm_lanterns": {
+      "name": "Keep the Lanterns",
+      "start": "oil",
+      "steps": {
+        "oil": {
+          "goal": "Take Siel's moon-oil: ASK SIEL ABOUT OIL.",
+          "on": {
+            "ask": "siel",
+            "about": "oil"
+          },
+          "effects": [
+            {
+              "give": "moon_oil"
+            }
+          ],
+          "then": "one"
+        },
+        "one": {
+          "goal": "Light the lantern in the Silverwood: USE OIL ON LANTERN.",
+          "on": {
+            "use": "moon_oil",
+            "on": "lantern"
+          },
+          "effects": [
+            {
+              "text": "It burns cold and blue."
+            }
+          ],
+          "then": "two"
+        },
+        "two": {
+          "goal": "Light the post in Moth Glade: USE OIL ON POST.",
+          "on": {
+            "use": "moon_oil",
+            "on": "post"
+          },
+          "effects": [
+            {
+              "text": "The moths swarm to it."
+            }
+          ],
+          "then": "three"
+        },
+        "three": {
+          "goal": "Light the Moonwell's lamp: USE OIL ON LAMP.",
+          "on": {
+            "use": "moon_oil",
+            "on": "lamp"
+          },
+          "effects": [
+            {
+              "take": "moon_oil"
+            },
+            {
+              "text": "The well blazes. The shadows draw back."
+            }
+          ],
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Siel: ASK SIEL ABOUT LANTERNS.",
+          "on": {
+            "ask": "siel",
+            "about": "lanterns"
+          },
+          "effects": [
+            {
+              "give": "moonsilver_dirk"
+            },
+            {
+              "xp": 210
+            }
+          ]
+        }
+      }
+    },
+    "hm_hunt": {
+      "name": "The Pale Hunt",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill four shadow-stalkers.",
+          "on": {
+            "kill": "stalker",
+            "count": 4
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Siel: ASK SIEL ABOUT HUNT.",
+          "on": {
+            "ask": "siel",
+            "about": "hunt"
+          },
+          "effects": [
+            {
+              "give": "nightweave_hood"
+            },
+            {
+              "xp": 190
+            }
+          ]
+        }
+      }
+    },
+    "hm_hound": {
+      "name": "The Eclipse Hound",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Kill the Eclipse Hound in its den.",
+          "on": {
+            "kill": "eclipse_hound"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Siel: ASK SIEL ABOUT HOUND.",
+          "on": {
+            "ask": "siel",
+            "about": "hound"
+          },
+          "effects": [
+            {
+              "give": "eclipse_fang"
+            },
+            {
+              "xp": 270
+            }
+          ]
+        }
+      }
+    }
+  }
+}

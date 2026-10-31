@@ -97,21 +97,22 @@ The web client is built around the map:
 
   Picking up a map (for example the sea chart in the Drowned Lantern, which
   reveals Saltmere Isle) makes the regions it shows discovered.
-- **Weather.** A grid of temperature (across) and energy (up) with today's
-  weather as a dot, a blurred patch if you can't read these skies, and the
-  forecast as a dotted trail if you can. Precipitation is the bar beside it.
-  Below that: snow and mud on the ground, and whether you can see far. See
-  [Weather](#weather) below.
-- **Loadout.** Your three slots, always visible, each marked ▲ or ▼ with what
-  the weather is doing to it. Hover a slot (or a piece of gear in the
-  Inventory, or tap it on a phone) for what it is, where on the weather grid
-  it works best, and today's conditions line by line. Below the slots is your
-  target's card: a portrait, health, whether they're hostile, neutral or
-  friendly to you, what their faction thinks of you, and each of an NPC's
-  attacks with a bar filling up to its next blow.
-- **Here.** Everyone in the room, as cards: name (players and NPCs in
-  different colours), race/class, short description, health, and an NPC's
-  disposition. Sleeping players are marked asleep.
+- **Weather.** Four columns, always in the same order: **Sky** (a grid of
+  temperature across and energy up, with today's weather as a dot, a blurred
+  patch if you can't read these skies, and the forecast as a dotted trail if
+  you can), **Rain** (what's falling, and how hard), **Time** (a day/night
+  wheel and how long until dusk or daylight) and **Ground** (the footing,
+  snow and mud). A line below says it in words. See [Weather](#weather).
+- **Combat** ([docs/combat.md](docs/combat.md)), top to bottom: **Here**,
+  everyone in the room, compact, with a fighting NPC's coming blows as thin
+  bars; your **target**, popping up below them, with a health bar that runs
+  out right to left and each NPC attack as a marker sliding to where the blow
+  lands; your three **slots**, each marked ▲ or ▼ with what the weather is
+  doing to it; and the **defend** row (7). Your own health fills the whole
+  panel faintly from the bottom, so you see it fall without looking away.
+  Hover a slot (or gear in the Inventory, or a talent, or tap it on a phone)
+  for what it is, its rarity and weather sensitivity, where on the weather
+  grid it works best, and today's conditions line by line.
 - **Inventory**, **Character**, **Reputation** and **Quests** (header
   buttons). Your gear and what it does in today's weather, with buttons to
   put any piece in slot 1, 2 or 3, and how full your pack is; your class,
@@ -193,8 +194,8 @@ server within its gear's window around a beat.
   client syncs to it with ping/pong and draws each ball where it will be when
   your command arrives, so pressing the key when the ball looks centred lands
   on the beat.
-- An NPC at 0 HP collapses and comes back after its `respawn` time (60 s by
-  default). Your health is in the header.
+- An NPC at 0 HP collapses and comes back after its `respawn` time (five
+  minutes by default, and never less; bosses take 15 to 30). Your health is in the header, and behind the combat panel.
 - The **Training Yard** (east of the smithy) has a Training Dummy, which never
   attacks, and a Sparring Post, whose arm clips you every 6 seconds: good for
   practising with a potion in a slot. Neither ever falls, and they give no
@@ -210,7 +211,12 @@ seconds) and each on its own timer. NPCs never miss, so there's nothing for
 the server to judge: it simply lands each attack when it's due (every server
 runs a combat tick ten times a second, and each attack is taken off a shared
 schedule in Redis as it lands, so it lands exactly once). Their timers are
-shown on the target card so you can plan around them.
+shown on the target card so you can plan around them, and you can meet
+them: **7** (or `DEFEND`) blocks with a shield in hand or dodges without, and
+timed to when the blow lands it takes part or all of it. A press is spent on
+one blow and needs 1.5 s to recover, and some attacks can only be dodged, or
+not met at all. Worn **armour** takes a share off every blow. See
+[docs/combat.md](docs/combat.md).
 
 Every NPC is **hostile** (attacks you on sight), **neutral** (fights back if
 you attack it) or **friendly** (can't be attacked). Everything can be
@@ -236,8 +242,10 @@ own: the Broodmother's lair is always a dead-still heat.
 What it does:
 
 - **Gear.** Every piece has a spot on the weather grid where it works best,
-  wants wet, dry or doesn't care, and a tier (grey, green, blue, purple,
-  orange) saying how much it depends on the weather. Weapons like a mild day,
+  wants wet, dry or doesn't care, and a **weather sensitivity** (one to five
+  dots) saying how much it depends on the weather. Its **rarity** (the
+  colour of its name: common, uncommon, rare, epic, legendary) is separate,
+  though the touchiest pieces are usually rare. Weapons like a mild day,
   spells like energetic air. The Inventory and the slot tooltips show each
   piece's spot and what today does to it.
 - **Timing.** Heat slows every beat (up to 30%), wind narrows timing windows,
@@ -293,6 +301,36 @@ Defeat anywhere sends you home to the temple shrine, and that's the cost: the
 whole journey is lost. Each realm has a `REALM:` channel for realm-wide
 events. The design is in [docs/realms.md](docs/realms.md).
 
+### Where to go: the zones
+
+Past the starting realms, Alzendor and its realms are laid out by danger
+([docs/zones.md](docs/zones.md) has every zone, its quests and its map):
+
+- **Levels 3–5: the Greyfold**, farmland east of Harrowgate's East Gate.
+  Marta in the tavern, Brannoc the smith and the people of Millbrook have
+  errands, pelts and bounties: Redcap bandits, wolves, boars, and a barrow
+  that needs a torch.
+- **Levels 5–9: the frontier**: Sallow Fen (a troll to sneak past), Cindercrag
+  Quarry (steam vents to get through), Gallows Moor (a rider who only comes
+  out at night), the Sunken Abbey (dark halls), the Deepwood (a spider queen).
+  The first things that can take half your health in a blow.
+- **Levels 9–14: five dangerous places**, each an expedition with its own
+  **exposure** (the meter under the room name): the Cold Spine (cold), the
+  Underdeep (foul air, and no light but yours), the Emberwaste (heat, at the
+  end of a caravan journey), the Rotwood (spores) and Hollowcrown (dread,
+  across the lake by barge). The people at each base camp give you what you
+  need to wear: a Fur Cloak, a Miner's Mask, Desert Wraps, a Spore Mask, a
+  Pilgrim's Hood. Shelters (fires, lamp stations, shrines) clear it.
+- **Levels 10–20: eleven realms**, each through a door in the place it
+  belongs to: Mirefall, the Ember Courts, Hollowmoon, the Gyre, the
+  Overgrowth, Brassmarch, the Pale Deep, the Gloaming, the Bone Steppe,
+  Starfall, and at the end the Tempest Throne, behind a door in Hollowcrown
+  that wants three relics from three realms.
+
+Anything that hits for 40% of your health or more is tagged **deadly**.
+Some deadly things are **watchful**: walk (or better, CREEP) in, and a Poise
+check decides whether they notice you. Unnoticed, leave them be.
+
 ### Getting around: walking, traps and night
 
 Every step takes time: 0.6 s through towns, along roads and indoors, 0.9 s
@@ -311,9 +349,11 @@ difficulty's base (easy 50%, fair 30%, hard 10%) plus 12% a point, between
 5% and 95%. You're told which stat is tested, not the odds. A background
 that suits the check adds 35%.
 
-**Day and night.** A game day lasts an hour of real time (`day_minutes`).
-Outdoors at night you can't see past the ways you know, as in heavy rain;
-some travel events only happen at night. A realm can have a sky of its own:
+**Day and night, and the dark.** A game day lasts an hour of real time
+(`day_minutes`). Towns keep their lamps lit, but in the wilds at night, and
+in dark rooms (caves, shuttered lofts) at any hour, you can't see or walk
+past the ways you know without a light in your hand: `WEAR TORCH`. Some
+travel events only happen at night. A realm can have a sky of its own:
 the Stillsands' sun never sets. `SETCLOCK <hour>` (admin) pins the hour for
 testing.
 
@@ -436,19 +476,30 @@ A new character chooses three things, once ([docs/characters.md](docs/characters
 Your class ability and background items fill your three slots. Choices are
 sidegrades, not ranks: none is meant to be best.
 
+**Worn gear.** Besides the slots you wear things: head, chest, legs and a
+hand. Armour takes a share off every blow, some pieces add a stat, and the
+hand holds a torch (see in the dark), a shield (block instead of dodge) or
+an orb. Classes wear some types only (mages no mail). You start in your
+class's and background's clothes; quests give more. `WEAR <item>`,
+`REMOVE <item or place>`, or the Character panel.
+
 **Starting realms.** Each background begins in a small realm of its own: a
 shipyard town, a market town, a hamlet in an old wood, a town that's got too
-small for you. Its quests teach the game, take you to level 3, and end with a
-journey out into Alzendor. You can't go back. Die there and you wake where
+small for you. Its quests teach the game one thing at a time: a first small
+quest; a local's lesson on the weather panel, weather sensitivity and rarity,
+with a torch and a first fight (level 2, a stat point); then a dark room, the
+longer quests and level 3 with your first talent; and a journey out into
+Alzendor. You can't go back. Die there and you wake where
 you began.
 
 **Levelling** (to a cap of 20; each level needs 100 × your level in
 experience):
 
 - every level: a **stat point** (`TRAIN <stat>`, or the `+` buttons);
-- every even level: a **talent**, a slot ability from your class's pool
-  (`LEARN <talent>`, or the Character panel). Your first three are rank 1;
-  rank 2 opens after three talents, rank 3 after seven. Talents have weather
+- levels 3, 6, 9, 12, 15 and 18: a **talent**, a slot ability from your
+  class's pool (`LEARN <talent>`, or the Character panel, where hovering a
+  talent shows everything about it first). Your first two are rank 1; rank 2
+  opens after two talents, rank 3 after four. Talents have weather
   elements, so a broad set lets you swap slots as the weather turns. Some
   stagger (push the target's next blow back), guard (soak up the next blows)
   or bleed and burn (hurt on each of the target's next beats, never quite
@@ -477,7 +528,7 @@ your points go. Gear and abilities are what make characters different.
 
 Your ancestry's +1 counts like a trained point. Factions can grant **boons**: a stat bonus while your standing with them is
 high enough. The Wardens give +1 Resilience at affinity 20, and the
-Spiderwood Brood +1 Poise at respect 30. The Character panel shows which are
+Spiderwood Brood +1 Poise at respect 30. The Reputation panel shows which are
 active and what the others need.
 
 `stats` shows your sheet as text.
@@ -550,8 +601,11 @@ Servers read `ALZ_*` environment variables (compose passes `.env` through):
 ## The world map
 
 [world/seed.json](world/seed.json) defines realms, regions, areas, rooms, items, NPCs,
-gear, default chat channels, and ambient events like bells and weather. Every
-server loads it at start. Map data is rewritten each time. Live state (where
+gear, default chat channels, and ambient events like bells and weather, and
+each file in [world/zones/](world/zones/) adds a zone in the same format
+(merged in when the world loads; a zone can add to existing places but never
+redefine anything; see [docs/zones.md](docs/zones.md)). Every server loads
+them at start. Map data is rewritten each time. Live state (where
 items are, who is where, NPC health) is never overwritten.
 
 - **Rooms** have a `pos` of `[x, y]` on an abstract plane (x grows east, y
@@ -562,7 +616,7 @@ items are, who is where, NPC health) is never overwritten.
   verbs on them (`"touch:ground": "crouches and presses a palm to…"`).
 - **Realms** have a `name`, a `description`, and optionally `weather`:
   `[centre, spread]` for each axis (e.g. `"temperature": [-0.85, 0.15]`),
-  default `[0, 1]`; a `sky` (`always_day` or `always_night`); and a `shrine`
+  default `[0, 1]`; a `sky` (`always_day`, `always_dusk` or `always_night`); and a `shrine`
   (where you wake if you die there; default the `shrine_room` rule).
   Exactly one is `"home": true`; `"starting": true` marks a background's
   starting realm. Rooms in different realms can't be joined by exits.
@@ -600,17 +654,34 @@ items are, who is where, NPC health) is never overwritten.
   they can then read (a storm glass).
 - **NPCs** have a `name`, `label` (race/class), short `description`, longer
   `details` for `inspect`, `keywords` to refer to them by, a `room` and
-  `max_hp`, and optionally `respawn` (seconds, default 60). Set
+  `max_hp`, and optionally `respawn` (seconds, default and minimum 300). Set
   `"proper": true` for named characters ("Brannoc" rather than "the
   Brannoc"). For combat and reputation: `disposition` (`hostile`, `neutral`
   or `friendly`), `faction`, `role` (e.g. `warrior`, `young`; cultures can
   judge by it), an `icon` (an emoji for the target card), `attacks` (each
-  with a `name`, `period` in ms, `damage` and `hit` text using `{actor}` and
-  `{target}`), `xp` (default half its max HP), `drops` (gear ids given to
+  with a `name`, `period` in ms, `damage`, `hit` text using `{actor}` and
+  `{target}`, and optionally `defend`: `both` (default), `block`, `dodge` or
+  `none`), `notice` (`easy`, `fair` or `hard`: a watchful NPC that only
+  attacks if it notices you), `xp` (default half its max HP), `drops` (gear ids given to
   whoever kills it), `coins` they drop, and `"immortal": true` for practice
   targets. `topics` maps what they'll talk about to a line, or to `{text,
-  starts}` to start a quest. `"trainer": true` lets players `RESPEC` there.
+  starts, explains}`: `starts` a quest, and `explains` is guide text shown
+  after the line (what it means in game terms). `"trainer": true` lets players `RESPEC` there.
   A `"template": true` NPC has no room: ambushes copy it.
+- **Darkness.** A room with `"dark": true` is pitch dark at any hour without
+  a light; an area (or room) with `"lit": true` is never dark at night.
+- **Exposure.** An area's `exposure`: `kind` (cold, air, heat, spores,
+  dread, breath, storm…), a `name` to show, `max` steps before it hurts,
+  `damage` a step after that, optionally `worse_when` (weather ranges, or
+  `time` phases) when a step counts double, and `warn`, `hurt` and `relief`
+  texts. A room with `"shelter": true` (or `"safe": true`) clears it; worn
+  gear that `protects` the kind keeps it off.
+- **`wearables`** (worn gear): a `name`, `keywords`, `place` (`head`,
+  `chest`, `legs`, `hand`), `type` (`cloth`, `leather`, `mail`, or for the
+  hand `shield`, `light`, `orb`), optionally `armor`, `stats` (`{stat: n}`),
+  `"light": true` (lights only), `block` (shields: the share of a block it
+  gives), `protects` (exposure kinds it keeps off) and `rarity`, and a
+  `description`.
 - **Rooms** can be `"safe": true` (inns, shrines, camps) and have a `terrain`
   (`forest`, `coast`, …) that perks can make safe and that nudges the weather
   (`terrain_weather`, e.g. forests are sheltered).
@@ -626,7 +697,9 @@ items are, who is where, NPC health) is never overwritten.
   `active_when`), `clear` (no NPC hostile to you there), a `path` of
   waypoint rooms (a journey; without one it's instant), `strand` (where the
   stranded wake), `risk` (added to the chance of an event), `events` (only
-  these travel events), `"hidden": true` (only a quest can start it), and
+  these travel events), `"hidden": true` (only a quest can start it),
+  `quest` and `step` (offered only to a player at that quest step),
+  `leaves_start` (taking it removes the starting realm from the map), and
   texts `closed`, `depart`, `leave` and `arrive` (with `{actor}`). Two
   routes from one room can't share a destination.
 - **`travel_events`** ([docs/journeys.md](docs/journeys.md)): `text`,
@@ -639,23 +712,29 @@ items are, who is where, NPC health) is never overwritten.
   `rumour`, `boon`, `death`, `strand`, `ambush` (template NPCs), `maroon`
   (`{room, quest}`)).
 - **`quests`** ([docs/quests.md](docs/quests.md)): a `name`, `start` step,
-  optionally `"priority": true` with its `area`, and `steps`, each with a
+  optionally `"priority": true` with its `area`, a `giver` and `offer` (what
+  they say when another quest leads here), and `steps`, each with a
   `goal`, `on` (one of `ask` + `about`, `get`, `enter`, `kill`, `use` + `on`,
-  `have`, `level`, `in`; any with `when`), `effects` (travel event effects,
-  plus `give`, `take`, `start`, `teleport`, `resume_journey`, `leave_start`)
+  `have`, `level`, `in`, `travel` (a route); any with `when`), `effects`
+  (travel event effects, plus `give` (an item, slot gear or worn gear),
+  `take`, `start`, `say` + `by`, `guide`, `teleport`, `resume_journey`,
+  `leave_start`)
   and `then`.
 - **`classes`**, **`ancestries`** and **`backgrounds`**
   ([docs/characters.md](docs/characters.md)): a class has a `name`,
   `description`, `ability` (gear), the gear `kinds` it can use and its
-  `talents` (gear with a `rank` of 1 to 3, and maybe `requires`); an ancestry
-  a `stat` and its `passives` (perks); a background its four `items`,
+  `talents` (gear with a `rank` of 1 to 3, and maybe `requires`), the worn
+  gear types it `wears` and its starting `outfit`; an ancestry
+  a `stat` and its `passives` (perks); a background its four `items`, an
+  `outfit`,
   `coins`, `opinions` (`{faction, affinity, respect}`), `start` (a room in
   its starting realm), `arrive` (where its journey out lands), `intro` and
   first `quest`.
 - **NPC weather.** `forecasts` lists the realms whose skies an NPC can teach
   a player (`ask <npc> about weather`). `active_when` gives ranges, e.g.
-  `{"precipitation": [-1, 0.2]}`: outside them the NPC hides (never
-  mid-fight), with optional `hide` and `emerge` texts using `{actor}`.
+  `{"precipitation": [-1, 0.2]}`, and optionally `time` phases (`{"time":
+  ["dusk", "night"]}`): outside them the NPC hides (never mid-fight), with
+  optional `hide` and `emerge` texts using `{actor}`.
 - **Factions** have a `name`, `realm` (where they live, for grouping on the
   Reputation tab; the home realm if left out), `description` and `rules`: each rule has a
   `deed`, optionally `of` (the faction of the NPC involved) and `role`, the
@@ -671,7 +750,9 @@ items are, who is where, NPC health) is never overwritten.
   `sleep_seconds`, `shrine_room`, `regen` and `safe_regen` (health per
   upkeep, every 5 s), `social_cooldown` (seconds), `pack_size`,
   `starting_coins`, `stage_seconds` (between waypoints), `event_chance` and
-  `event_seconds` (travel events), `level_cap`, `respec_coins_per_level`, and for the weather
+  `event_seconds` (travel events), `level_cap`, `respec_coins_per_level`,
+  `armor_k` (armour's curve), `defend_cooldown_ms`, `defend_late_ms`,
+  `dodge_window_ms`, `block_window_ms` and `defend_perfect_ms`, and for the weather
   `weather_seed` (which draws every realm's sky; change it for different
   weather) and `weather_unit_minutes` (how fast it moves; default 30).
 - **Gear** has a `name`, `kind` (shown in `gear`; classes use some kinds),
@@ -683,8 +764,9 @@ items are, who is where, NPC health) is never overwritten.
   (with `{actor}` and `{target}`), and `whiff` for you when you mistime it.
   A `description` says what it is, and `weather` is its element:
   `{temperature, energy}` (its spot on the grid), `precipitation` (`wet`,
-  `dry` or `any`) and `tier` (`grey`, `green`, `blue`, `purple`, `orange`).
-  Gear without one uses its kind's default from **`kinds`**.
+  `dry` or `any`) and `tier` (`grey`, `green`, `blue`, `purple`, `orange`:
+  weather sensitivity 1 to 5). `rarity` (`common` … `legendary`) defaults to
+  the tier's. Gear without a profile uses its kind's default from **`kinds`**.
   `loadout` lists the gear new characters start with, one per slot.
 
 ## Protocol
@@ -706,7 +788,7 @@ state updates, without one:
   `items` (quest items marked `quest`) and `features`, `indoor`, `step_ms`
   (how long crossing it takes), `routes` (the routes leaving it: `id`, `name`,
   `fare`, `to`, `command`), `exits_hidden` when rain, snow or the dark hides
-  some exits, `scents` (Hunter's Nose), and `waypoint` and `pos` while riding
+  some exits, `dark` when it's too dark to see the ways on without a light, `scents` (Hunter's Nose), and `waypoint` and `pos` while riding
 - `map`: explored rooms (each with its `realm`), glimpsed rooms and areas
   (`full` replaces what the client knows; otherwise merge them in);
   `regions`: every region the player knows in every realm, with `state`
@@ -724,14 +806,17 @@ state updates, without one:
 - `combat` / `heal` (have text): a use's `slot`, `result` (`opener`,
   `perfect`, `good`, `early`, `late`, `miss`), and `damage` or `amount`. An
   NPC's attack is a `combat` event with its `entity_id`, the `target` it hit
-  and `damage`
+  and `damage`, and `defended` (`block` or `dodge`) and `perfect` if it was met
+- `defend`: a DEFEND press: `ready` (false if it's still recovering), `mode`,
+  `cooldown_ms` and `window_ms`
 - `npc_timing`: an NPC starting, continuing or stopping a fight (`entity_id`,
-  `active`, `target`, and `attacks` with `name`, `period_ms`, `damage` and
-  `next_ms`, by Redis's clock). Room cards carry the same as `fight`
+  `active`, `target`, and `attacks` with `name`, `period_ms`, `damage`,
+  `defend` and `next_ms`, by Redis's clock). Room cards carry the same as `fight`
 - `dispositions`: how each NPC in your room treats you, by entity id. Room
   cards carry `disposition` (for you) and `base_disposition` (its nature)
 - `kit`: the gear you own, your `slots`, the `items` you carry, `coins`, and
   `pack` / `pack_size`. Each piece of gear has its base numbers, `description`,
+  `rarity`, `sensitivity` (1-5), `stagger_ms` and `bleed` if it has them,
   `weather` (its profile) and `now`: its `factor`, `amounts` and timings in
   today's weather, and `mods`, one `{label, pct, on}` per modifier. Sent
   again whenever the weather changes it
@@ -741,12 +826,17 @@ state updates, without one:
   that know you, home realm first: `realm`, `realm_name`, `description`,
   affinity and respect), `hp`, `max_hp`, and for a created character
   `class`, `ancestry`, `background`, `talent_picks`, `passive_picks`,
-  `talents` (`id`, `name`, `rank`, `kind`, `learned`, `locked`) and
-  `passives` (`id`, `name`, `slot`, `learned`)
+  `talents` (each a full gear summary, as in `kit`, plus `rank`, `learned`
+  and `locked`), `passives` (`id`, `name`, `slot`, `learned`), `worn` (place
+  to worn gear), `wardrobe` (all of it, with `worn` and `usable`), `places`,
+  `armor` and `armor_pct`; and `defence` (`mode`, `window_ms`,
+  `cooldown_ms`)
 - `weather`: where you are (`place`, `indoor`), `temperature`, `energy`,
   `precipitation` (exact, or to the nearest half if `exact` is false),
   `zone`, `falling`, `intensity`, `summary`, `visibility`, `ground` (`snow`,
-  `mud`), `realm` (its name), `clock` (`hour`, `phase`), with lore a
+  `mud`), `footing` (`road`, `open`, `rough`), `realm` (its name), `clock`
+  (`hour`, `phase`, `day` from 0 to 1, `day_ms` while it runs, `sky` for a
+  realm's own), with lore a
   `forecast` (a point every 7.5 minutes), and with Skyreading a `heading`. Sent on connecting, on changing realm, region or indoors, and
   every 30 s
 - `travel` (has text): a move held up by snow or mud (`delay_ms`, `cause`).
@@ -765,6 +855,8 @@ state updates, without one:
 - `quests`: your quests (`id`, `name`, `status`, `priority`, `goal`,
   `count`, `need`), active first
 - `intro` (has text): a new character's story so far
+- `guide` (has text): what someone just said means in game terms (the
+  weather panel, sensitivity, travel), shown set apart from speech
 - `reputation` (has text): a faction's opinion of you changed
 - `death` (has text): an NPC going down, with its `entity_id`
 - `arrive` / `leave` (these have text) carry `entity` / `entity_id`, so the
@@ -823,6 +915,11 @@ tests/
   build plan.
 - [docs/quests.md](docs/quests.md): options for quests, and the quest engine
   that was built.
+- [docs/combat.md](docs/combat.md): blocking and dodging, armour, and the
+  combat panel.
+- [docs/zones.md](docs/zones.md): every zone after the starting realms (the
+  Greyfold, the frontier, the dangerous places and the eleven realms): their
+  plans, quests, enemies and mechanics, where they are and why.
 - [docs/journeys.md](docs/journeys.md): walking pace, traps, day and night,
   routes as waypoints, and travel events: checks, stranding, surprise combat
   and marooning.

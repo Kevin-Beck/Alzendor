@@ -1,0 +1,520 @@
+{
+  "_note": "Brassmarch, level 15: clockwork that can only be blocked. See docs/zones.md.",
+  "realms": {
+    "brassmarch": {
+      "name": "Brassmarch",
+      "description": "Endless still plains of brass, worked by machines whose makers are gone.",
+      "weather": {
+        "temperature": [
+          0.1,
+          0.2
+        ],
+        "energy": [
+          -0.85,
+          0.1
+        ],
+        "precipitation": [
+          -0.8,
+          0.1
+        ]
+      },
+      "shrine": "bm_works"
+    }
+  },
+  "regions": {
+    "brass_plain": {
+      "name": "the Brass Plain",
+      "realm": "brassmarch"
+    }
+  },
+  "areas": {
+    "gearworks": {
+      "name": "the Gearworks",
+      "region": "brass_plain",
+      "lit": true
+    },
+    "plain": {
+      "name": "the Brass Plain",
+      "region": "brass_plain"
+    },
+    "grand_engine": {
+      "name": "the Grand Engine",
+      "region": "brass_plain"
+    }
+  },
+  "rooms": {
+    "bm_landing": {
+      "name": "The Gate Cogs",
+      "area": "gearworks",
+      "pos": [
+        0,
+        0
+      ],
+      "description": "Turning gears, and through them the fire of the Ember Courts.",
+      "exits": {
+        "east": "bm_works"
+      },
+      "features": {}
+    },
+    "bm_works": {
+      "name": "The Gearworks",
+      "area": "gearworks",
+      "pos": [
+        25,
+        0
+      ],
+      "description": "A workshop the size of a cathedral. One old man works in it.",
+      "exits": {
+        "west": "bm_landing",
+        "east": "bm_plain"
+      },
+      "features": {},
+      "indoor": true,
+      "safe": true,
+      "shelter": true
+    },
+    "bm_plain": {
+      "name": "The Brass Plain",
+      "area": "plain",
+      "pos": [
+        75,
+        0
+      ],
+      "description": "Brass to the horizon, ticking in the still air.",
+      "exits": {
+        "west": "bm_works",
+        "northeast": "bm_rail"
+      },
+      "features": {}
+    },
+    "bm_rail": {
+      "name": "The Rail Yard",
+      "area": "plain",
+      "pos": [
+        100,
+        -25
+      ],
+      "description": "Rails running off in every direction, and engines on them that move by themselves.",
+      "exits": {
+        "southwest": "bm_plain",
+        "southeast": "bm_seat"
+      },
+      "features": {}
+    },
+    "bm_seat": {
+      "name": "The Arbiter's Seat",
+      "area": "plain",
+      "pos": [
+        125,
+        0
+      ],
+      "description": "A tall brass figure on a throne, frozen mid-gesture. A keyhole in its chest.",
+      "exits": {
+        "northwest": "bm_rail",
+        "southeast": "bm_engine_gate"
+      },
+      "features": {
+        "keyhole": "A keyhole the size of a fist."
+      }
+    },
+    "bm_engine_gate": {
+      "name": "The Engine Gate",
+      "area": "grand_engine",
+      "pos": [
+        175,
+        50
+      ],
+      "description": "The gate of the Grand Engine, guarded by brass sentinels.",
+      "exits": {
+        "northwest": "bm_seat",
+        "southeast": "bm_engine"
+      },
+      "features": {}
+    },
+    "bm_engine": {
+      "name": "The Grand Engine",
+      "area": "grand_engine",
+      "pos": [
+        200,
+        75
+      ],
+      "description": "The heart of Brassmarch: an automaton a hundred feet tall, its eyes lighting up.",
+      "exits": {
+        "northwest": "bm_engine_gate"
+      },
+      "features": {}
+    }
+  },
+  "items": {
+    "great_key": {
+      "name": "great key",
+      "keywords": "key great brass",
+      "description": "A brass key as long as your arm.",
+      "quest": true
+    }
+  },
+  "npcs": {
+    "odo": {
+      "name": "Odo",
+      "label": "Last Engineer",
+      "description": "an old man with goggles and a beard full of oil",
+      "details": "An old man with goggles and a beard full of oil.",
+      "keywords": "odo",
+      "room": "bm_works",
+      "max_hp": 60,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "🔧",
+      "proper": true,
+      "topics": {
+        "work": "Ask me about the arbiter, or the scrap.",
+        "arbiter": {
+          "text": "The Arbiter judged every machine here, until it ran down. Wind it with this great key. Machines can only be blocked, by the way. Bring a shield.",
+          "starts": "bm_wind"
+        },
+        "key": "Clockwise.",
+        "scrap": {
+          "text": "Spider-engines. They eat everything. Five of them, scrapped.",
+          "starts": "bm_scrap"
+        }
+      }
+    },
+    "arbiter": {
+      "name": "the Arbiter",
+      "label": "Automaton",
+      "description": "a tall brass figure on a throne",
+      "details": "A tall brass figure on a throne.",
+      "keywords": "arbiter automaton",
+      "room": "bm_seat",
+      "max_hp": 5000,
+      "disposition": "friendly",
+      "attacks": [],
+      "icon": "⚖️",
+      "topics": {
+        "engine": {
+          "text": "THE GRAND ENGINE HAS GONE MAD. IT MUST BE STOPPED. YOU WILL STOP IT.",
+          "starts": "bm_engine"
+        }
+      }
+    },
+    "spider_engine_1": {
+      "name": "Spider-Engine",
+      "label": "Machine",
+      "description": "a brass spider the size of a cart, clicking",
+      "details": "A brass spider the size of a cart, clicking.",
+      "keywords": "spider-engine",
+      "room": "bm_plain",
+      "max_hp": 700,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "drill",
+          "period": 3000,
+          "damage": 40,
+          "hit": "{actor} drills at {target}.",
+          "defend": "block"
+        }
+      ],
+      "xp": 16,
+      "icon": "🕷️",
+      "role": "spider_engine",
+      "respawn": 300
+    },
+    "spider_engine_2": {
+      "name": "Spider-Engine",
+      "label": "Machine",
+      "description": "a brass spider the size of a cart, clicking",
+      "details": "A brass spider the size of a cart, clicking.",
+      "keywords": "spider-engine",
+      "room": "bm_rail",
+      "max_hp": 700,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "drill",
+          "period": 3000,
+          "damage": 40,
+          "hit": "{actor} drills at {target}.",
+          "defend": "block"
+        }
+      ],
+      "xp": 16,
+      "icon": "🕷️",
+      "role": "spider_engine",
+      "respawn": 300
+    },
+    "spider_engine_3": {
+      "name": "Spider-Engine",
+      "label": "Machine",
+      "description": "a brass spider the size of a cart, clicking",
+      "details": "A brass spider the size of a cart, clicking.",
+      "keywords": "spider-engine",
+      "room": "bm_rail",
+      "max_hp": 700,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "drill",
+          "period": 3000,
+          "damage": 40,
+          "hit": "{actor} drills at {target}.",
+          "defend": "block"
+        }
+      ],
+      "xp": 16,
+      "icon": "🕷️",
+      "role": "spider_engine",
+      "respawn": 300
+    },
+    "brass_sentinel_1": {
+      "name": "Brass Sentinel",
+      "label": "Machine",
+      "description": "a brass soldier with a halberd",
+      "details": "A brass soldier with a halberd.",
+      "keywords": "brass sentinel",
+      "room": "bm_engine_gate",
+      "max_hp": 900,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "halberd",
+          "period": 5000,
+          "damage": 55,
+          "hit": "{actor} swings its halberd at {target}.",
+          "defend": "block"
+        }
+      ],
+      "xp": 18,
+      "icon": "🤖",
+      "role": "sentinel",
+      "respawn": 300
+    },
+    "brass_sentinel_2": {
+      "name": "Brass Sentinel",
+      "label": "Machine",
+      "description": "a brass soldier with a halberd",
+      "details": "A brass soldier with a halberd.",
+      "keywords": "brass sentinel",
+      "room": "bm_engine_gate",
+      "max_hp": 900,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "halberd",
+          "period": 5000,
+          "damage": 55,
+          "hit": "{actor} swings its halberd at {target}.",
+          "defend": "block"
+        }
+      ],
+      "xp": 18,
+      "icon": "🤖",
+      "role": "sentinel",
+      "respawn": 300
+    },
+    "grand_automaton": {
+      "name": "the Grand Automaton",
+      "label": "Engine",
+      "description": "an automaton a hundred feet tall",
+      "details": "An automaton a hundred feet tall.",
+      "keywords": "grand automaton engine",
+      "room": "bm_engine",
+      "max_hp": 4500,
+      "disposition": "hostile",
+      "attacks": [
+        {
+          "name": "piston",
+          "period": 4000,
+          "damage": 60,
+          "hit": "{actor} drives a piston at {target}.",
+          "defend": "block"
+        },
+        {
+          "name": "overload",
+          "period": 14000,
+          "damage": 180,
+          "hit": "{actor} overloads, and lightning arcs into {target}!",
+          "defend": "none"
+        }
+      ],
+      "xp": 238,
+      "icon": "🤖",
+      "respawn": 1800
+    }
+  },
+  "gear": {
+    "arbiters_gavel": {
+      "name": "Arbiter's Gavel",
+      "kind": "Melee",
+      "keywords": "gavel arbiter",
+      "effect": "damage",
+      "period": 3500,
+      "window": 300,
+      "perfect_window": 100,
+      "amounts": [
+        46,
+        58,
+        95
+      ],
+      "hit": "{actor} brings the gavel down on {target}.",
+      "perfect_hit": "{actor} brings the gavel down on {target} perfectly!",
+      "miss": "{actor} misses {target}.",
+      "whiff": "your Arbiter's Gavel finds nothing.",
+      "description": "The Arbiter's gavel. In dead-still air, every blow is a verdict.",
+      "weather": {
+        "temperature": 0.1,
+        "energy": -0.8,
+        "precipitation": "dry",
+        "tier": "purple"
+      },
+      "rarity": "epic"
+    }
+  },
+  "wearables": {
+    "brass_plate": {
+      "name": "Brass Plate",
+      "keywords": "brass plate",
+      "place": "chest",
+      "type": "mail",
+      "description": "Plate from a sentinel, refitted for a person. Very heavy. +1 Vigor.",
+      "rarity": "epic",
+      "armor": 15,
+      "stats": {
+        "vigor": 1
+      }
+    },
+    "gearwright_gloves": {
+      "name": "Gearwright's Goggles",
+      "keywords": "gearwright's goggles",
+      "place": "head",
+      "type": "cloth",
+      "description": "Odo's spare goggles: you see the gaps between the gears. +2 Focus.",
+      "rarity": "rare",
+      "armor": 4,
+      "stats": {
+        "focus": 2
+      }
+    }
+  },
+  "routes": {
+    "brassmarch-gate": {
+      "name": "the Clockwork Gate",
+      "keywords": "gate clockwork ember courts home",
+      "from": "bm_landing",
+      "to": "ec_clockgate",
+      "kind": "portal",
+      "depart": "The gears turn, and the heat hits you.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} steps out of the turning gears."
+    }
+  },
+  "quests": {
+    "bm_wind": {
+      "name": "Wind the Arbiter",
+      "start": "key",
+      "steps": {
+        "key": {
+          "goal": "Take Odo's great key: ASK ODO ABOUT KEY.",
+          "on": {
+            "ask": "odo",
+            "about": "key"
+          },
+          "effects": [
+            {
+              "give": "great_key"
+            }
+          ],
+          "then": "wind"
+        },
+        "wind": {
+          "goal": "Wind the Arbiter, at its seat on the plain: USE KEY ON ARBITER.",
+          "on": {
+            "use": "great_key",
+            "on": "arbiter"
+          },
+          "effects": [
+            {
+              "take": "great_key"
+            },
+            {
+              "text": "The Arbiter's eyes light. Its head turns, with a great grinding, to you."
+            }
+          ],
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Odo: ASK ODO ABOUT ARBITER.",
+          "on": {
+            "ask": "odo",
+            "about": "arbiter"
+          },
+          "effects": [
+            {
+              "give": "gearwright_gloves"
+            },
+            {
+              "xp": 205
+            }
+          ]
+        }
+      }
+    },
+    "bm_scrap": {
+      "name": "Scrap Tyrants",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Scrap five spider-engines.",
+          "on": {
+            "kill": "spider_engine",
+            "count": 5
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Odo: ASK ODO ABOUT SCRAP.",
+          "on": {
+            "ask": "odo",
+            "about": "scrap"
+          },
+          "effects": [
+            {
+              "give": "brass_plate"
+            },
+            {
+              "xp": 205
+            }
+          ]
+        }
+      }
+    },
+    "bm_engine": {
+      "name": "The Grand Automaton",
+      "start": "kill",
+      "steps": {
+        "kill": {
+          "goal": "Stop the Grand Automaton.",
+          "on": {
+            "kill": "grand_automaton"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell the Arbiter: ASK ARBITER ABOUT ENGINE.",
+          "on": {
+            "ask": "arbiter",
+            "about": "engine"
+          },
+          "effects": [
+            {
+              "give": "arbiters_gavel"
+            },
+            {
+              "xp": 270
+            }
+          ]
+        }
+      }
+    }
+  }
+}

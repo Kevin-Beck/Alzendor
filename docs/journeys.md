@@ -90,10 +90,12 @@ To earn its place, the clock is read by:
 
 - **Travel events:** many are only possible by day or by night (`when:
   {time: "night"}`): highwaymen at night, market traders by day.
-- **What you see:** at night, the map darkens, the weather panel shows the
-  time and a moon, and outdoor room text says so. Night counts as poor
-  visibility outdoors without a light (like heavy rain: no glimpses past
-  exits), so it matters where you are when darkness falls.
+- **What you see:** at night, the map darkens, the weather panel's Time
+  wheel shows the moon and how long until daylight, and outdoor room text
+  says so. In the wilds at night (outdoors, away from a lit town) you can't
+  see the ways you don't know without a light in your hand, and can't walk
+  them: it matters where you are when darkness falls. Towns (`"lit": true`
+  areas) keep their lamps on.
 - **Realms:** a realm can have its own sky: `"sky": "always_day"` (the
   Stillsands' sun never sets) or `"always_night"`.
 
@@ -308,7 +310,8 @@ other's fights, which is rare enough to accept.
 ## Open questions
 
 - How long a game day should be once testing is over (2 hours? 4?).
-- Whether a light (a lantern item, a spell) should exist to see at night, or
-  night should only ever be a hazard.
+- Decided: a light exists. A torch in your hand shows the way at night and in
+  dark rooms ([characters.md](characters.md), "Worn gear"); it costs you the
+  shield.
 - Whether travel events should ever happen while walking on foot (a hermit on
   the mountain way), or only on routes.
