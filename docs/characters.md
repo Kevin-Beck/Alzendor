@@ -223,7 +223,9 @@ to, where your old life ends and your adventuring starts. It's also the
 tutorial.
 
 - **A realm of its own** (`"starting": true`), cut off from the world, with
-  its own mild weather and the clock. Three or four areas of 5–10 rooms each.
+  its own mild weather, and always in daylight (`"sky": "always_day"`): its
+  dark rooms still need the torch, but nobody's stuck in the wilds at night
+  before they've been given one. Three or four areas of 5–10 rooms each.
 - **What it teaches**, in order, through the story: first a small quest
   (moving, looking, asking, getting and using things). Then a **lesson** from
   a local (Pell, Aunt Brisa, Maud, Nan): `DISCUSS WEATHER` explains the
@@ -309,15 +311,20 @@ boil over.*
   Fernhollow (a misty bog); Stag's Rise (a hill above the trees).
 - **Checking the Snares:** walk your snare line, and find a poacher's trap
   laid on it (traps and their signs). It ends under the deep oaks, dark even
-  at noon: without a light you can only go back.
-- **Signs in the Sky:** Maud's lesson, a torch, and a bog wisp (it can be
+  at noon: without a light you can only go back, and tell Maud.
+- **Signs in the Sky:** Maud offers her lesson once she's heard about the
+  poachers: the sky, a torch, and a bog wisp she sends you after (it can be
   dodged, not blocked).
 - **Moonbloom:** the healer needs a flower that only opens in still, damp
   weather in Fernhollow. Read the forecast and be there when it opens.
 - **The White Hart:** hunt an elusive deer on Stag's Rise, and deal with
-  the wolves that are hunting it too.
-- **Out:** sell the hide in the city: ride a timber barge downriver to the
-  edge of the Spiderwood.
+  the wolves that are hunting it too. It leaves a white hide; bring Maud the
+  news.
+- **Out:** Maud sends you downriver with the hide. Ride Tobin's timber barge
+  to the edge of the Spiderwood, and take it to Wren at the Hunter's Camp
+  next to where it lands: she pays for it, has leggings made from it, and
+  has work for a hunter (Thinning the Webs, then The Broodmother; anyone can
+  ask her about hunting).
 
 ### Low Wick (Street Urchin)
 

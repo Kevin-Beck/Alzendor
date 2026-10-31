@@ -145,11 +145,15 @@ apart (`rarity`): the sensitive pieces are usually rare, but not always.
 
 | Tier (sensitivity) | At its spot | Far away (radius R and beyond) | R | Wet/dry effect |
 |---|---|---|---|---|
-| Grey | +15% | −15% | 2.0 | ±10% |
-| Green | +25% | −20% | 1.5 | ±15% |
-| Blue | +40% | −30% | 1.1 | ±20% |
-| Purple | +60% | −45% | 0.8 | ±25% |
-| Orange | +100% | ×0: useless | 0.5 | ±30% |
+| Grey | +20% | −20% | 1.2 | ±10% |
+| Green | +30% | −25% | 0.92 | ±15% |
+| Blue | +45% | −35% | 0.71 | ±20% |
+| Purple | +65% | −50% | 0.53 | ±25% |
+| Orange | +100% | ×0: useless | 0.4 | ±30% |
+
+(Tightened after the first public play: the old rings were so wide that plain
+gear barely noticed the weather. The ring where a tier neither helps nor
+hurts, R × peak / (peak + far), now runs from 0.6 for grey to 0.2 for orange.)
 
 With d the distance from the current weather to the gear's spot, and
 `c = max(0, 1 − d/R)`:
@@ -162,7 +166,7 @@ factor = place × precip
 ```
 
 The factor scales the gear's amounts (damage or healing), rounded, and can
-reach 0. Grey and green stay within about ±30%, so no common gear is ever
+reach 0. Grey stays within about ±30% and green ±50%, so no common gear is ever
 useless and the right choice still clearly wins. Blue, purple and orange
 break that on purpose.
 

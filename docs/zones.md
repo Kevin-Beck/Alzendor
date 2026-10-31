@@ -135,6 +135,15 @@ enough for level 5.
 
 ---
 
+### Wren's hunting (the Spiderwood, levels 3–5)
+
+Wren, the ranger at the Hunter's Camp on the Spiderwood's edge, buys the
+woodsman's white hide, and asks anyone about hunting: **Thinning the Webs**
+(three giant spiders in the Web Tunnel and the Hollow Tree; they hide when
+it rains) and then **The Broodmother** (the 200-health broodmother in the
+Silk Cavern, for a Hunter's Jerkin). She buys spider silk and pelts. Her
+Deepwood errand (Into the Deepwood) waits until level 8.
+
 ## The frontier (levels 5–9)
 
 Five zones around the Greyfold, each a different kind of country, each built

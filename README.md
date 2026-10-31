@@ -368,7 +368,7 @@ that suits the check adds 35%.
 **Day and night, and the dark.** A game day lasts an hour of real time
 (`day_minutes`). Towns keep their lamps lit, but in the wilds at night, and
 in dark rooms (caves, shuttered lofts) at any hour, you can't see or walk
-past the ways you know without a light in your hand: `HOLD TORCH`. Some
+past the ways you know without a light in your hand: `EQUIP TORCH`. Some
 travel events only happen at night. A realm can have a sky of its own:
 the Stillsands' sun never sets. `SETCLOCK <hour>` (admin) pins the hour for
 testing.

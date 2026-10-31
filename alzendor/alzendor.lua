@@ -566,11 +566,13 @@ end
 -- only works at its spot). Rarity is separate: how unusual a piece is. Very
 -- sensitive gear is usually rare, so rarity defaults to the tier's.
 local TIERS = {
-  grey = {peak = 0.15, far = 0.15, radius = 2.0, wet = 0.10, sensitivity = 1, rarity = 'common'},
-  green = {peak = 0.25, far = 0.20, radius = 1.5, wet = 0.15, sensitivity = 2, rarity = 'uncommon'},
-  blue = {peak = 0.40, far = 0.30, radius = 1.1, wet = 0.20, sensitivity = 3, rarity = 'rare'},
-  purple = {peak = 0.60, far = 0.45, radius = 0.8, wet = 0.25, sensitivity = 4, rarity = 'epic'},
-  orange = {peak = 1.00, far = 1.00, radius = 0.5, wet = 0.30, sensitivity = 5, rarity = 'legendary'},
+  -- (The ring where a tier neither helps nor hurts, radius x peak / (peak + far),
+  -- shrinks from 0.6 to 0.2 across the grid's 2 x 2: even plain gear cares.)
+  grey = {peak = 0.20, far = 0.20, radius = 1.2, wet = 0.10, sensitivity = 1, rarity = 'common'},
+  green = {peak = 0.30, far = 0.25, radius = 0.92, wet = 0.15, sensitivity = 2, rarity = 'uncommon'},
+  blue = {peak = 0.45, far = 0.35, radius = 0.71, wet = 0.20, sensitivity = 3, rarity = 'rare'},
+  purple = {peak = 0.65, far = 0.50, radius = 0.53, wet = 0.25, sensitivity = 4, rarity = 'epic'},
+  orange = {peak = 1.00, far = 1.00, radius = 0.4, wet = 0.30, sensitivity = 5, rarity = 'legendary'},
 }
 
 local function gear_profile(gear)
@@ -1115,7 +1117,7 @@ local function room_event(pid, rid, cause)
   if dark and w.dark then lines[2] = "It's pitch dark. You can't see a thing." end
   lines[#lines + 1] = 'Exits: ' .. (#exits > 0 and table.concat(exits, ', ') or 'none')
     .. (hidden and (' (the ' .. obscured_by(w) .. ' hides any other ways on)') or '')
-  if dark then lines[#lines + 1] = 'You need a light to find your way: WEAR a torch.' end
+  if dark then lines[#lines + 1] = 'You need a light to find your way: EQUIP TORCH.' end
   if w.night then lines[#lines + 1] = 'It is night.' end
   local routes = list()
   for _, id in ipairs(sorted(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':routes'))) do
@@ -2087,7 +2089,7 @@ redis.register_function('move', action(function(pid, rid, args)
   -- In the dark you can only feel your way back along ways you know.
   local here = weather_at(rid)
   if not can_see(here, pid) and obscured_by(here) == 'darkness' and redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':explored', dest) == 0 then
-    return notice(pid, "It's too dark to find a way " .. dir .. '. You need a light in your hand: WEAR a torch.')
+    return notice(pid, "It's too dark to find a way " .. dir .. '. You need a light in your hand: EQUIP TORCH.')
   end
   local careful = args[3] == 'careful'
   local cooldown = step_ms(pid, dest)

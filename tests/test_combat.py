@@ -50,7 +50,7 @@ async def test_the_opening_use_lands_and_starts_the_rhythm(world):
     kevin = await at_fish_market(world)
     await world.call("use", "kevin", 1, "npc:rat-2")
     events = await drain(kevin)
-    assert texts(events) == ["Kevin kicks the Dock Rat. (4)"]
+    assert texts(events) == ["Kevin kicks the Dock Rat. (5)"]  # 4, +13% on a mild coastal day
     assert of_type(events, "combat")[0]["slot"] == 1
     assert of_type(events, "entity")[0]["entity"]["hp"] == 1
     timing = of_type(events, "timing")[0]
@@ -74,7 +74,7 @@ async def test_uses_land_on_the_beat_and_mashing_misses(world):
     # Right on beat 2: perfect.
     await wait_until(world.redis, start + 2 * PERIOD)
     await world.call("use", "kevin", 1, "npc:rat-1")
-    assert texts(await drain(kevin)) == ["Kevin lands a perfect kick on the Dock Rat! (9)"]  # 8, +12% on a mild coastal day
+    assert texts(await drain(kevin)) == ["Kevin lands a perfect kick on the Dock Rat! (9)"]  # 8, +13% on a mild coastal day
 
     # A little after beat 3: still inside the window.
     await wait_until(world.redis, start + 3 * PERIOD + 200)
@@ -85,7 +85,7 @@ async def test_uses_land_on_the_beat_and_mashing_misses(world):
     await wait_until(world.redis, start + 4 * PERIOD + 450)
     await world.call("use", "kevin", 1, "npc:rat-1")
     assert texts(await drain(kevin))[0] == "Too late: your kick goes wide."
-    assert await world.redis.hget("NPC:rat-1", "hp") == str(100 - 4 - 9 - 6)
+    assert await world.redis.hget("NPC:rat-1", "hp") == str(100 - 5 - 9 - 6)
 
 
 async def test_each_slot_keeps_its_own_beat(world):
@@ -95,7 +95,7 @@ async def test_each_slot_keeps_its_own_beat(world):
     # Slot 2 hasn't started, so magic missile opens it and lands at once.
     await world.call("use", "kevin", 2, "npc:rat-1")
     events = await drain(kevin)
-    assert texts(events) == ["Kevin kicks the Dock Rat. (4)", "Kevin hurls a magic missile at the Dock Rat. (15)"]
+    assert texts(events) == ["Kevin kicks the Dock Rat. (5)", "Kevin hurls a magic missile at the Dock Rat. (15)"]
     assert [(t["slot"], t["period_ms"], t["grace_ms"]) for t in of_type(events, "timing")] == [
         (1, PERIOD, 300), (2, 8000, 400),
     ]
@@ -112,7 +112,7 @@ async def test_the_same_gear_in_two_slots_keeps_two_rhythms(world):
     await world.call("equip", "kevin", "kick", 2)
     await world.call("use", "kevin", 1, "npc:rat-1")
     await world.call("use", "kevin", 2, "npc:rat-1")
-    assert texts(await drain(kevin))[-2:] == ["Kevin kicks the Dock Rat. (4)", "Kevin kicks the Dock Rat. (4)"]
+    assert texts(await drain(kevin))[-2:] == ["Kevin kicks the Dock Rat. (5)", "Kevin kicks the Dock Rat. (5)"]
 
 
 async def test_healing_gear_works_on_its_own_beat(world):
@@ -154,7 +154,7 @@ async def test_npcs_go_down_and_come_back(world):
     await world.redis.zadd("alz:respawns", {"rat-1": 0})
     await world.call("respawn")
     arrive = of_type(await drain(kevin), "arrive")[0]
-    assert arrive["text"] == "The Dock Rat appears." and arrive["entity"]["hp"] == 5
+    assert arrive["text"] == "The Dock Rat appears." and arrive["entity"]["hp"] == 6
     assert await world.redis.sismember("ROOM:fish_market:npcs", "rat-1")
 
 
@@ -278,7 +278,8 @@ async def test_gear_lists_what_you_own_fastest_first(world):
     assert event["slots"] == ["kick", "missile", "potion"]
     lines = event["text"].split("\n")
     # Indoors it's always dead neutral and dry: grey gear at its best, and the frost
-    # dagger far from its cold, still spot but glad of the dry air.
-    assert "  Dagger (light, green): every 1.2s, ±200ms, 3 / 6 damage [weather +12%]" in lines
-    assert "  Health Potion (potion, grey): every 5.0s, ±350ms, heals 17 / 29 [weather +15%]" in lines
+    # dagger out of its element, far from its cold, still spot (-25%), though glad of
+    # the dry air (+15%).
+    assert "  Dagger (light, green): every 1.2s, ±200ms, 3 / 4 damage [weather -14%]" in lines
+    assert "  Health Potion (potion, grey): every 5.0s, ±350ms, heals 18 / 30 [weather +20%]" in lines
     assert lines[-1].startswith("Your slots: 1 Kick · 2 Magic Missile · 3 Health Potion.")

@@ -56,7 +56,7 @@ async def test_night_hides_the_ways_you_dont_know_in_the_wilds(world):
     assert "(the darkness hides any other ways on)" in room["text"] and "It is night." in room["text"]
     assert of_type(events, "weather")[-1]["visibility"] == "poor"
     await world.call("move", "kevin", "northwest")
-    assert texts(await drain(kevin)) == ["It's too dark to find a way northwest. You need a light in your hand: WEAR a torch."]
+    assert texts(await drain(kevin)) == ["It's too dark to find a way northwest. You need a light in your hand: EQUIP TORCH."]
 
     await world.redis.sadd("PLAYER:kevin:wardrobe", "torch")
     await world.call("wear", "kevin", "torch")

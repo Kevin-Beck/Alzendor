@@ -971,7 +971,7 @@ function renderPanels() {
     return b;
   }));
   if (room && room.dark) {
-    $("exits").append(el("span", "hidden-ways", "too dark to see the ways on: hold a light (WEAR TORCH)"));
+    $("exits").append(el("span", "hidden-ways", "too dark to see the ways on: hold a light (EQUIP TORCH)"));
   } else if (room && room.exits_hidden) {
     $("exits").append(el("span", "hidden-ways", `other ways hidden by the ${(wx && wx.falling) || "weather"}`));
   }
@@ -1949,8 +1949,8 @@ for (const dialog of document.querySelectorAll("dialog")) {
 
 // How the weather moves gear, by tier, as in alzendor.lua: +peak at its spot, falling off evenly to −far at
 // `radius` away. In between is the ring where it's no better or worse than usual.
-const TIERS = { grey: { radius: 2.0, peak: 0.15, far: 0.15 }, green: { radius: 1.5, peak: 0.25, far: 0.20 },
-  blue: { radius: 1.1, peak: 0.40, far: 0.30 }, purple: { radius: 0.8, peak: 0.60, far: 0.45 }, orange: { radius: 0.5, peak: 1.00, far: 1.00 } };
+const TIERS = { grey: { radius: 1.2, peak: 0.20, far: 0.20 }, green: { radius: 0.92, peak: 0.30, far: 0.25 },
+  blue: { radius: 0.71, peak: 0.45, far: 0.35 }, purple: { radius: 0.53, peak: 0.65, far: 0.50 }, orange: { radius: 0.4, peak: 1.00, far: 1.00 } };
 
 function evenRadius(tier) {
   const t = TIERS[tier] || TIERS.grey;
@@ -2054,7 +2054,7 @@ function renderWeather() {
   const about = [el("div", "main", capital(wx.summary) + (wx.zone && wx.zone !== "Temperate" ? ` · ${wx.zone}` : ""))];
   if (wx.heading) about.push(el("div", "sub", "Skyreading: " + wx.heading.text));
   if (wx.visibility === "poor") about.push(el("div", "warn", (room && room.dark) || !wx.falling
-    ? "Too dark to see the ways on: hold a light (WEAR TORCH)." : `You can't see far in the ${wx.falling}.`));
+    ? "Too dark to see the ways on: hold a light (EQUIP TORCH)." : `You can't see far in the ${wx.falling}.`));
   if (!wx.indoor) {
     if (!wx.exact) about.push(el("div", "sub", "Roughly: you can't read these skies. Someone local could teach you (DISCUSS WEATHER)."));
     else if (wx.forecast) about.push(el("div", "sub", `Forecast ${duration(wx.forecast[wx.forecast.length - 1].minutes)} ahead (dotted). Hover the grid.`));

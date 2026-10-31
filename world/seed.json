@@ -61,7 +61,8 @@
         ]
       },
       "starting": true,
-      "shrine": "slipway"
+      "shrine": "slipway",
+      "sky": "always_day"
     },
     "copperstall": {
       "name": "Copperstall",
@@ -81,7 +82,8 @@
         ]
       },
       "starting": true,
-      "shrine": "stall_row"
+      "shrine": "stall_row",
+      "sky": "always_day"
     },
     "thornwick": {
       "name": "Thornwick",
@@ -101,7 +103,8 @@
         ]
       },
       "starting": true,
-      "shrine": "hunters_lodge"
+      "shrine": "hunters_lodge",
+      "sky": "always_day"
     },
     "lowwick": {
       "name": "Low Wick",
@@ -121,7 +124,8 @@
         ]
       },
       "starting": true,
-      "shrine": "gutter_den"
+      "shrine": "gutter_den",
+      "sky": "always_day"
     }
   },
   "regions": {
@@ -2171,6 +2175,21 @@
       ],
       "value": 2,
       "description": "A filthy red cap. The Redcaps dye them in something you'd rather not know about."
+    },
+    "hart_hide": {
+      "name": "white hart's hide",
+      "keywords": "hide hart white",
+      "quest": true,
+      "description": "A pale, perfect hide. There's not another like it in Thornwick, or anywhere near."
+    },
+    "spider_silk": {
+      "name": "spider silk",
+      "keywords": "silk spider",
+      "tags": [
+        "silk"
+      ],
+      "value": 2,
+      "description": "A skein of grey spider silk, stronger than rope."
     }
   },
   "npcs": {
@@ -2308,7 +2327,7 @@
       "description": "mangy, missing an ear",
       "keywords": "rat",
       "room": "fish_market",
-      "max_hp": 5,
+      "max_hp": 6,
       "disposition": "neutral",
       "icon": "🐀",
       "xp": 3,
@@ -2334,7 +2353,7 @@
       "description": "fat and bold",
       "keywords": "rat",
       "room": "fish_market",
-      "max_hp": 5,
+      "max_hp": 6,
       "disposition": "neutral",
       "icon": "🐀",
       "xp": 3,
@@ -2453,13 +2472,61 @@
       "topics": {
         "spiders": {
           "text": "More spiders every week, and bigger. Something's driving them south out of the Deepwood, north of the silk cavern. Find out what. The Thornkin will know.",
-          "starts": "dw_intel"
+          "starts": "dw_intel",
+          "requires": {
+            "level": 8
+          }
         },
-        "deepwood": "So it's a new queen. Then the Barkmother will want her dead, and so do I."
+        "deepwood": "So it's a new queen. Then the Barkmother will want her dead, and so do I.",
+        "hunting": {
+          "text": "You've a hunter's eye. Good, because I need one. The spiders are thick in the Web Tunnel, north of the path, and bolder every week. Thin them out for me: three of them. Will you?",
+          "starts": "wr_webs"
+        },
+        "webs": {
+          "text": "Three of them? The path's quieter already.",
+          "while": {
+            "quest": "wr_webs",
+            "step": "back"
+          }
+        },
+        "brood": {
+          "text": "You found her? Tell me everything.",
+          "while": {
+            "quest": "wr_brood",
+            "step": "back"
+          }
+        },
+        "background": {
+          "text": "I came to the Spiderwood to hunt them, years back. Stayed because nobody else would.",
+          "requires": {
+            "rapport": 3
+          },
+          "rapport": 1
+        },
+        "place": "The Spiderwood. The city's on one side, the Deepwood on the other, and the spiders in between."
       },
       "lure": {
         "sense": "{Where}, woodsmoke, and pelts drying on a line.",
         "rumour": "There's a ranger camped out in the woods, Wren. Knows things."
+      },
+      "greet": {
+        "first": "Wren. I hunt these woods. You've the look of someone who does too.",
+        "again": "Back from the trees, then."
+      },
+      "wants": {
+        "says": "Silk and pelts. Two a skein for silk, three for a pelt.",
+        "items": [
+          {
+            "tag": "silk",
+            "price": 2,
+            "cap": 10
+          },
+          {
+            "tag": "pelt",
+            "price": 3,
+            "cap": 6
+          }
+        ]
       }
     },
     "spider-1": {
@@ -2497,7 +2564,13 @@
       },
       "hide": "{actor} scuttles up into the dark as the wet comes in.",
       "emerge": "{actor} drops back down on a thread, now the air is dry.",
-      "coins": 6
+      "coins": 6,
+      "loot": [
+        {
+          "item": "spider_silk",
+          "chance": 0.6
+        }
+      ]
     },
     "brood-1": {
       "name": "Broodmother",
@@ -2536,7 +2609,13 @@
       "drops": [
         "stormcall"
       ],
-      "coins": 40
+      "coins": 40,
+      "loot": [
+        {
+          "item": "spider_silk",
+          "chance": 1
+        }
+      ]
     },
     "orc-2": {
       "name": "Orc Whelp",
@@ -3453,7 +3532,21 @@
           "text": "I came to Thornwick to nurse a fever, forty years ago. Nobody ever let me leave.",
           "rapport": 1
         },
-        "place": "Thornwick. The old wood's been here longer than any of us. Mind it."
+        "place": "Thornwick. The old wood's been here longer than any of us. Mind it.",
+        "poachers": {
+          "text": "Poachers, in our wood? Then whoever it is has no respect for the old ways. You'll want to go after them, and you'll want a light, and the sense to read the sky first.",
+          "while": {
+            "quest": "tw_snares",
+            "step": "maud"
+          }
+        },
+        "hart": {
+          "text": "A white hart. I never thought I'd see one, let alone its hide.",
+          "while": {
+            "quest": "tw_hart",
+            "step": "back"
+          }
+        }
       },
       "lure": {
         "sense": "{Where}, the sharp green smell of drying herbs.",
@@ -3868,6 +3961,92 @@
         "stall": "PEPPER! FRESH PEPPER! Sorry. Habit.",
         "brisa": "Best boss in Copperstall. Pays on time, shouts less than me."
       }
+    },
+    "spider-2": {
+      "name": "Giant Spider",
+      "label": "Arachnid Hunter",
+      "description": "eight glossy eyes, dripping fangs",
+      "keywords": "spider giant",
+      "details": "A spider the size of a pony, legs bristling with black hairs. It is very still.",
+      "room": "web_tunnel",
+      "max_hp": 40,
+      "disposition": "hostile",
+      "faction": "spiders",
+      "role": "hunter",
+      "icon": "🕷️",
+      "xp": 30,
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 6000,
+          "damage": 5,
+          "hit": "{actor} sinks its fangs into {target}."
+        },
+        {
+          "name": "web lash",
+          "period": 8000,
+          "damage": 3,
+          "hit": "{actor} lashes {target} with sticky silk."
+        }
+      ],
+      "active_when": {
+        "precipitation": [
+          -1,
+          0.2
+        ]
+      },
+      "hide": "{actor} scuttles up into the dark as the wet comes in.",
+      "emerge": "{actor} drops back down on a thread, now the air is dry.",
+      "coins": 6,
+      "loot": [
+        {
+          "item": "spider_silk",
+          "chance": 0.6
+        }
+      ]
+    },
+    "spider-3": {
+      "name": "Giant Spider",
+      "label": "Arachnid Hunter",
+      "description": "eight glossy eyes, dripping fangs",
+      "keywords": "spider giant",
+      "details": "A spider the size of a pony, legs bristling with black hairs. It is very still.",
+      "room": "hollow_tree",
+      "max_hp": 40,
+      "disposition": "hostile",
+      "faction": "spiders",
+      "role": "hunter",
+      "icon": "🕷️",
+      "xp": 30,
+      "attacks": [
+        {
+          "name": "bite",
+          "period": 6000,
+          "damage": 5,
+          "hit": "{actor} sinks its fangs into {target}."
+        },
+        {
+          "name": "web lash",
+          "period": 8000,
+          "damage": 3,
+          "hit": "{actor} lashes {target} with sticky silk."
+        }
+      ],
+      "active_when": {
+        "precipitation": [
+          -1,
+          0.2
+        ]
+      },
+      "hide": "{actor} scuttles up into the dark as the wet comes in.",
+      "emerge": "{actor} drops back down on a thread, now the air is dry.",
+      "coins": 6,
+      "loot": [
+        {
+          "item": "spider_silk",
+          "chance": 0.6
+        }
+      ]
     }
   },
   "gear": {
@@ -7424,7 +7603,7 @@
               "give": "torch"
             },
             {
-              "guide": "Hold the torch to see in the dark: WEAR TORCH."
+              "guide": "A torch lights the way in the dark: EQUIP TORCH."
             },
             {
               "xp": 40
@@ -7614,7 +7793,7 @@
           "then": "search"
         },
         "search": {
-          "goal": "Someone swapped the guild's weights. Search the counting house on Guild Row: it's dark, so WEAR TORCH, then LOOK at things and GET what's wrong.",
+          "goal": "Someone swapped the guild's weights. Search the counting house on Guild Row: it's dark, so EQUIP TORCH, then LOOK at things and GET what's wrong.",
           "on": {
             "have": [
               "weight-m"
@@ -7752,11 +7931,21 @@
           },
           "effects": [
             {
-              "text": "Poachers, and their snares. Your own woods are not safe any more. And it's black as night under these oaks: without a light, you can only feel your way back. Maud, the healer in the hamlet, will have a torch."
+              "text": "Poachers, and their snares. Your own woods are not safe any more. And it's black as night under these oaks: without a light, you can only feel your way back. Maud ought to hear of this."
             },
             {
               "xp": 40
-            },
+            }
+          ],
+          "then": "maud"
+        },
+        "maud": {
+          "goal": "Tell Maud, the healer, about the poachers (her hut is NORTH of the lodge): DISCUSS POACHERS WITH MAUD.",
+          "on": {
+            "ask": "maud",
+            "about": "poachers"
+          },
+          "effects": [
             {
               "start": "tw_sky"
             }
@@ -7836,13 +8025,23 @@
           },
           "effects": [
             {
-              "text": "The white hart falls. Its hide would fetch a fortune in the city."
+              "text": "The white hart falls. You take its hide: pale, perfect, and worth a fortune to the right buyer."
             },
+            {
+              "give": "hart_hide"
+            }
+          ],
+          "then": "back"
+        },
+        "back": {
+          "goal": "Bring the hide back to Maud: DISCUSS HART WITH MAUD.",
+          "on": {
+            "ask": "maud",
+            "about": "hart"
+          },
+          "effects": [
             {
               "xp": 120
-            },
-            {
-              "give": "hart_leggings"
             },
             {
               "start": "tw_leave"
@@ -7860,7 +8059,7 @@
       "start": "ask",
       "steps": {
         "ask": {
-          "goal": "Sell the hide in the big woods. Tobin, at the smokehouse, takes his barge downriver: DISCUSS TRAVEL WITH TOBIN.",
+          "goal": "Tobin, at the smokehouse, takes his barge downriver to the big wood: DISCUSS TRAVEL WITH TOBIN.",
           "on": {
             "ask": "tobin",
             "about": "travel"
@@ -7876,10 +8075,42 @@
             {
               "start": "gf_newcomer"
             }
+          ],
+          "then": "sell"
+        },
+        "sell": {
+          "goal": "Take the white hart's hide to Wren, at the Hunter's Camp: NORTHEAST of the Woodland Path, where the barge puts you ashore. GIVE HIDE TO WREN.",
+          "on": {
+            "give": "hart_hide",
+            "to": "wren"
+          },
+          "effects": [
+            {
+              "take": "hart_hide"
+            },
+            {
+              "say": "A white hart. I've not seen one in twenty years. I'll not have this go to some fool in the city: twenty-five coins, and I'll have it made into something worthy of the one who took it.",
+              "by": "wren"
+            },
+            {
+              "coins": 25
+            },
+            {
+              "give": "hart_leggings"
+            },
+            {
+              "xp": 60
+            },
+            {
+              "start": "wr_webs"
+            }
           ]
         }
       },
-      "must": true
+      "must": true,
+      "giver": "maud",
+      "offer": "That hide is worth more than all of Thornwick could pay. Tobin takes his barge downriver to the big wood, the Spiderwood. Go with him, and take it to Wren, the ranger at the Hunter's Camp where the barge lands: she'll know what it's worth, and who'll pay it. Will you go?",
+      "accepted": "Then go with my blessing. And come back to see me, one day."
     },
     "lw_lift": {
       "name": "Lifting",
@@ -7921,7 +8152,7 @@
       "start": "steal",
       "steps": {
         "steal": {
-          "goal": "Steal the magistrate's signet. His house is east of Wick Square, dark inside (HOLD TORCH), the study up the stairs (NORTH). Deal with the dog, and LOOK at the stairs before you climb: then CREEP NORTH, or DISARM NORTH.",
+          "goal": "Steal the magistrate's signet. His house is east of Wick Square, dark inside (EQUIP TORCH), the study up the stairs (NORTH). Deal with the dog, and LOOK at the stairs before you climb: then CREEP NORTH, or DISARM NORTH.",
           "on": {
             "have": [
               "signet-u"
@@ -8020,7 +8251,13 @@
             "ask": "pell",
             "about": "sensitivity"
           },
-          "then": "fight"
+          "then": "fight",
+          "effects": [
+            {
+              "say": "Now put it to use. Rock crabs crowd Seal Rocks, out along the breakwater past the Quay Steps. Go and see to one, mind its claws, and come back and tell me how it went.",
+              "by": "pell"
+            }
+          ]
         },
         "fight": {
           "goal": "Rock crabs crowd Seal Rocks, out along the breakwater east of the Quay Steps. Kill one. Target it (Tab, or click it), then press 4, 3 or 2 as each slot's ball touches the edge. When it swings at you, watch its marker slide along the bar on its card, and press 7 just as it lands: you dodge, or block if you've a shield in hand. Time it well and it takes the whole blow. Not every blow can be dodged or blocked.",
@@ -8078,6 +8315,10 @@
             },
             {
               "give": "torch"
+            },
+            {
+              "say": "And while you're about it: the feed rats are in the oats in the caravan yard again. See to one for me, and come back.",
+              "by": "brisa"
             }
           ],
           "then": "fight"
@@ -8140,7 +8381,11 @@
               "give": "torch"
             },
             {
-              "guide": "Hold the torch to see in the dark: WEAR TORCH."
+              "guide": "A torch lights the way in the dark: EQUIP TORCH."
+            },
+            {
+              "say": "And while you're out: the bog wisps are thick in Fern Bog again, east of the snare line. They lead folk into the water. Put one out for me, and come back and tell me.",
+              "by": "maud"
             }
           ],
           "then": "fight"
@@ -8171,7 +8416,10 @@
           ]
         }
       },
-      "must": true
+      "must": true,
+      "giver": "maud",
+      "offer": "Will you let an old woman teach you the sky, before you go after them?",
+      "accepted": "Good. Sit down, and ask me about the weather."
     },
     "lw_sky": {
       "name": "Gutter Weather",
@@ -8198,6 +8446,10 @@
             },
             {
               "give": "torch"
+            },
+            {
+              "say": "Now. The rats in Rat Alley have been at my bread. Kill one for me, and come back.",
+              "by": "nan"
             }
           ],
           "then": "fight"
@@ -8232,6 +8484,76 @@
       "offer": "Good. You've quick hands. Before real work, though, you learn the sky. Will you let me teach you?",
       "must": true,
       "accepted": "Sit down, then. Ask me about the weather."
+    },
+    "wr_webs": {
+      "name": "Thinning the Webs",
+      "start": "kill",
+      "giver": "wren",
+      "offer": "You've a hunter's eye. Good, because I need one. The spiders are thick in the Web Tunnel, north of the path, and bolder every week. Thin them out for me: three of them. Will you?",
+      "accepted": "Good. They hide when it's wet: go when it's dry.",
+      "steps": {
+        "kill": {
+          "goal": "Kill three giant spiders in the Web Tunnel and the Hollow Tree, north of the Woodland Path. They hide when it rains.",
+          "on": {
+            "kill": "spiders",
+            "count": 3
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Wren, at the Hunter's Camp: DISCUSS WEBS WITH WREN.",
+          "on": {
+            "ask": "wren",
+            "about": "webs"
+          },
+          "effects": [
+            {
+              "xp": 80
+            },
+            {
+              "coins": 10
+            },
+            {
+              "start": "wr_brood"
+            }
+          ]
+        }
+      }
+    },
+    "wr_brood": {
+      "name": "The Broodmother",
+      "start": "kill",
+      "giver": "wren",
+      "offer": "They keep coming because something keeps laying them. There's a broodmother in the Silk Cavern, north of the Web Tunnel: vast, old, and she bites hard. Go ready, with friends if you have them. Kill her, and the path's safe for a season. Will you?",
+      "accepted": "Then may your aim be true.",
+      "steps": {
+        "kill": {
+          "goal": "Kill the Broodmother in the Silk Cavern, north of the Web Tunnel. She hits hard: go well rested.",
+          "on": {
+            "kill": "brood-1"
+          },
+          "then": "back"
+        },
+        "back": {
+          "goal": "Tell Wren: DISCUSS BROOD WITH WREN.",
+          "on": {
+            "ask": "wren",
+            "about": "brood"
+          },
+          "effects": [
+            {
+              "say": "The broodmother, dead. You're a hunter, and no mistake. Here: I made this for myself, but it fits you better.",
+              "by": "wren"
+            },
+            {
+              "xp": 150
+            },
+            {
+              "give": "hunters_jerkin"
+            }
+          ]
+        }
+      }
     }
   },
   "classes": {
@@ -8651,6 +8973,18 @@
       },
       "rarity": "uncommon",
       "description": "Nan's gift: soft black wool, for rooftops. +1 Poise."
+    },
+    "hunters_jerkin": {
+      "name": "Hunter's Jerkin",
+      "keywords": "jerkin hunter",
+      "place": "chest",
+      "type": "leather",
+      "armor": 4,
+      "stats": {
+        "poise": 1
+      },
+      "rarity": "uncommon",
+      "description": "Wren's own make: soft leather that doesn't creak, for walking up on things that bite. +1 Poise."
     }
   }
 }

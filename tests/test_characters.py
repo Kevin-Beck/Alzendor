@@ -160,7 +160,7 @@ async def test_a_dark_room_needs_a_light(world):
     assert (room["exits"], room["dark"], room["description"], room["features"]) == (
         ["west"], True, "It's pitch dark. You can't see a thing.", [])
     await world.call("move", "kevin", "east")
-    assert texts(await drain(kevin)) == ["It's too dark to find a way east. You need a light in your hand: WEAR a torch."]
+    assert texts(await drain(kevin)) == ["It's too dark to find a way east. You need a light in your hand: EQUIP TORCH."]
     await world.redis.sadd("PLAYER:kevin:wardrobe", "torch")
     await world.call("wear", "kevin", "torch")
     room = of_type(await drain(kevin), "room")[-1]["room"]
@@ -397,3 +397,71 @@ async def test_copperstall_ends_with_your_aunt_and_a_caravan_you_choose_to_take(
     assert "Quest complete: Your Own Road." in texts(await drain(kevin))
     assert not await world.redis.sismember("PLAYER:kevin:realms", "copperstall")
     assert await world.redis.hget("PLAYER:kevin:quests", "gf_newcomer") == "active"
+
+
+async def test_the_starting_realms_are_always_in_daylight(world):
+    kevin = await create(world, "kevin", background="woodsman")
+    await world.redis.set("alz:clock_override", 23)  # midnight everywhere else
+    await world.call("goto", "kevin", "snare_line")  # out in the wilds
+    events = await drain(kevin)
+    assert of_type(events, "weather")[-1]["clock"]["phase"] == "day"
+    assert of_type(events, "room")[-1]["room"]["exits_hidden"] is False
+
+
+async def test_thornwick_is_offered_in_person_and_the_hide_goes_to_wren(world):
+    kevin = await create(world, "kevin", cls="rogue", ancestry="human", passive="trapsense", background="woodsman")
+    await world.redis.hset("PLAYER:kevin:quest:tw_snares", "step", "maud")  # back from the deep oaks
+    await world.call("goto", "kevin", "healers_hut")
+    await drain(kevin)
+    await world.call("discuss", "kevin", "maud", "poachers")
+    said = texts(await drain(kevin))
+    assert 'Maud says, "Will you let an old woman teach you the sky, before you go after them?"' in said
+    assert not await world.redis.hget("PLAYER:kevin:quests", "tw_sky")  # offered, not given
+    await world.call("accept", "kevin")
+    await world.call("discuss", "kevin", "maud", "weather")
+    await world.call("discuss", "kevin", "maud", "sensitivity")
+    assert any("the bog wisps are thick in Fern Bog" in t for t in texts(await drain(kevin)))  # she sends you to the fight
+
+    # The white hart leaves a hide; Maud sends you downriver with it, to Wren.
+    await world.redis.hset("PLAYER:kevin:quests", mapping={"tw_sky": "done", "tw_bloom": "done", "tw_hart": "active"})
+    await world.redis.hset("PLAYER:kevin:quest:tw_hart", mapping={"step": "hunt", "count": 0})
+    await world.redis.hset("NPC:white_hart", "hp", 1)
+    await world.call("goto", "kevin", "stags_rise")
+    await world.call("use", "kevin", 1, "npc:white_hart")
+    assert await world.redis.sismember("PLAYER:kevin:inv", "hart_hide")
+    await world.call("goto", "kevin", "healers_hut")
+    await drain(kevin)
+    await world.call("discuss", "kevin", "maud", "hart")
+    assert any("take it to Wren" in t for t in texts(await drain(kevin)))
+    await world.call("accept", "kevin")
+    await world.call("goto", "kevin", "smokehouse")
+    await world.call("discuss", "kevin", "tobin", "travel")
+    await world.call("travel", "kevin", "barge")
+    await world.redis.hset("PLAYER:kevin:quest:tw_leave", "step", "sell")  # past the journey
+    await world.call("goto", "kevin", "hunters_camp")
+    await drain(kevin)
+    await world.call("give", "kevin", "hide", "wren")
+    said = texts(await drain(kevin))
+    assert any(t.startswith('Wren says, "A white hart.') for t in said)
+    assert await world.redis.sismember("PLAYER:kevin:wardrobe", "hart_leggings")
+    assert any(t.startswith('Wren says, "You\'ve a hunter\'s eye.') for t in said)  # and she has work for a hunter
+    await world.call("accept", "kevin")
+    assert await world.redis.hget("PLAYER:kevin:quest:wr_webs", "step") == "kill"
+
+
+async def test_anyone_can_hunt_for_wren(world):
+    kevin = await create(world, "kevin")
+    await world.call("goto", "kevin", "hunters_camp")
+    await drain(kevin)
+    await world.call("discuss", "kevin", "wren", "quests")
+    await world.call("accept", "kevin")
+    for nid in ("spider-1", "spider-2", "spider-3"):
+        await world.redis.hset(f"NPC:{nid}", "hp", 1)
+        await world.call("goto", "kevin", await world.redis.hget(f"NPC:{nid}", "room"))
+        await world.redis.delete("PLAYER:kevin:slot:1")  # a fresh opener for each
+        await world.call("use", "kevin", 1, f"npc:{nid}")
+    assert await world.redis.hget("PLAYER:kevin:quest:wr_webs", "step") == "back"
+    await world.call("goto", "kevin", "hunters_camp")
+    await world.call("discuss", "kevin", "wren", "webs")
+    assert await world.redis.hget("PLAYER:kevin:quests", "wr_webs") == "done"
+    assert any("broodmother" in t for t in texts(await drain(kevin)))
