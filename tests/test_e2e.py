@@ -155,3 +155,21 @@ async def test_a_new_player_creates_a_character_first(redis):
             seen = await kevin.until("New quest: Lifting. Nan wants a purse. The drunk in Tipsy Lane (WEST) won't notice: GET PURSE.")
             assert seen[0].startswith("The Gutter Den")
             assert any(text.startswith("Low Wick is a small town") for text in seen)  # the story so far
+
+
+def test_the_client_address_behind_a_proxy():
+    """Rate limits go by the client's address: behind CloudFront, its viewer header."""
+    from types import SimpleNamespace
+
+    from alzendor.session import Session
+
+    def session(trust, headers):
+        server = SimpleNamespace(config=SimpleNamespace(trust_proxy=trust))
+        ws = SimpleNamespace(request=SimpleNamespace(headers=headers), remote_address=("10.0.0.9", 5000))
+        return Session(server, ws)
+
+    viewer = {"CloudFront-Viewer-Address": "203.0.113.7:51234", "X-Forwarded-For": "203.0.113.7, 130.176.1.2"}
+    assert session(True, viewer).address == "203.0.113.7"
+    assert session(True, {"CloudFront-Viewer-Address": "[2001:db8::1]:443"}).address == "2001:db8::1"
+    assert session(True, {"X-Forwarded-For": "198.51.100.4, 10.0.0.1"}).address == "10.0.0.1"
+    assert session(False, viewer).address == "10.0.0.9"  # never trusted unless configured

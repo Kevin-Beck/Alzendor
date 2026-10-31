@@ -660,8 +660,11 @@ let historyIndex = 0;
 
 // Connection -------------------------------------------------------------------
 
+// Relative to the page, so the game also works under a path (iterbotgames.com/alzendor/).
 function wsUrl() {
-  return (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/ws";
+  const url = new URL("ws", location.href);
+  url.protocol = location.protocol === "https:" ? "wss:" : "ws:";
+  return url.href;
 }
 
 function setStatus(text, live) {

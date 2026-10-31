@@ -67,9 +67,17 @@ class Session:
 
     @property
     def address(self) -> str:
-        forwarded = self.ws.request.headers.get("X-Forwarded-For") if self.server.config.trust_proxy else None
-        if forwarded:
-            return forwarded.split(",")[-1].strip()
+        """The client's address, for rate limits. Behind a trusted proxy, CloudFront's
+        CloudFront-Viewer-Address ("ip:port") if it sent one, else the last
+        X-Forwarded-For entry (the one the proxy added)."""
+        if self.server.config.trust_proxy:
+            headers = self.ws.request.headers
+            viewer = headers.get("CloudFront-Viewer-Address")
+            if viewer:
+                return viewer.rsplit(":", 1)[0].strip("[]")
+            forwarded = headers.get("X-Forwarded-For")
+            if forwarded:
+                return forwarded.split(",")[-1].strip()
         return self.ws.remote_address[0] if self.ws.remote_address else "unknown"
 
     async def run(self) -> None:

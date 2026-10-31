@@ -591,7 +591,12 @@ options.
 
 ## Deploying
 
-The production setup is the local one plus
+**On iterbotgames.com** (the live test server, at
+https://iterbotgames.com/alzendor/): one small AWS server behind the site's
+CloudFront, set up with Terraform and deployed with `./deploy.sh`. Everything
+about it is in [deploy/iterbotgames/README.md](deploy/iterbotgames/README.md).
+
+**On a server of your own,** the production setup is the local one plus
 [docker-compose.prod.yml](docker-compose.prod.yml). That file adds
 [Caddy](https://caddyserver.com) for HTTPS with automatic certificates and
 load balancing across the servers, and it closes every other port. On a server

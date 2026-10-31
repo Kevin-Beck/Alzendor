@@ -1,0 +1,54 @@
+# Alzendor on iterbotgames.com: Redis, one game server and Caddy on one small
+# server. CloudFront sends https://iterbotgames.com/alzendor/* here; Caddy
+# terminates TLS for the origin's own name and strips the /alzendor prefix.
+# deploy.sh runs it with a .env holding ALZ_ORIGIN_DOMAIN and ALZ_ADMINS.
+name: alzendor
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  server:
+    build:
+      context: ../..
+      target: runtime
+    image: alzendor:latest
+    restart: unless-stopped
+    environment:
+      ALZ_REDIS_URL: redis://redis:6379/0
+      ALZ_SERVER_ID: server1
+      ALZ_TRUST_PROXY: "true"   # CloudFront, then Caddy: the client is in CloudFront-Viewer-Address
+      ALZ_ALLOWED_ORIGINS: https://iterbotgames.com,https://www.iterbotgames.com
+      ALZ_ADMINS: ${ALZ_ADMINS:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"     # certificate challenges, and redirects
+      - "443:443"   # only CloudFront can reach this (the security group)
+    environment:
+      ALZ_ORIGIN_DOMAIN: ${ALZ_ORIGIN_DOMAIN:?set ALZ_ORIGIN_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - server
+
+volumes:
+  redis-data:
+  caddy-data:
+  caddy-config:
