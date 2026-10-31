@@ -35,7 +35,7 @@ URL=$(aws s3 presign "s3://$BUCKET/alzendor-$SHA.tar.gz" --expires-in 900 --prof
 # On the server: unpack beside the running release, swap, rebuild. The compose
 # project is always "alzendor", so its volumes carry over.
 SCRIPT=$(cat <<SH
-set -euo pipefail
+set -eu  # SSM runs this with sh (dash): no pipefail
 cd /opt/alzendor
 curl -fsSL '$URL' -o release.tar.gz
 rm -rf release.new && mkdir release.new && tar -xzf release.tar.gz -C release.new && rm release.tar.gz
