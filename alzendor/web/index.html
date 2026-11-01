@@ -368,6 +368,43 @@
   #defend-row .result { min-width: 64px; text-align: right; font-weight: bold; color: var(--text); }
   #defend-row.flash .label { color: var(--up); }
 
+  /* The balance sandbox (?balance=1): the circle, the strike row, dodge and
+     block, debuff chips and (on a touch screen) a stick. */
+  #balance { margin: 0 0 10px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent); }
+  #balance .bhead { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  #balance .bhead b { color: var(--accent); }
+  #balance .bhead .mode { margin-left: auto; color: var(--muted); font-size: 11px; }
+  #balance .bhead .mode.on { color: var(--up); }
+  #balance .arena { display: flex; gap: 10px; align-items: center; justify-content: center; margin: 6px 0; flex-wrap: wrap; }
+  #balance canvas { width: 220px; height: 220px; max-width: 100%; touch-action: none; }
+  #balance .bstatus { text-align: center; font-size: 12px; min-height: 1.4em; font-weight: bold; }
+  #balance .bstatus.bad { color: var(--hp-low); } #balance .bstatus.good { color: var(--up); }
+  #balance .chips { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; min-height: 20px; }
+  #balance .chip { font-size: 11px; padding: 1px 6px; border-radius: 9px; border: 1px solid var(--border); background: var(--panel); }
+  #balance .chip.heavy, #balance .chip.reeling { border-color: var(--hp-low); color: var(--hp-low); }
+  #balance .chip.wobble { border-color: var(--hp-mid); color: var(--hp-mid); }
+  #balance .chip.steady, #balance .chip.immune { border-color: var(--up); color: var(--up); }
+  #balance .strikes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+  #balance .strike { position: relative; overflow: hidden; padding: 6px 4px; font-size: 12px; text-align: center; min-height: 44px; }
+  #balance .strike .k { font-weight: bold; color: var(--accent); }
+  #balance .strike .cd { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); width: 0; }
+  #balance .strike .res { display: block; font-size: 11px; min-height: 1.2em; color: var(--muted); }
+  #balance .strike.t2 .res { color: var(--up); font-weight: bold; } #balance .strike.t1 .res { color: var(--text); }
+  #balance .strike.no .res { color: var(--hp-low); }
+  #balance .defs { display: flex; gap: 6px; margin-top: 6px; }
+  #balance .defs button { flex: 1; min-height: 40px; position: relative; overflow: hidden; }
+  #balance .defs button.held { border-color: var(--accent); color: var(--accent); }
+  #balance .defs .cd { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); width: 0; }
+  #balance .stick { width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--border); position: relative;
+    touch-action: none; background: var(--panel); display: none; }
+  #balance .stick .knob { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px;
+    border-radius: 50%; background: color-mix(in srgb, var(--accent) 45%, var(--panel)); pointer-events: none; }
+  @media (pointer: coarse) { #balance .stick { display: block; } #balance .kh { display: none; } }
+  #balance.touch .stick { display: block; }
+  #balance .bfoot { display: flex; gap: 6px; margin-top: 6px; align-items: center; font-size: 11px; color: var(--muted); }
+  #balance .bfoot button { margin-left: auto; }
+
   /* Rarity: the colour of a thing's name. Weather sensitivity: dots. */
   .r-common { color: var(--tier-grey); } .r-uncommon { color: var(--tier-green); } .r-rare { color: var(--tier-blue); }
   .r-epic { color: var(--tier-purple); } .r-legendary { color: var(--tier-orange); }
@@ -596,6 +633,8 @@
       <h2>Here <span class="hint">Tab to target</span></h2>
       <ul id="entities"></ul>
       <div id="target-card" aria-live="polite"></div>
+      <!-- The balance sandbox (?balance=1 only): practice against the Training Yard's dummy and post. -->
+      <div id="balance" class="hidden" aria-label="Balance practice"></div>
       <h2>Slots <span class="hint" id="slot-hint">4 3 2 use your slots · hover for details</span></h2>
       <div id="timings" role="group" aria-label="Your slots"></div>
       <div id="defend-row" title="Block (with a shield in hand) or dodge the next blow: press as the enemy's marker reaches the end of its bar.">
@@ -1816,6 +1855,7 @@ function renderTarget() {
   const card = target && room ? room.entities.find((c) => c.id === target) : null;
   if (!card) {
     targetCard = null;
+    sandbox.render();
     const hint = room && room.entities.length ? "No target. Press Tab (or click someone above) to pick one." : "";
     return $("target-card").replaceChildren(...(hint ? [el("p", "empty", hint)] : []));
   }
@@ -1902,6 +1942,7 @@ function renderTarget() {
     if (fight && fight.target) rest.push(el("div", "fighting", `Fighting ${nameOf(fight.target)}`));
   }
   v.rest.replaceChildren(...rest);
+  sandbox.render();
 }
 
 // Moves every NPC attack marker (and the small bars in the room list) towards
@@ -3325,6 +3366,7 @@ $("command").addEventListener("submit", (e) => {
   // In a fight, keep the command (selected, so typing replaces it): Enter repeats it on the next beat.
   if (inCombat() || /^(use|[123])\b/i.test(text)) $("input").select();
   else $("input").value = "";
+  sandbox.sent();
 });
 
 // The keys that use each slot (4, 3 and 2 unless you've chosen others in
@@ -3365,6 +3407,449 @@ $("input").addEventListener("keydown", (e) => {
     $("input").value = history[historyIndex] || "";
   }
 });
+
+// The balance sandbox ----------------------------------------------------------------------
+// Behind ?balance=1, a practice of the balance simulation (the Balance block
+// at the top of this script) against the Training Yard's dummy and post. It
+// runs in this page only and sends nothing: blows come from the post's attack
+// timers (npc_timing when the server has them, else its attacks' periods from
+// the start), and strikes only show their tier. Gear is converted from its
+// rhythm on the fly, as tools/convert_balance.py will. It goes in step 11 of
+// docs/combat-redesign.md, when real encounters replace it.
+const sandbox = (() => {
+  const params = new URLSearchParams(location.search);
+  const enabled = params.get("balance") === "1" || params.get("balance") === "well";
+  const showWell = params.get("balance") === "well";
+  const PRACTICE = ["npc:dummy-1", "npc:post-1"];
+  const STEER = { w: Balance.UP, s: Balance.DOWN, a: Balance.LEFT, d: Balance.RIGHT,
+    ArrowUp: Balance.UP, ArrowDown: Balance.DOWN, ArrowLeft: Balance.LEFT, ArrowRight: Balance.RIGHT };
+  const TIER_WORDS = ["Edge", "Clean", "Perfect!"];
+  const REFUSED = { not_steady: "Not steady", cooldown: "Not ready", staggered: "Staggered", blocking: "Blocking", empty: "Empty slot", no_shield: "No shield" };
+  const VOLLEYS = { missile: [4, 1000, 0.7], chain_lightning: [3, 300, 0.5], cinder_rain: [3, 1000, 0.5], twin_jab: [2, 150, 0.4] };
+  const LEAD_MS = 1000;
+  const STEP_MS = 1000 / Balance.HZ;
+
+  let run = null;       // the practice fight: dot, foe, clocks, held keys
+  let focus = false;    // combat focus: steering and slot keys go to the fight, not the command line
+  let ui = null;        // the panel's nodes
+
+  // Piecewise linear through [x, y] anchors, clamped at the ends.
+  function interp(anchors, x) {
+    if (x <= anchors[0][0]) return anchors[0][1];
+    for (let i = 1; i < anchors.length; i++) {
+      const [x1, y1] = anchors[i], [x0, y0] = anchors[i - 1];
+      if (x <= x1) return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
+    }
+    return anchors[anchors.length - 1][1];
+  }
+
+  // A slot's gear as balance sees it, from its rhythm (the plan's conversion).
+  function convertGear(g) {
+    const period = (g.now && g.now.period_ms) || g.period_ms || 1200;
+    const out = { cooldown: Math.round(interp([[1000, 300], [1200, 350], [4500, 2500], [8000, 4500]], period)),
+      kick: interp([[1000, 0.8], [1200, 1.0], [4500, 1.6], [8000, 2.0]], period), pattern: period < 3000 ? "bump" : "side" };
+    if (g.effect === "heal" || g.effect === "guard") {
+      out.kick = 0;
+      if (g.kind === "Potion") out.debuff = { kind: "steady", strength: 1.5, ms: 3000 };
+    } else if (VOLLEYS[g.id]) {
+      [out.hits, out.gap, out.kick] = VOLLEYS[g.id];
+      out.pattern = "taps";
+    } else if (period >= 4000) {
+      out.debuff = { kind: "heavy", strength: Math.min(2.5, 1.5 + (period - 4000) / 2000), ms: 5000 };
+    }
+    return out;
+  }
+
+  function slotGear() {
+    const out = {};
+    if (!kit) return out;
+    kit.slots.forEach((gid, i) => {
+      const g = gid && kit.gear.find((x) => x.id === gid);
+      if (g) out[i + 1] = g;
+    });
+    return out;
+  }
+
+  // "The Sparring Post", "Brannoc".
+  const foe = (card) => (card.proper ? card.name : "the " + card.name);
+
+  function practiceCard() {
+    return target && PRACTICE.includes(target) && room ? room.entities.find((c) => c.id === target) : null;
+  }
+
+  // Starting and stopping ------------------------------------------------------------------
+
+  function start() {
+    const card = practiceCard();
+    if (!card || run) return;
+    const stats = (character && character.stats) || {};
+    const rules = Balance.forPlayer(Balance.rulesFrom({}), stats);
+    const gear = slotGear();
+    const slots = {};
+    for (const [n, g] of Object.entries(gear)) slots[n] = convertGear(g);
+    const shield = Boolean(character && character.defence && character.defence.mode === "block");
+    const seed = Math.floor(Math.random() * 1e9);
+    const startAt = performance.now() + LEAD_MS;
+    // The foe's attacks: on the server's timers if it has them, else a full period in.
+    const attacks = (card.attacks || []).map((a, i) => {
+      const timer = card.fight && card.fight.attacks && card.fight.attacks[i];
+      const period = a.period_ms || 6000;
+      let next = timer && timer.next_ms ? timer.next_ms - clock.offset : startAt + period;
+      while (next < startAt + 200) next += period;
+      return { name: a.name, damage: a.damage, defend: a.defend || "both", period,
+        kick: interp([[2500, 0.8], [8000, 2.0], [15000, 2.4]], period), next, angle: Math.random() * Balance.TAU };
+    });
+    run = { dot: Balance.makeDot(rules, seed, me || "you", slots, shield), rules, gear, startAt, card, attacks,
+      held: 0, stick: 0, acts: [], dealt: 0, taken: 0, frame: null, status: "", statusClass: "", statusUntil: 0,
+      results: {}, cool: {} };
+    for (const [n, g] of Object.entries(slots)) run.cool[n] = Balance.steps(g.cooldown);
+    line(`${capital(foe(card))} squares up to you. (Balance practice: WASD steers, ${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} strike, Space dodges${shield ? ", hold Shift to block" : ""}.)`, "t-combat");
+    setFocus(true);
+    render();
+    run.frame = requestAnimationFrame(frame);
+  }
+
+  function stop(why) {
+    if (!run) return;
+    cancelAnimationFrame(run.frame);
+    if (why) line(`Practice over${why === true ? "" : ": " + why}. You dealt ${run.dealt} and took ${run.taken}.`, "t-system");
+    run = null;
+    setFocus(false);
+    render();
+  }
+
+  // Combat focus ---------------------------------------------------------------------------
+
+  function setFocus(on) {
+    focus = Boolean(on && run);
+    if (focus && document.activeElement === $("input")) $("input").blur();
+    if (!focus && run) $("input").focus();
+    if (run) { run.held = 0; }
+    if (ui) {
+      ui.mode.textContent = focus ? "combat keys · Enter or / to type" : run ? "typing · Esc to fight" : "";
+      ui.mode.classList.toggle("on", focus);
+    }
+  }
+
+  function press(act) {
+    if (run) run.acts.push(act);
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (!run || document.querySelector("dialog[open]")) return;
+    const k = keyOf(e);
+    if (!focus) {
+      if (k === "Escape" && e.target === $("input") && !$("input").value) { e.preventDefault(); e.stopPropagation(); setFocus(true); }
+      return;
+    }
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const slot = [1, 2, 3].find((n) => keys[n] === k);
+    if (k === "Enter" || k === "/") setFocus(false);
+    else if (STEER[k]) run.held |= STEER[k];
+    else if (e.repeat) { /* held: nothing more */ }
+    else if (slot) press(["strike", slot, run.card.id]);
+    else if (k === " ") press(["dodge"]);
+    else if (k === "Shift") press(["block"]);
+    else if (k === "Escape") { /* already fighting */ }
+    else return;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
+
+  document.addEventListener("keyup", (e) => {
+    if (!run) return;
+    const k = keyOf(e);
+    if (STEER[k]) run.held &= ~STEER[k];
+    if (k === "Shift") press(["unblock"]);
+  }, true);
+
+  window.addEventListener("blur", () => { if (run) { run.held = 0; press(["unblock"]); } });
+
+  // The fight ------------------------------------------------------------------------------
+
+  function frame() {
+    if (!run) return;
+    const t = performance.now();
+    const due = Math.floor((t - run.startAt) / STEP_MS);
+    // Catch up at most a second (a tab in the background stops the clock).
+    if (due - run.dot.n > Balance.HZ) run.startAt = t - (run.dot.n + 1) * STEP_MS;
+    while (run && run.dot.n < Math.floor((t - run.startAt) / STEP_MS)) tick();
+    if (!run) return;
+    if (!practiceCard() || practiceCard().id !== run.card.id) return stop("you've turned away");
+    render();
+    run.frame = requestAnimationFrame(frame);
+  }
+
+  // When the post's attack lands, as a simulation step.
+  const stepAt = (ms) => Math.max(1, Math.round((ms - run.startAt) / STEP_MS));
+
+  function tick() {
+    const dot = run.dot;
+    const n = dot.n + 1;
+    const blows = [];
+    const landing = [];
+    for (const a of run.attacks) {
+      if (stepAt(a.next) <= n) {
+        blows.push({ kick: a.kick, angle: a.angle, defend: a.defend });
+        landing.push(a);
+      }
+    }
+    const acts = run.acts;
+    run.acts = [];
+    const events = Balance.step(dot, run.held | run.stick, acts, blows);
+    let b = 0;
+    for (const e of events) {
+      if (e.type === "strike") strikeShown(e);
+      else if (e.type === "refused") refusedShown(e);
+      else if (e.type === "blow") blowShown(landing[b++], e);
+      else if (e.type === "stagger") flash(e.by === "rim" ? "Off balance! (the rim)" : "Staggered!", "bad", 1200);
+      else if (e.type === "recover") flash("Back on your feet", "good", 700);
+      else if (e.type === "dodge") flash("Dodge", "good", 500);
+    }
+    for (const a of landing) { a.next += a.period; a.angle = Math.random() * Balance.TAU; }
+  }
+
+  function strikeShown(e) {
+    const g = run.gear[e.slot];
+    const amounts = g ? ((g.now && g.now.amounts) || g.amounts) : [];
+    const amount = amounts[e.tier] !== undefined ? Math.ceil(amounts[e.tier] / e.hits) : 0;
+    run.results[e.slot] = { text: `${TIER_WORDS[e.tier]}${amount ? ` ${g.effect === "heal" ? "+" : ""}${amount}` : ""}`, cls: "t" + e.tier, until: performance.now() + 900 };
+    if (g && g.effect !== "heal" && g.effect !== "guard") run.dealt += amount;
+    if (e.hit === 1) line(`${TIER_WORDS[e.tier].replace("!", "")} ${g ? g.name : "strike"}${e.hits > 1 ? ` (${e.hits} hits)` : ""}: ${amount}${e.hits > 1 ? " a hit" : ""}.`, "t-combat mine");
+  }
+
+  function refusedShown(e) {
+    const word = REFUSED[e.reason] || e.reason;
+    if (e.act === "strike") run.results[e.slot] = { text: word, cls: "no", until: performance.now() + 700 };
+    else flash(word, "bad", 600);
+  }
+
+  function blowShown(a, e) {
+    if (!a) return;
+    let dmg = a.damage;
+    if (e.result === "dodge" || e.result === "perfect_block") dmg = 0;
+    else if (e.result === "block") dmg = Math.round(dmg * (1 - run.rules.block_cut));
+    else if (e.result === "staggered") dmg = Math.round(dmg * run.rules.stagger_dmg);
+    run.taken += dmg;
+    const how = { dodge: "you dodge it", block: "blocked", perfect_block: "a perfect block!", staggered: "while you're staggered",
+      hit: "it lands", parting: "a parting blow" }[e.result];
+    line(`${capital(foe(run.card))}'s ${a.name}: ${how}${dmg ? ` (${dmg})` : ""}.`, "t-combat");
+    if (dmg) struck();
+  }
+
+  function flash(text, cls, ms) {
+    run.status = text;
+    run.statusClass = cls;
+    run.statusUntil = performance.now() + ms;
+  }
+
+  // Drawing --------------------------------------------------------------------------------
+
+  function build() {
+    const box = $("balance");
+    const head = el("div", "bhead");
+    const title = el("b", "", "Balance");
+    const mode = el("span", "mode");
+    head.append(title, el("span", "", "practice"), mode);
+    const arena = el("div", "arena");
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("role", "img");
+    canvas.setAttribute("aria-label", "Your balance: keep the dot in the middle circle to strike");
+    const stick = el("div", "stick");
+    const knob = el("div", "knob");
+    stick.append(knob);
+    arena.append(canvas, stick);
+    const status = el("div", "bstatus");
+    const chips = el("div", "chips");
+    const strikes = el("div", "strikes");
+    const strikeButtons = {};
+    for (const n of [1, 2, 3]) {
+      const b = el("button", "strike");
+      b.type = "button";
+      const k = el("span", "k"), name = el("span", "nm"), res = el("span", "res"), cd = el("div", "cd");
+      b.append(k, " ", name, res, cd);
+      b.addEventListener("pointerdown", (e) => { e.preventDefault(); if (run) press(["strike", n, run.card.id]); });
+      strikes.append(b);
+      strikeButtons[n] = { b, k, name, res, cd };
+    }
+    const defs = el("div", "defs");
+    const dodge = el("button", "", "Dodge");
+    dodge.append(el("span", "kh", " (Space)"));
+    dodge.type = "button";
+    const dodgeCd = el("div", "cd");
+    dodge.append(dodgeCd);
+    dodge.addEventListener("pointerdown", (e) => { e.preventDefault(); press(["dodge"]); });
+    const block = el("button", "", "Block");
+    block.append(el("span", "kh", " (hold Shift)"));
+    block.type = "button";
+    block.addEventListener("pointerdown", (e) => { e.preventDefault(); block.setPointerCapture(e.pointerId); press(["block"]); });
+    for (const ev of ["pointerup", "pointercancel"]) block.addEventListener(ev, () => press(["unblock"]));
+    defs.append(dodge, block);
+    const foot = el("div", "bfoot");
+    const tally = el("span");
+    const go = el("button", "", "Spar");
+    go.type = "button";
+    go.addEventListener("click", () => (run ? stop(true) : start()));
+    foot.append(tally, go);
+    box.append(head, arena, status, chips, strikes, defs, foot);
+    // The touch stick: eight ways, like the keys.
+    let stickId = null;
+    const steer = (e) => {
+      const r = stick.getBoundingClientRect();
+      let x = (e.clientX - r.left) / r.width * 2 - 1, y = (e.clientY - r.top) / r.height * 2 - 1;
+      const d = Math.hypot(x, y);
+      if (d > 1) { x /= d; y /= d; }
+      knob.style.transform = `translate(${x * 38}px, ${y * 38}px)`;
+      let mask = 0;
+      if (Math.hypot(x, y) > 0.25) {
+        if (x > 0.38) mask |= Balance.RIGHT; else if (x < -0.38) mask |= Balance.LEFT;
+        if (y > 0.38) mask |= Balance.DOWN; else if (y < -0.38) mask |= Balance.UP;
+      }
+      if (run) run.stick = mask;
+    };
+    stick.addEventListener("pointerdown", (e) => { e.preventDefault(); stickId = e.pointerId; stick.setPointerCapture(e.pointerId); steer(e); });
+    stick.addEventListener("pointermove", (e) => { if (e.pointerId === stickId) steer(e); });
+    for (const ev of ["pointerup", "pointercancel"]) {
+      stick.addEventListener(ev, () => { stickId = null; knob.style.transform = ""; if (run) run.stick = 0; });
+    }
+    if (params.get("touch") === "1") box.classList.add("touch");
+    ui = { box, mode, canvas, status, chips, strikeButtons, dodge, dodgeCd, block, tally, go };
+  }
+
+  function css(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function draw() {
+    const canvas = ui.canvas;
+    const size = canvas.clientWidth || 220;
+    const dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== Math.round(size * dpr)) { canvas.width = Math.round(size * dpr); canvas.height = Math.round(size * dpr); }
+    const g = canvas.getContext("2d");
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, size, size);
+    const c = size / 2, R = size / 2 - 8;
+    const dot = run ? run.dot : null;
+    const rules = run ? run.rules : Balance.rulesFrom({});
+    const ring = (r, fill, stroke, width = 1, dash = []) => {
+      g.beginPath();
+      g.arc(c, c, r, 0, Balance.TAU);
+      if (fill) { g.fillStyle = fill; g.fill(); }
+      if (stroke) { g.setLineDash(dash); g.lineWidth = width; g.strokeStyle = stroke; g.stroke(); g.setLineDash([]); }
+    };
+    const immune = dot && dot.immune > 0;
+    ring(R, css("--panel"), immune ? css("--up") : css("--edge"), 3, immune ? [6, 4] : []);
+    const steady = dot && dot.stagger === 0 && Balance.dist(dot) <= rules.core && !dot.blocking;
+    ring(R * rules.core, `color-mix(in srgb, ${css("--accent")} ${steady ? 26 : 12}%, transparent)`, css("--accent"), 1.5);
+    ring(R * rules.clean_r, null, css("--accent"), 1, [3, 3]);
+    ring(R * rules.perfect_r, `color-mix(in srgb, ${css("--up")} 30%, transparent)`, css("--up"), 1);
+    if (!dot) return;
+    if (showWell) {
+      g.beginPath();
+      g.arc(c + R * dot.well_r * Math.cos(dot.well_a), c + R * dot.well_r * Math.sin(dot.well_a), 5, 0, Balance.TAU);
+      g.strokeStyle = css("--muted");
+      g.stroke();
+    }
+    // Blows on their way: an arrow on the rim, pointing the way it will knock you, filling as it comes.
+    const t = performance.now();
+    for (const a of run.attacks) {
+      const left = a.next - t;
+      if (left > rules.warn_ms || left < 0) continue;
+      const u = 1 - left / rules.warn_ms;
+      const from = a.angle + Math.PI;
+      const x = c + (R + 2) * Math.cos(from), y = c + (R + 2) * Math.sin(from);
+      g.save();
+      g.translate(x, y);
+      g.rotate(a.angle);
+      g.beginPath();
+      g.moveTo(14 + 10 * u, 0);
+      g.lineTo(-2, -9);
+      g.lineTo(-2, 9);
+      g.closePath();
+      g.globalAlpha = 0.35 + 0.65 * u;
+      g.fillStyle = css("--hp-low");
+      g.fill();
+      g.restore();
+      g.beginPath();
+      g.arc(c, c, R, from - 0.35 * u, from + 0.35 * u);
+      g.lineWidth = 5;
+      g.strokeStyle = css("--hp-low");
+      g.stroke();
+    }
+    const x = c + R * dot.x, y = c + R * dot.y;
+    g.beginPath();
+    g.arc(x, y, 7, 0, Balance.TAU);
+    g.globalAlpha = dot.invuln > 0 ? 0.45 : 1;
+    g.fillStyle = dot.stagger > 0 ? css("--hp-low") : steady ? css("--up") : css("--text");
+    g.fill();
+    g.globalAlpha = 1;
+    if (dot.blocking) {
+      g.beginPath();
+      g.arc(x, y, 12, 0, Balance.TAU);
+      g.lineWidth = 3;
+      g.strokeStyle = css("--accent");
+      g.stroke();
+    }
+  }
+
+  function render() {
+    const show = enabled && Boolean(run || practiceCard());
+    if (show && !ui) build();
+    $("balance").classList.toggle("hidden", !show);
+    if (!show) return;
+    const card = run ? run.card : practiceCard();
+    ui.go.textContent = run ? "Stop" : `Spar with ${foe(card)}`;
+    const t = performance.now();
+    const gear = run ? run.gear : slotGear();
+    for (const n of [1, 2, 3]) {
+      const s = ui.strikeButtons[n], g = gear[n];
+      s.k.textContent = keyLabel(keys[n]);
+      s.name.textContent = g ? g.name : "empty";
+      const res = run && run.results[n] && run.results[n].until > t ? run.results[n] : null;
+      s.res.textContent = res ? res.text : "";
+      s.b.className = "strike" + (res ? " " + res.cls : "");
+      const left = run ? run.dot.cool[n] || 0 : 0;
+      s.cd.style.width = run && left ? (100 * left) / run.cool[n] + "%" : "0";
+    }
+    ui.block.classList.toggle("hidden", !(character && character.defence && character.defence.mode === "block"));
+    if (!run) {
+      ui.status.textContent = "";
+      ui.chips.replaceChildren();
+      ui.tally.textContent = "Practice, in this page only. Nothing is sent.";
+      ui.mode.textContent = "";
+      return draw();
+    }
+    const dot = run.dot;
+    ui.block.classList.toggle("held", dot.blocking);
+    ui.dodgeCd.style.width = dot.dodge_cd ? (100 * dot.dodge_cd) / Balance.steps(run.rules.dodge_cd_ms) + "%" : "0";
+    let status = "", cls = "";
+    if (t < run.startAt) status = "Ready…";
+    else if (run.statusUntil > t) { status = run.status; cls = run.statusClass; }
+    else if (dot.stagger > 0) { status = "Staggered!"; cls = "bad"; }
+    else if (dot.blocking) status = "Blocking";
+    else if (Balance.dist(dot) <= run.rules.core) { status = "Steady"; cls = "good"; }
+    else status = "Off centre";
+    ui.status.textContent = status;
+    ui.status.className = "bstatus" + (cls ? " " + cls : "");
+    const chips = Object.entries(dot.debuffs).map(([kind, d]) => el("span", "chip " + kind, `${kind} ${(d[1] / Balance.HZ).toFixed(1)}s`));
+    if (dot.immune > 0) chips.push(el("span", "chip immune", `sure-footed ${(dot.immune / Balance.HZ).toFixed(1)}s`));
+    ui.chips.replaceChildren(...chips);
+    ui.tally.textContent = `dealt ${run.dealt} · took ${run.taken}`;
+    draw();
+  }
+
+  $("input").addEventListener("focus", () => { if (run && focus) setFocus(false); });
+
+  return {
+    enabled,
+    running: () => Boolean(run),
+    render,
+    stop,
+    // Back to combat focus after a command is sent.
+    sent() { if (run) setFocus(true); },
+    convertGear,
+  };
+})();
 
 $("reconnect").addEventListener("click", resume);
 

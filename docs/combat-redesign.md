@@ -579,6 +579,28 @@ does, what it deletes, and its tests. A phase ends at its gate, and the next
 phase doesn't start before the gate is met. Tests run against the test Redis
 on port 6380, never the live one.
 
+**Progress.** Phase 1 (Steps 1–4) is built: `alzendor/balance.py`, the
+`Balance` block in `alzendor/web/index.html`, `tools/make_vectors.py`,
+`tools/check_vectors.mjs`, `tests/test_balance.py`, and the sandbox at
+`/?balance=1` (`/?balance=well` also shows the well; `&touch=1` shows the
+stick on a desktop). Gate 1 (the feel on a keyboard and a phone) is waiting
+on a playtest; Phase 2 starts after it.
+
+Choices made in Phase 1 that the rules above leave open:
+
+- Timers are whole steps (`steps(ms)`, half rounding up). Up is −y, as on
+  screen.
+- The four draws are used as: well spin flip, well radius change (a new
+  target radius reuses that draw, scaled), wobble direction, and the spare
+  for knock directions (`bump`, `side`, a volley's `taps`) and the stagger
+  point.
+- A step runs: timers, draws, the well, acts, a buffered strike, volleys,
+  blows, then the dot. A blow's `result` is `staggered` when it lands on a
+  staggered dot (for the ×1.5); whether it staggered you is a separate flag.
+- A strike is refused as `not_steady` while blocking; a dodge is refused as
+  `staggered`, `blocking` or `cooldown`; a block without a shield as
+  `no_shield`.
+
 ### Phase 1: the simulation
 
 **Step 1. Python simulation.** `alzendor/balance.py`: pure functions, no

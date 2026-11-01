@@ -73,12 +73,13 @@ class GameServer:
         await Session(self, ws).run()
 
     def http(self, connection: ServerConnection, request: Request) -> Response | None:
-        if request.path == "/ws":
+        path = request.path.split("?", 1)[0]  # the page takes flags in its query (?balance=1)
+        if path == "/ws":
             return None  # carry on with the WebSocket handshake
-        if request.path in ("/", "/index.html"):
+        if path in ("/", "/index.html"):
             headers = Headers({"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache", **SECURITY_HEADERS})
             return Response(200, "OK", headers, self._web_client)
-        if request.path == "/healthz":
+        if path == "/healthz":
             return connection.respond(200, "ok\n")
         return connection.respond(404, "Not found\n")
 
