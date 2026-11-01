@@ -154,30 +154,7 @@
   .hp .fill.low { background: var(--hp-low); }
 
   /* Combat slots: each ball swings out and back; press the slot's key as it enters the centre. */
-  #timings { margin: 0 0 10px; display: grid; gap: 8px; }
-  .rhythm .status { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; font-size: 11px; color: var(--muted); }
-  .rhythm { cursor: pointer; }
-  .rhythm .key {
-    min-width: 16px; padding: 0 4px; border: 1px solid var(--muted); border-radius: 4px;
-    text-align: center; font-weight: bold; color: var(--text);
-  }
-  .rhythm.empty .label { color: var(--muted); }
-  .rhythm .label { font-weight: bold; text-transform: uppercase; letter-spacing: .06em; color: var(--text); }
-  .rhythm .result { margin-left: auto; font-weight: bold; color: var(--text); }
-  .rhythm .bar { position: relative; height: 16px; border-radius: 8px; background: var(--hp-track); overflow: hidden; }
-  .rhythm .lane { position: absolute; top: 0; bottom: 0; left: 8px; right: 8px; }
-  .rhythm .zone, .rhythm .sweet { position: absolute; top: 0; bottom: 0; transform: translateX(-50%); left: 50%; }
-  .rhythm .zone { background: color-mix(in srgb, var(--accent) 22%, transparent); transition: background .15s; }
-  .rhythm .sweet { background: color-mix(in srgb, var(--accent) 50%, transparent); }
-  .rhythm .ball {
-    position: absolute; top: 50%; left: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px;
-    border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--panel);
-  }
-  .rhythm.idle .ball { background: var(--fog); }
-  .rhythm.idle .zone, .rhythm.idle .sweet { opacity: .3; }
-  .rhythm.spent .zone { opacity: .35; }
-  .rhythm.hit .zone { background: color-mix(in srgb, var(--hp-good) 55%, transparent); }
-  .rhythm.miss .zone { background: color-mix(in srgb, var(--hp-low) 45%, transparent); }
+
   #me-hp { width: 120px; margin: 0; }
   #me-hp.struck .fill { animation: struck .4s; }
   @keyframes struck { from { background: var(--hp-low); filter: brightness(1.6); } }
@@ -241,11 +218,6 @@
   .zone-tag { font-size: 11px; padding: 0 6px; border-radius: 8px; border: 1px solid var(--border); color: var(--muted); align-self: flex-start; }
 
   /* Weather's effect on each slot, and the gear tooltip. */
-  .rhythm .wxbadge { font-size: 11px; font-weight: bold; }
-  .rhythm .wxbadge.up { color: var(--up); } .rhythm .wxbadge.down { color: var(--down); }
-  .rhythm.boosted .bar { box-shadow: 0 0 0 2px color-mix(in srgb, var(--up) 55%, transparent); }
-  .rhythm.reduced .bar { box-shadow: 0 0 0 2px color-mix(in srgb, var(--down) 45%, transparent); }
-  .rhythm.reduced .label { opacity: .7; }
   #tip {
     position: fixed; z-index: 10; width: min(330px, calc(100vw - 16px)); padding: 10px 12px; pointer-events: none;
     background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 8px;
@@ -265,10 +237,6 @@
   .now { font-size: 12px; }
   .now .up { color: var(--up); } .now .down { color: var(--down); }
   .t-travel, .t-journey { color: var(--move); font-style: italic; }
-  .rhythm.edge-left .lane { box-shadow: inset 3px 0 0 var(--accent); }
-  .rhythm.edge-right .lane { box-shadow: inset -3px 0 0 var(--accent); }
-  .rhythm.charged .lane { box-shadow: inset 0 -2px 0 var(--down); }
-  .rhythm[data-passive]:not([data-passive=""]) .status::after { content: "· " attr(data-passive); color: var(--accent); font-size: 11px; margin-left: 6px; }
   .identity { color: var(--accent); font-weight: 600; margin-bottom: 4px; }
   .rows li.off { opacity: .75; }
   #log .intro { margin: 8px 0; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--panel); }
@@ -336,9 +304,6 @@
   #entities { max-height: 132px; overflow-y: auto; margin-bottom: 8px; }
   #entities .card { padding: 4px 8px; margin-bottom: 4px; background: color-mix(in srgb, var(--bg) 85%, transparent); }
   #entities .card .desc { display: none; }
-  #entities .mini { display: flex; gap: 3px; margin-top: 3px; }
-  #entities .mini span { flex: 1; height: 3px; border-radius: 2px; background: var(--hp-track); overflow: hidden; }
-  #entities .mini i { display: block; height: 100%; width: 0; background: var(--hp-low); }
   /* The target pops up between the room's list and your slots, in a space of its own. */
   #target-card { min-height: 150px; margin: 0 0 8px; }
   #target-card .tcard { animation: pop .18s ease-out; background: color-mix(in srgb, var(--bg) 88%, transparent); }
@@ -358,20 +323,23 @@
   .attack .marker { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%;
     background: var(--hp-low); box-shadow: 0 0 0 2px var(--panel); left: 0; }
   .attack.mine .row b { color: var(--hp-low); font-weight: bold; }
+  .attack:not(.coming) .marker { display: none; }
+  #exits button.flee { border-color: var(--hp-low); color: var(--hp-low); }
   .attack .how { font-size: 11px; }
-  #defend-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 11px; color: var(--muted); }
-  #defend-row .key { min-width: 18px; padding: 0 4px; font-weight: bold; font-size: 11px; }
-  #defend-row .key.listening { border-color: var(--accent); color: var(--accent); }
-  #defend-row .label { font-weight: bold; text-transform: uppercase; letter-spacing: .06em; color: var(--text); }
-  #defend-row .cool { flex: 1; height: 6px; border-radius: 3px; background: var(--hp-track); overflow: hidden; }
-  #defend-row .cool .fill { height: 100%; width: 100%; background: var(--accent); }
-  #defend-row .result { min-width: 64px; text-align: right; font-weight: bold; color: var(--text); }
-  #defend-row.flash .label { color: var(--up); }
 
-  /* The balance sandbox (?balance=1): the circle, the strike row, dodge and
-     block, debuff chips and (on a touch screen) a stick. */
-  #balance { margin: 0 0 10px; padding: 8px; border: 1px solid var(--border); border-radius: 8px;
+  /* Your slots, and in a fight your balance: the circle, dodge and block,
+     debuff chips and (on a touch screen) a stick. */
+  #balance { margin: 0 0 10px; }
+  #balance.fighting { padding: 8px; border: 1px solid var(--border); border-radius: 8px;
     background: color-mix(in srgb, var(--bg) 88%, transparent); }
+  #balance .bhead { display: none; }
+  #balance.fighting .bhead { display: flex; }
+  #balance .bhead .boss { color: var(--hp-low); font-size: 11px; letter-spacing: .05em; }
+  #balance .strike .wxbadge { font-size: 11px; font-weight: bold; }
+  #balance .strike .wxbadge.up { color: var(--up); } #balance .strike .wxbadge.down { color: var(--down); }
+  #balance .strike.empty .nm { color: var(--muted); }
+  #balance .strike[data-passive]:not([data-passive=""])::after { content: attr(data-passive); display: block; font-size: 10px; color: var(--accent); }
+  #balance .strike.t0 .res { color: var(--text); }
   #balance .bhead { display: flex; align-items: center; gap: 8px; font-size: 12px; }
   #balance .bhead b { color: var(--accent); }
   #balance .bhead .mode { margin-left: auto; color: var(--muted); font-size: 11px; }
@@ -402,8 +370,6 @@
     border-radius: 50%; background: color-mix(in srgb, var(--accent) 45%, var(--panel)); pointer-events: none; }
   @media (pointer: coarse) { #balance .stick { display: block; } #balance .kh { display: none; } }
   #balance.touch .stick { display: block; }
-  #balance .bfoot { display: flex; gap: 6px; margin-top: 6px; align-items: center; font-size: 11px; color: var(--muted); }
-  #balance .bfoot button { margin-left: auto; }
 
   /* Rarity: the colour of a thing's name. Weather sensitivity: dots. */
   .r-common { color: var(--tier-grey); } .r-uncommon { color: var(--tier-green); } .r-rare { color: var(--tier-blue); }
@@ -633,16 +599,8 @@
       <h2>Here <span class="hint">Tab to target</span></h2>
       <ul id="entities"></ul>
       <div id="target-card" aria-live="polite"></div>
-      <!-- The balance sandbox (?balance=1 only): practice against the Training Yard's dummy and post. -->
-      <div id="balance" class="hidden" aria-label="Balance practice"></div>
       <h2>Slots <span class="hint" id="slot-hint">4 3 2 use your slots · hover for details</span></h2>
-      <div id="timings" role="group" aria-label="Your slots"></div>
-      <div id="defend-row" title="Block (with a shield in hand) or dodge the next blow: press as the enemy's marker reaches the end of its bar.">
-        <button type="button" class="key" id="defend-key" title="Change your keys in Settings">7</button>
-        <span class="label" id="defend-label">Dodge</span>
-        <div class="cool"><div class="fill" id="defend-cool"></div></div>
-        <span class="result" id="defend-result"></span>
-      </div>
+      <div id="balance" aria-label="Your slots, and your balance in a fight"></div>
     </section>
     <section>
       <h2>On the ground</h2>
@@ -1218,6 +1176,12 @@ function handle(message) {
     case "pong":
       onPong(message);
       break;
+    case "state":
+      fight.onState(message);
+      break;
+    case "refused":
+      fight.onRefused(message);
+      break;
   }
 }
 
@@ -1317,24 +1281,19 @@ function line(text, className) {
 
 function show(event) {
   if (event.type === "map") return applyMap(event);
-  if (event.type === "timing") return applyTiming(event);
-  if (event.type === "kit") { kit = event; decorateSlots(); return renderInventory(); }
+  if (event.type === "kit") { kit = event; fight.render(); return renderInventory(); }
   if (event.type === "weather") { wx = event; renderWeather(); renderNight(); return renderPanels(); }
   if (event.type === "journey") { journey = event.done ? null : event; renderPanels(); renderMap(); if (!event.text) return; }
   if (event.type === "travel_event") return showTravelEvent(event);
   if (event.type === "quests") { quests = event.quests; return renderQuests(); }
   if (event.type === "intro") return line(event.text, "intro");
-  if (event.type === "character") { character = event; renderCharacter(); renderDefend(); return renderTarget(); }
-  if (event.type === "npc_timing") return applyNpcTiming(event);
+  if (event.type === "character") { character = event; renderCharacter(); fight.render(); return renderTarget(); }
+  if (event.type === "encounter") return fight.onEncounter(event);
   if (event.type === "dispositions") return applyDispositions(event.dispositions, event.talk || {});
   if (event.type === "quest_update") return questUpdate(event);
-  if (event.type === "defend") return showDefend(event);
   if (event.type === "exposure") { exposure = event.kind ? event : null; return renderExposure(); }
-  if (event.type === "combat" && event.entity_id && event.target === "pc:" + me) {
-    if (event.defended) defendResult(event.perfect ? "Perfect!" : event.defended === "block" ? "Blocked" : "Dodged", true);
-    if (event.damage > 0) struck();
-  }
-  if ((event.type === "combat" || event.type === "heal") && (event.actor === me || event.channel === "PLAYER:" + me)) showResult(event);
+  if (event.type === "combat" && event.entity_id && event.target === "pc:" + me && event.damage > 0) struck();
+  if (event.type === "combat" || event.type === "heal") fight.onCombat(event);
   if (event.type === "room") return showRoom(event.room, event.text, event.cause);
   if (room && event.channel === "ROOM:" + room.id) updateRoom(event);
   if (walk && event.type === "system" && event.channel === "PLAYER:" + me) stopWalk();
@@ -1415,10 +1374,12 @@ function renderPanels() {
   $("room-name").textContent = room ? room.name : "—";
   $("room-area").textContent = room && room.area ? room.area : "";
   if (room && room.safe) $("room-area").append(" · ", el("span", "safe", "safe to rest"));
+  const fleeing = fight.active();
   $("exits").replaceChildren(...(room ? room.exits : []).map((dir) => {
-    const b = el("button", "", dir);
+    const b = el("button", fleeing ? "flee" : "", fleeing ? `flee ${dir}` : dir);
     b.type = "button";
-    b.onclick = () => { stopWalk(); sendCmd("move " + dir); };
+    if (fleeing) b.title = `FLEE ${dir.toUpperCase()}: steady first; the toughest enemy gets one parting blow`;
+    b.onclick = () => { stopWalk(); fleeing ? fight.flee(dir) : sendCmd("move " + dir); };
     return b;
   }));
   if (room && room.dark) {
@@ -1550,21 +1511,11 @@ function renderEntities() {
     if (card.asleep) top.append(el("span", "tag", "asleep"));
     else if (card.kind === "npc" && disposition(card) !== "neutral") top.append(el("span", "tag", disposition(card)));
     if (deadly(card)) top.append(el("span", "tag deadly", "deadly"));
-    if (card.wary && !card.fight) top.append(el("span", "tag", "watchful"));
+    if (card.wary && !card.fighting) top.append(el("span", "tag", "watchful"));
+    if (card.fighting) top.append(el("span", "tag", "fighting"));
     b.append(top);
     if (card.description) b.append(el("div", "desc", card.description));
     b.append(healthBar(card.hp, card.max_hp));
-    // A fighting NPC's blows coming, small: the target card shows them in full.
-    if (card.fight) {
-      const mini = el("div", "mini");
-      for (const a of card.fight.attacks) {
-        const bar = el("span"), fill = el("i");
-        Object.assign(fill.dataset, { next: a.next_ms, period: a.period_ms });
-        bar.append(fill);
-        mini.append(bar);
-      }
-      b.append(mini);
-    }
     b.onclick = () => { setTarget(card.id === target ? null : card.id); $("input").focus(); };
     li.append(b);
     return li;
@@ -1630,7 +1581,7 @@ function setTarget(id) {
 function autoTarget() {
   if (target || !room) return;
   // Never something deadly or watchful that isn't already after you: sneaking past it is the point.
-  const npcs = room.entities.filter((c) => c.kind === "npc" && (c.fight || !(deadly(c) || c.wary)));
+  const npcs = room.entities.filter((c) => c.kind === "npc" && (c.fighting || !(deadly(c) || c.wary)));
   const card = npcs.find((c) => disposition(c) === "hostile") || npcs.find((c) => disposition(c) === "friendly");
   if (card) setTarget(card.id);
 }
@@ -1645,17 +1596,11 @@ function cycleTarget(step) {
 
 $("target-clear").addEventListener("click", () => { setTarget(null); $("input").focus(); });
 
-// Combat slots ---------------------------------------------------------------------------
-// You have three slots, each holding a piece of gear with its own rhythm and
-// bar. Press 1, 2 or 3 (or click a bar) to use one. The server judges uses by
-// Redis's clock; the client keeps an estimate of that clock (from ping/pong)
-// and of the one-way trip to the server, and draws each ball where it will be
-// when a command sent now arrives. Use a slot as its ball enters the centre and
-// it lands on its beat.
+// The clock ---------------------------------------------------------------------------
+// Encounters count their steps on Redis's clock. The client keeps an estimate
+// of it (from ping/pong) and of the one-way trip to the server.
 
 const clock = { offset: 0, trip: 0, samples: [], timer: null };
-const slots = {};       // slot number -> { row, info, event }; event is set while its rhythm is running
-let timingFrame = null;
 
 function sendPing() {
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "ping", t: performance.now() }));
@@ -1678,127 +1623,8 @@ function onPong(message) {
   clock.trip = best.rtt / 2;
 }
 
-// Redis's clock at the moment a command sent now would reach the server.
-function arrivalTime() {
-  return performance.now() + clock.offset + clock.trip;
-}
-
-function inCombat() {
-  return Object.values(slots).some((s) => s.event);
-}
-
 function useSlot(n) {
-  stopWalk();
-  sendCmd(String(n));
-}
-
-function slotRow(n) {
-  if (slots[n]) return slots[n];
-  const row = el("div", "rhythm idle");
-  row.title = `Press ${keyLabel(SLOT_KEYS[n])} (or click) to use this slot`;
-  const status = el("div", "status");
-  status.append(el("span", "key", keyLabel(SLOT_KEYS[n])), el("span", "label"), el("span", "wxbadge"), el("span", "note"), el("span", "result"));
-  const lane = el("div", "lane");
-  lane.append(el("div", "zone"), el("div", "sweet"), el("div", "ball"));
-  const bar = el("div", "bar");
-  bar.append(lane);
-  row.append(status, bar);
-  row.addEventListener("click", () => { useSlot(n); $("input").focus(); });
-  row.addEventListener("mouseenter", () => { if (slots[n].gear) showTip(row, gearTip(slots[n].gear, [], keyLabel(SLOT_KEYS[n]))); });
-  row.addEventListener("mouseleave", hideTip);
-  // Keep the slots in order however their first events arrive.
-  const after = Object.keys(slots).map(Number).filter((m) => m > n).sort((a, b) => a - b)[0];
-  $("timings").insertBefore(row, after ? slots[after].row : null);
-  slots[n] = { row, info: {}, event: null, resultTimer: null };
-  return slots[n];
-}
-
-function applyTiming(event) {
-  const slot = slotRow(event.slot);
-  const { row } = slot;
-  const q = (cls) => row.querySelector("." + cls);
-  if (event.label) slot.info = { label: event.label, period_ms: event.period_ms };
-  slot.event = event.active ? event : null;
-  q("label").textContent = slot.info.label || "";
-  row.classList.toggle("idle", !event.active);
-  row.classList.toggle("empty", !slot.info.period_ms);
-  const period = slot.info.period_ms;
-  if (event.active) {
-    // A ball covers half its lane in half a beat, so a window of g ms either
-    // side of the centre spans 2g/period of the lane.
-    q("zone").style.width = (200 * event.grace_ms) / event.period_ms + "%";
-    q("sweet").style.width = (200 * event.perfect_ms) / event.period_ms + "%";
-    if (!timingFrame) timingFrame = requestAnimationFrame(drawTiming);
-  } else {
-    q("ball").style.left = "50%";
-    row.classList.remove("spent");
-  }
-  q("note").textContent = period ? `every ${(period / 1000).toFixed(1)}s` : `equip something: EQUIP <gear> ${event.slot}`;
-  decorateSlots();
-  renderEntities();
-}
-
-// Marks each slot with what the weather does to its gear: ▲ stronger, ▼
-// weaker, and the beat it would open at now.
-function decorateSlots() {
-  if (!kit) return;
-  kit.slots.forEach((gid, i) => {
-    const slot = slots[i + 1];
-    if (!slot) return;
-    const g = gid ? kit.gear.find((x) => x.id === gid) : null;
-    slot.gear = g;
-    const change = g && g.now ? Math.round((g.now.factor - 1) * 100) : 0;
-    const badge = slot.row.querySelector(".wxbadge");
-    badge.textContent = change > 0 ? `▲${change}%` : change < 0 ? `▼${-change}%` : "";
-    badge.className = "wxbadge" + (change > 0 ? " up" : change < 0 ? " down" : "");
-    badge.title = g ? "What the weather does to it right now. Hover for details." : "";
-    slot.row.classList.toggle("boosted", change >= 5);
-    slot.row.classList.toggle("reduced", change <= -5);
-    if (g && g.now && !slot.event) slot.row.querySelector(".note").textContent = `every ${(g.now.period_ms / 1000).toFixed(1)}s`;
-    // A passive attuned to this slot: named, with a glow on the edge it watches.
-    const attuned = character ? character.perks.filter((p) => p.attuned === i + 1) : [];
-    slot.row.querySelector(".label").title = attuned.map((p) => `${p.name}: ${p.description}`).join("\n");
-    slot.row.classList.toggle("edge-left", attuned.some((p) => ["second_wind", "berserk_seal"].includes(p.id)));
-    slot.row.classList.toggle("edge-right", attuned.some((p) => p.id === "moonlit_edge"));
-    slot.row.classList.toggle("charged", attuned.some((p) => p.id === "bloodrhythm"));
-    slot.row.dataset.passive = attuned.map((p) => p.name).join(", ");
-  });
-}
-
-function drawTiming() {
-  timingFrame = null;
-  const t = arrivalTime();
-  for (const [n, slot] of Object.entries(slots)) {
-    const event = slot.event;
-    if (!event) continue;
-    if (t - event.last_ms > event.timeout_ms) { applyTiming({ slot: Number(n), active: false }); continue; }
-    // Out to the right and back in one beat, out to the left and back in the next.
-    const u = Math.max(0, (t - event.start_ms) / event.period_ms);
-    const swing = 1 - Math.abs(1 - 2 * (u % 1));
-    const side = Math.floor(u) % 2 === 0 ? 1 : -1;
-    slot.row.querySelector(".ball").style.left = 50 + 50 * swing * side + "%";
-    // The coming centre crossing is already used up (by a miss): nothing to aim for.
-    slot.row.classList.toggle("spent", Math.round(u) <= event.last_beat);
-  }
-  drawNpcTimers();
-  if (inCombat() || npcFighting()) timingFrame = requestAnimationFrame(drawTiming);
-}
-
-const RESULTS = { opener: "Opening", perfect: "Perfect!", good: "Hit", early: "Too early", late: "Too late" };
-
-function showResult(event) {
-  const slot = slots[event.slot];
-  if (!slot || !RESULTS[event.result]) return; // a room "miss" adds nothing to the private early/late message
-  const amount = event.damage !== undefined ? ` (${event.damage})` : event.amount !== undefined ? ` (+${event.amount})` : "";
-  const landed = !["early", "late"].includes(event.result);
-  slot.row.querySelector(".result").textContent = RESULTS[event.result] + amount;
-  slot.row.classList.remove("hit", "miss");
-  slot.row.classList.add(landed ? "hit" : "miss");
-  clearTimeout(slot.resultTimer);
-  slot.resultTimer = setTimeout(() => {
-    slot.row.classList.remove("hit", "miss");
-    slot.row.querySelector(".result").textContent = "";
-  }, 900);
+  fight.strike(n);
 }
 
 // Your own health: in the header, and as the faint fill behind the combat
@@ -1847,18 +1673,6 @@ function serverNow() {
   return performance.now() + clock.offset;
 }
 
-function npcFighting() {
-  return Boolean(room && room.entities.some((c) => c.fight));
-}
-
-function applyNpcTiming(event) {
-  if (!room) return;
-  room.entities = room.entities.map((c) =>
-    c.id === event.entity_id ? { ...c, fight: event.active ? { attacks: event.attacks, target: event.target } : null } : c);
-  renderEntities();
-  if (!timingFrame) timingFrame = requestAnimationFrame(drawTiming);
-}
-
 function applyDispositions(map, talk) {
   if (!room) return;
   room.entities = room.entities.map((c) => (map[c.id] ? { ...c, disposition: map[c.id], ...(talk[c.id] || {}) } : c));
@@ -1885,7 +1699,6 @@ function renderTarget() {
   const card = target && room ? room.entities.find((c) => c.id === target) : null;
   if (!card) {
     targetCard = null;
-    sandbox.render();
     const hint = room && room.entities.length ? "No target. Press Tab (or click someone above) to pick one." : "";
     return $("target-card").replaceChildren(...(hint ? [el("p", "empty", hint)] : []));
   }
@@ -1940,65 +1753,35 @@ function renderTarget() {
     rest.push(row);
   }
   if (card.kind === "npc" && card.attacks && card.attacks.length) {
-    // Each attack: a marker sliding to the end of its bar, where the blow lands.
-    // The shaded end is your window to block or dodge it (DEFEND).
-    const fight = card.fight;
-    const mine = fight && fight.target === "pc:" + me;
-    const defence = character && character.defence;
+    // Each attack: in a fight, a marker sliding to the end of its bar as an
+    // announced blow comes (fight.js draws it); red when it's coming for you.
     const list = el("div", "attacks");
     card.attacks.forEach((attack, i) => {
-      const row = el("div", "attack" + (mine ? " mine" : ""));
+      const row = el("div", "attack");
+      Object.assign(row.dataset, { npc: card.id, n: String(i + 1) });
       const top = el("div", "row");
-      top.append(el("b", "", attack.name), el("span", "how", `${attack.damage} dmg · ${DEFEND_WORDS[attack.defend || "both"]}`));
+      const hard = attack.stagger ? " · staggers" : attack.kick >= 1.8 ? " · knocks hard" : "";
+      top.append(el("b", "", attack.name), el("span", "how", `${attack.damage} dmg · ${DEFEND_WORDS[attack.defend || "both"]}${hard}`));
       const track = el("div", "track");
-      const fill = el("div", "fill");
-      const timer = fight && fight.attacks[i];
-      const canMeet = defence && (attack.defend === "both" || attack.defend === defence.mode || !attack.defend);
-      if (timer && mine && canMeet) {
-        const zone = el("div", "window");
-        zone.style.width = Math.min(50, (100 * defence.window_ms) / attack.period_ms) + "%";
-        track.append(zone);
-      }
-      track.append(fill);
-      if (timer) {
-        const marker = el("div", "marker");
-        for (const node of [fill, marker]) Object.assign(node.dataset, { next: timer.next_ms, period: timer.period_ms });
-        track.append(marker);
-      }
+      track.append(el("div", "fill"), el("div", "marker"));
       row.append(top, track);
       list.append(row);
     });
     rest.push(list);
-    if (fight && fight.target) rest.push(el("div", "fighting", `Fighting ${nameOf(fight.target)}`));
   }
   v.rest.replaceChildren(...rest);
-  sandbox.render();
 }
 
-// Moves every NPC attack marker (and the small bars in the room list) towards
-// its next blow. They're drawn for when a press sent now would arrive, so
-// pressing DEFEND as a marker reaches the end meets the blow.
-function drawNpcTimers() {
-  const t = arrivalTime();
-  for (const node of document.querySelectorAll("#target-card .attack [data-next], #entities .mini [data-next]")) {
-    const left = Number(node.dataset.next) - t;
-    const pct = Math.max(0, Math.min(100, 100 * (1 - left / Number(node.dataset.period))));
-    if (node.classList.contains("marker")) node.style.left = pct + "%";
-    else node.style.width = pct + "%";
-  }
-}
-
-// Key bindings: a key for each slot and one for DEFEND, chosen in Settings and
+// Key bindings: a key for each slot, chosen in Settings and
 // remembered per browser (alz.keys). A key is one character (letters are kept
 // lowercase) or F1 to F12. Choosing a key that's in use swaps the two.
-const KEY_DEFAULTS = { 1: "4", 2: "3", 3: "2", defend: "7" };
-const KEY_NAMES = { 1: "Slot 1", 2: "Slot 2", 3: "Slot 3", defend: "Defend (block or dodge)" };
+const KEY_DEFAULTS = { 1: "4", 2: "3", 3: "2" };
+const KEY_NAMES = { 1: "Slot 1", 2: "Slot 2", 3: "Slot 3" };
 
 function loadKeys() {
   let saved = {};
   try { saved = JSON.parse(store.get("alz.keys") || "{}") || {}; } catch {}
-  const old = store.get("alz.key.defend"); // the defend key, from before there were Settings
-  if (old && !saved.defend) saved.defend = old;
+  delete saved.defend; // from before balance
   return { ...KEY_DEFAULTS, ...saved };
 }
 
@@ -2023,56 +1806,14 @@ function bindKey(action, k) {
   if (other) keys[other] = keys[action];
   keys[action] = k;
   store.set("alz.keys", JSON.stringify(keys));
-  store.remove("alz.key.defend");
   showKeys();
 }
 
 function showKeys() {
-  for (const n of [1, 2, 3]) {
-    const row = slots[n];
-    if (!row) continue;
-    row.row.title = `Press ${keyLabel(keys[n])} (or click) to use this slot`;
-    row.row.querySelector(".status .key").textContent = keyLabel(keys[n]);
-  }
-  $("input").placeholder = `Type a command — Tab picks a target, ${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} use your slots, `
-    + `${keyLabel(keys.defend)} blocks or dodges`;
-  renderDefend();
+  $("input").placeholder = `Type a command — Tab picks a target, ${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} use your slots`;
+  $("slot-hint").textContent = `${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} · in a fight WASD steers, Space dodges, Shift blocks`;
+  fight.render();
 }
-
-// Defence: DEFEND (the 7 key, or one you choose) blocks with a shield in hand,
-// or dodges without. Then it needs a moment before it's ready again.
-function renderDefend() {
-  const d = character && character.defence;
-  $("defend-key").textContent = keyLabel(keys.defend);
-  $("defend-label").textContent = d && d.mode === "block" ? "Block" : "Dodge";
-  $("slot-hint").textContent = `${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} use your slots · `
-    + `${keyLabel(keys.defend)} ${d && d.mode === "block" ? "blocks" : "dodges"} · hover for details`;
-}
-
-function defend() {
-  stopWalk();
-  sendCmd("defend");
-}
-
-function defendResult(text, good) {
-  const row = $("defend-row");
-  $("defend-result").textContent = text;
-  row.classList.toggle("flash", good);
-  clearTimeout(defendResult.timer);
-  defendResult.timer = setTimeout(() => { $("defend-result").textContent = ""; row.classList.remove("flash"); }, 1200);
-}
-
-function showDefend(event) {
-  if (!event.ready) return defendResult("Too soon", false);
-  const fill = $("defend-cool");
-  fill.style.transition = "none";
-  fill.style.width = "0%";
-  void fill.offsetWidth;
-  fill.style.transition = `width ${event.cooldown_ms}ms linear`;
-  fill.style.width = "100%";
-}
-
-$("defend-key").addEventListener("click", openSettings);
 
 // Settings ----------------------------------------------------------------------------
 // Key bindings: click a key, then press the one you want (Esc keeps the old one).
@@ -2081,7 +1822,7 @@ let choosing = null; // the action whose key is being chosen
 function renderSettings() {
   const body = $("settings-body");
   const list = el("ul", "keys");
-  for (const action of [1, 2, 3, "defend"]) {
+  for (const action of [1, 2, 3]) {
     const li = el("li");
     const b = el("button", "keycap" + (choosing === String(action) ? " listening" : ""),
       choosing === String(action) ? "Press a key…" : keyLabel(keys[action]));
@@ -2091,12 +1832,11 @@ function renderSettings() {
     li.append(el("span", "", KEY_NAMES[action]), b);
     list.append(li);
   }
-  const reset = el("button", "", "Reset to 4, 3, 2 and 7");
+  const reset = el("button", "", "Reset to 4, 3 and 2");
   reset.type = "button";
   reset.addEventListener("click", () => {
     for (const [action, k] of Object.entries(KEY_DEFAULTS)) keys[action] = k;
     store.remove("alz.keys");
-    store.remove("alz.key.defend");
     choosing = null;
     showKeys();
     renderSettings();
@@ -2146,7 +1886,7 @@ function amountsText(g, amounts) {
 function gearLine(g) {
   const line = el("div", "sub");
   line.append(`${g.rarity || "common"} ${g.kind.toLowerCase()} `, pips(g.sensitivity || 1),
-    ` · every ${(g.period_ms / 1000).toFixed(1)}s · ${amountsText(g, g.amounts.slice(1))}` + (g.targets === "ally" ? " · you or an ally" : ""));
+    ` · every ${(g.cooldown_ms / 1000).toFixed(1)}s · ${amountsText(g, g.amounts)}` + (g.hits > 1 ? ` in ${g.hits} hits` : "") + (g.targets === "ally" ? " · you or an ally" : ""));
   return line;
 }
 
@@ -2155,7 +1895,7 @@ function nowLine(g) {
   const line = el("div", "now");
   if (!g.now) return line;
   const change = Math.round((g.now.factor - 1) * 100);
-  line.append(`now: ${amountsText(g, g.now.amounts.slice(1))}, every ${(g.now.period_ms / 1000).toFixed(1)}s `);
+  line.append(`now: ${amountsText(g, g.now.amounts)} `);
   if (change) line.append(el("span", change > 0 ? "up" : "down", change > 0 ? `▲${change}%` : `▼${-change}%`));
   return line;
 }
@@ -2298,7 +2038,7 @@ function renderCharacter() {
   }
   $("character-body").replaceChildren(...parts);
   renderReputation();
-  decorateSlots();
+  fight.render();
 }
 
 // Worn gear: one row per place (head, chest, legs, hand), then everything else
@@ -2689,9 +2429,10 @@ function gearTip(g, extra = [], key = null) {
   const heal = g.effect === "heal";
   card.append(gsec("What it does", kv([
     [heal ? "Heals" : "Damage", `${g.amounts.join(" / ")}`],
-    ["", "opener / hit / perfect"],
-    ["Beat", `every ${(g.period_ms / 1000).toFixed(1)} s`],
-    ["Timing", `±${g.grace_ms} ms · ±${g.perfect_ms} perfect`],
+    ["", "edge / clean / perfect" + (g.hits > 1 ? `, in ${g.hits} hits` : "")],
+    ["Ready", `every ${(g.cooldown_ms / 1000).toFixed(1)} s`],
+    ["Kick", g.kick ? `${g.kick} (${g.pattern === "side" ? "sideways" : g.pattern === "taps" ? "the same way each hit" : "any way"})` : "none"],
+    ["Leaves you", g.debuff ? `${g.debuff.kind} for ${(g.debuff.ms / 1000).toFixed(1)} s` : null],
     ["Staggers", g.stagger_ms ? `${g.stagger_ms} ms` : null],
     ["Bleeds", g.bleed ? `${g.bleed.damage} a blow, ${g.bleed.beats} blows` : null],
     ["Targets", g.targets === "ally" ? "you or an ally" : null],
@@ -2714,13 +2455,12 @@ function gearTip(g, extra = [], key = null) {
     const rows = [];
     for (const m of g.now.mods) {
       const row = el("div", "mod");
-      const good = m.on === "resilience" || (m.on === "period" ? m.pct < 0 : m.pct > 0);
-      const value = m.on === "resilience" ? `${m.pct}% softer` : m.on === "period" ? `${signed(m.pct)}% beat`
-        : m.on ? `${signed(m.pct)}% window` : `${signed(m.pct)}%`;
+      const good = m.on === "resilience" || m.pct > 0;
+      const value = m.on === "resilience" ? `${m.pct}% softer` : `${signed(m.pct)}%`;
       row.append(el("span", "", m.label), el("span", m.pct === 0 ? "" : good ? "up" : "down", value));
       rows.push(row);
     }
-    rows.push(el("div", "result", `→ ${g.now.amounts.join(" / ")} · every ${(g.now.period_ms / 1000).toFixed(1)} s`));
+    rows.push(el("div", "result", `→ ${g.now.amounts.join(" / ")}`));
     card.append(gsec(`Right now · ${wx.place}`, ...rows));
   }
   if (g.description) card.append(gsec(null, el("div", "flavour", g.description)));
@@ -3340,7 +3080,7 @@ function signOut() {
   lastSeq = 0;
   stopWalk();
   setTarget(null);
-  for (const n of Object.keys(slots)) applyTiming({ slot: Number(n), active: false });
+  fight.end();
   $("me-hp").classList.add("hidden");
   $("panel-buttons").classList.add("hidden");
   for (const dialog of document.querySelectorAll("dialog")) dialog.close();
@@ -3393,32 +3133,28 @@ $("command").addEventListener("submit", (e) => {
   scrollToLatest();
   historyIndex = history.length;
   sendCmd(text);
-  // In a fight, keep the command (selected, so typing replaces it): Enter repeats it on the next beat.
-  if (inCombat() || /^(use|[123])\b/i.test(text)) $("input").select();
-  else $("input").value = "";
-  sandbox.sent();
+  $("input").value = "";
+  fight.sent(); // back to combat focus
 });
 
 // The keys that use each slot (4, 3 and 2 unless you've chosen others in
-// Settings, so a resting finger sits on the first slot) and DEFEND. They work
-// straight away, without Enter, unless you're typing something: on an empty
-// command line, or in a fight when the kept command is all selected.
+// Settings, so a resting finger sits on the first slot), out of a fight. They
+// work straight away, without Enter, on an empty command line. (In a fight,
+// combat focus has them: see fight.)
 function slotKey(e) {
   const k = keyOf(e);
   const n = Number([1, 2, 3].find((slot) => keys[slot] === k));
-  const guard = k === keys.defend;
-  if ((!n && !guard) || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return false;
+  if (!n || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return false;
   if ($("world").classList.contains("hidden") || document.querySelector("dialog[open]")) return false;
   const field = e.target;
   if (field === $("input")) {
     const all = field.selectionStart === 0 && field.selectionEnd === field.value.length;
-    if (field.value && !(inCombat() && all)) return false;
+    if (field.value && !all) return false;
   } else if (field.closest && field.closest("input, textarea, select, [contenteditable]")) {
     return false;
   }
   e.preventDefault();
-  if (guard) defend();
-  else useSlot(n);
+  useSlot(n);
   return true;
 }
 
@@ -3438,135 +3174,185 @@ $("input").addEventListener("keydown", (e) => {
   }
 });
 
-// The balance sandbox ----------------------------------------------------------------------
-// Behind ?balance=1, a practice of the balance simulation (the Balance block
-// at the top of this script) against the Training Yard's dummy and post. It
-// runs in this page only and sends nothing: blows come from the post's attack
-// timers (npc_timing when the server has them, else its attacks' periods from
-// the start), and strikes only show their tier. Gear is converted from its
-// rhythm on the fly, as tools/convert_balance.py will. It goes in step 11 of
-// docs/combat-redesign.md, when real encounters replace it.
-const sandbox = (() => {
-  const params = new URLSearchParams(location.search);
-  const enabled = params.get("balance") === "1" || params.get("balance") === "well";
-  const showWell = params.get("balance") === "well";
-  const PRACTICE = ["npc:dummy-1", "npc:post-1"];
+// Fights ------------------------------------------------------------------------------------
+// Every fight is an encounter (docs/combat-redesign.md), run by one server, its
+// owner, which simulates every dot in it. This page predicts your own dot with
+// the Balance block at the top of the script: your inputs apply at once, and
+// each state message from the owner (15 a second) resets the dot to the
+// server's, replays your inputs since, and blends any difference in over a few
+// frames. Blows are announced 1.5 s ahead with their direction, so the
+// prediction knows them too.
+//
+// In a fight, with the command line empty, the page is in combat focus: WASD
+// (or the arrows) steer, your slot keys strike, Space dodges and Shift (held)
+// blocks with a shield in hand. Enter or / types a command; Esc goes back.
+// Out of a fight the slot row still works: a heal or guard just happens, and
+// damage gear on your target strikes first, which starts a fight.
+const fight = (() => {
   const STEER = { w: Balance.UP, s: Balance.DOWN, a: Balance.LEFT, d: Balance.RIGHT,
     ArrowUp: Balance.UP, ArrowDown: Balance.DOWN, ArrowLeft: Balance.LEFT, ArrowRight: Balance.RIGHT };
-  const TIER_WORDS = ["Edge", "Clean", "Perfect!"];
-  const REFUSED = { not_steady: "Not steady", cooldown: "Not ready", staggered: "Staggered", blocking: "Blocking", empty: "Empty slot", no_shield: "No shield" };
-  const VOLLEYS = { missile: [4, 1000, 0.7], chain_lightning: [3, 300, 0.5], cinder_rain: [3, 1000, 0.5], twin_jab: [2, 150, 0.4] };
-  const LEAD_MS = 1000;
+  const TIER_WORDS = { edge: "Edge", clean: "Clean", perfect: "Perfect!" };
+  const REFUSED = { not_steady: "Not steady", cooldown: "Not ready", staggered: "Staggered", blocking: "Blocking",
+    empty: "Empty slot", no_shield: "No shield", gone: "Gone", no_exit: "No way out", dark: "Too dark" };
   const STEP_MS = 1000 / Balance.HZ;
+  const BLEND = 0.6; // how much of a correction is left after each frame (gone in ~6)
 
-  let run = null;       // the practice fight: dot, foe, clocks, held keys
-  let focus = false;    // combat focus: steering and slot keys go to the fight, not the command line
-  let ui = null;        // the panel's nodes
+  let enc = null;    // the encounter you're in: { id, info, startMs, join, dot, gear, seq, held, stick, log, blows, bosses, ... }
+  let focus = false; // combat focus: steering and slot keys go to the fight, not the command line
+  let ui = null;
+  let frame = null;
+  let lastSent = 0;
+  const results = {}; // slot -> { text, cls, until }: the last strike's tier, or why it didn't
+  let status = { text: "", cls: "", until: 0 };
+  const stats = { states: 0, visible: 0 }; // state messages, and corrections bigger than a pixel or so
 
-  // Piecewise linear through [x, y] anchors, clamped at the ends.
-  function interp(anchors, x) {
-    if (x <= anchors[0][0]) return anchors[0][1];
-    for (let i = 1; i < anchors.length; i++) {
-      const [x1, y1] = anchors[i], [x0, y0] = anchors[i - 1];
-      if (x <= x1) return y0 + (y1 - y0) * (x - x0) / (x1 - x0);
-    }
-    return anchors[anchors.length - 1][1];
-  }
+  const active = () => Boolean(enc);
+  const nowStep = () => Math.floor((serverNow() - enc.startMs) * Balance.HZ / 1000);
 
-  // A slot's gear as balance sees it, from its rhythm (the plan's conversion).
-  function convertGear(g) {
-    const period = (g.now && g.now.period_ms) || g.period_ms || 1200;
-    const out = { cooldown: Math.round(interp([[1000, 300], [1200, 350], [4500, 2500], [8000, 4500]], period)),
-      kick: interp([[1000, 0.8], [1200, 1.0], [4500, 1.6], [8000, 2.0]], period), pattern: period < 3000 ? "bump" : "side" };
-    if (g.effect === "heal" || g.effect === "guard") {
-      out.kick = 0;
-      if (g.kind === "Potion") out.debuff = { kind: "steady", strength: 1.5, ms: 3000 };
-    } else if (VOLLEYS[g.id]) {
-      [out.hits, out.gap, out.kick] = VOLLEYS[g.id];
-      out.pattern = "taps";
-    } else if (period >= 4000) {
-      out.debuff = { kind: "heavy", strength: Math.min(2.5, 1.5 + (period - 4000) / 2000), ms: 5000 };
-    }
-    return out;
-  }
+  // Starting and ending ------------------------------------------------------------------
 
-  function slotGear() {
-    const out = {};
-    if (!kit) return out;
-    kit.slots.forEach((gid, i) => {
-      const g = gid && kit.gear.find((x) => x.id === gid);
-      if (g) out[i + 1] = g;
-    });
-    return out;
-  }
-
-  // "The Sparring Post", "Brannoc".
-  const foe = (card) => (card.proper ? card.name : "the " + card.name);
-
-  function practiceCard() {
-    return target && PRACTICE.includes(target) && room ? room.entities.find((c) => c.id === target) : null;
-  }
-
-  // Starting and stopping ------------------------------------------------------------------
-
-  function start() {
-    const card = practiceCard();
-    if (!card || run) return;
-    const stats = (character && character.stats) || {};
-    const rules = Balance.forPlayer(Balance.rulesFrom({}), stats);
-    const gear = slotGear();
+  function start(event) {
+    const info = event.encounter;
+    const mine = info.players.find((p) => p.pid === me);
+    if (!mine) return;
+    const rules = Balance.forPlayer(Balance.rulesFrom(info.rules), mine.stats || {});
     const slots = {};
-    for (const [n, g] of Object.entries(gear)) slots[n] = convertGear(g);
-    const shield = Boolean(character && character.defence && character.defence.mode === "block");
-    const seed = Math.floor(Math.random() * 1e9);
-    const startAt = performance.now() + LEAD_MS;
-    // The foe's attacks: on the server's timers if it has them, else a full period in.
-    const attacks = (card.attacks || []).map((a, i) => {
-      const timer = card.fight && card.fight.attacks && card.fight.attacks[i];
-      const period = a.period_ms || 6000;
-      let next = timer && timer.next_ms ? timer.next_ms - clock.offset : startAt + period;
-      while (next < startAt + 200) next += period;
-      return { name: a.name, damage: a.damage, defend: a.defend || "both", period,
-        kick: interp([[2500, 0.8], [8000, 2.0], [15000, 2.4]], period), next, angle: Math.random() * Balance.TAU };
-    });
-    run = { dot: Balance.makeDot(rules, seed, me || "you", slots, shield), rules, gear, startAt, card, attacks,
-      held: 0, stick: 0, acts: [], dealt: 0, taken: 0, frame: null, status: "", statusClass: "", statusUntil: 0,
-      results: {}, cool: {} };
-    for (const [n, g] of Object.entries(slots)) run.cool[n] = Balance.steps(g.cooldown);
-    line(`${capital(foe(card))} squares up to you. (Balance practice: WASD steers, ${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} strike, Space dodges${shield ? ", hold Shift to block" : ""}.)`, "t-combat");
+    for (const [n, g] of Object.entries(mine.slots || {})) slots[n] = g;
+    enc = {
+      id: info.id, info, rules, startMs: info.start_ms,
+      join: Math.floor((mine.join_ms + info.lead_ms - info.start_ms) * Balance.HZ / 1000),
+      dot: Balance.makeDot(rules, info.seed, me, slots, mine.shield > 0), slots, shield: mine.shield > 0,
+      seq: 0, held: 0, stick: 0, log: [], acts: [], blows: [], bosses: {}, offset: { x: 0, y: 0 },
+      npcs: Object.fromEntries(info.npcs.map((n) => [n.id, n])),
+    };
+    if (!event.resumed) flash("Steady…", "", 900);
     setFocus(true);
     render();
-    run.frame = requestAnimationFrame(frame);
+    if (!frame) frame = requestAnimationFrame(tick);
   }
 
-  function stop(why) {
-    if (!run) return;
-    cancelAnimationFrame(run.frame);
-    if (why) line(`Practice over${why === true ? "" : ": " + why}. You dealt ${run.dealt} and took ${run.taken}.`, "t-system");
-    run = null;
-    setFocus(false);
+  function end() {
+    if (!enc) return;
+    enc = null;
+    setFocus(false, true);
     render();
+    renderPanels();
   }
 
-  // Combat focus ---------------------------------------------------------------------------
+  function onEncounter(event) {
+    if (event.op === "start") start(event);
+    else if (event.op === "end" && enc && event.id === enc.id) end();
+    else if (enc && event.id === enc.id && event.op === "join" && event.npc) enc.npcs[event.who] = event.npc;
+    else if (enc && event.id === enc.id && event.op === "leave") delete enc.npcs[event.who];
+    renderPanels();
+  }
 
-  function setFocus(on) {
-    focus = Boolean(on && run);
+  // What the owner says: your dot as the server has it, and the blows announced.
+  function onState(m) {
+    if (!enc || m.id !== enc.id) return;
+    enc.blows = m.blows || [];
+    enc.bosses = m.bosses || {};
+    const snap = m.players && m.players[me];
+    if (!snap) return;
+    enc.log = enc.log.filter((e) => e.seq > snap.seq);
+    const d = Balance.makeDot(enc.rules, enc.info.seed, me, enc.slots, enc.shield);
+    Balance.restore(d, snap);
+    // Replay what you've done since (that the server hasn't yet) up to where the prediction was.
+    let keys = snap.keys;
+    const upTo = enc.dot.n;
+    for (let n = d.n + 1; n <= upTo; n++) {
+      const acts = [];
+      for (const e of enc.log) {
+        if (Math.max(e.n, snap.n + 1) !== n) continue;
+        keys = e.keys;
+        if (e.act) acts.push(e.act);
+      }
+      Balance.step(d, keys, acts, blowsAt(n + enc.join));
+    }
+    const dx = enc.dot.x - d.x, dy = enc.dot.y - d.y;
+    enc.offset.x += dx;
+    enc.offset.y += dy;
+    enc.dot = d;
+    // For measuring (docs/combat-redesign.md, step 12): how often a correction would show.
+    stats.states += 1;
+    if (Math.hypot(dx, dy) > 0.01) stats.visible += 1;
+  }
+
+  function onRefused(m) {
+    if (m.pid && m.pid !== me) return;
+    const word = REFUSED[m.reason] || m.reason;
+    if (m.act === "strike" && m.slot) results[m.slot] = { text: word, cls: "no", until: performance.now() + 700 };
+    else flash(m.act === "flee" && m.reason === "not_steady" ? "Steady yourself first." : word, "bad", 900);
+  }
+
+  // A strike or a blow, as the room hears it: your slots show their tier.
+  function onCombat(event) {
+    if ((event.type === "combat" || event.type === "heal") && event.actor === me && event.slot) {
+      const amount = event.damage !== undefined ? ` ${event.damage}` : event.amount !== undefined ? ` +${event.amount}` : "";
+      const tier = TIER_WORDS[event.tier] || "";
+      results[event.slot] = { text: (tier + amount).trim(), cls: event.tier === "perfect" ? "t2" : event.tier === "clean" ? "t1" : "t0",
+        until: performance.now() + 900 };
+    }
+    if (event.type === "combat" && event.target === "pc:" + me && event.entity_id) {
+      const words = { dodge: "Dodged", block: "Blocked", perfect_block: "Perfect block!", parting: "A parting blow" };
+      if (words[event.result]) flash(words[event.result], event.result === "parting" ? "bad" : "good", 800);
+    }
+  }
+
+  // Inputs ------------------------------------------------------------------------------
+
+  function blowsAt(step) {
+    if (!enc) return [];
+    return enc.blows.filter((b) => b.land === step && b.pid === me)
+      .map((b) => ({ kick: b.kick, angle: b.angle, defend: b.defend, stagger: b.stagger, debuff: b.debuff }));
+  }
+
+  // Sends your held keys and maybe an act, and applies it to the prediction at once.
+  function input(act, extra = {}) {
+    if (!enc || !ws || ws.readyState !== WebSocket.OPEN) return;
+    const keys = enc.held | enc.stick;
+    enc.seq += 1;
+    const message = { type: "input", seq: enc.seq, keys, ...extra };
+    if (act) message.act = act;
+    ws.send(JSON.stringify(message));
+    lastSent = performance.now();
+    let local = null;
+    if (act === "strike") local = ["strike", extra.slot, extra.target || null];
+    else if (["dodge", "block", "unblock"].includes(act)) local = [act];
+    enc.log.push({ seq: enc.seq, n: enc.dot.n + 1, keys, act: local });
+    if (local) enc.acts.push(local);
+  }
+
+  function strike(n) {
+    stopWalk();
+    if (!enc) return sendCmd(String(n));
+    if (!enc.slots[n]) return onRefused({ act: "strike", slot: n, reason: "empty" });
+    input("strike", { slot: n, target: target || "" });
+  }
+
+  function flee(dir) {
+    if (enc) input("flee", { dir });
+    else sendCmd("move " + dir);
+  }
+
+  function steer(mask) {
+    if (!enc) return;
+    if (enc.held !== mask) { enc.held = mask; input(null); }
+  }
+
+  function setFocus(on, quiet) {
+    focus = Boolean(on && enc);
+    if (enc) { enc.held = 0; }
     if (focus && document.activeElement === $("input")) $("input").blur();
-    if (!focus && run) $("input").focus();
-    if (run) { run.held = 0; }
+    if (!focus && enc && !quiet) $("input").focus();
     if (ui) {
-      ui.mode.textContent = focus ? "combat keys · Enter or / to type" : run ? "typing · Esc to fight" : "";
+      ui.mode.textContent = focus ? "combat keys · Enter or / to type" : enc ? "typing · Esc to fight" : "";
       ui.mode.classList.toggle("on", focus);
     }
   }
 
-  function press(act) {
-    if (run) run.acts.push(act);
-  }
-
   document.addEventListener("keydown", (e) => {
-    if (!run || document.querySelector("dialog[open]")) return;
+    if (!enc || document.querySelector("dialog[open]")) return;
     const k = keyOf(e);
     if (!focus) {
       if (k === "Escape" && e.target === $("input") && !$("input").value) { e.preventDefault(); e.stopPropagation(); setFocus(true); }
@@ -3575,11 +3361,12 @@ const sandbox = (() => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const slot = [1, 2, 3].find((n) => keys[n] === k);
     if (k === "Enter" || k === "/") setFocus(false);
-    else if (STEER[k]) run.held |= STEER[k];
+    else if (STEER[k]) steer(enc.held | STEER[k]);
     else if (e.repeat) { /* held: nothing more */ }
-    else if (slot) press(["strike", slot, run.card.id]);
-    else if (k === " ") press(["dodge"]);
-    else if (k === "Shift") press(["block"]);
+    else if (slot) strike(slot);
+    else if (k === " ") input("dodge");
+    else if (k === "Shift") input("block");
+    else if (k === "Tab") cycleTarget(e.shiftKey ? -1 : 1);
     else if (k === "Escape") { /* already fighting */ }
     else return;
     e.preventDefault();
@@ -3587,100 +3374,51 @@ const sandbox = (() => {
   }, true);
 
   document.addEventListener("keyup", (e) => {
-    if (!run) return;
+    if (!enc) return;
     const k = keyOf(e);
-    if (STEER[k]) run.held &= ~STEER[k];
-    if (k === "Shift") press(["unblock"]);
+    if (STEER[k]) steer(enc.held & ~STEER[k]);
+    if (k === "Shift") input("unblock");
   }, true);
 
-  window.addEventListener("blur", () => { if (run) { run.held = 0; press(["unblock"]); } });
+  window.addEventListener("blur", () => { if (enc) { enc.held = 0; input("unblock"); } });
+  $("input").addEventListener("focus", () => { if (enc && focus) setFocus(false); });
 
-  // The fight ------------------------------------------------------------------------------
-
-  function frame() {
-    if (!run) return;
-    const t = performance.now();
-    const due = Math.floor((t - run.startAt) / STEP_MS);
-    // Catch up at most a second (a tab in the background stops the clock).
-    if (due - run.dot.n > Balance.HZ) run.startAt = t - (run.dot.n + 1) * STEP_MS;
-    while (run && run.dot.n < Math.floor((t - run.startAt) / STEP_MS)) tick();
-    if (!run) return;
-    if (!practiceCard() || practiceCard().id !== run.card.id) return stop("you've turned away");
-    render();
-    run.frame = requestAnimationFrame(frame);
-  }
-
-  // When the post's attack lands, as a simulation step.
-  const stepAt = (ms) => Math.max(1, Math.round((ms - run.startAt) / STEP_MS));
+  // The clock -----------------------------------------------------------------------------
 
   function tick() {
-    const dot = run.dot;
-    const n = dot.n + 1;
-    const blows = [];
-    const landing = [];
-    for (const a of run.attacks) {
-      if (stepAt(a.next) <= n) {
-        blows.push({ kick: a.kick, angle: a.angle, defend: a.defend });
-        landing.push(a);
+    frame = null;
+    if (!enc) return render();
+    const target = nowStep() - enc.join;
+    // Catch up at most two seconds (a tab in the background stops the clock); the next state fixes the rest.
+    if (target - enc.dot.n > 2 * Balance.HZ) enc.dot.n = target - 1;
+    while (enc.dot.n < target) {
+      const n = enc.dot.n + 1;
+      const acts = enc.acts;
+      enc.acts = [];
+      for (const e of Balance.step(enc.dot, enc.held | enc.stick, acts, blowsAt(n + enc.join))) {
+        if (e.type === "refused") onRefused(e);
+        else if (e.type === "stagger") flash(e.by === "rim" ? "Off balance!" : "Staggered!", "bad", 1200);
+        else if (e.type === "recover") flash("Back on your feet", "good", 700);
       }
     }
-    const acts = run.acts;
-    run.acts = [];
-    const events = Balance.step(dot, run.held | run.stick, acts, blows);
-    let b = 0;
-    for (const e of events) {
-      if (e.type === "strike") strikeShown(e);
-      else if (e.type === "refused") refusedShown(e);
-      else if (e.type === "blow") blowShown(landing[b++], e);
-      else if (e.type === "stagger") flash(e.by === "rim" ? "Off balance! (the rim)" : "Staggered!", "bad", 1200);
-      else if (e.type === "recover") flash("Back on your feet", "good", 700);
-      else if (e.type === "dodge") flash("Dodge", "good", 500);
-    }
-    for (const a of landing) { a.next += a.period; a.angle = Math.random() * Balance.TAU; }
-  }
-
-  function strikeShown(e) {
-    const g = run.gear[e.slot];
-    const amounts = g ? ((g.now && g.now.amounts) || g.amounts) : [];
-    const amount = amounts[e.tier] !== undefined ? Math.ceil(amounts[e.tier] / e.hits) : 0;
-    run.results[e.slot] = { text: `${TIER_WORDS[e.tier]}${amount ? ` ${g.effect === "heal" ? "+" : ""}${amount}` : ""}`, cls: "t" + e.tier, until: performance.now() + 900 };
-    if (g && g.effect !== "heal" && g.effect !== "guard") run.dealt += amount;
-    if (e.hit === 1) line(`${TIER_WORDS[e.tier].replace("!", "")} ${g ? g.name : "strike"}${e.hits > 1 ? ` (${e.hits} hits)` : ""}: ${amount}${e.hits > 1 ? " a hit" : ""}.`, "t-combat mine");
-  }
-
-  function refusedShown(e) {
-    const word = REFUSED[e.reason] || e.reason;
-    if (e.act === "strike") run.results[e.slot] = { text: word, cls: "no", until: performance.now() + 700 };
-    else flash(word, "bad", 600);
-  }
-
-  function blowShown(a, e) {
-    if (!a) return;
-    let dmg = a.damage;
-    if (e.result === "dodge" || e.result === "perfect_block") dmg = 0;
-    else if (e.result === "block") dmg = Math.round(dmg * (1 - run.rules.block_cut));
-    else if (e.result === "staggered") dmg = Math.round(dmg * run.rules.stagger_dmg);
-    run.taken += dmg;
-    const how = { dodge: "you dodge it", block: "blocked", perfect_block: "a perfect block!", staggered: "while you're staggered",
-      hit: "it lands", parting: "a parting blow" }[e.result];
-    line(`${capital(foe(run.card))}'s ${a.name}: ${how}${dmg ? ` (${dmg})` : ""}.`, "t-combat");
-    if (dmg) struck();
+    enc.offset.x *= BLEND;
+    enc.offset.y *= BLEND;
+    if (performance.now() - lastSent > 100) input(null); // every 100 ms, so the owner knows you're there
+    render();
+    frame = requestAnimationFrame(tick);
   }
 
   function flash(text, cls, ms) {
-    run.status = text;
-    run.statusClass = cls;
-    run.statusUntil = performance.now() + ms;
+    status = { text, cls, until: performance.now() + ms };
   }
 
-  // Drawing --------------------------------------------------------------------------------
+  // Drawing -----------------------------------------------------------------------------
 
   function build() {
     const box = $("balance");
     const head = el("div", "bhead");
-    const title = el("b", "", "Balance");
     const mode = el("span", "mode");
-    head.append(title, el("span", "", "practice"), mode);
+    head.append(el("b", "", "Balance"), el("span", "boss"), mode);
     const arena = el("div", "arena");
     const canvas = document.createElement("canvas");
     canvas.setAttribute("role", "img");
@@ -3689,44 +3427,40 @@ const sandbox = (() => {
     const knob = el("div", "knob");
     stick.append(knob);
     arena.append(canvas, stick);
-    const status = el("div", "bstatus");
+    const status_ = el("div", "bstatus");
     const chips = el("div", "chips");
     const strikes = el("div", "strikes");
-    const strikeButtons = {};
+    const buttons = {};
     for (const n of [1, 2, 3]) {
       const b = el("button", "strike");
       b.type = "button";
-      const k = el("span", "k"), name = el("span", "nm"), res = el("span", "res"), cd = el("div", "cd");
-      b.append(k, " ", name, res, cd);
-      b.addEventListener("pointerdown", (e) => { e.preventDefault(); if (run) press(["strike", n, run.card.id]); });
+      const k = el("span", "k"), name = el("span", "nm"), badge = el("span", "wxbadge"), res = el("span", "res"), cd = el("div", "cd");
+      b.append(k, " ", name, " ", badge, res, cd);
+      b.addEventListener("pointerdown", (e) => { e.preventDefault(); strike(n); });
+      b.addEventListener("mouseenter", () => { const g = slotGear(n); if (g) showTip(b, gearTip(g, [], keyLabel(keys[n]))); });
+      b.addEventListener("mouseleave", hideTip);
       strikes.append(b);
-      strikeButtons[n] = { b, k, name, res, cd };
+      buttons[n] = { b, k, name, badge, res, cd };
     }
     const defs = el("div", "defs");
     const dodge = el("button", "", "Dodge");
-    dodge.append(el("span", "kh", " (Space)"));
     dodge.type = "button";
+    dodge.append(el("span", "kh", " (Space)"));
     const dodgeCd = el("div", "cd");
     dodge.append(dodgeCd);
-    dodge.addEventListener("pointerdown", (e) => { e.preventDefault(); press(["dodge"]); });
+    dodge.addEventListener("pointerdown", (e) => { e.preventDefault(); input("dodge"); });
     const block = el("button", "", "Block");
-    block.append(el("span", "kh", " (hold Shift)"));
     block.type = "button";
-    block.addEventListener("pointerdown", (e) => { e.preventDefault(); block.setPointerCapture(e.pointerId); press(["block"]); });
-    for (const ev of ["pointerup", "pointercancel"]) block.addEventListener(ev, () => press(["unblock"]));
+    block.append(el("span", "kh", " (hold Shift)"));
+    block.addEventListener("pointerdown", (e) => { e.preventDefault(); block.setPointerCapture(e.pointerId); input("block"); });
+    for (const ev of ["pointerup", "pointercancel"]) block.addEventListener(ev, () => input("unblock"));
     defs.append(dodge, block);
-    const foot = el("div", "bfoot");
-    const tally = el("span");
-    const go = el("button", "", "Spar");
-    go.type = "button";
-    go.addEventListener("click", () => (run ? stop(true) : start()));
-    foot.append(tally, go);
-    box.append(head, arena, status, chips, strikes, defs, foot);
+    box.append(head, arena, status_, chips, strikes, defs);
     // The touch stick: eight ways, like the keys.
     let stickId = null;
-    const steer = (e) => {
+    const move = (e) => {
       const r = stick.getBoundingClientRect();
-      let x = (e.clientX - r.left) / r.width * 2 - 1, y = (e.clientY - r.top) / r.height * 2 - 1;
+      let x = ((e.clientX - r.left) / r.width) * 2 - 1, y = ((e.clientY - r.top) / r.height) * 2 - 1;
       const d = Math.hypot(x, y);
       if (d > 1) { x /= d; y /= d; }
       knob.style.transform = `translate(${x * 38}px, ${y * 38}px)`;
@@ -3735,15 +3469,21 @@ const sandbox = (() => {
         if (x > 0.38) mask |= Balance.RIGHT; else if (x < -0.38) mask |= Balance.LEFT;
         if (y > 0.38) mask |= Balance.DOWN; else if (y < -0.38) mask |= Balance.UP;
       }
-      if (run) run.stick = mask;
+      if (enc && enc.stick !== mask) { enc.stick = mask; input(null); }
     };
-    stick.addEventListener("pointerdown", (e) => { e.preventDefault(); stickId = e.pointerId; stick.setPointerCapture(e.pointerId); steer(e); });
-    stick.addEventListener("pointermove", (e) => { if (e.pointerId === stickId) steer(e); });
+    stick.addEventListener("pointerdown", (e) => { e.preventDefault(); stickId = e.pointerId; stick.setPointerCapture(e.pointerId); move(e); });
+    stick.addEventListener("pointermove", (e) => { if (e.pointerId === stickId) move(e); });
     for (const ev of ["pointerup", "pointercancel"]) {
-      stick.addEventListener(ev, () => { stickId = null; knob.style.transform = ""; if (run) run.stick = 0; });
+      stick.addEventListener(ev, () => { stickId = null; knob.style.transform = ""; if (enc && enc.stick) { enc.stick = 0; input(null); } });
     }
-    if (params.get("touch") === "1") box.classList.add("touch");
-    ui = { box, mode, canvas, status, chips, strikeButtons, dodge, dodgeCd, block, tally, go };
+    if (new URLSearchParams(location.search).get("touch") === "1") box.classList.add("touch");
+    ui = { box, mode, boss: head.querySelector(".boss"), arena, canvas, status: status_, chips, buttons, defs, dodge, dodgeCd, block };
+  }
+
+  // A slot's gear, as the kit describes it (with the weather now).
+  function slotGear(n) {
+    const gid = kit && kit.slots[n - 1];
+    return gid ? kit.gear.find((g) => g.id === gid) : null;
   }
 
   function css(name) {
@@ -3759,45 +3499,37 @@ const sandbox = (() => {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, size, size);
     const c = size / 2, R = size / 2 - 8;
-    const dot = run ? run.dot : null;
-    const rules = run ? run.rules : Balance.rulesFrom({});
+    const dot = enc.dot, rules = dot.rules;
     const ring = (r, fill, stroke, width = 1, dash = []) => {
       g.beginPath();
       g.arc(c, c, r, 0, Balance.TAU);
       if (fill) { g.fillStyle = fill; g.fill(); }
       if (stroke) { g.setLineDash(dash); g.lineWidth = width; g.strokeStyle = stroke; g.stroke(); g.setLineDash([]); }
     };
-    const immune = dot && dot.immune > 0;
+    const immune = dot.immune > 0;
     ring(R, css("--panel"), immune ? css("--up") : css("--edge"), 3, immune ? [6, 4] : []);
-    const steady = dot && dot.stagger === 0 && Balance.dist(dot) <= rules.core && !dot.blocking;
+    const steady = dot.stagger === 0 && Balance.dist(dot) <= rules.core && !dot.blocking;
     ring(R * rules.core, `color-mix(in srgb, ${css("--accent")} ${steady ? 26 : 12}%, transparent)`, css("--accent"), 1.5);
     ring(R * rules.clean_r, null, css("--accent"), 1, [3, 3]);
     ring(R * rules.perfect_r, `color-mix(in srgb, ${css("--up")} 30%, transparent)`, css("--up"), 1);
-    if (!dot) return;
-    if (showWell) {
-      g.beginPath();
-      g.arc(c + R * dot.well_r * Math.cos(dot.well_a), c + R * dot.well_r * Math.sin(dot.well_a), 5, 0, Balance.TAU);
-      g.strokeStyle = css("--muted");
-      g.stroke();
-    }
-    // Blows on their way: an arrow on the rim, pointing the way it will knock you, filling as it comes.
-    const t = performance.now();
-    for (const a of run.attacks) {
-      const left = a.next - t;
-      if (left > rules.warn_ms || left < 0) continue;
-      const u = 1 - left / rules.warn_ms;
-      const from = a.angle + Math.PI;
-      const x = c + (R + 2) * Math.cos(from), y = c + (R + 2) * Math.sin(from);
+    // Blows on their way to you: an arrow on the rim, pointing the way it will knock you, filling as it comes.
+    const step = (serverNow() - enc.startMs) * Balance.HZ / 1000;
+    for (const b of enc.blows) {
+      if (b.pid !== me) continue;
+      const left = b.land - step;
+      if (left > b.warn || left < 0) continue;
+      const u = 1 - left / b.warn;
+      const from = b.angle + Math.PI;
       g.save();
-      g.translate(x, y);
-      g.rotate(a.angle);
+      g.translate(c + (R + 2) * Math.cos(from), c + (R + 2) * Math.sin(from));
+      g.rotate(b.angle);
       g.beginPath();
       g.moveTo(14 + 10 * u, 0);
       g.lineTo(-2, -9);
       g.lineTo(-2, 9);
       g.closePath();
       g.globalAlpha = 0.35 + 0.65 * u;
-      g.fillStyle = css("--hp-low");
+      g.fillStyle = b.stagger || b.kick >= rules.stagger_kick ? css("--down") : css("--hp-low");
       g.fill();
       g.restore();
       g.beginPath();
@@ -3806,7 +3538,7 @@ const sandbox = (() => {
       g.strokeStyle = css("--hp-low");
       g.stroke();
     }
-    const x = c + R * dot.x, y = c + R * dot.y;
+    const x = c + R * (dot.x + enc.offset.x), y = c + R * (dot.y + enc.offset.y);
     g.beginPath();
     g.arc(x, y, 7, 0, Balance.TAU);
     g.globalAlpha = dot.invuln > 0 ? 0.45 : 1;
@@ -3823,62 +3555,72 @@ const sandbox = (() => {
   }
 
   function render() {
-    const show = enabled && Boolean(run || practiceCard());
-    if (show && !ui) build();
-    $("balance").classList.toggle("hidden", !show);
-    if (!show) return;
-    const card = run ? run.card : practiceCard();
-    ui.go.textContent = run ? "Stop" : `Spar with ${foe(card)}`;
+    if (!ui) build();
+    const fighting = Boolean(enc);
+    for (const node of [ui.arena, ui.status, ui.chips, ui.defs]) node.classList.toggle("hidden", !fighting);
+    ui.box.classList.toggle("fighting", fighting);
     const t = performance.now();
-    const gear = run ? run.gear : slotGear();
     for (const n of [1, 2, 3]) {
-      const s = ui.strikeButtons[n], g = gear[n];
+      const s = ui.buttons[n], g = slotGear(n);
       s.k.textContent = keyLabel(keys[n]);
       s.name.textContent = g ? g.name : "empty";
-      const res = run && run.results[n] && run.results[n].until > t ? run.results[n] : null;
-      s.res.textContent = res ? res.text : "";
-      s.b.className = "strike" + (res ? " " + res.cls : "");
-      const left = run ? run.dot.cool[n] || 0 : 0;
-      s.cd.style.width = run && left ? (100 * left) / run.cool[n] + "%" : "0";
+      const change = g && g.now ? Math.round((g.now.factor - 1) * 100) : 0;
+      s.badge.textContent = change > 0 ? `▲${change}%` : change < 0 ? `▼${-change}%` : "";
+      s.badge.className = "wxbadge" + (change > 0 ? " up" : change < 0 ? " down" : "");
+      const res = results[n] && results[n].until > t ? results[n] : null;
+      s.res.textContent = res ? res.text : g ? `every ${(g.cooldown_ms / 1000).toFixed(1)}s` : "";
+      s.b.className = "strike" + (res ? " " + res.cls : "") + (g ? "" : " empty");
+      const left = enc ? enc.dot.cool[n] || 0 : 0;
+      const total = enc && enc.slots[n] ? Balance.steps(enc.slots[n].cooldown) : 1;
+      s.cd.style.width = left ? (100 * left) / total + "%" : "0";
+      // A passive attuned to this slot, named.
+      const attuned = character ? character.perks.filter((p) => p.attuned === n) : [];
+      s.b.dataset.passive = attuned.map((p) => p.name).join(", ");
     }
-    ui.block.classList.toggle("hidden", !(character && character.defence && character.defence.mode === "block"));
-    if (!run) {
-      ui.status.textContent = "";
-      ui.chips.replaceChildren();
-      ui.tally.textContent = "Practice, in this page only. Nothing is sent.";
+    if (!fighting) {
       ui.mode.textContent = "";
-      return draw();
+      ui.boss.textContent = "";
+      return;
     }
-    const dot = run.dot;
+    const dot = enc.dot;
+    ui.block.classList.toggle("hidden", !enc.shield);
     ui.block.classList.toggle("held", dot.blocking);
-    ui.dodgeCd.style.width = dot.dodge_cd ? (100 * dot.dodge_cd) / Balance.steps(run.rules.dodge_cd_ms) + "%" : "0";
-    let status = "", cls = "";
-    if (t < run.startAt) status = "Ready…";
-    else if (run.statusUntil > t) { status = run.status; cls = run.statusClass; }
-    else if (dot.stagger > 0) { status = "Staggered!"; cls = "bad"; }
-    else if (dot.blocking) status = "Blocking";
-    else if (Balance.dist(dot) <= run.rules.core) { status = "Steady"; cls = "good"; }
-    else status = "Off centre";
-    ui.status.textContent = status;
+    ui.dodgeCd.style.width = dot.dodge_cd ? (100 * dot.dodge_cd) / Balance.steps(dot.rules.dodge_cd_ms) + "%" : "0";
+    let text = "", cls = "";
+    if (dot.n <= 0) text = "Steady…";
+    else if (status.until > t) { text = status.text; cls = status.cls; }
+    else if (dot.stagger > 0) { text = "Staggered!"; cls = "bad"; }
+    else if (dot.blocking) text = "Blocking";
+    else if (Balance.dist(dot) <= dot.rules.core) { text = "Steady"; cls = "good"; }
+    else text = "Off centre";
+    ui.status.textContent = text;
     ui.status.className = "bstatus" + (cls ? " " + cls : "");
     const chips = Object.entries(dot.debuffs).map(([kind, d]) => el("span", "chip " + kind, `${kind} ${(d[1] / Balance.HZ).toFixed(1)}s`));
     if (dot.immune > 0) chips.push(el("span", "chip immune", `sure-footed ${(dot.immune / Balance.HZ).toFixed(1)}s`));
     ui.chips.replaceChildren(...chips);
-    ui.tally.textContent = `dealt ${run.dealt} · took ${run.taken}`;
+    // A boss's stagger meter, for your target (or the only boss in the fight).
+    const bossId = target && enc.bosses[target.slice(4)] ? target.slice(4) : Object.keys(enc.bosses)[0];
+    const boss = bossId && enc.bosses[bossId];
+    ui.boss.textContent = boss ? (boss.staggered ? `${nameOf("npc:" + bossId)} reels!` : `${nameOf("npc:" + bossId)}: ${"▮".repeat(Math.round(8 * boss.meter / boss.poise))}${"▯".repeat(8 - Math.round(8 * boss.meter / boss.poise))}`) : "";
     draw();
+    drawWarnings();
   }
 
-  $("input").addEventListener("focus", () => { if (run && focus) setFocus(false); });
+  // The target card's attack bars: each announced blow's marker slides to the end as it comes.
+  function drawWarnings() {
+    const step = (serverNow() - enc.startMs) * Balance.HZ / 1000;
+    for (const node of document.querySelectorAll("#target-card .attack[data-n]")) {
+      const b = enc.blows.find((x) => "npc:" + x.nid === node.dataset.npc && String(x.n) === node.dataset.n);
+      const pct = b ? Math.max(0, Math.min(100, 100 * (1 - (b.land - step) / b.warn))) : 0;
+      node.querySelector(".fill").style.width = pct + "%";
+      node.querySelector(".marker").style.left = pct + "%";
+      node.classList.toggle("coming", Boolean(b));
+      node.classList.toggle("mine", Boolean(b && b.pid === me));
+    }
+  }
 
-  return {
-    enabled,
-    running: () => Boolean(run),
-    render,
-    stop,
-    // Back to combat focus after a command is sent.
-    sent() { if (run) setFocus(true); },
-    convertGear,
-  };
+  return { active, onEncounter, onState, onRefused, onCombat, strike, flee, render, end, sent() { if (enc) setFocus(true); },
+    stats: () => ({ ...stats }), dot: () => (enc ? { x: enc.dot.x, y: enc.dot.y, n: enc.dot.n } : null) };
 })();
 
 $("reconnect").addEventListener("click", resume);

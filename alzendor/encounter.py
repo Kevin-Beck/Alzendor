@@ -415,7 +415,7 @@ class Owner:
                 if a.angle is not None:
                     blows.append({"nid": npc.nid, "n": a.n, "pid": a.target, "land": a.land, "warn": a.warn, "angle": a.angle,
                                   "kick": a.info.get("kick") or 0, "name": a.info.get("name"), "defend": a.info.get("defend") or "both",
-                                  "stagger": bool(a.info.get("stagger"))})
+                                  "stagger": bool(a.info.get("stagger")), "debuff": a.info.get("debuff") or None})
         bosses = {npc.nid: {"meter": round(npc.boss.meter, 2), "poise": npc.boss.poise, "staggered": npc.boss.staggered}
                   for npc in self.npcs.values() if npc.boss}
         return {"type": "state", "id": self.id, "step": self.step, "players": players, "blows": blows, "bosses": bosses}

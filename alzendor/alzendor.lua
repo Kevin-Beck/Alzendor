@@ -578,8 +578,8 @@ local function pct(factor)
   return round((factor - 1) * 100)
 end
 
--- What weather w does to a player's gear: the factor on its amounts, its
--- adjusted timings, and one line per modifier for the tooltip.
+-- What weather w does to a player's gear: the factor on its amounts, and one
+-- line per modifier for the tooltip.
 local function weathered(pid, gear, w)
   local profile = gear_profile(gear)
   local tier, r = TIERS[profile.tier], resilience(pid)
@@ -597,30 +597,13 @@ local function weathered(pid, gear, w)
   end
   local raw = place * wet
   local factor = soften(raw, r)
-  local period, window, perfect = tonumber(gear.period), tonumber(gear.window), tonumber(gear.perfect_window)
-  local heat = math.max(0, (w.temperature - 0.5) / 0.5) * (1 - r)
-  local chaos = math.max(0, (w.energy - 0.5) / 0.5) * (1 - r)
-  local still = math.max(0, (-w.energy - 0.5) / 0.5) * (1 - r)
-  if heat > 0 then
-    period = round(period * (1 + 0.3 * heat))
-    mods[#mods + 1] = {label = 'Heat: beats slower', pct = round(30 * heat), on = 'period'}
-  end
-  if chaos > 0 then
-    window = round(window * (1 - 0.3 * chaos))
-    mods[#mods + 1] = {label = 'Wind: timing windows narrower', pct = -round(30 * chaos), on = 'window'}
-  end
-  if still > 0 then
-    perfect = round(perfect * (1 - 0.3 * still))
-    mods[#mods + 1] = {label = 'Stillness: perfect windows narrower', pct = -round(30 * still), on = 'perfect'}
-  end
-  if r > 0 and (raw < 1 or heat + chaos + still > 0) then
+  if r > 0 and raw < 1 then
     mods[#mods + 1] = {label = 'Resilience ' .. stat(pid, 'resilience') .. ': penalties softened', pct = round(r * 100), on = 'resilience'}
   end
   local amounts = list()
   -- (The nudge keeps 10 x 1.15 from rounding down: in binary it's 11.4999...)
   for i, key in ipairs({'opener', 'good', 'perfect'}) do amounts[i] = math.max(0, round(tonumber(gear[key]) * factor + 1e-9)) end
-  return {factor = factor, amounts = amounts, period = period, window = math.max(1, window), perfect = math.max(1, math.min(perfect, window)),
-    mods = mods, profile = profile}
+  return {factor = factor, amounts = amounts, mods = mods, profile = profile}
 end
 
 -- Weather lore: PLAYER:<id>:lore maps the realms whose skies a player can
@@ -1581,7 +1564,7 @@ end
 -- the player and the weather) what it does right now and why.
 local function gear_summary(g, pid, w)
   local summary = {id = g.id, name = g.name, kind = g.kind, effect = g.effect, targets = g.targets ~= '' and g.targets or 'self',
-    description = g.description or '', period_ms = tonumber(g.period), grace_ms = tonumber(g.window), perfect_ms = tonumber(g.perfect_window),
+    description = g.description or '',
     amounts = list({tonumber(g.opener), tonumber(g.good), tonumber(g.perfect)}),
     cooldown_ms = tonumber(g.cooldown) or 0, kick = tonumber(g.kick) or 0, pattern = (g.pattern or '') ~= '' and g.pattern or 'bump',
     hits = tonumber(g.hits) or 1, gap_ms = tonumber(g.gap) or 0, debuff = (g.debuff or '') ~= '' and decode(g.debuff) or nil}
@@ -1592,8 +1575,7 @@ local function gear_summary(g, pid, w)
   if pid then
     local wx = weathered(pid, g, w)
     summary.weather = wx.profile
-    summary.now = {factor = wx.factor, amounts = wx.amounts, period_ms = wx.period, grace_ms = wx.window,
-      perfect_ms = wx.perfect, mods = wx.mods}
+    summary.now = {factor = wx.factor, amounts = wx.amounts, mods = wx.mods}
   end
   return summary
 end
