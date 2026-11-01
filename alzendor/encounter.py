@@ -1,0 +1,543 @@
+"""Encounters, as their owner runs them (docs/combat-redesign.md).
+
+Every fight is an encounter, and one server runs each: the server that caused
+it, its owner. The owner simulates every player's dot (alzendor/balance.py)
+and the NPCs' attack clock in fixed 1/60 s steps, `encounter_hz` ticks a
+second. It never changes the world itself: a strike that lands calls
+`encounter_strike` and a blow `encounter_blow` (alzendor.lua), which do the
+damage, kills, drops and deaths in the global event order, and the owner
+carries on from what they say happened.
+
+Players may be connected to any server. Their sessions publish inputs on
+`enc:<id>:in`, and the owner publishes the encounter's state on
+`enc:<id>:out`, which every session with a player in the encounter forwards
+to its client. Lua publishes `{"op": "sync"}` on `enc:<id>:in` when the
+encounter changes (someone joins or leaves), and `{"op": "end"}` when it's over.
+
+The owner refreshes the encounter's lease (`ENC:<id>:lease`) every second.
+Every server checks the live encounters once a second, and ends one whose
+lease has lapsed (its owner died): everyone keeps the health they have, and
+the one rule starts a fresh encounter for whoever is still there, owned by
+the server that found it.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import math
+import random
+import time
+from collections import defaultdict
+from collections.abc import Callable
+from dataclasses import dataclass, field
+
+from redis.asyncio import Redis
+
+from . import balance as b
+from .world import World
+
+log = logging.getLogger(__name__)
+
+LEASE_MS = 3000
+STATE_HZ = 15            # state messages a second
+MAX_CATCH_UP = 120       # steps a tick may run to catch up (2 s)
+NEW_ENCOUNTERS = "alz:new_encounters"
+
+
+class Bus:
+    """One pubsub connection for a server: owners listen for inputs on it, and
+    sessions for state. Handlers are plain functions of the message data."""
+
+    def __init__(self, redis: Redis):
+        self.redis = redis
+        self.pubsub = redis.pubsub()
+        self.handlers: dict[str, set[Callable[[str], None]]] = defaultdict(set)
+        self.task: asyncio.Task | None = None
+
+    async def start(self, name: str) -> None:
+        await self.pubsub.subscribe(f"alz:bus:{name}")  # so the connection is always listening
+        self.task = asyncio.create_task(self._run())
+
+    async def close(self) -> None:
+        if self.task:
+            self.task.cancel()
+        await self.pubsub.aclose()
+
+    async def subscribe(self, channel: str, handler: Callable[[str], None]) -> None:
+        first = not self.handlers[channel]
+        self.handlers[channel].add(handler)
+        if first:
+            await self.pubsub.subscribe(channel)
+
+    async def unsubscribe(self, channel: str, handler: Callable[[str], None]) -> None:
+        handlers = self.handlers.get(channel)
+        if handlers is None:
+            return
+        handlers.discard(handler)
+        if not handlers:
+            del self.handlers[channel]
+            await self.pubsub.unsubscribe(channel)
+
+    async def _run(self) -> None:
+        while True:
+            try:
+                message = await self.pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                log.exception("encounter bus read failed")
+                await asyncio.sleep(0.5)
+                continue
+            if not message or message["type"] != "message":
+                continue
+            for handler in list(self.handlers.get(message["channel"], ())):
+                try:
+                    handler(message["data"])
+                except Exception:
+                    log.exception("encounter bus handler failed")
+
+
+# The encounter's state, as the owner keeps it ---------------------------------------------
+
+
+@dataclass
+class Attack:
+    """One of an NPC's attacks, on the encounter's clock (in steps)."""
+
+    n: int                      # its number among the NPC's attacks (1-based, as in Lua)
+    info: dict
+    period: int
+    warn: int
+    land: int                   # the step it lands on
+    angle: float | None = None  # drawn when it's announced
+    target: str | None = None
+
+
+@dataclass
+class Npc:
+    nid: str
+    info: dict
+    join: int                                   # the step it joined on
+    attacks: list[Attack] = field(default_factory=list)
+    boss: b.Boss | None = None
+
+
+@dataclass
+class Player:
+    pid: str
+    info: dict
+    join: int                                   # its dot's first step comes after this one
+    dot: b.Dot
+    gear: dict = field(default_factory=dict)    # slot: gear info (effect, kick…)
+    keys: int = 0
+    seq: int = 0
+    acts: list = field(default_factory=list)    # waiting for the next step
+    flee: str | None = None
+
+
+def steps_since(start_ms: float, ms: float) -> int:
+    return math.floor((ms - start_ms) * b.HZ / 1000)
+
+
+class Owner:
+    """Runs one encounter, on the server that owns it."""
+
+    def __init__(self, host: "EncounterHost", eid: str):
+        self.host = host
+        self.world: World = host.world
+        self.id = eid
+        self.inbox: list[dict] = []
+        self.players: dict[str, Player] = {}
+        self.npcs: dict[str, Npc] = {}
+        self.opened: set[str] = set()
+        self.step = 0
+        self.ended = False
+        self.need_sync = True
+        self.rules = b.Rules()
+        self.start_ms = 0
+        self.lead_ms = 1000
+        self.hz = 30
+        self.seed = eid
+        self.rng = random.Random()
+
+    # Messages ------------------------------------------------------------------------------
+
+    def _receive(self, data: str) -> None:
+        try:
+            message = json.loads(data)
+        except ValueError:
+            return
+        if isinstance(message, dict):
+            self.inbox.append(message)
+
+    def _take_inbox(self) -> None:
+        inbox, self.inbox = self.inbox, []
+        for m in inbox:
+            op = m.get("op")
+            if op == "end":
+                self.ended = True
+            elif op == "sync":
+                self.need_sync = True
+            else:
+                self._input(m)
+
+    def _input(self, m: dict) -> None:
+        """A player's input: held keys, and maybe an act (strike, dodge, block,
+        unblock, flee)."""
+        p = self.players.get(str(m.get("pid", "")))
+        if p is None:
+            return
+        seq = m.get("seq")
+        if isinstance(seq, int) and seq > p.seq:
+            p.seq = seq
+        if isinstance(m.get("keys"), int):
+            p.keys = m["keys"] & 15
+        act = m.get("act")
+        if act == "strike":
+            slot = m.get("slot")
+            if isinstance(slot, int) and 1 <= slot <= 3:
+                p.acts.append(("strike", slot, self._target(p, slot, m.get("target"))))
+        elif act in ("dodge", "block", "unblock"):
+            p.acts.append((act,))
+        elif act == "flee" and isinstance(m.get("dir"), str):
+            p.flee = m["dir"][:16]
+        elif act == "release":
+            p.keys = 0
+            p.acts.append(("unblock",))
+
+    def _target(self, p: Player, slot: int, target) -> str:
+        """Who a strike is aimed at: an entity id, a word naming an NPC in the
+        fight, or (for damage gear, with nothing named) the first NPC in it."""
+        gear = p.gear.get(slot) or {}
+        if isinstance(target, str) and target.startswith(("npc:", "pc:")):
+            return target[:100]
+        if isinstance(target, str) and target.strip():
+            word = target.strip().lower()
+            for npc in self.npcs.values():
+                words = f" {npc.info['name'].lower()} {npc.info.get('keywords', '')} "
+                if word == npc.nid or f" {word} " in words:
+                    return "npc:" + npc.nid
+        if gear.get("effect") in ("heal", "guard"):
+            return ""
+        first = min(self.npcs.values(), key=lambda n: n.join, default=None)
+        return "npc:" + first.nid if first else ""
+
+    # Membership ---------------------------------------------------------------------------
+
+    async def _sync(self) -> bool:
+        """Brings the encounter's membership up to date. False if it's over."""
+        self.need_sync = False
+        raw = await self.world.redis.fcall("encounter_info", 0, self.id)
+        if not raw:
+            return False
+        info = json.loads(raw)
+        if not self.start_ms:
+            self.start_ms = info["start_ms"]
+            self.lead_ms = info["lead_ms"]
+            self.hz = max(1, int(info.get("hz") or 30))
+            self.seed = info["seed"]
+            self.rules = b.Rules.from_seed(info["rules"])
+        here = {p["pid"] for p in info["players"]}
+        for pid in list(self.players):
+            if pid not in here:
+                del self.players[pid]
+        for p in info["players"]:
+            if p["pid"] not in self.players:
+                self._add_player(p, info.get("opening", {}).get(p["pid"]))
+        there = {n["nid"] for n in info["npcs"]}
+        for nid in list(self.npcs):
+            if nid not in there:
+                self._drop_npc(nid)
+        for n in info["npcs"]:
+            if n["nid"] not in self.npcs:
+                self._add_npc(n)
+        return True
+
+    def _add_player(self, p: dict, opening: dict | None) -> None:
+        stats = p.get("stats") or {}
+        rules = self.rules.for_player(poise=stats.get("poise", 0), focus=stats.get("focus", 0), resilience=stats.get("resilience", 0))
+        slots = {int(n): b.Gear.from_dict(g) for n, g in (p.get("slots") or {}).items()}
+        join = steps_since(self.start_ms, p["join_ms"] + self.lead_ms)
+        dot = b.make_dot(rules, self.seed, p["pid"], slots, bool(p.get("shield")))
+        player = Player(p["pid"], p, join, dot, {int(n): g for n, g in (p.get("slots") or {}).items()})
+        if opening and p["pid"] not in self.opened:
+            self.opened.add(p["pid"])
+            player.acts.append(("strike", int(opening["slot"]), opening.get("target") or ""))
+        self.players[p["pid"]] = player
+
+    def _add_npc(self, n: dict) -> None:
+        join = steps_since(self.start_ms, n["join_ms"])
+        npc = Npc(n["nid"], n, join)
+        for i, a in enumerate(n.get("attacks") or [], start=1):
+            period = max(1, b.steps(a.get("period") or 6000))
+            warn = b.steps(a.get("warn") or self.rules.warn_ms)
+            npc.attacks.append(Attack(i, a, period, min(warn, period), join + period))
+        if n.get("poise"):
+            npc.boss = b.Boss(float(n["poise"]), self.rules)
+        self.npcs[n["nid"]] = npc
+
+    def _drop_npc(self, nid: str) -> None:
+        self.npcs.pop(nid, None)
+        for p in self.players.values():
+            b.cancel_volleys(p.dot, "npc:" + nid)
+
+    # The clock ---------------------------------------------------------------------------
+
+    def _first_player(self) -> Player | None:
+        return min(self.players.values(), key=lambda p: (p.info.get("join_ms", 0), p.pid), default=None)
+
+    def _run_step(self, n: int, calls: list) -> None:
+        """Global step n: blows announced and landing, every active dot, the bosses."""
+        blows: dict[str, list] = defaultdict(list)
+        for npc in self.npcs.values():
+            for a in npc.attacks:
+                if a.angle is None and n >= a.land - a.warn:
+                    first = self._first_player()
+                    a.target = first.pid if first else None
+                    a.angle = self.rng.random() * b.TAU
+                if n >= a.land:
+                    target = a.target if a.target in self.players else (self._first_player().pid if self.players else None)
+                    if target is not None:
+                        info = a.info
+                        blow = b.Blow(kick=float(info.get("kick") or 0), angle=a.angle or 0.0, defend=info.get("defend") or "both",
+                                      stagger=bool(info.get("stagger")), debuff=info.get("debuff") or None)
+                        blows[target].append((npc.nid, a.n, blow))
+                    a.land += a.period
+                    a.angle = a.target = None
+        for p in list(self.players.values()):
+            if n <= p.join:
+                if blows.get(p.pid):  # not on their feet yet: it just lands
+                    for nid, an, _ in blows[p.pid]:
+                        calls.append(("blow", nid, an, p.pid, "hit"))
+                continue
+            if p.flee is not None:
+                direction, p.flee = p.flee, None
+                if p.dot.staggered or p.dot.dist > p.dot.rules.core:
+                    calls.append(("refused", p.pid, {"act": "flee", "reason": "not_steady"}))
+                else:
+                    calls.append(("flee", p.pid, direction))
+            acts, p.acts = p.acts, []
+            mine = blows.get(p.pid, [])
+            events = b.step(p.dot, p.keys, acts, [x[2] for x in mine])
+            k = 0
+            for e in events:
+                if e["type"] == "strike":
+                    calls.append(("strike", p.pid, e))
+                elif e["type"] == "blow":
+                    nid, an, _ = mine[k]
+                    k += 1
+                    calls.append(("blow", nid, an, p.pid, e["result"]))
+                    if e["result"] == "perfect_block" and nid in self.npcs and self.npcs[nid].boss:
+                        calls.append(("poise", nid, None))
+                elif e["type"] == "refused":
+                    calls.append(("refused", p.pid, {k2: e[k2] for k2 in ("act", "reason", "slot") if k2 in e}))
+        for npc in self.npcs.values():
+            if npc.boss:
+                was = npc.boss.staggered
+                npc.boss.step()
+                if was and not npc.boss.staggered:
+                    calls.append(("note", npc.nid, "steadies"))
+
+    def _boss_reels(self, npc: Npc) -> None:
+        """A boss's meter filled: its attacks due while it reels wait for the end."""
+        end = self.step + npc.boss.staggered
+        for a in npc.attacks:
+            if a.land < end:
+                a.land = end
+                a.angle = a.target = None
+
+    async def _call(self, call: tuple) -> None:
+        """Carries out one consequence, in Lua, and whatever follows from it."""
+        kind = call[0]
+        w = self.world
+        if kind == "strike":
+            _, pid, e = call
+            p = self.players.get(pid)
+            if p is None:
+                return
+            target = e["target"] or ""
+            gear = p.gear.get(e["slot"]) or {}
+            npc = self.npcs.get(target[4:]) if target.startswith("npc:") else None
+            mult = npc.boss.damage_mult if npc and npc.boss else 1
+            result = json.loads(await w.call("encounter_strike", self.id, pid, target, e["slot"], e["tier"],
+                                              e["hit"], e["hits"], mult))
+            if result.get("gone"):
+                b.cancel_volleys(p.dot, target)
+                self._publish({"type": "refused", "pid": pid, "act": "strike", "slot": e["slot"], "reason": "gone"})
+                return
+            if result.get("killed") and npc:
+                self._drop_npc(npc.nid)
+                return
+            if npc and result.get("stagger_ms"):
+                for a in npc.attacks:
+                    a.land += b.steps(result["stagger_ms"])
+            if npc and npc.boss and gear.get("effect") == "damage" and npc.boss.strike(float(gear.get("kick") or 0)):
+                self._boss_reels(npc)
+                await w.call("encounter_note", self.id, npc.nid, "reels")
+        elif kind == "blow":
+            _, nid, n, pid, how = call
+            if pid not in self.players or nid not in self.npcs:
+                return
+            result = json.loads(await w.call("encounter_blow", self.id, nid, n, pid, how))
+            if result.get("dead"):
+                self.players.pop(pid, None)
+        elif kind == "poise":
+            npc = self.npcs.get(call[1])
+            if npc and npc.boss and npc.boss.perfect_block():
+                self._boss_reels(npc)
+                await w.call("encounter_note", self.id, npc.nid, "reels")
+        elif kind == "note":
+            await w.call("encounter_note", self.id, call[1], call[2])
+        elif kind == "flee":
+            _, pid, direction = call
+            result = json.loads(await w.call("encounter_flee", self.id, pid, direction))
+            if result.get("fled") or result.get("dead"):
+                self.players.pop(pid, None)
+            elif result.get("refused"):
+                self._publish({"type": "refused", "pid": pid, "act": "flee", "reason": result["refused"]})
+        elif kind == "refused":
+            _, pid, detail = call
+            self._publish({"type": "refused", "pid": pid, **detail})
+
+    # State ---------------------------------------------------------------------------------
+
+    def state(self) -> dict:
+        players = {}
+        for p in self.players.values():
+            snap = b.snapshot(p.dot)
+            snap.update(keys=p.keys, seq=p.seq, join=p.join)
+            players[p.pid] = snap
+        blows = []
+        for npc in self.npcs.values():
+            for a in npc.attacks:
+                if a.angle is not None:
+                    blows.append({"nid": npc.nid, "n": a.n, "pid": a.target, "land": a.land, "warn": a.warn, "angle": a.angle,
+                                  "kick": a.info.get("kick") or 0, "name": a.info.get("name"), "defend": a.info.get("defend") or "both",
+                                  "stagger": bool(a.info.get("stagger"))})
+        bosses = {npc.nid: {"meter": round(npc.boss.meter, 2), "poise": npc.boss.poise, "staggered": npc.boss.staggered}
+                  for npc in self.npcs.values() if npc.boss}
+        return {"type": "state", "id": self.id, "step": self.step, "players": players, "blows": blows, "bosses": bosses}
+
+    def _publish(self, message: dict) -> None:
+        asyncio.ensure_future(self.world.redis.publish(f"enc:{self.id}:out", json.dumps(message, separators=(",", ":"))))
+
+    # The loop ------------------------------------------------------------------------------
+
+    async def run(self) -> None:
+        channel = f"enc:{self.id}:in"
+        await self.host.bus.subscribe(channel, self._receive)
+        try:
+            await self._loop()
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            log.exception("encounter %s failed", self.id)
+        finally:
+            await self.host.bus.unsubscribe(channel, self._receive)
+
+    async def _loop(self) -> None:
+        if not await self._sync():
+            return
+        tick = 1 / self.hz
+        per_state = max(1, round(self.hz / STATE_HZ))
+        ticks, last_lease = 0, 0.0
+        while True:
+            started = time.monotonic()
+            self._take_inbox()
+            if self.ended:
+                return
+            if self.need_sync and not await self._sync():
+                return
+            if started - last_lease >= 1:
+                last_lease = started
+                ok = await self.world.redis.set(f"ENC:{self.id}:lease", self.host.server_id, xx=True, px=LEASE_MS)
+                if not ok:
+                    return
+            target = steps_since(self.start_ms, self.host.now_ms())
+            calls: list = []
+            ran = 0
+            while self.step < target and ran < MAX_CATCH_UP:
+                self.step += 1
+                ran += 1
+                self._run_step(self.step, calls)
+            if ran >= MAX_CATCH_UP:
+                self.step = target  # too far behind: skip ahead rather than run slow for ever
+            for call in calls:
+                if self.ended:
+                    break
+                await self._call(call)
+            ticks += 1
+            if ticks % per_state == 0 and self.players:
+                self._publish(self.state())
+            await asyncio.sleep(max(0, tick - (time.monotonic() - started)))
+
+
+class EncounterHost:
+    """A server's part in encounters: it runs the ones it owns, and ends any
+    whose owner has gone away."""
+
+    def __init__(self, world: World, server_id: str, now_ms: Callable[[], float]):
+        self.world = world
+        self.server_id = server_id
+        self.now_ms = now_ms
+        self.bus = Bus(world.redis)
+        self.owners: dict[str, asyncio.Task] = {}
+        self.tasks: list[asyncio.Task] = []
+
+    async def start(self) -> None:
+        await self.bus.start(self.server_id)
+        self.tasks = [asyncio.create_task(self._discover()), asyncio.create_task(self._leases())]
+
+    async def close(self) -> None:
+        for task in [*self.tasks, *self.owners.values()]:
+            task.cancel()
+        await self.bus.close()
+
+    def adopt(self, eid: str) -> None:
+        """Starts running an encounter this server owns."""
+        if eid in self.owners:
+            return
+        task = asyncio.create_task(Owner(self, eid).run())
+        self.owners[eid] = task
+        task.add_done_callback(lambda _t, eid=eid: self.owners.pop(eid, None))
+
+    async def _discover(self) -> None:
+        """Watches for new encounters, and runs the ones this server owns."""
+        last = "$"
+        while True:
+            try:
+                reply = await self.world.redis.xread({NEW_ENCOUNTERS: last}, block=1000)
+                for _stream, entries in reply or ():
+                    for entry_id, fields in entries:
+                        last = entry_id
+                        if fields.get("owner") == self.server_id:
+                            self.adopt(fields["id"])
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                log.exception("watching for new encounters failed")
+                await asyncio.sleep(1)
+
+    async def check_leases(self) -> int:
+        """Ends every encounter whose owner has stopped renewing its lease."""
+        ended = 0
+        for eid in await self.world.redis.smembers("alz:encounters"):
+            if eid in self.owners:
+                continue
+            if not await self.world.redis.exists(f"ENC:{eid}:lease"):
+                if await self.world.call("encounter_end", eid, "lost"):
+                    log.info("encounter %s lost its owner; ended it", eid)
+                    ended += 1
+        return ended
+
+    async def _leases(self) -> None:
+        while True:
+            await asyncio.sleep(1)
+            try:
+                await self.check_leases()
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                log.exception("checking encounter leases failed")

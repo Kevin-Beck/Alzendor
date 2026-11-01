@@ -240,6 +240,32 @@ class Dot:
                 "debuffs": {k: [round(v[0], 6), v[1], v[2]] for k, v in sorted(self.debuffs.items())}}
 
 
+SNAPSHOT = ("n", "x", "y", "vx", "vy", "well_a", "well_r", "well_target", "spin", "dodge_cd", "invuln", "wobble_after",
+            "stagger", "sx", "sy", "immune", "blocking", "block_n", "wobble_clock")
+
+
+def snapshot(dot: Dot) -> dict:
+    """Everything that makes a dot what it is now, so a copy can carry on
+    exactly as it would (the client's prediction restores the server's)."""
+    out = {k: getattr(dot, k) for k in SNAPSHOT}
+    out["rng"] = dot.rng.s
+    out["cool"] = {str(k): v for k, v in dot.cool.items() if v > 0}
+    out["debuffs"] = {k: list(v) for k, v in dot.debuffs.items()}
+    out["pending"] = list(dot.pending) if dot.pending else None
+    out["volleys"] = [list(v) for v in dot.volleys]
+    return out
+
+
+def restore(dot: Dot, snap: dict) -> None:
+    for k in SNAPSHOT:
+        setattr(dot, k, snap[k])
+    dot.rng.s = snap["rng"]
+    dot.cool = {int(k): v for k, v in snap["cool"].items()}
+    dot.debuffs = {k: list(v) for k, v in snap["debuffs"].items()}
+    dot.pending = list(snap["pending"]) if snap["pending"] else None
+    dot.volleys = [list(v) for v in snap["volleys"]]
+
+
 def make_dot(rules: Rules, encounter_seed, pid: str, slots: dict | None = None, shield: bool = False) -> Dot:
     """A player's dot at the start of an encounter, at the centre."""
     return Dot(rules=rules, seed=seed_for(encounter_seed, pid), slots=slots or {}, shield=shield)
@@ -595,14 +621,19 @@ def replay(script: dict) -> dict:
     blows_at: dict[int, list] = {}
     for n, b in script.get("blows", []):
         blows_at.setdefault(int(n), []).append(Blow(**b))
-    keys, states, events = 0, [], []
+    keys, states, events, snap = 0, [], [], None
     for n in range(1, script["steps"] + 1):
         keys = keys_at.get(n, keys)
         for e in step(dot, keys, acts_at.get(n, ()), blows_at.get(n, ())):
             events.append({"n": n, **e})
         if n % 30 == 0 or n == script["steps"]:
             states.append(dot.state())
-    return {"states": states, "events": events}
+        if n == script.get("snap_at"):
+            snap = snapshot(dot)
+    out = {"states": states, "events": events}
+    if snap:
+        out["snap"] = snap
+    return out
 
 
 # Converting rhythm content ----------------------------------------------------------------

@@ -97,7 +97,7 @@ def make_run(i: int) -> dict:
         acts += [[n, *a] for a in now_acts]
         blows += [[n, x] for x in now_blows]
         b.step(dot, keys, [tuple(a) for a in now_acts], [b.Blow(**x) for x in now_blows])
-    script.update(keys=key_log, acts=acts, blows=blows)
+    script.update(keys=key_log, acts=acts, blows=blows, snap_at=300)
     return script
 
 

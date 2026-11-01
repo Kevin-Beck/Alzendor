@@ -20,6 +20,7 @@ from websockets.http11 import Request, Response
 
 from .auth import Auth
 from .config import Config
+from .encounter import EncounterHost
 from .feed import FEED_BLOCK_MS
 from .session import Session
 from .world import World
@@ -42,7 +43,7 @@ SECURITY_HEADERS = {
 class GameServer:
     def __init__(self, config: Config, redis: Redis):
         self.config = config
-        self.world = World(redis)
+        self.world = World(redis, config.server_id)
         self.auth = Auth(redis, config.session_ttl_days * 24 * 3600, config.signups_per_hour)
         self.sessions: dict[str, Session] = {}
         self.ambient: list[dict] = []
@@ -50,6 +51,8 @@ class GameServer:
         # so clients sync to it (ping/pong) through this offset.
         self.clock_offset_ms = 0.0
         self._web_client = WEB_CLIENT.read_bytes()
+        # The encounters this server owns, and the bus their inputs and state travel on.
+        self.encounters = EncounterHost(self.world, config.server_id, self.now_ms)
 
     async def prepare(self) -> None:
         """Installs the game rules and loads the map. Safe to run on every
@@ -94,12 +97,14 @@ class GameServer:
             max_size=MAX_MESSAGE_BYTES,
         ) as server:
             log.info("server %s listening on %s:%d", self.config.server_id, self.config.host, self.config.port)
-            tasks = [asyncio.create_task(loop()) for loop in (self._heartbeats, self._ticker, self._combat)]
+            await self.encounters.start()
+            tasks = [asyncio.create_task(loop()) for loop in (self._heartbeats, self._ticker, self._world_tick)]
             try:
                 await stop
             finally:
                 for task in tasks:
                     task.cancel()
+                await self.encounters.close()
                 server.close()
 
     async def _heartbeats(self) -> None:
@@ -132,15 +137,15 @@ class GameServer:
                 await self.world.call("disconnect", session.pid, session.id, "", "You drifted off after a long while idle.")
                 log.info("%s left the world after being idle", session.pid)
 
-    async def _combat(self) -> None:
-        """Lands NPC attacks as they come due. Every server runs this loop; each
-        attack is taken off the schedule atomically, so it lands only once."""
+    async def _world_tick(self) -> None:
+        """Finishes held-up moves and moves journeys on as they come due. Every
+        server runs this loop; each is taken off its schedule atomically."""
         while True:
             await asyncio.sleep(0.1)
             try:
                 await self.world.call("tick")
             except Exception:
-                log.exception("combat tick failed")
+                log.exception("world tick failed")
                 await asyncio.sleep(1)
 
     async def _ticker(self) -> None:

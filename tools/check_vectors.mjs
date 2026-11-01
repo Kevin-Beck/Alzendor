@@ -35,7 +35,20 @@ function compare(path, want, got) {
   }
 }
 
-vectors.runs.forEach((run, i) => compare(`run ${i}`, run.expect, Balance.replay(run.script)));
+vectors.runs.forEach((run, i) => {
+  compare(`run ${i}`, run.expect, Balance.replay(run.script));
+  // The server's snapshot, restored here mid-run, carries on exactly as the run did.
+  const s = run.script;
+  const dot = Balance.makeDot(Balance.forPlayer(Balance.rulesFrom(s.rules || {}), s.stats || {}), s.seed, s.pid, s.slots || {}, s.shield);
+  Balance.restore(dot, run.expect.snap);
+  let keys = 0;
+  for (const [n, k] of s.keys) if (n <= s.snap_at) keys = k;
+  for (let n = s.snap_at + 1; n <= s.steps; n++) {
+    for (const [m, k] of s.keys) if (m === n) keys = k;
+    Balance.step(dot, keys, s.acts.filter((a) => a[0] === n).map((a) => a.slice(1)), s.blows.filter((b) => b[0] === n).map((b) => b[1]));
+  }
+  compare(`run ${i} restored`, run.expect.states[run.expect.states.length - 1], Balance.state(dot));
+});
 if (problems.length) {
   console.error(problems.join("\n"));
   process.exit(1);

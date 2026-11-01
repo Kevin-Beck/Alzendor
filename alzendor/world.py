@@ -12,8 +12,11 @@ LUA_LIBRARY = Path(__file__).with_name("alzendor.lua")
 
 
 class World:
-    def __init__(self, redis: Redis):
+    def __init__(self, redis: Redis, server_id: str = "local"):
         self.redis = redis
+        # Passed to every function as KEYS[1]: the server an encounter a call
+        # starts belongs to (docs/combat-redesign.md).
+        self.server_id = server_id
         self.creation: dict = {}  # what the character creation screen offers, once seeded
 
     async def load_rules(self) -> None:
@@ -22,7 +25,7 @@ class World:
 
     async def call(self, function: str, *args) -> int:
         """Runs one game-rules function atomically. See alzendor.lua."""
-        return await self.redis.fcall(function, 0, *(str(a) for a in args))
+        return await self.redis.fcall(function, 1, self.server_id, *(str(a) for a in args))
 
     async def seed(self, path: Path) -> dict:
         """Loads the map from a seed file (and its zone files) and returns it (for its ambient events)."""
