@@ -637,6 +637,388 @@
 
 <script>
 "use strict";
+/* BALANCE BEGIN */
+// Balance: the combat simulation, the client's copy (for prediction). It's
+// alzendor/balance.py line for line, with the arithmetic in the same order, so
+// the two agree to within 1e-6 (tests/balance_vectors.json, checked by
+// tools/check_vectors.mjs). Change one, change the other.
+const Balance = (() => {
+  const HZ = 60, DT = 1 / 60, TAU = 2 * Math.PI;
+  const UP = 1, DOWN = 2, LEFT = 4, RIGHT = 8;
+  const TIERS = ["edge", "clean", "perfect"];
+  const steps = (ms) => Math.floor(ms * HZ / 1000 + 0.5);
+
+  function rng(seed) {
+    let s = seed >>> 0;
+    return () => {
+      s = (s + 0x6D2B79F5) >>> 0;
+      let t = Math.imul(s ^ (s >>> 15), s | 1);
+      t = ((t + Math.imul(t ^ (t >>> 7), t | 61)) >>> 0) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function fnv1a(text) {
+    let h = 0x811C9DC5;
+    for (const byte of new TextEncoder().encode(text)) h = Math.imul(h ^ byte, 0x01000193) >>> 0;
+    return h >>> 0;
+  }
+  const seedFor = (encounterSeed, pid) => fnv1a(`${encounterSeed}:${pid}`);
+
+  const DEFAULTS = {
+    core: 0.22, perfect_r: 0.06, clean_r: 0.14, damping: 2.5, block_damping: 10, push: 2.6, gravity: 0.9,
+    gravity_falloff: 0.3, well_radius: [0.5, 0.85], well_speed: 0.3, warn_ms: 1500, buffer_ms: 100,
+    stagger_ms: 1200, stagger_dmg: 1.5, stagger_kick: 1.8, stagger_immune_ms: 3000, dodge_ms: 600,
+    dodge_cd_ms: 3000, wobble_ms: 2500, block_cut: 0.7, block_kick: 0.15, perfect_block_poise: 40,
+    boss_stagger_ms: 4000, boss_stagger_dmg: 1.5, boss_poise_decay: 5, damage_scale: 1, defend_perfect_ms: 60,
+    debuff_scale: 1,
+  };
+
+  // From seed-style rules (balance_core…, defend_perfect_ms), or from an
+  // encounter's own rules (core…), over the defaults.
+  function rulesFrom(given = {}) {
+    const out = { ...DEFAULTS };
+    for (const name of Object.keys(DEFAULTS)) {
+      let raw = name in given ? given[name] : given[name === "defend_perfect_ms" ? name : "balance_" + name];
+      if (raw === undefined || raw === null) continue;
+      if (name === "well_radius") out[name] = (Array.isArray(raw) ? raw : String(raw).split(",")).map(Number);
+      else out[name] = Number(raw);
+    }
+    return out;
+  }
+
+  function forPlayer(rules, { poise = 0, focus = 0, resilience = 0 } = {}) {
+    return { ...rules, core: rules.core * (1 + 0.04 * poise), perfect_r: rules.perfect_r * (1 + 0.05 * focus),
+      debuff_scale: Math.max(0.5, 1 - 0.05 * resilience) };
+  }
+
+  function gear(g) {
+    return { cooldown: Number(g.cooldown || 0), kick: Number(g.kick || 0), pattern: g.pattern || "bump",
+      hits: Number(g.hits || 1), gap: Number(g.gap || 0), debuff: g.debuff || null };
+  }
+
+  function blow(b) {
+    return { kick: 0, angle: 0, defend: "both", stagger: false, debuff: null, parting: false, ...b };
+  }
+
+  function makeDot(rules, encounterSeed, pid, slots = {}, shield = false) {
+    const next = rng(seedFor(encounterSeed, pid));
+    const [lo, hi] = rules.well_radius;
+    const dot = { rules, next, slots: {}, shield, x: 0, y: 0, vx: 0, vy: 0, well_a: 0, well_r: 0, well_target: 0,
+      spin: 1, n: 0, cool: {}, dodge_cd: 0, invuln: 0, wobble_after: false, stagger: 0, sx: 0, sy: 0, immune: 0,
+      debuffs: {}, blocking: false, block_n: 0, wobble_clock: 0, pending: null, volleys: [], draws: [0, 0, 0, 0] };
+    dot.well_a = next() * TAU;
+    dot.well_r = lo + (hi - lo) * next();
+    dot.well_target = dot.well_r;
+    dot.spin = next() < 0.5 ? -1 : 1;
+    for (const [k, v] of Object.entries(slots)) dot.slots[Number(k)] = gear(v);
+    return dot;
+  }
+
+  const dist = (dot) => Math.sqrt(dot.x * dot.x + dot.y * dot.y);
+  const fade = (dot, kind) => { const d = dot.debuffs[kind]; return d ? d[0] * d[1] / d[2] : 0; };
+
+  function addDebuff(dot, kind, strength, ms) {
+    const total = Math.max(1, steps(ms * dot.rules.debuff_scale));
+    const old = dot.debuffs[kind];
+    dot.debuffs[kind] = [old ? Math.max(strength, old[0]) : strength, total, total];
+  }
+
+  function tier(dot) {
+    const d = dist(dot);
+    if (d <= dot.rules.perfect_r) return 2;
+    if (d <= dot.rules.clean_r) return 1;
+    return 0;
+  }
+
+  function strikeCheck(dot, slot) {
+    if (dot.stagger > 0) return "staggered";
+    if (dot.blocking || dist(dot) > dot.rules.core) return "not_steady";
+    if ((dot.cool[slot] || 0) > 0) return "cooldown";
+    if (!(slot in dot.slots)) return "empty";
+    return null;
+  }
+
+  function applyKick(dot, kick, pattern, angle = null) {
+    const u = dot.draws[3];
+    if (pattern === "side") {
+      const sign = u < 0.5 ? -1 : 1;
+      const lean = ((u * 2) % 1) * 2 - 1;
+      const dx = sign * kick, dy = kick * 0.2 * lean;
+      dot.vx += dx;
+      dot.vy += dy;
+      return Math.atan2(dy, dx);
+    }
+    if (angle === null) angle = u * TAU;
+    dot.vx += kick * Math.cos(angle);
+    dot.vy += kick * Math.sin(angle);
+    return angle;
+  }
+
+  function stagger(dot, angle) {
+    dot.x = Math.cos(angle);
+    dot.y = Math.sin(angle);
+    dot.vx = dot.vy = 0;
+    dot.stagger = steps(dot.rules.stagger_ms);
+    const back = angle + (dot.draws[3] * 2 - 1) * 0.8;
+    dot.sx = 0.35 * Math.cos(back);
+    dot.sy = 0.35 * Math.sin(back);
+  }
+
+  function strike(dot, slot, target, events) {
+    const g = dot.slots[slot];
+    const t = tier(dot);
+    dot.cool[slot] = steps(g.cooldown);
+    const angle = applyKick(dot, g.kick, g.pattern);
+    if (g.debuff) addDebuff(dot, g.debuff.kind, Number(g.debuff.strength), Number(g.debuff.ms));
+    events.push({ type: "strike", slot, target, tier: t, hit: 1, hits: g.hits });
+    if (g.hits > 1) dot.volleys.push([slot, target, t, 2, Math.max(1, steps(g.gap)), angle]);
+  }
+
+  function cancelVolleys(dot, target = null) {
+    dot.volleys = dot.volleys.filter((v) => target !== null && v[1] !== target);
+  }
+
+  function applyBlow(dot, b) {
+    const r = dot.rules;
+    if (b.parting) return { result: "parting", stagger: false };
+    if (dot.invuln > 0 && b.defend !== "block" && b.defend !== "none") return { result: "dodge", stagger: false };
+    if (dot.blocking && !(dot.stagger > 0) && b.defend !== "dodge" && b.defend !== "none") {
+      const k = b.kick * r.block_kick;
+      dot.vx += k * Math.cos(b.angle);
+      dot.vy += k * Math.sin(b.angle);
+      const perfect = dot.n - dot.block_n <= steps(r.defend_perfect_ms);
+      return { result: perfect ? "perfect_block" : "block", stagger: false };
+    }
+    const was = dot.stagger > 0;
+    if (!was) {
+      dot.vx += b.kick * Math.cos(b.angle);
+      dot.vy += b.kick * Math.sin(b.angle);
+    }
+    const staggers = Boolean((b.stagger || b.kick >= r.stagger_kick) && !was && dot.immune === 0);
+    if (staggers) stagger(dot, b.angle);
+    if (b.debuff) addDebuff(dot, b.debuff.kind, Number(b.debuff.strength), Number(b.debuff.ms));
+    return { result: was ? "staggered" : "hit", stagger: staggers };
+  }
+
+  function timers(dot, events) {
+    for (const slot of Object.keys(dot.cool)) if (dot.cool[slot] > 0) dot.cool[slot] -= 1;
+    if (dot.dodge_cd > 0) dot.dodge_cd -= 1;
+    if (dot.immune > 0) dot.immune -= 1;
+    if (dot.invuln > 0) {
+      dot.invuln -= 1;
+      if (dot.invuln === 0 && dot.wobble_after) {
+        dot.wobble_after = false;
+        addDebuff(dot, "wobble", 1, dot.rules.wobble_ms);
+      }
+    }
+    if (dot.stagger > 0) {
+      dot.stagger -= 1;
+      if (dot.stagger === 0) {
+        dot.immune = steps(dot.rules.stagger_immune_ms);
+        events.push({ type: "recover" });
+      }
+    }
+    for (const kind of Object.keys(dot.debuffs)) {
+      const d = dot.debuffs[kind];
+      d[1] -= 1;
+      if (d[1] <= 0) delete dot.debuffs[kind];
+    }
+  }
+
+  function well(dot) {
+    const r = Math.min(1, fade(dot, "reeling"));
+    const [u1, u2] = dot.draws;
+    if (u1 < DT * (0.08 + 0.6 * r)) dot.spin = -dot.spin;
+    const p = DT * (0.25 + r);
+    if (u2 < p) {
+      const [lo, hi] = dot.rules.well_radius;
+      dot.well_target = lo + (hi - lo) * (u2 / p);
+    }
+    dot.well_r += (dot.well_target - dot.well_r) * (1 - Math.exp(-0.8 * DT));
+    dot.well_a += dot.spin * dot.rules.well_speed * (1 + 3 * r) * DT;
+  }
+
+  function act(dot, a, events) {
+    const kind = a[0];
+    if (kind === "strike") {
+      dot.pending = [Number(a[1]), a.length > 2 ? a[2] : null, steps(dot.rules.buffer_ms)];
+    } else if (kind === "dodge") {
+      const why = dot.stagger > 0 ? "staggered" : dot.blocking ? "blocking" : dot.dodge_cd > 0 ? "cooldown" : null;
+      if (why) { events.push({ type: "refused", act: "dodge", reason: why }); return; }
+      dot.invuln = steps(dot.rules.dodge_ms);
+      dot.dodge_cd = steps(dot.rules.dodge_cd_ms);
+      dot.wobble_after = true;
+      events.push({ type: "dodge" });
+    } else if (kind === "block") {
+      if (!dot.shield) events.push({ type: "refused", act: "block", reason: "no_shield" });
+      else if (!dot.blocking) { dot.blocking = true; dot.block_n = dot.n; }
+    } else if (kind === "unblock") {
+      dot.blocking = false;
+    }
+  }
+
+  function volleys(dot, events) {
+    const keep = [];
+    for (const v of dot.volleys) {
+      v[4] -= 1;
+      if (v[4] > 0) { keep.push(v); continue; }
+      const [slot, target, t, hit, , angle] = v;
+      const g = dot.slots[slot];
+      applyKick(dot, g.kick, g.pattern, g.pattern === "taps" ? angle : null);
+      events.push({ type: "strike", slot, target, tier: t, hit, hits: g.hits });
+      if (hit < g.hits) keep.push([slot, target, t, hit + 1, Math.max(1, steps(g.gap)), angle]);
+    }
+    dot.volleys = keep;
+  }
+
+  function physics(dot, keys, events) {
+    const r = dot.rules;
+    if (dot.stagger > 0) {
+      const ease = 1 - Math.exp(-3 * DT);
+      dot.x += (dot.sx - dot.x) * ease;
+      dot.y += (dot.sy - dot.y) * ease;
+      dot.vx = dot.vy = 0;
+      return;
+    }
+    const reel = Math.min(1, fade(dot, "reeling"));
+    const calm = dot.blocking ? 0.1 : 1;
+    const wx = dot.well_r * Math.cos(dot.well_a);
+    const wy = dot.well_r * Math.sin(dot.well_a);
+    const gx = wx - dot.x, gy = wy - dot.y;
+    const dg = Math.sqrt(gx * gx + gy * gy);
+    let ax = 0, ay = 0;
+    if (dg > 0) {
+      let g = r.gravity * (1 + 0.6 * reel) * calm;
+      if (dg < r.gravity_falloff) g = g * dg / r.gravity_falloff;
+      ax = g * gx / dg;
+      ay = g * gy / dg;
+    }
+    if (!dot.blocking) {
+      let px = (keys & RIGHT ? 1 : 0) - (keys & LEFT ? 1 : 0);
+      let py = (keys & DOWN ? 1 : 0) - (keys & UP ? 1 : 0);
+      if (px && py) { px *= Math.sqrt(0.5); py *= Math.sqrt(0.5); }
+      const steady = "steady" in dot.debuffs ? 1.5 : 1;
+      const heavy = dot.debuffs.heavy;
+      const weigh = 1 + (heavy ? heavy[0] * heavy[1] / heavy[2] : 0);
+      const push = r.push * steady / weigh;
+      ax += px * push;
+      ay += py * push;
+    }
+    dot.vx += ax * DT;
+    dot.vy += ay * DT;
+    const wob = fade(dot, "wobble");
+    if (wob > 0) {
+      dot.wobble_clock += DT;
+      if (dot.wobble_clock >= 0.07) {
+        dot.wobble_clock -= 0.07;
+        const k = 1.1 * wob * calm;
+        const a = dot.draws[2] * TAU;
+        dot.vx += k * Math.cos(a);
+        dot.vy += k * Math.sin(a);
+      }
+    } else {
+      dot.wobble_clock = 0;
+    }
+    const damp = Math.exp(-(dot.blocking ? r.block_damping : r.damping) * DT);
+    dot.vx *= damp;
+    dot.vy *= damp;
+    dot.x += dot.vx * DT;
+    dot.y += dot.vy * DT;
+    const d = dist(dot);
+    if (d >= 1) {
+      const nx = dot.x / d, ny = dot.y / d;
+      if (wob > 0.15 || dot.immune > 0) {
+        const vn = dot.vx * nx + dot.vy * ny;
+        if (vn > 0) { dot.vx -= 2 * vn * nx; dot.vy -= 2 * vn * ny; }
+        dot.x = nx * 0.999;
+        dot.y = ny * 0.999;
+      } else {
+        stagger(dot, Math.atan2(ny, nx));
+        events.push({ type: "stagger", by: "rim" });
+      }
+    }
+  }
+
+  // One step: timers, the four draws, the well, acts, a buffered strike,
+  // volleys, blows, then the dot. Returns what happened, as balance.step.
+  function step(dot, keys = 0, acts = [], blows = []) {
+    const events = [];
+    dot.n += 1;
+    timers(dot, events);
+    dot.draws = [dot.next(), dot.next(), dot.next(), dot.next()];
+    well(dot);
+    for (const a of acts) act(dot, a, events);
+    if (dot.pending) {
+      const [slot, target, left] = dot.pending;
+      const why = strikeCheck(dot, slot);
+      if (why === null) {
+        dot.pending = null;
+        strike(dot, slot, target, events);
+      } else if (why === "empty" || left <= 0) {
+        dot.pending = null;
+        events.push({ type: "refused", act: "strike", slot, reason: why });
+      } else {
+        dot.pending[2] = left - 1;
+      }
+    }
+    volleys(dot, events);
+    for (const b of blows) {
+      const result = applyBlow(dot, blow(b));
+      events.push({ type: "blow", ...result });
+      if (result.stagger) events.push({ type: "stagger", by: "blow" });
+    }
+    physics(dot, keys, events);
+    return events;
+  }
+
+  function state(dot) {
+    const cool = {}, debuffs = {};
+    for (const k of Object.keys(dot.cool).sort()) if (dot.cool[k] > 0) cool[k] = dot.cool[k];
+    for (const k of Object.keys(dot.debuffs).sort()) { const d = dot.debuffs[k]; debuffs[k] = [Math.round(d[0] * 1e6) / 1e6, d[1], d[2]]; }
+    return { n: dot.n, x: dot.x, y: dot.y, vx: dot.vx, vy: dot.vy, well: [dot.well_a, dot.well_r], stagger: dot.stagger,
+      immune: dot.immune, invuln: dot.invuln, blocking: dot.blocking, dodge_cd: dot.dodge_cd, cool, debuffs };
+  }
+
+  // A scripted run, as balance.replay.
+  function replay(script) {
+    const rules = forPlayer(rulesFrom(script.rules || {}), script.stats || {});
+    const dot = makeDot(rules, script.seed, script.pid, script.slots || {}, script.shield || false);
+    const keysAt = new Map((script.keys || []).map(([n, k]) => [n, k]));
+    const actsAt = new Map(), blowsAt = new Map();
+    for (const [n, ...a] of script.acts || []) actsAt.set(n, [...(actsAt.get(n) || []), a]);
+    for (const [n, b] of script.blows || []) blowsAt.set(n, [...(blowsAt.get(n) || []), b]);
+    let keys = 0;
+    const states = [], events = [];
+    for (let n = 1; n <= script.steps; n++) {
+      if (keysAt.has(n)) keys = keysAt.get(n);
+      for (const e of step(dot, keys, actsAt.get(n) || [], blowsAt.get(n) || [])) events.push({ n, ...e });
+      if (n % 30 === 0 || n === script.steps) states.push(state(dot));
+    }
+    return { states, events };
+  }
+
+  // A boss's stagger meter, as balance.Boss.
+  function boss(poise, rules) {
+    return { poise, rules, meter: 0, staggered: 0 };
+  }
+  function bossAdd(b, amount) {
+    if (b.staggered) return false;
+    b.meter += amount;
+    if (b.meter >= b.poise) { b.meter = 0; b.staggered = steps(b.rules.boss_stagger_ms); return true; }
+    return false;
+  }
+  function bossStep(b) {
+    if (b.staggered) b.staggered -= 1;
+    else b.meter = Math.max(0, b.meter - b.rules.boss_poise_decay * DT);
+  }
+
+  return { HZ, DT, TAU, UP, DOWN, LEFT, RIGHT, TIERS, steps, rng, fnv1a, seedFor, rulesFrom, forPlayer, makeDot,
+    dist, fade, addDebuff, tier, strikeCheck, applyKick, stagger, cancelVolleys, applyBlow, step, state, replay,
+    boss, bossAdd, bossStep };
+})();
+/* BALANCE END */
+
 // The protocol is documented in alzendor/session.py. Everything the player sees
 // after logging in arrives as an `event` with a global sequence number; the
 // client keeps the last one so it can resume after a dropped connection
