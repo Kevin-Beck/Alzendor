@@ -1,6 +1,7 @@
 """The game rules and event delivery, against a real Redis."""
 
 import asyncio
+import json
 
 import pytest
 
@@ -486,3 +487,36 @@ async def test_reseeding_replaces_the_gear_catalog(world):
     await world.seed(SEED)
     assert await world.redis.hget("GEAR:kick", "period") == "2000"
     assert await world.redis.lrange("alz:default_loadout", 0, -1) == ["kick", "missile", "potion"]
+
+
+async def test_balance_fields_are_seeded(world):
+    # Converted by hand in the seed.
+    assert await world.redis.hmget("GEAR:dagger", "cooldown", "kick", "pattern") == ["350", "1", "bump"]
+    assert await world.redis.hmget("GEAR:missile", "hits", "gap", "pattern") == ["4", "1000", "taps"]
+    assert json.loads(await world.redis.hget("GEAR:greataxe", "debuff")) == {"kind": "heavy", "strength": 1.75, "ms": 5000}
+    assert json.loads(await world.redis.hget("NPC:post-1", "attacks"))[0]["kick"] == 1.564
+    # Not yet converted: filled in from its rhythm as it's seeded.
+    assert await world.redis.hmget("GEAR:kick", "cooldown", "kick") == ["871", "1.145"]
+    # The rules, a list as "low,high".
+    assert await world.redis.hmget("alz:rules", "balance_core", "balance_well_radius", "encounter_hz") == ["0.22", "0.5,0.85", "30"]
+
+
+async def test_bosses_get_poise(world):
+    seed = load_seed(SEED)
+    bosses = [nid for nid, npc in seed["npcs"].items() if npc.get("respawn", 0) >= 900 and npc.get("attacks")]
+    assert len(bosses) == 29
+    for nid in bosses:
+        assert float(await world.redis.hget(f"NPC:{nid}", "poise")) >= 100
+
+
+@pytest.mark.parametrize("change, message", [
+    (lambda d: d["gear"]["dagger"].update(pattern="wiggle"), "pattern must be"),
+    (lambda d: d["gear"]["dagger"].update(cooldown=-5), "cooldown must be"),
+    (lambda d: d["gear"]["greataxe"].update(debuff={"kind": "sleepy", "strength": 1, "ms": 10}), "debuff must be"),
+    (lambda d: d["npcs"]["post-1"]["attacks"][0].update(kick="hard"), "kick must be a number"),
+])
+def test_seed_validation_checks_balance_fields(change, message):
+    data = load_seed(SEED)
+    change(data)
+    with pytest.raises(ValueError, match=message):
+        validate_seed(data)

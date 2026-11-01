@@ -4739,7 +4739,7 @@ redis.register_function('seed', function(keys, args)
       'topics', cjson.encode(npc.topics or {}), 'trainer', npc.trainer and '1' or '0', 'notice', npc.notice or '',
       'greet', cjson.encode(npc.greet or {}), 'lure', cjson.encode(npc.lure or {}), 'wants', npc.wants and cjson.encode(npc.wants) or '',
       'likes', cjson.encode(npc.likes or {}), 'loot', cjson.encode(npc.loot or {}), 'refuse', npc.refuse or '',
-      'thanks', npc.thanks or '')
+      'thanks', npc.thanks or '', 'poise', npc.poise or 0)
     if npc.active_when then redis.call('SADD', 'alz:weather_npcs', nid) else redis.call('SREM', 'alz:weather_npcs', nid) end
     if npc.template then
       -- A template for ambushers: copied when an ambush springs, never placed.
@@ -4769,7 +4769,9 @@ redis.register_function('seed', function(keys, args)
       'hit', gear.hit, 'perfect_hit', gear.perfect_hit, 'miss', gear.miss, 'whiff', gear.whiff,
       'description', gear.description or '', 'weather', gear.weather and cjson.encode(gear.weather) or '',
       'rank', gear.rank or 0, 'requires', gear.requires or '', 'stagger_ms', gear.stagger_ms or 0, 'rarity', gear.rarity or '',
-      'bleed', gear.bleed and cjson.encode(gear.bleed) or '')
+      'bleed', gear.bleed and cjson.encode(gear.bleed) or '',
+      'cooldown', gear.cooldown or 0, 'kick', gear.kick or 0, 'pattern', gear.pattern or 'bump', 'hits', gear.hits or 1,
+      'gap', gear.gap or 0, 'debuff', gear.debuff and cjson.encode(gear.debuff) or '')
     redis.call('SADD', 'alz:gear', gid)
   end
   for _, gid in ipairs(world.loadout or {}) do redis.call('RPUSH', 'alz:default_loadout', gid) end
@@ -4808,7 +4810,10 @@ redis.register_function('seed', function(keys, args)
   for id, a in pairs(world.ancestries or {}) do redis.call('HSET', 'alz:ancestries', id, cjson.encode(a)) end
   for id, b in pairs(world.backgrounds or {}) do redis.call('HSET', 'alz:backgrounds', id, cjson.encode(b)) end
   redis.call('DEL', 'alz:rules')
-  for name, value in pairs(world.rules or {}) do redis.call('HSET', 'alz:rules', name, value) end
+  for name, value in pairs(world.rules or {}) do
+    if type(value) == 'table' then value = table.concat(value, ',') end -- balance_well_radius: "0.5,0.85"
+    redis.call('HSET', 'alz:rules', name, value)
+  end
   for iid, item in pairs(world.items or {}) do
     local key = 'ITEM:' .. iid
     local new = redis.call('EXISTS', key) == 0

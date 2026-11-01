@@ -2670,7 +2670,8 @@
           "name": "swinging arm",
           "period": 6000,
           "damage": 2,
-          "hit": "{actor}'s arm swings round and clips {target}."
+          "hit": "{actor}'s arm swings round and clips {target}.",
+          "kick": 1.564
         }
       ]
     },
@@ -4073,7 +4074,10 @@
         "energy": -0.6,
         "precipitation": "dry",
         "tier": "green"
-      }
+      },
+      "cooldown": 350,
+      "kick": 1.0,
+      "pattern": "bump"
     },
     "kick": {
       "name": "Kick",
@@ -4182,6 +4186,14 @@
         "energy": 0.7,
         "precipitation": "any",
         "tier": "blue"
+      },
+      "cooldown": 2500,
+      "kick": 1.6,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 1.75,
+        "ms": 5000
       }
     },
     "potion": {
@@ -4220,7 +4232,12 @@
       "perfect_hit": "{actor}'s magic missile strikes {target} dead centre!",
       "miss": "{actor}'s magic missile streaks past {target}.",
       "whiff": "your magic missile fizzles.",
-      "description": "A dart of raw force. Like all spells, it's strongest when the air is restless."
+      "description": "A dart of raw force. Like all spells, it's strongest when the air is restless.",
+      "cooldown": 4500,
+      "kick": 0.7,
+      "pattern": "taps",
+      "hits": 4,
+      "gap": 1000
     },
     "mending": {
       "name": "Mending Light",
@@ -6110,7 +6127,38 @@
     "offer_beat_ms": 2500,
     "lure_chance": 0.03,
     "whatnow_steps": 15,
-    "gift_cooldown": 86400
+    "gift_cooldown": 86400,
+    "encounter_hz": 30,
+    "encounter_lead_ms": 1000,
+    "balance_core": 0.22,
+    "balance_perfect_r": 0.06,
+    "balance_clean_r": 0.14,
+    "balance_damping": 2.5,
+    "balance_block_damping": 10,
+    "balance_push": 2.6,
+    "balance_gravity": 0.9,
+    "balance_gravity_falloff": 0.3,
+    "balance_well_radius": [
+      0.5,
+      0.85
+    ],
+    "balance_well_speed": 0.3,
+    "balance_warn_ms": 1500,
+    "balance_buffer_ms": 100,
+    "balance_stagger_ms": 1200,
+    "balance_stagger_dmg": 1.5,
+    "balance_stagger_kick": 1.8,
+    "balance_stagger_immune_ms": 3000,
+    "balance_dodge_ms": 600,
+    "balance_dodge_cd_ms": 3000,
+    "balance_wobble_ms": 2500,
+    "balance_block_cut": 0.7,
+    "balance_block_kick": 0.15,
+    "balance_perfect_block_poise": 40,
+    "balance_boss_stagger_ms": 4000,
+    "balance_boss_stagger_dmg": 1.5,
+    "balance_boss_poise_decay": 5,
+    "balance_damage_scale": 1
   },
   "channels": [
     "general"

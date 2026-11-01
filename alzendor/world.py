@@ -6,7 +6,7 @@ from pathlib import Path
 
 from redis.asyncio import Redis
 
-from . import weather
+from . import balance, weather
 
 LUA_LIBRARY = Path(__file__).with_name("alzendor.lua")
 
@@ -28,12 +28,29 @@ class World:
         """Loads the map from a seed file (and its zone files) and returns it (for its ambient events)."""
         data = load_seed(path)
         validate_seed(data)
+        fill_balance(data)
         # Lua gets each realm's weather waves ready-made (see weather.py).
         weather_seed = str(data.get("rules", {}).get("weather_seed", "alzendor"))
         params = {realm: weather.realm_params(weather_seed, realm) for realm in data.get("realms", {})}
         await self.call("seed", json.dumps({**data, "weather_params": params}))
         self.creation = creation_options(data)
         return data
+
+
+def fill_balance(data: dict) -> None:
+    """Gives every piece of gear, NPC attack and boss the balance fields it
+    doesn't have yet, converted from its rhythm (balance.convert_gear and
+    friends), so the world in Redis always has them."""
+    for gid, gear in data.get("gear", {}).items():
+        if gear.get("cooldown") is None:
+            gear.update(balance.convert_gear(gid, gear))
+    for npc in data.get("npcs", {}).values():
+        boss = float(npc.get("respawn") or 0) >= 900 and bool(npc.get("attacks"))
+        for attack in npc.get("attacks", []):
+            if attack.get("kick") is None:
+                attack.update(balance.convert_attack(attack, boss))
+        if boss and npc.get("poise") is None:
+            npc["poise"] = balance.boss_poise(float(npc.get("max_hp") or 10))
 
 
 def load_seed(path: Path) -> dict:
@@ -354,6 +371,12 @@ def _npc_problems(npc: dict, factions: dict, gear: dict) -> list[str]:
             problems.append(f"attack {attack.get('name')!r}: period and damage must be positive whole numbers")
         if attack.get("defend", "both") not in DEFENCES:
             problems.append(f"attack {attack.get('name')!r}: defend must be one of {', '.join(DEFENCES)}")
+        if not _number(attack.get("kick", 0)) or not isinstance(attack.get("stagger", False), bool) \
+                or not isinstance(attack.get("warn", 1), int):
+            problems.append(f"attack {attack.get('name')!r}: kick must be a number, stagger true or false, warn whole ms")
+        problems += [f"attack {attack.get('name')!r}: {p}" for p in _debuff_problems(attack.get("debuff"))]
+    if npc.get("poise") is not None and not _number(npc["poise"], 1):
+        problems.append("poise must be a positive number")
     problems += [f"drops unknown gear {g!r}" for g in npc.get("drops", []) if g not in gear]
     return problems
 
@@ -373,7 +396,40 @@ def _gear_problems(gear: dict) -> list[str]:
     amounts = gear.get("amounts")
     if not (isinstance(amounts, list) and len(amounts) == 3 and all(isinstance(n, int) and n > 0 for n in amounts)):
         problems.append("amounts must be [opener, good, perfect], positive whole numbers")
+    if "cooldown" in gear:
+        problems += _balance_gear_problems(gear)
     return problems
+
+
+PATTERNS = ("bump", "side", "taps")
+DEBUFFS = ("heavy", "reeling", "wobble", "steady")  # see docs/combat-redesign.md
+
+
+def _number(value, low=0) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and value >= low
+
+
+def _debuff_problems(debuff) -> list[str]:
+    if debuff is None:
+        return []
+    if not (isinstance(debuff, dict) and debuff.get("kind") in DEBUFFS and _number(debuff.get("strength"))
+            and _number(debuff.get("ms"), 1)):
+        return [f"debuff must be {{kind ({', '.join(DEBUFFS)}), strength, ms}}"]
+    return []
+
+
+def _balance_gear_problems(gear: dict) -> list[str]:
+    """The balance fields (docs/combat-redesign.md, Data)."""
+    problems = []
+    if not (isinstance(gear["cooldown"], int) and gear["cooldown"] > 0):
+        problems.append("cooldown must be positive whole ms")
+    if not _number(gear.get("kick", 0)):
+        problems.append("kick must be a number, 0 or more")
+    if gear.get("pattern", "bump") not in PATTERNS:
+        problems.append(f"pattern must be one of {', '.join(PATTERNS)}")
+    if not (isinstance(gear.get("hits", 1), int) and gear.get("hits", 1) >= 1 and isinstance(gear.get("gap", 0), int)):
+        problems.append("hits and gap must be whole numbers (hits at least 1)")
+    return problems + _debuff_problems(gear.get("debuff"))
 
 
 EFFECTS = ("text", "delay", "hasten", "coins", "xp", "hp", "reputation", "discover", "rumour", "boon", "death",

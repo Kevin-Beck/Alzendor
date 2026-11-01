@@ -603,3 +603,78 @@ def replay(script: dict) -> dict:
         if n % 30 == 0 or n == script["steps"]:
             states.append(dot.state())
     return {"states": states, "events": events}
+
+
+# Converting rhythm content ----------------------------------------------------------------
+# The plan's conversion (docs/combat-redesign.md, "Content conversion"), used by
+# tools/convert_balance.py, and meanwhile for any gear or attack the seed
+# hasn't converted yet.
+
+VOLLEYS = {"missile": (4, 1000, 0.7), "chain_lightning": (3, 300, 0.5), "cinder_rain": (3, 1000, 0.5), "twin_jab": (2, 150, 0.4)}
+GEAR_COOLDOWN = ((1000, 300), (1200, 350), (4500, 2500), (8000, 4500))
+GEAR_KICK = ((1000, 0.8), (1200, 1.0), (4500, 1.6), (8000, 2.0))
+ATTACK_KICK = ((2500, 0.8), (8000, 2.0), (15000, 2.4))
+
+
+def interp(anchors, x: float) -> float:
+    """Linear between the anchors, clamped outside them."""
+    if x <= anchors[0][0]:
+        return anchors[0][1]
+    for (x0, y0), (x1, y1) in zip(anchors, anchors[1:]):
+        if x <= x1:
+            return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+    return anchors[-1][1]
+
+
+def convert_gear(gid: str, g: dict) -> dict:
+    """The balance fields for a piece of gear: its own if it has them, else
+    converted from its rhythm `period`."""
+    if g.get("cooldown") not in (None, ""):
+        out = {"cooldown": int(float(g["cooldown"])), "kick": float(g.get("kick") or 0), "pattern": g.get("pattern") or "bump"}
+        for key in ("hits", "gap"):
+            if g.get(key) not in (None, "", 0, "0"):
+                out[key] = int(float(g[key]))
+        debuff = g.get("debuff")
+        if isinstance(debuff, str):
+            import json
+            debuff = json.loads(debuff) if debuff else None
+        if debuff:
+            out["debuff"] = debuff
+        return out
+    period = float(g.get("period") or 1200)
+    out = {"cooldown": round(interp(GEAR_COOLDOWN, period)), "kick": round(interp(GEAR_KICK, period), 3),
+           "pattern": "bump" if period < 3000 else "side"}
+    if g.get("effect") in ("heal", "guard"):
+        out["kick"] = 0
+        out["pattern"] = "bump"
+        if g.get("kind") == "Potion":
+            out["debuff"] = {"kind": "steady", "strength": 1.5, "ms": 3000}
+    elif gid in VOLLEYS:
+        out["hits"], out["gap"], out["kick"] = VOLLEYS[gid]
+        out["pattern"] = "taps"
+    elif period >= 4000:
+        out["debuff"] = {"kind": "heavy", "strength": round(min(2.5, 1.5 + (period - 4000) / 2000), 3), "ms": 5000}
+    return out
+
+
+def convert_attack(attack: dict, boss: bool = False) -> dict:
+    """An NPC attack's balance fields: its own if it has them, else converted
+    from its period."""
+    period = float(attack.get("period") or 6000)
+    out = {"kick": float(attack["kick"]) if attack.get("kick") is not None else round(interp(ATTACK_KICK, period), 3)}
+    if "stagger" in attack:
+        out["stagger"] = bool(attack["stagger"])
+    elif boss and period >= 10000:
+        out["stagger"] = True
+    if "debuff" in attack:
+        if attack["debuff"]:
+            out["debuff"] = attack["debuff"]
+    elif period >= 12000:
+        out["debuff"] = {"kind": "reeling", "strength": 1, "ms": 5000}
+    if attack.get("warn"):
+        out["warn"] = int(attack["warn"])
+    return out
+
+
+def boss_poise(max_hp: float) -> int:
+    return int(min(400, 100 + max_hp / 40))
