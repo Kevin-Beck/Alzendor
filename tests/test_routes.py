@@ -2,7 +2,7 @@
 between realms. Journeys pass through waypoints and play themselves. See
 docs/places.md and docs/journeys.md."""
 
-from .conftest import drain, enter, ride, set_weather, texts
+from .conftest import drain, enter, go, hit, ride, set_weather, texts
 
 
 def of_type(events, kind):
@@ -11,7 +11,7 @@ def of_type(events, kind):
 
 async def walk(world, pid, *directions):
     for direction in directions:
-        await world.call("move", pid, direction)
+        await go(world, pid, direction)  # fleeing anything that turns on them
 
 
 async def test_the_coach_runs_through_its_waypoints_and_costs_a_fare(world):
@@ -150,7 +150,7 @@ async def test_npcs_drop_coins(world):
     await walk(world, "kevin", "north", "west", "south")  # the fish market
     await world.redis.hset("NPC:rat-1", "hp", 1)
     await drain(kevin)
-    await world.call("use", "kevin", 1, "npc:rat-1")
+    await hit(world, "kevin", "npc:rat-1")
     assert "You take the Dock Rat's 1 coin." in texts(await drain(kevin))
     assert await world.redis.hget("ACCOUNT:kevin", "coins") == "21"
 

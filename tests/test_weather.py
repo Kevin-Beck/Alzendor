@@ -114,16 +114,14 @@ async def test_resilience_softens_penalties_but_keeps_bonuses(world):
     assert (await kit_gear(kevin, "stormcall"))["now"]["amounts"] == [36, 47, 73]  # the bonus is untouched
 
 
-async def test_heat_slows_beats_and_wind_narrows_windows(world):
+async def test_the_weather_scales_what_gear_lands_in_a_fight(world):
     kevin = await enter(world, "kevin")
-    await walk(world, "kevin", "north")
+    await world.call("goto", "kevin", "back_alley")
     await world.call("set_weather", "kevin", 1, 1, -1)  # scorching and howling
     kick = await kit_gear(kevin, "kick")
-    assert kick["now"]["period_ms"] == 2600 and kick["now"]["grace_ms"] == 210
-    await world.call("use", "kevin", 1, "")  # the kick needs a target, so try the rhythm with the potion
-    await world.call("use", "kevin", 3, "")
-    timing = [e for e in of_type(await drain(kevin), "timing") if e["active"]][-1]
-    assert timing["period_ms"] == 6500  # 5000, 30% slower in the heat
+    eid = await world.redis.get("PLAYER:kevin:encounter")
+    result = json.loads(await world.call("encounter_strike", eid, "kevin", "npc:orc-1", 1, 2, 1, 1, 1))
+    assert result["damage"] == kick["now"]["amounts"][2] != kick["amounts"][2]
 
 
 # Travel, sight and NPCs -------------------------------------------------------------

@@ -5044,6 +5044,7 @@ redis.register_function('seed', function(keys, args)
   redis.call('DEL', 'alz:rules')
   for name, value in pairs(world.rules or {}) do
     if type(value) == 'table' then value = table.concat(value, ',') end -- balance_well_radius: "0.5,0.85"
+    if type(value) == 'number' then value = tostring(value) end -- 0.3, not 0.29999999999999999
     redis.call('HSET', 'alz:rules', name, value)
   end
   for iid, item in pairs(world.items or {}) do

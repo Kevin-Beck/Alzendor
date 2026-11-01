@@ -173,3 +173,42 @@ def test_the_client_address_behind_a_proxy():
     assert session(True, {"CloudFront-Viewer-Address": "[2001:db8::1]:443"}).address == "2001:db8::1"
     assert session(True, {"X-Forwarded-For": "198.51.100.4, 10.0.0.1"}).address == "10.0.0.1"
     assert session(False, viewer).address == "10.0.0.9"  # never trusted unless configured
+
+
+async def test_a_fight_across_two_servers(redis):
+    """An encounter owned by one server, with a player connected to another:
+    her inputs reach the owner, and its state reaches her."""
+    from alzendor.world import World
+
+    async with running_server(redis, "one") as url_one, running_server(redis, "two") as url_two:
+        await redis.hset("alz:rules", "encounter_lead_ms", 200)
+        async with Client.open(url_one) as kevin, Client.open(url_two) as mara:
+            await kevin.auth(type="register", name="Kevin", password="correct horse")
+            await mara.auth(type="register", name="Mara", password="battery staple")
+            one = World(redis, "one")
+            await one.call("goto", "kevin", "back_alley")  # server one causes the fight, so it owns it
+            await one.call("goto", "mara", "back_alley")
+            eid = await redis.get("PLAYER:mara:encounter")
+            assert eid and await redis.hget(f"ENC:{eid}", "owner") == "one"
+            await redis.hset("NPC:orc-1", "hp", 500)
+
+            # Mara (on server two) gets the owner's state, with both dots in it.
+            async with asyncio.timeout(5):
+                while True:
+                    message = json.loads(await mara.ws.recv())
+                    if message["type"] == "state":
+                        break
+            assert message["id"] == eid and set(message["players"]) == {"kevin", "mara"}
+
+            # Her strike goes to the owner on server one, and lands.
+            await asyncio.sleep(0.3)
+            await mara.send(type="input", seq=1, keys=0, act="strike", slot=1, target="npc:orc-1")
+            async with asyncio.timeout(5):
+                while int(await redis.hget("NPC:orc-1", "hp")) == 500:
+                    await asyncio.sleep(0.05)
+            # And a typed command is the same input.
+            hp = int(await redis.hget("NPC:orc-1", "hp"))
+            await kevin.send(type="cmd", text="1")
+            async with asyncio.timeout(5):
+                while int(await redis.hget("NPC:orc-1", "hp")) == hp:
+                    await asyncio.sleep(0.05)

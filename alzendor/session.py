@@ -9,6 +9,11 @@ Client -> server
   {"type": "create",   "class": ..., "ancestry": ..., "passive": ..., "background": ...}
   {"type": "cmd",      "text": "move north", "target": "npc:orc-1"}   (target optional)
   {"type": "ping",     "t": <client clock ms>}   at most 5 a second
+  {"type": "input",    "seq": 812, "keys": 5, "act": "strike", "slot": 1, "target": "npc:orc-1"}
+      In a fight (an encounter): the steering keys held (1 up, 2 down, 4 left,
+      8 right), and maybe an act: strike (slot, target), dodge, block,
+      unblock, or flee (dir). Sent on any change and every 100 ms; at most 30
+      a second, and the rest are dropped. See docs/combat-redesign.md.
 
 Server -> client
   {"type": "auth_ok", "player": <id>, "name": <display name>, "token": ..., "server": <id>}
@@ -18,11 +23,17 @@ Server -> client
   {"type": "event", "event": {"seq", "channel", "type", "actor", "verb", "target", "text", "ts", ...}}
   {"type": "error", "message": ...}
   {"type": "pong", "t": <echoed>, "server_ms": <Redis clock ms>}
+  {"type": "state", "id": <encounter>, "step": N, "players": {...}, "blows": [...], "bosses": {...}}
+      15 a second while the player is in an encounter, from its owner: every
+      dot in it (a full snapshot, with the last input `seq` applied), the NPC
+      blows announced, and boss stagger meters.
+  {"type": "refused", "pid": ..., "act": ..., "reason": ...}   a dropped strike, dodge or flee
 
-Combat timing is judged by Redis's clock. A client syncs to it with ping/pong
-(server_ms is the time when the pong left, by Redis's clock) and uses that to
-draw the timing bars from `timing` events (your slots) and `npc_timing` events
-(an NPC's attacks). The README's Protocol section lists the event types.
+An encounter's steps count from its start_ms on Redis's clock. A client syncs
+to that clock with ping/pong (server_ms is the time when the pong left, by
+Redis's clock). `encounter` events (start, join, leave, end) on the player's
+own stream say when they're in one. The README's Protocol section lists the
+event types.
 
 A player without a character (a new account, or one wiped for a new version)
 is sent `create` after authenticating and must answer with its choices
@@ -51,6 +62,7 @@ AUTH_TIMEOUT_SECONDS = 120
 CREATE_TIMEOUT_SECONDS = 1800
 COMMANDS_PER_SECOND = 4
 COMMAND_BURST = 10
+INPUTS_PER_SECOND = 30
 
 
 class Session:
@@ -64,6 +76,9 @@ class Session:
         self._last_command = time.monotonic()
         self._last_ping = 0.0
         self.last_active = time.monotonic()  # the last command, for the idle timeout
+        self._inputs: list[float] = []      # when recent inputs came, for their rate limit
+        self.encounter: str | None = None   # the encounter the player is in, whose state is forwarded
+        self._input_seq = 0
 
     @property
     def address(self) -> str:
@@ -113,8 +128,15 @@ class Session:
         finally:
             # A dropped connection leaves the player in the world; the reaper
             # removes them if no client resumes within the linkdead grace period.
+            # In a fight, their keys are let go: the fight runs on without them.
             self.server.sessions.pop(self.id, None)
             pump.cancel()
+            if self.encounter:
+                try:
+                    await world.redis.publish(f"enc:{self.encounter}:in", json.dumps({"pid": self.pid, "act": "release"}))
+                except RedisError:
+                    pass
+                await self._follow(None)
             log.info("%s's connection closed (session %s)", self.pid, self.id)
 
     async def _authenticate(self) -> int | None:
@@ -176,6 +198,8 @@ class Session:
                 echo = message.get("t") if type(message.get("t")) in (int, float) else None
                 await self._send(type="pong", t=echo, server_ms=self.server.now_ms())
             return
+        if message and message.get("type") == "input":
+            return await self._input(message)
         if not message or message.get("type") != "cmd" or not isinstance(message.get("text"), str):
             await self._send(type="error", message='Expected {"type": "cmd", "text": ...}.')
             return
@@ -190,6 +214,38 @@ class Session:
             log.exception("command from %s failed: %r", self.pid, message["text"][:100])
             await self._send(type="error", message="Something went wrong with that command.")
 
+    async def _input(self, message: dict) -> None:
+        """Passes a fight input to the encounter's owner, if the player is in one."""
+        now = time.monotonic()
+        self._inputs = [t for t in self._inputs if now - t < 1]
+        if len(self._inputs) >= INPUTS_PER_SECOND or not self.encounter:
+            return
+        self._inputs.append(now)
+        self.last_active = now
+        out = {"pid": self.pid}
+        for key, kind in (("seq", int), ("keys", int), ("act", str), ("slot", int), ("target", str), ("dir", str)):
+            value = message.get(key)
+            if type(value) is kind:
+                out[key] = value[:100] if kind is str else value
+        await self.server.world.redis.publish(f"enc:{self.encounter}:in", json.dumps(out))
+
+    def _forward(self, data: str) -> None:
+        """An encounter's state or refusal, from its owner, to this client."""
+        if data.startswith('{"type":"refused"') and json.loads(data).get("pid") != self.pid:
+            return
+        asyncio.ensure_future(self._send_raw(data))
+
+    async def _follow(self, eid: str | None) -> None:
+        """Forwards the state of this encounter (or none) to the client."""
+        if eid == self.encounter:
+            return
+        bus = self.server.encounters.bus
+        if self.encounter:
+            await bus.unsubscribe(f"enc:{self.encounter}:out", self._forward)
+        self.encounter = eid
+        if eid:
+            await bus.subscribe(f"enc:{eid}:out", self._forward)
+
     async def _pump(self, feed: Feed) -> None:
         """Forwards this player's events to the client until told to stop."""
         try:
@@ -202,6 +258,11 @@ class Session:
                     await asyncio.sleep(1)
                     continue
                 for event in events:
+                    if event["type"] == "encounter" and event.get("channel") == f"PLAYER:{self.pid}":
+                        if event["op"] == "start":
+                            await self._follow(event["id"])
+                        elif event["op"] == "end" and event["id"] == self.encounter:
+                            await self._follow(None)
                     await self._send(type="event", event=event)
             await self.ws.close(1000, feed.ended[:120])
         except ConnectionClosed:
@@ -229,6 +290,12 @@ class Session:
 
     async def _send(self, **message) -> None:
         await self.ws.send(json.dumps(message))
+
+    async def _send_raw(self, data: str) -> None:
+        try:
+            await self.ws.send(data)
+        except ConnectionClosed:
+            pass
 
 
 def _decode(raw) -> dict | None:

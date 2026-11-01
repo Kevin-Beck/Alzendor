@@ -1,7 +1,7 @@
 """Journeys: walking pace, the clock, traps, routes made of waypoints, and
 travel events. See docs/journeys.md."""
 
-from .conftest import drain, enter, ride, set_weather, texts
+from .conftest import blow, drain, enter, go, hit, ride, set_weather, texts
 
 
 def of_type(events, kind):
@@ -10,7 +10,7 @@ def of_type(events, kind):
 
 async def walk(world, pid, *directions):
     for direction in directions:
-        await world.call("move", pid, direction)
+        await go(world, pid, direction)  # fleeing anything that turns on them
 
 
 # Walking pace -----------------------------------------------------------------
@@ -280,7 +280,9 @@ async def test_an_ambush_is_yours_alone_and_you_ride_on_after(world):
     wolves = [e["id"] for e in of_type(events, "room")[-1]["room"]["entities"]]
     assert wolves == ["npc:ford_wolf~kevin~1", "npc:ford_wolf~kevin~2"]
     assert "ROOM:switchbacks" in kevin.subs
-    assert await world.redis.smembers("PLAYER:kevin:foes") == {"ford_wolf~kevin~1", "ford_wolf~kevin~2"}
+    eid = await world.redis.get("PLAYER:kevin:encounter")
+    assert set(await world.redis.zrange(f"ENC:{eid}:npcs", 0, -1)) == {"ford_wolf~kevin~1", "ford_wolf~kevin~2"}
+    assert not await world.redis.exists("ROOM:switchbacks:encounter")  # the rider's own, not the road's
 
     mara = await enter(world, "mara")  # someone else on the same road sees none of it
     await board_coach(world, "mara")
@@ -288,7 +290,7 @@ async def test_an_ambush_is_yours_alone_and_you_ride_on_after(world):
 
     for n, wolf in enumerate(("ford_wolf~kevin~1", "ford_wolf~kevin~2"), 1):
         await world.redis.hset(f"NPC:{wolf}", "hp", 1)
-        await world.call("use", "kevin", n, f"npc:{wolf}")
+        await hit(world, "kevin", f"npc:{wolf}", n)
     await world.redis.zadd("alz:journeys", {"kevin": 0})
     await world.call("tick")
     assert "The last of them is down. You climb back aboard, and the journey goes on." in texts(await drain(kevin))
@@ -316,9 +318,9 @@ async def test_losing_or_fleeing_an_ambush_strands_you(world):
     await world.call("travel", "kevin", "coach")
     await world.call("choose", "kevin", "2")
     await world.redis.hset("ACCOUNT:kevin", "hp", 1)
-    await world.redis.zadd("alz:npc_attacks", {"ford_wolf~kevin~1#1": 0})
-    await world.call("tick")
+    await blow(world, "ford_wolf~kevin~1")
     assert await world.redis.get("PLAYER:kevin:room") == "scree_foot"
+    assert not await world.redis.get("PLAYER:kevin:encounter")
 
 
 async def test_rumours_mark_realms_and_regions(world):

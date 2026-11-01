@@ -4,7 +4,7 @@ selling. See docs/talk-and-layout.md."""
 
 import json
 
-from .conftest import drain, enter, texts
+from .conftest import drain, enter, hit, texts
 
 
 def of_type(events, kind):
@@ -201,7 +201,7 @@ async def test_creatures_drop_loot(world):
     await world.redis.hset("NPC:wild_boar_1", mapping={"hp": 1, "loot": json.dumps([{"item": "bear_claw", "chance": 1}])})
     await world.call("goto", "kevin", "ff_orchard")
     await drain(kevin)
-    await world.call("use", "kevin", 1, "npc:wild_boar_1")
+    await hit(world, "kevin", "npc:wild_boar_1")
     assert "You take bear claw." in texts(await drain(kevin))
     assert await world.redis.sismember("PLAYER:kevin:inv", "bear_claw")
 

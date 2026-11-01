@@ -7,7 +7,7 @@ import pytest
 
 from alzendor.world import load_seed, validate_seed
 
-from .conftest import SEED, drain, enter, set_weather, texts
+from .conftest import SEED, drain, enter, go, hit, set_weather, texts
 
 
 
@@ -17,7 +17,7 @@ def of_type(events, kind):
 
 async def walk(world, pid, *directions):
     for direction in directions:
-        await world.call("move", pid, direction)
+        await go(world, pid, direction)  # fleeing anything that turns on them
 
 
 async def probe(world, rid, t):
@@ -82,7 +82,8 @@ async def test_the_rift_is_one_way_and_the_portal_home_needs_wind_and_no_wraiths
     assert of_type(await drain(kevin), "room")[-1]["room"]["exits"] == ["east"]  # no way back up
 
     await walk(world, "kevin", "east", "east")
-    await world.redis.delete("PLAYER:kevin:foes")  # outrun the scorpion
+    if eid := await world.redis.get("PLAYER:kevin:encounter"):
+        await world.call("encounter_end", eid, "outrun")  # outrun the scorpion
     await set_weather(world.redis, "stillsands", 0.95, -0.9, -1)  # dead still
     await drain(kevin)
     await world.call("travel", "kevin", "portal")
@@ -94,6 +95,8 @@ async def test_the_rift_is_one_way_and_the_portal_home_needs_wind_and_no_wraiths
     assert await world.redis.get("PLAYER:kevin:room") == "sun_altar"
 
     await world.redis.srem("ROOM:sun_altar:npcs", "sandwraith-1", "sandwraith-2")  # cut down
+    if eid := await world.redis.get("PLAYER:kevin:encounter"):
+        await world.call("encounter_end", eid, "won")
     await world.call("travel", "kevin", "portal")
     await drain(kevin)
     assert await world.redis.get("PLAYER:kevin:room") == "temple_steps"

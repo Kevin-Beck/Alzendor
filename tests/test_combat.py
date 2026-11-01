@@ -1,27 +1,16 @@
-"""Combat slots, against Redis's real clock (tests wait for actual beats)."""
+"""Starting fights (the one rule), slots and gear. What happens inside a
+fight, and owners running it, is in test_encounters.py; the simulation in
+test_balance.py."""
 
-import asyncio
-
-from .conftest import drain, enter, texts
-
-PERIOD = 1000  # ms between kick beats in these tests; kicks hit within 300 ms, perfect within 100
+from .conftest import blow, drain, enter, flee, hit, texts
 
 
-async def redis_ms(redis) -> float:
-    seconds, micros = await redis.time()
-    return seconds * 1000 + micros / 1000
-
-
-async def wait_until(redis, when_ms: float) -> None:
-    delay = (when_ms - await redis_ms(redis)) / 1000
-    if delay > 0:
-        await asyncio.sleep(delay)
+def of_type(events, kind, **match):
+    return [e for e in events if e["type"] == kind and all(e.get(k) == v for k, v in match.items())]
 
 
 async def at_fish_market(world, pid="kevin"):
-    """A player standing with the two dock rats, with the starting loadout: kick, magic missile, health potion."""
-    await world.redis.hset("GEAR:kick", "period", PERIOD)
-    await world.redis.hset("GEAR:potion", "period", PERIOD)
+    """A player standing with the two dock rats (neutral), with the starting loadout: kick, magic missile, health potion."""
     feed = await enter(world, pid)
     for direction in ("north", "west", "south"):
         await world.call("move", pid, direction)
@@ -29,140 +18,131 @@ async def at_fish_market(world, pid="kevin"):
     return feed
 
 
-async def started(world, slot=1, pid="kevin") -> int:
-    return int(await world.redis.hget(f"PLAYER:{pid}:slot:{slot}", "start"))
+async def encounter(world, pid="kevin"):
+    return await world.redis.get(f"PLAYER:{pid}:encounter")
 
 
-def of_type(events, kind):
-    return [e for e in events if e["type"] == kind]
+# The one rule: where fights start -------------------------------------------------------
 
 
-async def test_connecting_announces_every_slot(world):
+async def test_walking_in_on_an_enemy(world):
     kevin = await enter(world, "kevin")
-    timings = of_type(await drain(kevin), "timing")
-    assert [(t["slot"], t["gear"], t["label"], t["active"]) for t in timings] == [
-        (1, "kick", "Kick", False), (2, "missile", "Magic Missile", False), (3, "potion", "Health Potion", False),
-    ]
-    assert timings[0]["period_ms"] == 2000
-
-
-async def test_the_opening_use_lands_and_starts_the_rhythm(world):
-    kevin = await at_fish_market(world)
-    await world.call("use", "kevin", 1, "npc:rat-2")
+    await world.call("move", "kevin", "east")  # the back alley's orc warrior is hostile
     events = await drain(kevin)
-    assert texts(events) == ["Kevin kicks the Dock Rat. (5)"]  # 4, +13% on a mild coastal day
-    assert of_type(events, "combat")[0]["slot"] == 1
-    assert of_type(events, "entity")[0]["entity"]["hp"] == 1
-    timing = of_type(events, "timing")[0]
-    assert (timing["slot"], timing["active"]) == (1, True)
-    assert (timing["period_ms"], timing["grace_ms"], timing["perfect_ms"], timing["last_beat"]) == (PERIOD, 300, 100, 0)
+    assert "The Orc Warrior turns on Kevin!" in texts(events)
+    assert of_type(events, "encounter", op="start")
+    assert await encounter(world)
 
 
-async def test_uses_land_on_the_beat_and_mashing_misses(world):
-    kevin = await at_fish_market(world)
-    await world.redis.hset("NPC:rat-1", "hp", 100)
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    start = await started(world)
-    await drain(kevin)
-
-    # Straight away: too early, and it uses up beat 1.
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    events = await drain(kevin)
-    assert texts(events) == ["Too early: your kick goes wide.", "Kevin kicks at the Dock Rat and misses."]
-    assert of_type(events, "timing")[0]["last_beat"] == 1
-
-    # Right on beat 2: perfect.
-    await wait_until(world.redis, start + 2 * PERIOD)
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    assert texts(await drain(kevin)) == ["Kevin lands a perfect kick on the Dock Rat! (9)"]  # 8, +13% on a mild coastal day
-
-    # A little after beat 3: still inside the window.
-    await wait_until(world.redis, start + 3 * PERIOD + 200)
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    assert texts(await drain(kevin)) == ["Kevin kicks the Dock Rat. (6)"]
-
-    # Well after beat 4: too late.
-    await wait_until(world.redis, start + 4 * PERIOD + 450)
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    assert texts(await drain(kevin))[0] == "Too late: your kick goes wide."
-    assert await world.redis.hget("NPC:rat-1", "hp") == str(100 - 5 - 9 - 6)
+async def test_teleporting_in_on_an_enemy(world):
+    await enter(world, "kevin")
+    await world.call("goto", "kevin", "back_alley")
+    assert await encounter(world)
 
 
-async def test_each_slot_keeps_its_own_beat(world):
-    kevin = await at_fish_market(world)
-    await world.redis.hset("NPC:rat-1", "hp", 100)
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    # Slot 2 hasn't started, so magic missile opens it and lands at once.
-    await world.call("use", "kevin", 2, "npc:rat-1")
-    events = await drain(kevin)
-    assert texts(events) == ["Kevin kicks the Dock Rat. (5)", "Kevin hurls a magic missile at the Dock Rat. (15)"]
-    assert [(t["slot"], t["period_ms"], t["grace_ms"]) for t in of_type(events, "timing")] == [
-        (1, PERIOD, 300), (2, 8000, 400),
-    ]
-    # Mashing slot 2 burns one of its beats but leaves slot 1 alone.
-    await world.call("use", "kevin", 2, "npc:rat-1")
-    assert texts(await drain(kevin))[0] == "Too early: your magic missile fizzles."
-    assert await world.redis.hget("PLAYER:kevin:slot:1", "beat") == "0"
-    assert await world.redis.hget("PLAYER:kevin:slot:2", "beat") == "1"
+async def test_connecting_where_an_enemy_waits(world):
+    await world.redis.set("PLAYER:kevin:room", "back_alley")
+    await enter(world, "kevin")
+    assert await encounter(world)
 
 
-async def test_the_same_gear_in_two_slots_keeps_two_rhythms(world):
-    kevin = await at_fish_market(world)
-    await world.redis.hset("NPC:rat-1", "hp", 100)
-    await world.call("equip", "kevin", "kick", 2)
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    await world.call("use", "kevin", 2, "npc:rat-1")
-    assert texts(await drain(kevin))[-2:] == ["Kevin kicks the Dock Rat. (5)", "Kevin kicks the Dock Rat. (5)"]
+async def test_reconnecting_mid_fight_resends_it(world):
+    await enter(world, "kevin")
+    await world.call("goto", "kevin", "back_alley")
+    eid = await encounter(world)
+    again = await enter(world, "kevin", session="again")  # a new connection, still in the world
+    start = of_type(await drain(again), "encounter", op="start")[0]
+    assert start["id"] == eid and start["resumed"] is True
 
 
-async def test_healing_gear_works_on_its_own_beat(world):
-    kevin = await at_fish_market(world)
-    await world.redis.hset("ACCOUNT:kevin", mapping={"hp": 70, "max_hp": 100})
-    await world.call("use", "kevin", 3, "npc:rat-1")  # a target makes no difference to a potion
-    events = await drain(kevin)
-    assert texts(events) == ["Kevin drinks a health potion. (+11)"]
-    assert of_type(events, "heal")[0]["slot"] == 3
-
-    await world.call("use", "kevin", 3, "")  # mashing
-    assert texts(await drain(kevin))[0] == "Too early: you fumble the potion and spill it."
-
-    await wait_until(world.redis, await started(world, 3) + 2 * PERIOD)
-    await world.call("use", "kevin", 3, "")
-    assert texts(await drain(kevin)) == ["Kevin downs a health potion in one perfect gulp! (+19)"]  # capped at 100
-    assert await world.redis.hget("ACCOUNT:kevin", "hp") == "100"
-
-
-async def test_npcs_go_down_and_come_back(world):
-    kevin = await at_fish_market(world)
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    start = await started(world)
-    await wait_until(world.redis, start + PERIOD)
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    events = await drain(kevin)
-    death = of_type(events, "death")
-    assert death[0]["entity_id"] == "npc:rat-1" and death[0]["text"] == "The Dock Rat collapses."
-    assert of_type(events, "timing")[-1]["active"] is True  # still in the rhythm
-    assert not await world.redis.sismember("ROOM:fish_market:npcs", "rat-1")
-    assert await world.redis.zscore("alz:respawns", "rat-1") > start
-
-    # A fresh target is no excuse for an instant opener: it waits for a beat too.
-    await world.call("use", "kevin", 1, "npc:rat-2")
-    assert texts(await drain(kevin))[0] == "Too early: your kick goes wide."
-
-    await world.call("respawn")  # not due yet
-    assert not await world.redis.sismember("ROOM:fish_market:npcs", "rat-1")
-    await world.redis.zadd("alz:respawns", {"rat-1": 0})
+async def test_an_enemy_appearing_starts_a_fight(world):
+    kevin = await enter(world, "kevin")
+    await world.call("move", "kevin", "east")
+    await flee(world, "kevin", "west")
+    # The orc goes down; when it comes back, it turns on whoever is there.
+    await world.redis.srem("ROOM:back_alley:npcs", "orc-1")
+    await world.redis.delete("PLAYER:kevin:moved")
+    await world.call("move", "kevin", "east")
+    assert not await encounter(world)
+    await world.redis.zadd("alz:respawns", {"orc-1": 0})
     await world.call("respawn")
-    arrive = of_type(await drain(kevin), "arrive")[0]
-    assert arrive["text"] == "The Dock Rat appears." and arrive["entity"]["hp"] == 6
-    assert await world.redis.sismember("ROOM:fish_market:npcs", "rat-1")
+    assert await encounter(world)
+    assert await world.redis.get("NPC:orc-1:encounter") == await encounter(world)
+
+
+async def test_an_enemy_arriving_joins_the_fight_in_progress(world):
+    await enter(world, "kevin")
+    await world.call("goto", "kevin", "back_alley")
+    eid = await encounter(world)
+    # Another hostile one turns up mid-fight: it joins, rather than starting its own.
+    await world.redis.hset("NPC:orc-2", "disposition", "hostile")
+    await world.redis.delete("PLAYER:kevin:rep:orcs")
+    await world.call("respawn")  # nothing due; then reputation turns the whelp hostile:
+    await world.redis.hset("PLAYER:kevin:rep:orcs", mapping={"affinity": -100, "respect": -100})
+    await world.call("greet", "kevin", "orc")  # any deed re-runs the rule
+    assert set(await world.redis.zrange(f"ENC:{eid}:npcs", 0, -1)) == {"orc-1", "orc-2"}
+
+
+async def test_reputation_turning_an_npc_hostile_starts_a_fight(world):
+    # Respected enough that the orc lets him be (test_npcs), until he taunts it.
+    await world.redis.hset("PLAYER:kevin:rep:orcs", mapping={"affinity": -40, "respect": 30})
+    await world.redis.srem("ROOM:back_alley:npcs", "orc-2")  # (the whelp takes the dislike less calmly)
+    await enter(world, "kevin")
+    await world.call("move", "kevin", "east")
+    assert not await encounter(world)
+    await world.redis.hset("PLAYER:kevin:rep:orcs", mapping={"affinity": -80, "respect": -20})
+    await world.call("emote", "kevin", "laugh", "orc warrior", "{actor} laughs.", "{actor} laughs at {target}.")
+    assert await encounter(world)
+
+
+async def test_a_player_walking_in_on_a_fight_joins_it(world):
+    await enter(world, "kevin")
+    await world.call("goto", "kevin", "back_alley")
+    eid = await encounter(world)
+    mara = await enter(world, "mara")
+    await world.call("goto", "mara", "back_alley")
+    assert await encounter(world, "mara") == eid
+    assert await world.redis.zrange(f"ENC:{eid}:players", 0, -1) == ["kevin", "mara"]
+    # The orc hits whoever joined first.
+    await drain(mara)
+    await blow(world, "orc-1")
+    assert texts(await drain(mara))[0].startswith("The Orc Warrior hacks at Kevin")
+
+
+async def test_bystanders_stay_out_until_they_strike(world):
+    kevin = await at_fish_market(world)
+    mara = await at_fish_market(world, "mara")
+    await world.redis.hset("NPC:rat-1", "hp", 100)
+    await world.call("use", "kevin", 1, "npc:rat-1")
+    eid = await encounter(world)
+    assert not await encounter(world, "mara")  # the rats aren't hostile to her
+    await world.call("use", "mara", 1, "npc:rat-1")  # striking one in the fight joins it
+    assert await encounter(world, "mara") == eid
+
+
+async def test_attacking_first(world):
+    kevin = await at_fish_market(world)
+    await world.redis.hset("NPC:rat-1", "hp", 100)
+    await world.call("use", "kevin", 1, "npc:rat-1")
+    eid = await encounter(world)
+    assert await world.redis.zrange(f"ENC:{eid}:npcs", 0, -1) == ["rat-1"]  # the other rat stays out of it
+    assert await world.redis.hget(f"ENC:{eid}:opening", "kevin") == "1|npc:rat-1"
+    # In the fight, a typed USE is the owner's to land: Lua won't.
+    await world.call("use", "kevin", 1, "npc:rat-1")
+    assert texts(await drain(kevin))[-1] == "You strike from your balance in a fight: press the slot key."
+
+
+async def test_watchful_enemies_are_checked(world):
+    await enter(world, "kevin")
+    await world.redis.hset("NPC:orc-1", "notice", "hard")
+    await world.redis.rpush("alz:test_rolls", 0.0)  # a good Poise check
+    await world.call("goto", "kevin", "back_alley")
+    assert not await encounter(world)
 
 
 async def test_only_npcs_can_be_attacked(world):
     kevin = await at_fish_market(world)
-    mara = await enter(world, "mara")
-    for direction in ("north", "west", "south"):
-        await world.call("move", "mara", direction)
+    mara = await at_fish_market(world, "mara")
     await drain(kevin), await drain(mara)
     for target in ("mara", "ice", "me", "orc", ""):
         await world.call("use", "kevin", 1, target)
@@ -170,40 +150,36 @@ async def test_only_npcs_can_be_attacked(world):
         "You can't attack other players.", "You can't fight that.", "You think better of it.", "You don't see that here.",
         "Kick what? Name a target, or press Tab to pick one.",
     ]
-    assert not await world.redis.exists("PLAYER:kevin:slot:1")
+    assert not await encounter(world)
 
 
-async def test_stepping_out_and_back_does_not_reset_the_rhythm(world):
+async def test_npcs_go_down_and_come_back(world):
     kevin = await at_fish_market(world)
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    await world.call("move", "kevin", "north")
-    await world.call("move", "kevin", "south")
-    await world.call("use", "kevin", 1, "npc:rat-2")
-    assert texts(await drain(kevin))[-2:] == ["Too early: your kick goes wide.", "Kevin kicks at the Dock Rat and misses."]
+    result = await hit(world, "kevin", "npc:rat-1", tier=2)
+    assert result["killed"]
+    events = await drain(kevin)
+    death = of_type(events, "death")
+    assert death[0]["entity_id"] == "npc:rat-1" and death[0]["text"] == "The Dock Rat collapses."
+    assert not await world.redis.sismember("ROOM:fish_market:npcs", "rat-1")
+    assert not await encounter(world)  # it was the only one in the fight
+
+    await world.call("respawn")  # not due yet
+    assert not await world.redis.sismember("ROOM:fish_market:npcs", "rat-1")
+    await world.redis.zadd("alz:respawns", {"rat-1": 0})
+    await world.call("respawn")
+    arrive = of_type(await drain(kevin), "arrive")[0]
+    assert arrive["text"] == "The Dock Rat appears." and arrive["entity"]["hp"] == 6
 
 
-async def test_reconnecting_does_not_reset_the_rhythm(world):
-    kevin = await at_fish_market(world)
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    await world.call("disconnect", "kevin", "session-kevin", "", "Bye.")
-    again = await enter(world, "kevin", session="again")
-    timings = of_type(await drain(again), "timing")
-    assert [t["active"] for t in timings] == [True, False, False]  # slot 1 is still going
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    assert texts(await drain(again))[0] == "Too early: your kick goes wide."
+# Slots and gear ------------------------------------------------------------------------
 
 
-# Equipping ---------------------------------------------------------------------
-
-
-async def test_equipping_changes_a_slots_gear_and_timing(world):
+async def test_equipping_changes_a_slots_gear(world):
     kevin = await enter(world, "kevin")
     await drain(kevin)
     await world.call("equip", "kevin", "dagger", 1)
     events = await drain(kevin)
-    assert texts(events) == ["Slot 1: Dagger, every 1.2s."]
-    timing = of_type(events, "timing")[0]
-    assert (timing["slot"], timing["gear"], timing["active"], timing["period_ms"]) == (1, "dagger", False, 1200)
+    assert texts(events) == ["Slot 1: Dagger, ready every 0.3s."]
     assert of_type(events, "kit")[0]["slots"] == ["dagger", "missile", "potion"]
     assert await world.redis.hget("PLAYER:kevin:slots", "1") == "dagger"
 
@@ -215,7 +191,7 @@ async def test_equipping_changes_a_slots_gear_and_timing(world):
     await world.call("equip", "kevin", "banjo", 1)
     await world.call("equip", "kevin", "dagger", 4)
     assert texts(await drain(kevin)) == [
-        "Slot 1: Magic Missile, every 8.0s.", "You don't have Greataxe.", "Slot 1: Greataxe, every 4.5s.",
+        "Slot 1: Magic Missile, ready every 4.5s.", "You don't have Greataxe.", "Slot 1: Greataxe, ready every 2.5s.",
         "Slot 1 already holds Greataxe.", "There's no gear called 'banjo'. Type GEAR to see what you have.",
         "Your slots are 1, 2 and 3.",
     ]
@@ -226,7 +202,6 @@ async def test_equip_without_a_slot_fills_the_first_empty_one(world):
     await world.call("equip", "kevin", "dagger", "")
     await world.call("unequip", "kevin", 2)
     await world.call("equip", "kevin", "dagger", "")
-    await world.call("use", "kevin", 2, "")
     await drain(kevin)
     assert await world.redis.hgetall("PLAYER:kevin:slots") == {"1": "kick", "2": "dagger", "3": "potion"}
     await world.call("unequip", "kevin", 2)
@@ -245,20 +220,16 @@ async def test_a_full_loadout_needs_a_slot_number(world):
     assert texts(await drain(kevin)) == ["Your slots are full. Say which one to replace: 'equip dagger 1', 2 or 3."]
 
 
-async def test_a_slot_in_rhythm_cannot_be_swapped(world):
-    kevin = await at_fish_market(world)
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    await world.redis.delete("PLAYER:kevin:foes")  # the rat loses interest; only the rhythm holds the slot
+async def test_gear_is_locked_in_a_fight_and_free_between(world):
+    kevin = await enter(world, "kevin")
+    await world.call("goto", "kevin", "back_alley")
+    await drain(kevin)
     await world.call("equip", "kevin", "dagger", 1)
     await world.call("unequip", "kevin", 1)
-    await world.call("equip", "kevin", "dagger", 2)  # slot 2 hasn't been used
-    events = await drain(kevin)
-    assert texts(events)[1:] == [
-        "Slot 1 is still in rhythm. It settles 10s after its last use.",
-        "Slot 1 is still in rhythm. It settles 10s after its last use.",
-        "Slot 2: Dagger, every 1.2s.",
-    ]
-    assert await world.redis.hget("PLAYER:kevin:slots", "1") == "kick"
+    assert texts(await drain(kevin)) == ["You can't change your gear mid-fight."] * 2
+    await flee(world, "kevin", "west")
+    await world.call("equip", "kevin", "dagger", 1)
+    assert texts(await drain(kevin))[-1] == "Slot 1: Dagger, ready every 0.3s."
 
 
 async def test_the_starting_loadout_is_only_given_once(world):
@@ -266,20 +237,21 @@ async def test_the_starting_loadout_is_only_given_once(world):
     await world.call("unequip", "kevin", 3)
     await world.call("disconnect", "kevin", "session-kevin", "", "Bye.")
     again = await enter(world, "kevin", session="again")
-    assert [t["label"] for t in of_type(await drain(again), "timing")] == ["Kick", "Magic Missile", "Empty"]
+    assert of_type(await drain(again), "kit")[-1]["slots"] == ["kick", "missile", ""]
 
 
-async def test_gear_lists_what_you_own_fastest_first(world):
+async def test_gear_lists_what_you_own_quickest_first(world):
     kevin = await enter(world, "kevin")
     await drain(kevin)
     await world.call("gear", "kevin")
     event = of_type(await drain(kevin), "gear")[0]
     assert [g["id"] for g in event["gear"]] == ["dagger", "kick", "potion", "missile"]
     assert event["slots"] == ["kick", "missile", "potion"]
+    dagger = next(g for g in event["gear"] if g["id"] == "dagger")
+    assert (dagger["cooldown_ms"], dagger["kick"], dagger["pattern"]) == (350, 1, "bump")
     lines = event["text"].split("\n")
     # Indoors it's always dead neutral and dry: grey gear at its best, and the frost
-    # dagger out of its element, far from its cold, still spot (-25%), though glad of
-    # the dry air (+15%).
-    assert "  Dagger (light, green): every 1.2s, ±200ms, 3 / 4 damage [weather -14%]" in lines
-    assert "  Health Potion (potion, grey): every 5.0s, ±350ms, heals 18 / 30 [weather +20%]" in lines
+    # dagger out of its element (-14% all told).
+    assert "  Dagger (light, green): every 0.3s, 2 / 3 / 4 damage [weather -14%]" in lines
+    assert "  Magic Missile (spell, grey): every 4.5s, 14 / 18 / 30 damage in 4 hits" in lines
     assert lines[-1].startswith("Your slots: 1 Kick · 2 Magic Missile · 3 Health Potion.")

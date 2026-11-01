@@ -1,6 +1,6 @@
 """NPCs that fight back, dispositions, reputation, experience, sleeping and the move cooldown."""
 
-from .conftest import drain, enter, texts
+from .conftest import blow, drain, enter, flee, hit, texts
 
 
 def of_type(events, kind):
@@ -12,16 +12,10 @@ async def walk(world, pid, *directions):
         await world.call("move", pid, direction)
 
 
-async def attack_now(world, nid, n=1):
-    """Makes one of an NPC's scheduled attacks due, and runs the combat tick."""
-    await world.redis.zadd("alz:npc_attacks", {f"{nid}#{n}": 0})
-    await world.call("tick")
-
-
 async def kill(world, pid, nid, slot=1):
-    """Lands one blow on an NPC with 1 HP left (an opener on an unused slot)."""
+    """Lands one strike (edge) on an NPC with 1 HP left."""
     await world.redis.hset(f"NPC:{nid}", "hp", 1)
-    await world.call("use", pid, slot, f"npc:{nid}")
+    await hit(world, pid, f"npc:{nid}", slot)
 
 
 # Moving -----------------------------------------------------------------------
@@ -35,33 +29,34 @@ async def test_hostile_npcs_attack_on_sight(world):
     await walk(world, "kevin", "east")  # the back alley: an orc warrior (hostile) and a whelp (neutral)
     events = await drain(kevin)
     assert "The Orc Warrior turns on Kevin!" in texts(events)
-    timing = of_type(events, "npc_timing")[0]
-    assert timing["entity_id"] == "npc:orc-1" and timing["target"] == "pc:kevin"
-    assert [(a["name"], a["period_ms"]) for a in timing["attacks"]] == [("cleaver", 6000), ("shield bash", 9000)]
+    start = [e for e in of_type(events, "encounter") if e["op"] == "start"][0]["encounter"]
+    assert [n["nid"] for n in start["npcs"]] == ["orc-1"]  # the whelp isn't hostile
+    assert [(a["name"], a["period"]) for a in start["npcs"][0]["attacks"]] == [("cleaver", 6000), ("shield bash", 9000)]
     room = of_type(events, "room")[-1]["room"]
     cards = {c["id"]: c for c in room["entities"]}
     assert cards["npc:orc-1"]["disposition"] == "hostile" and cards["npc:orc-2"]["disposition"] == "neutral"
 
-    await attack_now(world, "orc-1")
+    await blow(world, "orc-1")
     events = await drain(kevin)
     assert texts(events) == ["The Orc Warrior hacks at Kevin with a cleaver. (7)"]
     assert of_type(events, "entity")[0]["entity"]["hp"] == 93
-    assert of_type(events, "npc_timing")[0]["attacks"][0]["next_ms"] > timing["attacks"][0]["next_ms"]
 
 
-async def test_neutral_npcs_fight_back_and_forget_you_when_you_leave(world):
+async def test_neutral_npcs_fight_back_and_stay_when_you_flee(world):
     kevin = await enter(world, "kevin")
     await walk(world, "kevin", "north", "west", "south")  # the fish market's rats are neutral
-    assert not of_type(await drain(kevin), "npc_timing")
+    assert not await world.redis.get("PLAYER:kevin:encounter")
     await world.redis.hset("NPC:rat-1", "hp", 100)
-    await world.call("use", "kevin", 1, "npc:rat-1")
-    assert of_type(await drain(kevin), "npc_timing")[0]["target"] == "pc:kevin"
-    await attack_now(world, "rat-1")
+    await world.call("use", "kevin", 1, "npc:rat-1")  # striking first starts a fight
+    eid = await world.redis.get("PLAYER:kevin:encounter")
+    assert await world.redis.get("NPC:rat-1:encounter") == eid
+    await drain(kevin)
+    await blow(world, "rat-1")
     assert texts(await drain(kevin)) == ["The Dock Rat nips at Kevin. (1)"]
 
-    await world.call("move", "kevin", "north")
-    assert not await world.redis.exists("NPC:rat-1:foes")
-    assert not await world.redis.zscore("alz:npc_attacks", "rat-1#1")
+    await flee(world, "kevin", "north")
+    assert await world.redis.get("PLAYER:kevin:room") == "harbor_road"
+    assert not await world.redis.exists("NPC:rat-1:encounter", f"ENC:{eid}")
 
 
 async def test_friendly_npcs_cannot_be_attacked_but_can_be_healed(world):
@@ -73,45 +68,40 @@ async def test_friendly_npcs_cannot_be_attacked_but_can_be_healed(world):
     await world.redis.sadd("PLAYER:kevin:gear", "mending")
     await world.call("equip", "kevin", "mending", 3)
     await world.redis.hset("NPC:marta", "hp", 10)
-    await world.call("use", "kevin", 3, "npc:marta")
+    await world.call("use", "kevin", 3, "npc:marta")  # out of a fight: its clean amount
     assert texts(await drain(kevin))[1:] == [
-        "Kevin lays glowing hands on Marta. (+8)",  # a rain spell, in the dry (neutral) tavern
+        "Kevin lays glowing hands on Marta. (+11)",  # a rain spell, in the dry (neutral) tavern
         "The Folk of Harrowgate: They won't forget a kindness. (affinity +4, respect +1)",
     ]
-    assert await world.redis.hget("NPC:marta", "hp") == "18"
+    assert await world.redis.hget("NPC:marta", "hp") == "21"
 
 
-async def test_npcs_keep_attacking_a_sleeping_body_and_players_wake_at_the_shrine(world):
+async def test_leaving_the_world_takes_you_out_of_the_fight(world):
     kevin = await enter(world, "kevin")
     await walk(world, "kevin", "east")
+    eid = await world.redis.get("PLAYER:kevin:encounter")
     await world.call("disconnect", "kevin", "session-kevin", "", "Bye.")  # in the open: Kevin lies down
-    await world.redis.hset("ACCOUNT:kevin", mapping={"hp": 5, "xp": 50})
-    watcher = await enter(world, "mara")
-    await walk(world, "mara", "east")
-    await drain(watcher)
-    await attack_now(world, "orc-1")
-    assert texts(await drain(watcher))[-3:] == [
-        "The Orc Warrior hacks at Kevin with a cleaver. (7)", "Kevin collapses.", "Kevin's body fades away.",
-    ]
-    assert await world.redis.get("PLAYER:kevin:room") == "temple_steps"
-    assert await world.redis.hmget("ACCOUNT:kevin", "hp", "xp") == ["50", "40"]  # half health; 10% of a level lost
-
-    again = await enter(world, "kevin", session="again")
-    room = of_type(await drain(again), "room")[-1]["room"]
-    assert room["id"] == "temple_steps"
+    assert not await world.redis.exists("PLAYER:kevin:encounter", f"ENC:{eid}")
+    # Asleep, nothing turns on him; awake again, the orc does.
+    await world.call("encounter_start", "back_alley", "pve", "", "", "orc-1")
+    assert not await world.redis.get("PLAYER:kevin:encounter")
+    await world.redis.delete("NPC:orc-1:encounter")
+    await enter(world, "kevin", session="again")
+    assert await world.redis.get("PLAYER:kevin:encounter")
 
 
 async def test_a_defeated_player_wakes_at_the_shrine(world):
     kevin = await enter(world, "kevin")
     await walk(world, "kevin", "east")
-    await world.redis.hset("ACCOUNT:kevin", "hp", 3)
+    await world.redis.hset("ACCOUNT:kevin", mapping={"hp": 3, "xp": 50})
     await drain(kevin)
-    await attack_now(world, "orc-1")
+    await blow(world, "orc-1")
     events = await drain(kevin)
-    assert "You were defeated, and wake at the shrine." in texts(events)
+    assert "You were defeated, and wake at the shrine, 10 experience poorer." in texts(events)
     assert of_type(events, "room")[-1]["room"]["id"] == "temple_steps"
     assert "The Back-Alley Orcs: You were beaten. Weakness. (respect -2)" in texts(events)
-    assert not await world.redis.exists("NPC:orc-1:foes")
+    assert await world.redis.hmget("ACCOUNT:kevin", "hp", "xp") == ["50", "40"]  # half health; 10% of a level lost
+    assert not await world.redis.exists("NPC:orc-1:encounter", "PLAYER:kevin:encounter")
 
 
 # Practice ---------------------------------------------------------------------------
@@ -212,14 +202,12 @@ async def test_levelling_up_grants_a_point_and_no_gear(world):
     assert await world.redis.hget("ACCOUNT:kevin", "hp") == "108"
 
 
-async def test_poise_and_focus_widen_timing_windows(world):
+async def test_poise_focus_and_resilience_go_to_the_fight(world):
     await world.redis.hset("ACCOUNT:kevin", mapping={"stat:poise": 2, "stat:focus": 3})
     kevin = await enter(world, "kevin")
-    await walk(world, "kevin", "north", "east", "east")
-    await drain(kevin)
-    await world.call("use", "kevin", 1, "npc:dummy-1")
-    timing = of_type(await drain(kevin), "timing")[0]
-    assert (timing["grace_ms"], timing["perfect_ms"]) == (330, 130)
+    await walk(world, "kevin", "east")
+    start = [e for e in of_type(await drain(kevin), "encounter") if e["op"] == "start"][0]["encounter"]
+    assert start["players"][0]["stats"] == {"poise": 2, "focus": 3, "resilience": 0}
 
 
 async def test_wounds_heal_out_of_a_fight_and_faster_somewhere_safe(world):

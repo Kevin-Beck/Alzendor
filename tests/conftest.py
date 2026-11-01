@@ -85,3 +85,42 @@ async def drain(feed: Feed) -> list[dict]:
 def texts(events: list[dict]) -> list[str]:
     """The text of events that have any (state updates like `map` don't)."""
     return [e["text"] for e in events if "text" in e]
+
+
+async def hit(world: World, pid: str, target: str, slot: int = 1, tier: int = 0) -> dict:
+    """Lands one strike as an encounter's owner would (tier 0 edge, 1 clean,
+    2 perfect), striking first to start a fight if the player isn't in one."""
+    import json
+    eid = await world.redis.get(f"PLAYER:{pid}:encounter")
+    if not eid:
+        await world.call("use", pid, slot, target)
+        eid = await world.redis.get(f"PLAYER:{pid}:encounter")
+        if not eid:
+            return {}
+    return json.loads(await world.call("encounter_strike", eid, pid, target, slot, tier, 1, 1, 1))
+
+
+async def blow(world: World, nid: str, n: int = 1, how: str = "hit", pid: str | None = None) -> dict:
+    """Lands an NPC's attack n as an encounter's owner would, on the first
+    player in its fight (or `pid`)."""
+    import json
+    eid = await world.redis.get(f"NPC:{nid}:encounter")
+    if not eid:
+        return {}
+    pid = pid or (await world.redis.zrange(f"ENC:{eid}:players", 0, 0))[0]
+    return json.loads(await world.call("encounter_blow", eid, nid, n, pid, how))
+
+
+async def flee(world: World, pid: str, direction: str) -> dict:
+    """FLEE <direction>, steady (the owner's check passed)."""
+    import json
+    eid = await world.redis.get(f"PLAYER:{pid}:encounter")
+    return json.loads(await world.call("encounter_flee", eid, pid, direction))
+
+
+async def go(world: World, pid: str, direction: str) -> None:
+    """Moves on: by FLEE if something here is fighting the player."""
+    if await world.redis.get(f"PLAYER:{pid}:encounter"):
+        await flee(world, pid, direction)
+    else:
+        await world.call("move", pid, direction)

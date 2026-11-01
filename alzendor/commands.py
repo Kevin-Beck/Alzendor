@@ -11,6 +11,7 @@ stand out from the text around them, and accepted in any case. In usages,
 lowercase words are what you fill in.
 """
 
+import json
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -47,6 +48,15 @@ class Context:
 
     async def reply(self, text: str) -> None:
         await self.call("notify", text)
+
+    async def encounter(self) -> str | None:
+        """The encounter this player is fighting in, if any."""
+        return await self.world.redis.get(f"PLAYER:{self.pid}:encounter")
+
+    async def input(self, eid: str, **message) -> None:
+        """Sends an input to the encounter's owner (docs/combat-redesign.md,
+        Protocol): typed commands and pressed keys take the same path."""
+        await self.world.redis.publish(f"enc:{eid}:in", json.dumps({"pid": self.pid, **message}))
 
 
 Handler = Callable[[Context, str], Awaitable[None]]
@@ -246,8 +256,17 @@ async def choose(ctx: Context, rest: str) -> None:
     await ctx.call("choose", number)
 
 
-@command("flee", "FLEE", "Run from an ambush on the road, and be left behind in the wilds.", aliases=("run",))
+@command("flee", "FLEE <direction>", "Break away from a fight, steady first: the toughest enemy gets one parting blow. "
+         "On the road, FLEE alone runs from an ambush, and leaves you in the wilds.", aliases=("run",))
 async def flee(ctx: Context, rest: str) -> None:
+    direction = rest.lower().strip()
+    direction = SHORT_DIRECTIONS.get(direction, direction)
+    eid = await ctx.encounter()
+    if direction and eid:
+        if direction not in DIRECTIONS:
+            raise Usage("Flee which way? e.g. FLEE NORTH.")
+        await ctx.input(eid, act="flee", dir=direction)
+        return
     await ctx.call("flee")
 
 
@@ -355,12 +374,16 @@ SLOT_FILLER = ("in", "into", "to", "slot")
 
 
 @command("use", "USE <slot> [target] | USE <item> [ON <thing>]",
-         "Use what's in slot 1, 2 or 3, on its beat (shorthand: 1, 2, 3; in the web client, the keys 4, 3, 2), "
+         "Use what's in slot 1, 2 or 3 (shorthand: 1, 2, 3; in the web client, the keys 4, 3, 2): in a fight, from your balance, "
          "or use something you carry, e.g. USE TAR ON HULL.")
 async def use(ctx: Context, rest: str) -> None:
     slot, _, target = rest.partition(" ")
     if slot in SLOT_NUMBERS:
-        await ctx.call("use", slot, _thing(target) or ctx.target)
+        eid = await ctx.encounter()
+        if eid:
+            await ctx.input(eid, act="strike", slot=int(slot), target=_thing(target) or ctx.target)
+        else:
+            await ctx.call("use", slot, _thing(target) or ctx.target)
         return
     if not rest or slot.isdigit():
         raise Usage("Use which slot? 1, 2 or 3. Or USE <item> ON <thing>.")
@@ -433,10 +456,28 @@ async def remove(ctx: Context, rest: str) -> None:
     await ctx.call("remove", _require(_thing(rest), "Remove what? HEAD, CHEST, LEGS, HAND, or an item's name."))
 
 
-@command("defend", "DEFEND", "Block (with a shield in hand) or dodge the next blow; time it to when the blow lands. "
-         "In the web client, the key 7.", aliases=("block", "dodge"))
-async def defend(ctx: Context, rest: str) -> None:
-    await ctx.call("defend")
+@command("dodge", "DODGE", "In a fight: be untouchable for a moment, then wobble. In the web client, Space.")
+async def dodge(ctx: Context, rest: str) -> None:
+    eid = await ctx.encounter()
+    if not eid:
+        raise Usage("There's nothing to dodge.")
+    await ctx.input(eid, act="dodge")
+
+
+@command("block", "BLOCK", "In a fight, with a shield in hand: brace (steady, and blows cut) until UNBLOCK. "
+         "In the web client, hold Shift.", aliases=("brace",))
+async def block(ctx: Context, rest: str) -> None:
+    eid = await ctx.encounter()
+    if not eid:
+        raise Usage("There's nothing to block.")
+    await ctx.input(eid, act="block")
+
+
+@command("unblock", "UNBLOCK", "Lower your shield, so you can strike again.", aliases=("lower",))
+async def unblock(ctx: Context, rest: str) -> None:
+    eid = await ctx.encounter()
+    if eid:
+        await ctx.input(eid, act="unblock")
 
 
 # Character ----------------------------------------------------------------------

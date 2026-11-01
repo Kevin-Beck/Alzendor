@@ -1,14 +1,31 @@
 """The parser and command handlers, with the world replaced by a recorder."""
 
+import json
+
 import pytest
 
 from alzendor import commands
 from alzendor.commands import Context, clean, dispatch, parse
 
 
+class RecordingRedis:
+    """Just enough Redis for commands to ask about an encounter and send it inputs."""
+
+    def __init__(self):
+        self.encounter = None
+        self.published = []
+
+    async def get(self, key):
+        return self.encounter if key.endswith(":encounter") else None
+
+    async def publish(self, channel, data):
+        self.published.append((channel, json.loads(data)))
+
+
 class RecordingWorld:
     def __init__(self):
         self.calls = []
+        self.redis = RecordingRedis()
 
     async def call(self, function, *args):
         self.calls.append((function, *args))
@@ -215,3 +232,24 @@ async def test_enter_and_realm_announcements(ctx):
     admin = Context(RecordingWorld(), "kevin", is_admin=True)
     await dispatch(admin, "announce realm The ground shudders.")
     assert admin.world.calls == [("announce", "kevin", "realm", "The ground shudders.")]
+
+
+async def test_fight_commands_are_inputs_in_a_fight(ctx):
+    for text in ["dodge", "block", "flee north"]:
+        await dispatch(ctx, text)
+    assert ctx.world.replies == ["There's nothing to dodge.", "There's nothing to block."]
+    assert ("flee", "kevin") in ctx.world.calls  # no fight: an ambush's FLEE, or nothing to flee
+    ctx.world.calls.clear()
+    ctx.world.redis.encounter = "e7"
+    ctx.target = "npc:rat-2"
+    for text in ["1", "use 2 the orc", "dodge", "block", "unblock", "flee n", "flee"]:
+        await dispatch(ctx, text)
+    assert ctx.world.redis.published == [
+        ("enc:e7:in", {"pid": "kevin", "act": "strike", "slot": 1, "target": "npc:rat-2"}),
+        ("enc:e7:in", {"pid": "kevin", "act": "strike", "slot": 2, "target": "orc"}),
+        ("enc:e7:in", {"pid": "kevin", "act": "dodge"}),
+        ("enc:e7:in", {"pid": "kevin", "act": "block"}),
+        ("enc:e7:in", {"pid": "kevin", "act": "unblock"}),
+        ("enc:e7:in", {"pid": "kevin", "act": "flee", "dir": "north"}),
+    ]
+    assert ctx.world.calls == [("flee", "kevin")]  # with no direction: Lua says which way

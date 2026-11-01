@@ -32,6 +32,8 @@ def test_zone_files_add_to_the_seed_and_cant_redefine_it(tmp_path):
 
 async def test_exposure_wears_you_down_until_shelter_or_the_right_gear(world):
     kevin = await create(world, "kevin")
+    for key in await world.redis.keys("ROOM:rw_*:npcs"):
+        await world.redis.delete(key)  # nothing in the Rotwood to fight, just the spores
     await world.call("goto", "kevin", "rw_edge")  # the Rotwood's edge: no spores yet
     await drain(kevin)
     await world.call("move", "kevin", "northeast")  # the Rotting Groves: spores, 5 steps
@@ -60,25 +62,26 @@ async def test_exposure_wears_you_down_until_shelter_or_the_right_gear(world):
 
 async def test_watchful_enemies_can_be_slipped_past(world):
     kevin = await create(world, "kevin")
+    await world.redis.delete("ROOM:sf_mire:npcs", "ROOM:sf_reeds:npcs")  # just Gnasher, for this
     await world.call("goto", "kevin", "sf_mire")
     await world.redis.rpush("alz:test_rolls", 0.0)  # a good Poise check
     await drain(kevin)
     await world.call("move", "kevin", "southeast")  # Gnasher's Wallow
     events = await drain(kevin)
     assert "Old Gnasher hasn't noticed you. Don't touch it, and don't linger. (Poise check; CREEP helps)" in texts(events)
-    assert not await world.redis.exists("NPC:old_gnasher:foes")
+    assert not await world.redis.exists("NPC:old_gnasher:encounter")
     gnasher = next(c for c in of_type(events, "room")[-1]["room"]["entities"] if c["id"] == "npc:old_gnasher")
     assert gnasher["wary"] is True
 
     await world.call("move", "kevin", "southwest")  # past him, and back: still unnoticed for a while
     await world.call("move", "kevin", "northeast")
-    assert not await world.redis.exists("NPC:old_gnasher:foes")
+    assert not await world.redis.exists("NPC:old_gnasher:encounter")
 
     await world.redis.delete("PLAYER:kevin:unseen:old_gnasher")
     await world.redis.rpush("alz:test_rolls", 0.99)  # a bad one
     await world.call("move", "kevin", "southwest")
     await world.call("move", "kevin", "northeast")
-    assert await world.redis.zscore("NPC:old_gnasher:foes", "kevin") is not None
+    assert await world.redis.get("NPC:old_gnasher:encounter") == await world.redis.get("PLAYER:kevin:encounter") is not None
 
 
 async def test_some_things_only_come_out_at_night(world):
@@ -107,6 +110,7 @@ async def test_quests_can_give_gear(world):
 async def test_a_realm_is_found_where_it_makes_sense(world):
     """The Font in the Sunken Abbey opens onto Mirefall, but only in the rain."""
     kevin = await create(world, "kevin")
+    await world.redis.delete("ROOM:sa_undercroft:npcs")  # cleared out
     await world.call("goto", "kevin", "sa_undercroft")
     await drain(kevin)
     await world.call("travel", "kevin", "font")

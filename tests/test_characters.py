@@ -1,7 +1,7 @@
 """Characters: class, ancestry and background, talents and passives, and the
 starting realms. See docs/characters.md."""
 
-from .conftest import drain, enter, ride, texts
+from .conftest import blow, drain, enter, go, hit, ride, texts
 
 
 def of_type(events, kind):
@@ -101,19 +101,13 @@ async def test_guard_soaks_up_blows(world):
     kevin = await create(world, "kevin", cls="fighter", ancestry="human", passive="last_stand")
     await world.redis.sadd("PLAYER:kevin:gear", "guard_up")
     await world.redis.delete("PLAYER:kevin:worn_stats")  # no armour, to see the guard alone
-    await world.call("goto", "kevin", "back_alley")  # an orc warrior, who attacks
-    await world.call("equip", "kevin", "guard up", 1)  # can't: in a fight
-    await world.redis.delete("PLAYER:kevin:foes")
-    await world.redis.delete("NPC:orc-1:foes")
     await world.call("equip", "kevin", "guard up", 1)
-    await world.call("use", "kevin", 1, "")
-    guard = int(await world.redis.get("PLAYER:kevin:guard"))  # the opener, after the weather
-    await world.redis.zadd("NPC:orc-1:foes", {"kevin": 0})
-    await world.redis.hset("NPC:orc-1:next", 1, 0)
-    await world.redis.zadd("alz:npc_attacks", {"orc-1#1": 0})
-    hp = int(await world.redis.hget("ACCOUNT:kevin", "hp"))
+    await world.call("goto", "kevin", "back_alley")  # an orc warrior, who attacks
+    await hit(world, "kevin", "", 1, 0)  # an edge guard
+    guard = int(await world.redis.get("PLAYER:kevin:guard"))
+    hp = int(await world.redis.hget("ACCOUNT:kevin", "hp") or 100)
     await drain(kevin)
-    await world.call("tick")
+    await blow(world, "orc-1")
     assert f"The Orc Warrior hacks at Kevin with a cleaver. ({7 - guard}, {guard} guarded)" in texts(await drain(kevin))
     assert int(await world.redis.hget("ACCOUNT:kevin", "hp")) == hp - (7 - guard)
 
@@ -167,76 +161,24 @@ async def test_a_dark_room_needs_a_light(world):
     assert room["exits"] == ["east", "west"] and "dark" not in room
 
 
-async def blow(world, pid, pressed_offset_ms=None, attacks=None):
-    """Lands one Orc Warrior blow on a player, as if they pressed DEFEND that
-    long after it landed (None: they didn't). Returns what they were told."""
-    at = (await world.redis.time())[0] * 1000 - 2000  # long enough ago to land at once
-    if attacks:
-        await world.redis.hset("NPC:orc-1", "attacks", attacks)
-    if pressed_offset_ms is not None:
-        await world.redis.set(f"PLAYER:{pid}:defend", at + pressed_offset_ms)
-    await world.redis.zadd("NPC:orc-1:foes", {pid: 0})
-    await world.redis.hset("NPC:orc-1:next", 1, at)
-    await world.redis.zadd("alz:npc_attacks", {"orc-1#1": at})
-    await world.call("tick")
-    return [e for e in await drain(world.feeds[pid]) if e["type"] == "combat" and e.get("entity_id") == "npc:orc-1"][0]
-
-
-async def test_dodging_and_blocking(world):
-    kevin = await create(world, "kevin", cls="rogue", ancestry="human", passive="last_stand")
-    await world.redis.delete("PLAYER:kevin:worn_stats")  # no armour, to see the dodge alone
-    await world.call("goto", "kevin", "back_alley")
-    world.feeds = {"kevin": kevin}
-    await drain(kevin)
-    hit = await blow(world, "kevin", 0)  # perfect: none of it
-    assert (hit["damage"], hit["defended"], hit["perfect"]) == (0, "dodge", True)
-    assert hit["text"].startswith("Kevin dodges the Orc Warrior's ")
-    assert not await world.redis.exists("PLAYER:kevin:defend")  # a press is spent on one blow
-    hit = await blow(world, "kevin", -130)  # early, inside the 200 ms window: 0.75 - 0.5 * 70/140 = half of it
-    assert (hit["damage"], hit["defended"]) == (3, "dodge") and "4 dodged" in hit["text"]
-    hit = await blow(world, "kevin", 250)  # too late
-    assert hit["damage"] == 7 and not hit.get("defended")
-    hit = await blow(world, "kevin", 0, attacks='[{"name": "cleaver", "period": 3000, "damage": 7, "defend": "none", "hit": "{actor} hacks at {target}."}]')
-    assert hit["damage"] == 7  # some blows can't be met at all
-
-    # With a shield in hand it's a block, with a wider window.
-    await world.redis.sadd("PLAYER:kevin:wardrobe", "round_shield")
-    await world.redis.hset("PLAYER:kevin:worn", "hand", "round_shield")
-    hit = await blow(world, "kevin", 250, attacks='[{"name": "cleaver", "period": 3000, "damage": 7, "hit": "{actor} hacks at {target}."}]')
-    assert hit["defended"] == "block" and hit["damage"] > 0
-
-
-async def test_defending_has_a_cooldown(world):
-    kevin = await create(world, "kevin", cls="rogue", ancestry="human", passive="last_stand")
-    await drain(kevin)
-    await world.call("defend", "kevin")
-    first = of_type(await drain(kevin), "defend")[0]
-    assert (first["ready"], first["mode"], first["cooldown_ms"]) == (True, "dodge", 1500)
-    await world.call("defend", "kevin")
-    assert of_type(await drain(kevin), "defend")[0]["ready"] is False
-
-
 async def test_stagger_pushes_back_the_next_blow(world):
     kevin = await create(world, "kevin", cls="rogue", ancestry="human", passive="last_stand")
     await world.call("goto", "kevin", "back_alley")
-    before = float(await world.redis.hget("NPC:orc-1:next", "1"))
-    await world.call("use", "kevin", 2, "npc:orc-1")  # the tar flask: stagger 1200 ms
-    assert float(await world.redis.hget("NPC:orc-1:next", "1")) == before + 1200
+    result = await hit(world, "kevin", "npc:orc-1", 2)  # the tar flask: stagger 1200 ms, which the owner applies
+    assert result["stagger_ms"] == 1200
 
 
-async def test_slot_ball_edges(world):
-    kevin = await create(world, "kevin", cls="fighter", ancestry="human", passive="second_wind", background="merchant")
-    await world.call("attune", "kevin", "second wind", 1)
-    assert texts(await drain(kevin))[-1] == "Second Wind is attuned to slot 1."
-    await world.redis.hset("ACCOUNT:kevin", "hp", 50)
+async def test_attuned_passives_on_strikes(world):
+    kevin = await create(world, "kevin", cls="fighter", ancestry="human", passive="last_stand", background="merchant")
+    await world.redis.sadd("PLAYER:kevin:perks", "bloodrhythm")
+    await world.redis.hset("PLAYER:kevin:attuned", "bloodrhythm", 1)
     await world.call("goto", "kevin", "training_yard")
-    await world.call("use", "kevin", 1, "dummy")  # the opener starts the rhythm
-    # Pretend 3.6 periods have passed: the ball has touched the left edge twice (at 1.5 and 3.5).
-    start = int(await world.redis.hget("PLAYER:kevin:slot:1", "start"))
-    await world.redis.hset("PLAYER:kevin:slot:1", mapping={"start": start - 9000, "last": start - 9000})
-    await drain(kevin)
-    await world.call("use", "kevin", 1, "dummy")
-    assert "Second Wind: +2 health." in texts(await drain(kevin))
+    await world.call("use", "kevin", 1, "dummy")  # striking first: a fight with the dummy
+    first = (await hit(world, "kevin", "npc:dummy-1", 1, 0))["damage"]  # an edge strike charges the slot
+    second = (await hit(world, "kevin", "npc:dummy-1", 1, 0))["damage"]
+    assert second == round(first * 1.1 + 0.4)  # 10% stronger
+    await world.redis.sadd("PLAYER:kevin:sealed", 1)  # Berserk Seal, sealed for the fight
+    assert (await hit(world, "kevin", "npc:dummy-1", 1, 0)) == {"sealed": True}
 
 
 async def test_a_starting_realm_from_start_to_finish(world):
@@ -268,7 +210,7 @@ async def test_a_starting_realm_from_start_to_finish(world):
     assert await world.redis.sismember("PLAYER:kevin:wardrobe", "torch")
     await do("move", "kevin", "east")
     await world.redis.hset("NPC:alley_rat", "hp", 1)
-    await do("use", "kevin", 1, "npc:alley_rat")
+    await hit(world, "kevin", "npc:alley_rat")
     await do("move", "kevin", "west")
     await drain(kevin)
     await do("ask", "kevin", "nan", "rats")  # report back, and Nan has the next job
@@ -322,8 +264,9 @@ async def test_dying_in_a_starting_realm_wakes_you_where_you_began(world):
     kevin = await create(world, "kevin", background="woodsman")
     await world.call("goto", "kevin", "fern_bog")
     await world.redis.hset("ACCOUNT:kevin", "hp", 1)
-    await world.redis.zadd("alz:npc_attacks", {"bog_wisp#1": 0})
-    await world.call("tick")
+    if not await world.redis.get("NPC:bog_wisp:encounter"):
+        await world.call("encounter_start", "fern_bog", "pve", "", "kevin", "bog_wisp")
+    await blow(world, "bog_wisp")
     assert await world.redis.get("PLAYER:kevin:room") == "hunters_lodge"
 
 
@@ -384,7 +327,7 @@ async def test_copperstall_ends_with_your_aunt_and_a_caravan_you_choose_to_take(
 
     await world.call("goto", "kevin", "caravan_yard")
     assert "dace" not in await world.redis.smembers("ROOM:caravan_yard:npcs")  # he's at the coach stand, away from the rats
-    await world.call("move", "kevin", "south")
+    await go(world, "kevin", "south")
     assert await world.redis.get("PLAYER:kevin:room") == "coach_stand"
     await drain(kevin)
     await world.call("travel", "kevin")
@@ -427,7 +370,7 @@ async def test_thornwick_is_offered_in_person_and_the_hide_goes_to_wren(world):
     await world.redis.hset("PLAYER:kevin:quest:tw_hart", mapping={"step": "hunt", "count": 0})
     await world.redis.hset("NPC:white_hart", "hp", 1)
     await world.call("goto", "kevin", "stags_rise")
-    await world.call("use", "kevin", 1, "npc:white_hart")
+    await hit(world, "kevin", "npc:white_hart")
     assert await world.redis.sismember("PLAYER:kevin:inv", "hart_hide")
     await world.call("goto", "kevin", "healers_hut")
     await drain(kevin)
@@ -458,8 +401,7 @@ async def test_anyone_can_hunt_for_wren(world):
     for nid in ("spider-1", "spider-2", "spider-3"):
         await world.redis.hset(f"NPC:{nid}", "hp", 1)
         await world.call("goto", "kevin", await world.redis.hget(f"NPC:{nid}", "room"))
-        await world.redis.delete("PLAYER:kevin:slot:1")  # a fresh opener for each
-        await world.call("use", "kevin", 1, f"npc:{nid}")
+        await hit(world, "kevin", f"npc:{nid}")
     assert await world.redis.hget("PLAYER:kevin:quest:wr_webs", "step") == "back"
     await world.call("goto", "kevin", "hunters_camp")
     await world.call("discuss", "kevin", "wren", "webs")
