@@ -78,6 +78,7 @@ class Session:
         self.last_active = time.monotonic()  # the last command, for the idle timeout
         self._inputs: list[float] = []      # when recent inputs came, for their rate limit
         self.encounter: str | None = None   # the encounter the player is in, whose state is forwarded
+        self.encounter_owner: str | None = None  # the server that owns it
         self._input_seq = 0
 
     @property
@@ -133,10 +134,11 @@ class Session:
             pump.cancel()
             if self.encounter:
                 try:
-                    await world.redis.publish(f"enc:{self.encounter}:in", json.dumps({"pid": self.pid, "act": "release"}))
+                    await self.server.encounters.send_input(self.encounter, self.encounter_owner,
+                                                            json.dumps({"pid": self.pid, "act": "release"}))
                 except RedisError:
                     pass
-                await self._follow(None)
+                await self._follow(None, None)
             log.info("%s's connection closed (session %s)", self.pid, self.id)
 
     async def _authenticate(self) -> int | None:
@@ -227,7 +229,7 @@ class Session:
             value = message.get(key)
             if type(value) is kind:
                 out[key] = value[:100] if kind is str else value
-        await self.server.world.redis.publish(f"enc:{self.encounter}:in", json.dumps(out))
+        await self.server.encounters.send_input(self.encounter, self.encounter_owner, json.dumps(out))
 
     def _forward(self, data: str) -> None:
         """An encounter's state or refusal, from its owner, to this client."""
@@ -235,16 +237,16 @@ class Session:
             return
         asyncio.ensure_future(self._send_raw(data))
 
-    async def _follow(self, eid: str | None) -> None:
+    async def _follow(self, eid: str | None, owner: str | None) -> None:
         """Forwards the state of this encounter (or none) to the client."""
         if eid == self.encounter:
             return
-        bus = self.server.encounters.bus
+        host = self.server.encounters
         if self.encounter:
-            await bus.unsubscribe(f"enc:{self.encounter}:out", self._forward)
-        self.encounter = eid
+            await host.unfollow(self.encounter, self.encounter_owner, self._forward)
+        self.encounter, self.encounter_owner = eid, owner
         if eid:
-            await bus.subscribe(f"enc:{eid}:out", self._forward)
+            await host.follow(eid, owner, self._forward)
 
     async def _pump(self, feed: Feed) -> None:
         """Forwards this player's events to the client until told to stop."""
@@ -260,9 +262,9 @@ class Session:
                 for event in events:
                     if event["type"] == "encounter" and event.get("channel") == f"PLAYER:{self.pid}":
                         if event["op"] == "start":
-                            await self._follow(event["id"])
+                            await self._follow(event["id"], (event.get("encounter") or {}).get("owner"))
                         elif event["op"] == "end" and event["id"] == self.encounter:
-                            await self._follow(None)
+                            await self._follow(None, None)
                     await self._send(type="event", event=event)
             await self.ws.close(1000, feed.ended[:120])
         except ConnectionClosed:

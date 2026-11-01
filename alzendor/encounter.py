@@ -161,8 +161,14 @@ class Owner:
         self.hz = 30
         self.seed = eid
         self.rng = random.Random()
+        self.remote = True      # whether sessions on other servers follow it (see _publish)
+        self.probed = 0.0
 
     # Messages ------------------------------------------------------------------------------
+
+    def receive(self, data: str) -> None:
+        """An input from a session on this server, without going through Redis."""
+        self._receive(data)
 
     def _receive(self, data: str) -> None:
         try:
@@ -365,7 +371,7 @@ class Owner:
                                               e["hit"], e["hits"], mult))
             if result.get("gone"):
                 b.cancel_volleys(p.dot, target)
-                self._publish({"type": "refused", "pid": pid, "act": "strike", "slot": e["slot"], "reason": "gone"})
+                await self._publish({"type": "refused", "pid": pid, "act": "strike", "slot": e["slot"], "reason": "gone"})
                 return
             if result.get("killed") and npc:
                 self._drop_npc(npc.nid)
@@ -396,10 +402,10 @@ class Owner:
             if result.get("fled") or result.get("dead"):
                 self.players.pop(pid, None)
             elif result.get("refused"):
-                self._publish({"type": "refused", "pid": pid, "act": "flee", "reason": result["refused"]})
+                await self._publish({"type": "refused", "pid": pid, "act": "flee", "reason": result["refused"]})
         elif kind == "refused":
             _, pid, detail = call
-            self._publish({"type": "refused", "pid": pid, **detail})
+            await self._publish({"type": "refused", "pid": pid, **detail})
 
     # State ---------------------------------------------------------------------------------
 
@@ -420,8 +426,17 @@ class Owner:
                   for npc in self.npcs.values() if npc.boss}
         return {"type": "state", "id": self.id, "step": self.step, "players": players, "blows": blows, "bosses": bosses}
 
-    def _publish(self, message: dict) -> None:
-        asyncio.ensure_future(self.world.redis.publish(f"enc:{self.id}:out", json.dumps(message, separators=(",", ":"))))
+    async def _publish(self, message: dict) -> None:
+        """To every session following this encounter: those on this server
+        directly, and through Redis only while someone elsewhere listens
+        (checked once a second, by how many a publish reached)."""
+        data = json.dumps(message, separators=(",", ":"))
+        for handler in list(self.host.local.get(self.id, ())):
+            handler(data)
+        now = time.monotonic()
+        if self.remote or now - self.probed >= 1:
+            self.probed = now
+            self.remote = await self.world.redis.publish(f"enc:{self.id}:out", data) > 0
 
     # The loop ------------------------------------------------------------------------------
 
@@ -441,7 +456,7 @@ class Owner:
         if not await self._sync():
             return
         tick = 1 / self.hz
-        per_state = max(1, round(self.hz / STATE_HZ))
+        per_state = max(1, math.ceil(self.hz / STATE_HZ))  # at most STATE_HZ a second
         ticks, last_lease = 0, 0.0
         while True:
             started = time.monotonic()
@@ -470,7 +485,7 @@ class Owner:
                 await self._call(call)
             ticks += 1
             if ticks % per_state == 0 and self.players:
-                self._publish(self.state())
+                await self._publish(self.state())
             await asyncio.sleep(max(0, tick - (time.monotonic() - started)))
 
 
@@ -484,6 +499,9 @@ class EncounterHost:
         self.now_ms = now_ms
         self.bus = Bus(world.redis)
         self.owners: dict[str, asyncio.Task] = {}
+        self.running: dict[str, Owner] = {}
+        # Sessions on this server following encounters it owns: eid -> handlers.
+        self.local: dict[str, set[Callable[[str], None]]] = defaultdict(set)
         self.tasks: list[asyncio.Task] = []
 
     async def start(self) -> None:
@@ -499,9 +517,44 @@ class EncounterHost:
         """Starts running an encounter this server owns."""
         if eid in self.owners:
             return
-        task = asyncio.create_task(Owner(self, eid).run())
+        owner = Owner(self, eid)
+        task = asyncio.create_task(owner.run())
         self.owners[eid] = task
-        task.add_done_callback(lambda _t, eid=eid: self.owners.pop(eid, None))
+        self.running[eid] = owner
+
+        def done(_task, eid=eid):
+            self.owners.pop(eid, None)
+            self.running.pop(eid, None)
+        task.add_done_callback(done)
+
+    def is_local(self, owner: str | None) -> bool:
+        return owner == self.server_id
+
+    async def follow(self, eid: str, owner: str | None, handler: Callable[[str], None]) -> None:
+        """A session starts forwarding an encounter's state: directly if this
+        server owns it, else through Redis."""
+        if self.is_local(owner):
+            self.local[eid].add(handler)
+        else:
+            await self.bus.subscribe(f"enc:{eid}:out", handler)
+
+    async def unfollow(self, eid: str, owner: str | None, handler: Callable[[str], None]) -> None:
+        if self.is_local(owner):
+            handlers = self.local.get(eid)
+            if handlers is not None:
+                handlers.discard(handler)
+                if not handlers:
+                    del self.local[eid]
+        else:
+            await self.bus.unsubscribe(f"enc:{eid}:out", handler)
+
+    async def send_input(self, eid: str, owner: str | None, data: str) -> None:
+        """A session's input, to the encounter's owner: directly if it's here."""
+        running = self.running.get(eid) if self.is_local(owner) else None
+        if running is not None:
+            running.receive(data)
+        else:
+            await self.world.redis.publish(f"enc:{eid}:in", data)
 
     async def _discover(self) -> None:
         """Watches for new encounters, and runs the ones this server owns."""

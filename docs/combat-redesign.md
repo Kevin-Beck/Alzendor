@@ -579,14 +579,27 @@ does, what it deletes, and its tests. A phase ends at its gate, and the next
 phase doesn't start before the gate is met. Tests run against the test Redis
 on port 6380, never the live one.
 
-**Progress.** Phase 1 (Steps 1–4) is built: `alzendor/balance.py`, the
-`Balance` block in `alzendor/web/index.html`, `tools/make_vectors.py`,
-`tools/check_vectors.mjs`, `tests/test_balance.py`, and the sandbox at
-`/?balance=1` (`/?balance=well` also shows the well; `&touch=1` shows the
-stick on a desktop). Gate 1 (the feel on a keyboard and a phone) is waiting
-on a playtest; Phase 2 starts after it.
+**Progress.** Phases 1 and 2 (Steps 1–12) are built. Gate 1 passed (the
+controls felt right). Gate 2 waits on a remote playtest and a CPU
+measurement on the t4g.micro (below).
 
-Choices made in Phase 1 that the rules above leave open:
+Phase 1: `alzendor/balance.py`, the `Balance` block in
+`alzendor/web/index.html`, `tools/make_vectors.py`, `tools/check_vectors.mjs`
+and `tests/test_balance.py`. The vectors also check that a Python snapshot
+restored in JavaScript carries on identically.
+
+Phase 2: the encounter block in `alzendor.lua` (records, the one rule in
+`aggro()`, `encounter_strike`, `encounter_blow`, `encounter_flee`),
+`alzendor/encounter.py` (the owner, the bus, the host), inputs in
+`session.py` and `commands.py`, the live client, and
+`tools/load_encounters.py`. Rhythm code is gone from Lua and the client:
+`engage` and the `:foes`/`:next` keys, `alz:npc_attacks`, DEFEND, the slot
+rhythms (`take_beat`, `timing` events), `npc_timing`, and the sandbox.
+`tests/test_encounters.py` covers the Lua functions and owners against the
+test Redis; `test_combat.py` covers the one rule; `test_e2e.py` runs a fight
+owned by one server with a player on another.
+
+Choices made that the rules above leave open:
 
 - Timers are whole steps (`steps(ms)`, half rounding up). Up is −y, as on
   screen.
@@ -600,6 +613,41 @@ Choices made in Phase 1 that the rules above leave open:
 - A strike is refused as `not_steady` while blocking; a dodge is refused as
   `staggered`, `blocking` or `cooldown`; a block without a shield as
   `no_shield`.
+- Every Lua function gets the calling server's id as `KEYS[1]`
+  (`World.call` passes it): that's how "the server that causes an
+  encounter owns it" reaches `aggro()` from all its call sites.
+- One encounter per room (`ROOM:<id>:encounter`), which arrivals join; a
+  journey ambush is its rider's own and isn't the room's.
+- Striking first records the strike as the encounter's opening
+  (`ENC:<id>:opening`); the owner lands it after the lead-in.
+- Until Step 13 converts the content, `world.py` fills in the balance fields
+  for unconverted gear, attacks and bosses as it seeds (the same
+  conversion, `balance.convert_gear` and friends). Weather no longer changes
+  timings; it scales amounts, as the plan says.
+- Owners deliver state to sessions on their own server directly, and
+  publish to Redis only while a session elsewhere follows (checked once a
+  second by what a publish reaches). Inputs to a local owner skip Redis too.
+- The websocket has no per-message compression: deflating every state
+  message was the biggest single cost under load.
+- The Redis pool allows 1000 connections (redis-py's default is 100; every
+  connected player's feed holds one in a blocking read).
+
+Measured with `tools/load_encounters.py` on the 4-core development VM (not
+the t4g.micro), 50 players fighting, each in a room of their own:
+
+| | Server CPU (one core) |
+|---|---|
+| 50 connected, not fighting | 2.9% |
+| 50 fighting, `encounter_hz` 30 | 21.5% |
+| 50 fighting, `encounter_hz` 20 | 19.1% |
+| 50 fighting in one room, 30 Hz (before the fast paths) | 56.5% |
+
+The simulation itself is about 1% of that, and per-encounter wakeups about
+1%; the rest is moving messages (state 15 a second and inputs 10 a second
+per player, and the room events of every strike and blow). So lowering
+`encounter_hz` barely helps; the levers are the message rates. Locally, a
+steering bot in the browser saw a visible correction on 4 of 270 state
+messages.
 
 ### Phase 1: the simulation
 

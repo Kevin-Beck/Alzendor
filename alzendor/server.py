@@ -29,6 +29,7 @@ log = logging.getLogger(__name__)
 
 WEB_CLIENT = Path(__file__).with_name("web") / "index.html"
 MAX_MESSAGE_BYTES = 16 * 1024
+MAX_REDIS_CONNECTIONS = 1000
 WEATHER_SECONDS = 30  # how often weather_tick runs (ground, NPCs, everyone's weather)
 SECURITY_HEADERS = {
     "Content-Security-Policy": (
@@ -95,6 +96,9 @@ class GameServer:
             process_request=self.http,
             origins=origins,
             max_size=MAX_MESSAGE_BYTES,
+            # Encounter state goes out 15 times a second to every fighting
+            # player: deflating each message cost more CPU than anything else.
+            compression=None,
         ) as server:
             log.info("server %s listening on %s:%d", self.config.server_id, self.config.host, self.config.port)
             await self.encounters.start()
@@ -186,12 +190,15 @@ class GameServer:
 def open_redis(url: str) -> Redis:
     # Each player's feed blocks on XREAD for up to FEED_BLOCK_MS, so reads must be
     # allowed to take longer than that. redis-py's default timeout (5s) is not.
+    # And each holds a connection while it waits, so the pool has room for a
+    # connection per player and then some (redis-py's default is 100).
     return Redis.from_url(
         url,
         decode_responses=True,
         protocol=2,
         socket_timeout=FEED_BLOCK_MS / 1000 + 10,
         socket_connect_timeout=5,
+        max_connections=MAX_REDIS_CONNECTIONS,
     )
 
 
