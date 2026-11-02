@@ -638,8 +638,7 @@ def replay(script: dict) -> dict:
 
 # Converting rhythm content ----------------------------------------------------------------
 # The plan's conversion (docs/combat-redesign.md, "Content conversion"), used by
-# tools/convert_balance.py, and meanwhile for any gear or attack the seed
-# hasn't converted yet.
+# tools/convert_balance.py, which converted the content once.
 
 VOLLEYS = {"missile": (4, 1000, 0.7), "chain_lightning": (3, 300, 0.5), "cinder_rain": (3, 1000, 0.5), "twin_jab": (2, 150, 0.4)}
 GEAR_COOLDOWN = ((1000, 300), (1200, 350), (4500, 2500), (8000, 4500))

@@ -367,8 +367,8 @@ async def describe(ctx: Context, rest: str) -> None:
 # Combat -----------------------------------------------------------------------
 
 
-# Three slots, each holding a piece of gear with its own rhythm (see
-# alzendor.lua): the first use lands at once, and after that only on its beat.
+# Three slots, each holding a piece of gear (see alzendor.lua): in a fight they
+# strike from your balance; out of one, heals and guards just work.
 SLOT_NUMBERS = ("1", "2", "3")
 SLOT_FILLER = ("in", "into", "to", "slot")
 

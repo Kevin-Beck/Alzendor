@@ -602,7 +602,7 @@ local function weathered(pid, gear, w)
   end
   local amounts = list()
   -- (The nudge keeps 10 x 1.15 from rounding down: in binary it's 11.4999...)
-  for i, key in ipairs({'opener', 'good', 'perfect'}) do amounts[i] = math.max(0, round(tonumber(gear[key]) * factor + 1e-9)) end
+  for i, key in ipairs({'edge', 'clean', 'perfect'}) do amounts[i] = math.max(0, round(tonumber(gear[key]) * factor + 1e-9)) end
   return {factor = factor, amounts = amounts, mods = mods, profile = profile}
 end
 
@@ -1565,7 +1565,7 @@ end
 local function gear_summary(g, pid, w)
   local summary = {id = g.id, name = g.name, kind = g.kind, effect = g.effect, targets = g.targets ~= '' and g.targets or 'self',
     description = g.description or '',
-    amounts = list({tonumber(g.opener), tonumber(g.good), tonumber(g.perfect)}),
+    amounts = list({tonumber(g.edge), tonumber(g.clean), tonumber(g.perfect)}),
     cooldown_ms = tonumber(g.cooldown) or 0, kick = tonumber(g.kick) or 0, pattern = (g.pattern or '') ~= '' and g.pattern or 'bump',
     hits = tonumber(g.hits) or 1, gap_ms = tonumber(g.gap) or 0, debuff = (g.debuff or '') ~= '' and decode(g.debuff) or nil}
   local tier = TIERS[gear_profile(g).tier]
@@ -4978,8 +4978,8 @@ redis.register_function('seed', function(keys, args)
   redis.call('DEL', 'alz:gear', 'alz:default_loadout')
   for gid, gear in pairs(world.gear or {}) do
     redis.call('HSET', 'GEAR:' .. gid, 'name', gear.name, 'kind', gear.kind or '', 'keywords', gear.keywords or '',
-      'effect', gear.effect, 'targets', gear.targets or 'self', 'period', gear.period, 'window', gear.window, 'perfect_window', gear.perfect_window,
-      'opener', gear.amounts[1], 'good', gear.amounts[2], 'perfect', gear.amounts[3],
+      'effect', gear.effect, 'targets', gear.targets or 'self',
+      'edge', gear.amounts[1], 'clean', gear.amounts[2], 'perfect', gear.amounts[3],
       'hit', gear.hit, 'perfect_hit', gear.perfect_hit, 'miss', gear.miss, 'whiff', gear.whiff,
       'description', gear.description or '', 'weather', gear.weather and cjson.encode(gear.weather) or '',
       'rank', gear.rank or 0, 'requires', gear.requires or '', 'stagger_ms', gear.stagger_ms or 0, 'rarity', gear.rarity or '',

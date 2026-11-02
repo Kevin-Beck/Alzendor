@@ -324,6 +324,7 @@
           "name": "greatsword",
           "period": 4500,
           "damage": 40,
+          "kick": 1.236,
           "hit": "{actor} swings a greatsword at {target}.",
           "defend": "block"
         },
@@ -331,6 +332,12 @@
           "name": "cleave",
           "period": 12000,
           "damage": 85,
+          "kick": 2.229,
+          "debuff": {
+            "kind": "reeling",
+            "strength": 1,
+            "ms": 5000
+          },
           "hit": "{actor} heaves a great cleave at {target}!",
           "defend": "block"
         }
@@ -354,6 +361,7 @@
           "name": "greatsword",
           "period": 4500,
           "damage": 40,
+          "kick": 1.236,
           "hit": "{actor} swings a greatsword at {target}.",
           "defend": "block"
         },
@@ -361,6 +369,12 @@
           "name": "cleave",
           "period": 12000,
           "damage": 85,
+          "kick": 2.229,
+          "debuff": {
+            "kind": "reeling",
+            "strength": 1,
+            "ms": 5000
+          },
           "hit": "{actor} heaves a great cleave at {target}!",
           "defend": "block"
         }
@@ -384,6 +398,7 @@
           "name": "greatsword",
           "period": 4500,
           "damage": 40,
+          "kick": 1.236,
           "hit": "{actor} swings a greatsword at {target}.",
           "defend": "block"
         },
@@ -391,6 +406,12 @@
           "name": "cleave",
           "period": 12000,
           "damage": 85,
+          "kick": 2.229,
+          "debuff": {
+            "kind": "reeling",
+            "strength": 1,
+            "ms": 5000
+          },
           "hit": "{actor} heaves a great cleave at {target}!",
           "defend": "block"
         }
@@ -414,6 +435,7 @@
           "name": "bite",
           "period": 2000,
           "damage": 22,
+          "kick": 0.8,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -436,6 +458,7 @@
           "name": "bite",
           "period": 2000,
           "damage": 22,
+          "kick": 0.8,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -452,12 +475,14 @@
       "keywords": "crownless king",
       "room": "hc_door",
       "max_hp": 3500,
+      "poise": 187,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "blade",
           "period": 5000,
           "damage": 45,
+          "kick": 1.345,
           "hit": "{actor} cuts at {target}.",
           "defend": "block"
         },
@@ -465,6 +490,13 @@
           "name": "wail",
           "period": 13000,
           "damage": 140,
+          "kick": 2.286,
+          "stagger": true,
+          "debuff": {
+            "kind": "reeling",
+            "strength": 1,
+            "ms": 5000
+          },
           "hit": "{actor} wails for his lost crown, and {target} feels it in their bones!",
           "defend": "none"
         }
@@ -481,9 +513,9 @@
       "kind": "Melee",
       "keywords": "oathkeeper sword",
       "effect": "damage",
-      "period": 3000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1523,
+      "kick": 1.327,
+      "pattern": "side",
       "amounts": [
         30,
         38,

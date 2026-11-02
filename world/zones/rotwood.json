@@ -278,12 +278,14 @@
           "name": "slam",
           "period": 3500,
           "damage": 26,
+          "kick": 1.018,
           "hit": "{actor} slams into {target}."
         },
         {
           "name": "spore-cough",
           "period": 9000,
           "damage": 45,
+          "kick": 2.057,
           "hit": "{actor} coughs a cloud of spores at {target}!",
           "defend": "dodge"
         }
@@ -307,12 +309,14 @@
           "name": "slam",
           "period": 3500,
           "damage": 26,
+          "kick": 1.018,
           "hit": "{actor} slams into {target}."
         },
         {
           "name": "spore-cough",
           "period": 9000,
           "damage": 45,
+          "kick": 2.057,
           "hit": "{actor} coughs a cloud of spores at {target}!",
           "defend": "dodge"
         }
@@ -336,12 +340,14 @@
           "name": "slam",
           "period": 3500,
           "damage": 26,
+          "kick": 1.018,
           "hit": "{actor} slams into {target}."
         },
         {
           "name": "spore-cough",
           "period": 9000,
           "damage": 45,
+          "kick": 2.057,
           "hit": "{actor} coughs a cloud of spores at {target}!",
           "defend": "dodge"
         }
@@ -365,12 +371,14 @@
           "name": "slam",
           "period": 3500,
           "damage": 26,
+          "kick": 1.018,
           "hit": "{actor} slams into {target}."
         },
         {
           "name": "spore-cough",
           "period": 9000,
           "damage": 45,
+          "kick": 2.057,
           "hit": "{actor} coughs a cloud of spores at {target}!",
           "defend": "dodge"
         }
@@ -394,12 +402,14 @@
           "name": "kick",
           "period": 3000,
           "damage": 18,
+          "kick": 0.909,
           "hit": "{actor} kicks {target}."
         },
         {
           "name": "charge",
           "period": 10000,
           "damage": 70,
+          "kick": 2.114,
           "hit": "{actor} lowers its antlers and charges {target}!",
           "defend": "dodge"
         }
@@ -423,12 +433,14 @@
           "name": "kick",
           "period": 3000,
           "damage": 18,
+          "kick": 0.909,
           "hit": "{actor} kicks {target}."
         },
         {
           "name": "charge",
           "period": 10000,
           "damage": 70,
+          "kick": 2.114,
           "hit": "{actor} lowers its antlers and charges {target}!",
           "defend": "dodge"
         }
@@ -446,18 +458,27 @@
       "keywords": "mycelial mind mound",
       "room": "rw_heart",
       "max_hp": 3000,
+      "poise": 175,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "tendril",
           "period": 4000,
           "damage": 25,
+          "kick": 1.127,
           "hit": "{actor} lashes {target} with a tendril."
         },
         {
           "name": "spore-burst",
           "period": 15000,
           "damage": 110,
+          "kick": 2.4,
+          "stagger": true,
+          "debuff": {
+            "kind": "reeling",
+            "strength": 1,
+            "ms": 5000
+          },
           "hit": "{actor} bursts, and spores engulf {target}!",
           "defend": "none"
         }
@@ -473,9 +494,14 @@
       "kind": "Potion",
       "keywords": "tincture pim",
       "effect": "heal",
-      "period": 5000,
-      "window": 330,
-      "perfect_window": 110,
+      "cooldown": 2786,
+      "kick": 0,
+      "pattern": "bump",
+      "debuff": {
+        "kind": "steady",
+        "strength": 1.5,
+        "ms": 3000
+      },
       "amounts": [
         20,
         28,
@@ -498,9 +524,9 @@
       "kind": "Melee",
       "keywords": "lash mycelial",
       "effect": "damage",
-      "period": 3500,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1848,
+      "kick": 1.418,
+      "pattern": "side",
       "amounts": [
         30,
         40,

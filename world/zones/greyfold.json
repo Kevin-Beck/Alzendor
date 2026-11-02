@@ -680,6 +680,7 @@
           "name": "bite",
           "period": 2600,
           "damage": 3,
+          "kick": 0.822,
           "hit": "{actor} snaps at {target}."
         }
       ],
@@ -708,6 +709,7 @@
           "name": "bite",
           "period": 2600,
           "damage": 3,
+          "kick": 0.822,
           "hit": "{actor} snaps at {target}."
         }
       ],
@@ -736,6 +738,7 @@
           "name": "bite",
           "period": 2600,
           "damage": 3,
+          "kick": 0.822,
           "hit": "{actor} snaps at {target}."
         }
       ],
@@ -764,12 +767,19 @@
           "name": "bite",
           "period": 3000,
           "damage": 6,
+          "kick": 0.909,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "maul",
           "period": 12000,
           "damage": 14,
+          "kick": 2.229,
+          "debuff": {
+            "kind": "reeling",
+            "strength": 1,
+            "ms": 5000
+          },
           "hit": "{actor} bowls {target} over and mauls them!",
           "defend": "block"
         }
@@ -798,12 +808,14 @@
           "name": "gore",
           "period": 3200,
           "damage": 4,
+          "kick": 0.953,
           "hit": "{actor} gores {target}."
         },
         {
           "name": "charge",
           "period": 9000,
           "damage": 9,
+          "kick": 2.057,
           "hit": "{actor} charges into {target}!",
           "defend": "dodge"
         }
@@ -837,12 +849,14 @@
           "name": "gore",
           "period": 3200,
           "damage": 4,
+          "kick": 0.953,
           "hit": "{actor} gores {target}."
         },
         {
           "name": "charge",
           "period": 9000,
           "damage": 9,
+          "kick": 2.057,
           "hit": "{actor} charges into {target}!",
           "defend": "dodge"
         }
@@ -876,12 +890,14 @@
           "name": "gore",
           "period": 3200,
           "damage": 4,
+          "kick": 0.953,
           "hit": "{actor} gores {target}."
         },
         {
           "name": "charge",
           "period": 9000,
           "damage": 9,
+          "kick": 2.057,
           "hit": "{actor} charges into {target}!",
           "defend": "dodge"
         }
@@ -915,6 +931,7 @@
           "name": "knife",
           "period": 2800,
           "damage": 4,
+          "kick": 0.865,
           "hit": "{actor} slashes at {target}."
         }
       ],
@@ -944,6 +961,7 @@
           "name": "knife",
           "period": 2800,
           "damage": 4,
+          "kick": 0.865,
           "hit": "{actor} slashes at {target}."
         }
       ],
@@ -973,6 +991,7 @@
           "name": "knife",
           "period": 2800,
           "damage": 4,
+          "kick": 0.865,
           "hit": "{actor} slashes at {target}."
         }
       ],
@@ -1002,12 +1021,14 @@
           "name": "jab",
           "period": 3000,
           "damage": 4,
+          "kick": 0.909,
           "hit": "{actor} jabs {target} with the cudgel's end."
         },
         {
           "name": "cudgel",
           "period": 9000,
           "damage": 13,
+          "kick": 2.057,
           "hit": "{actor} brings the cudgel down on {target}!",
           "defend": "block"
         }
@@ -1040,6 +1061,7 @@
           "name": "claw",
           "period": 3000,
           "damage": 5,
+          "kick": 0.909,
           "hit": "{actor} rakes {target}."
         }
       ],
@@ -1061,6 +1083,7 @@
           "name": "claw",
           "period": 3000,
           "damage": 5,
+          "kick": 0.909,
           "hit": "{actor} rakes {target}."
         }
       ],
@@ -1076,18 +1099,22 @@
       "keywords": "barrow wight",
       "room": "bk_crypt",
       "max_hp": 160,
+      "poise": 104,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "touch",
           "period": 3500,
           "damage": 6,
+          "kick": 1.018,
           "hit": "{actor} touches {target} with a dead hand."
         },
         {
           "name": "grave-chill",
           "period": 11000,
           "damage": 16,
+          "kick": 2.171,
+          "stagger": true,
           "hit": "{actor} breathes the grave's cold over {target}!",
           "defend": "dodge"
         }
@@ -1103,9 +1130,9 @@
       "kind": "Melee",
       "keywords": "billhook hook",
       "effect": "damage",
-      "period": 2600,
-      "window": 280,
-      "perfect_window": 90,
+      "cooldown": 1262,
+      "kick": 1.255,
+      "pattern": "bump",
       "amounts": [
         6,
         8,
@@ -1129,9 +1156,9 @@
       "kind": "Light",
       "keywords": "knife redcap",
       "effect": "damage",
-      "period": 1400,
-      "window": 220,
-      "perfect_window": 70,
+      "cooldown": 480,
+      "kick": 1.036,
+      "pattern": "bump",
       "amounts": [
         3,
         4,

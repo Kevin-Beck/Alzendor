@@ -177,12 +177,14 @@
           "name": "fangs",
           "period": 2800,
           "damage": 12,
+          "kick": 0.865,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "web-shot",
           "period": 8000,
           "damage": 18,
+          "kick": 2.0,
           "hit": "{actor} shoots a sticky web at {target}.",
           "defend": "dodge"
         }
@@ -207,12 +209,14 @@
           "name": "fangs",
           "period": 2800,
           "damage": 12,
+          "kick": 0.865,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "web-shot",
           "period": 8000,
           "damage": 18,
+          "kick": 2.0,
           "hit": "{actor} shoots a sticky web at {target}.",
           "defend": "dodge"
         }
@@ -237,12 +241,14 @@
           "name": "fangs",
           "period": 2800,
           "damage": 12,
+          "kick": 0.865,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "web-shot",
           "period": 8000,
           "damage": 18,
+          "kick": 2.0,
           "hit": "{actor} shoots a sticky web at {target}.",
           "defend": "dodge"
         }
@@ -267,12 +273,14 @@
           "name": "fangs",
           "period": 2800,
           "damage": 12,
+          "kick": 0.865,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "web-shot",
           "period": 8000,
           "damage": 18,
+          "kick": 2.0,
           "hit": "{actor} shoots a sticky web at {target}.",
           "defend": "dodge"
         }
@@ -297,12 +305,14 @@
           "name": "fangs",
           "period": 2800,
           "damage": 12,
+          "kick": 0.865,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "web-shot",
           "period": 8000,
           "damage": 18,
+          "kick": 2.0,
           "hit": "{actor} shoots a sticky web at {target}.",
           "defend": "dodge"
         }
@@ -327,6 +337,7 @@
           "name": "spines",
           "period": 4000,
           "damage": 15,
+          "kick": 1.127,
           "hit": "{actor} rams {target} with its spines.",
           "defend": "block"
         }
@@ -343,18 +354,22 @@
       "keywords": "weaver queen spider",
       "room": "dw_queen",
       "max_hp": 650,
+      "poise": 116,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "bite",
           "period": 4000,
           "damage": 18,
+          "kick": 1.127,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "venom",
           "period": 11000,
           "damage": 60,
+          "kick": 2.171,
+          "stagger": true,
           "hit": "{actor} strikes at {target} with venom-dripping fangs!",
           "defend": "dodge"
         },
@@ -362,6 +377,13 @@
           "name": "web shroud",
           "period": 15000,
           "damage": 25,
+          "kick": 2.4,
+          "stagger": true,
+          "debuff": {
+            "kind": "reeling",
+            "strength": 1,
+            "ms": 5000
+          },
           "hit": "{actor} wraps {target} in silver silk.",
           "defend": "none"
         }
@@ -378,9 +400,9 @@
       "kind": "Light",
       "keywords": "fang weaver",
       "effect": "damage",
-      "period": 1500,
-      "window": 220,
-      "perfect_window": 70,
+      "cooldown": 545,
+      "kick": 1.055,
+      "pattern": "bump",
       "amounts": [
         7,
         10,

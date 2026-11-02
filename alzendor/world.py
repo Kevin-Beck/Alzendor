@@ -6,7 +6,7 @@ from pathlib import Path
 
 from redis.asyncio import Redis
 
-from . import balance, weather
+from . import weather
 
 LUA_LIBRARY = Path(__file__).with_name("alzendor.lua")
 
@@ -31,29 +31,12 @@ class World:
         """Loads the map from a seed file (and its zone files) and returns it (for its ambient events)."""
         data = load_seed(path)
         validate_seed(data)
-        fill_balance(data)
         # Lua gets each realm's weather waves ready-made (see weather.py).
         weather_seed = str(data.get("rules", {}).get("weather_seed", "alzendor"))
         params = {realm: weather.realm_params(weather_seed, realm) for realm in data.get("realms", {})}
         await self.call("seed", json.dumps({**data, "weather_params": params}))
         self.creation = creation_options(data)
         return data
-
-
-def fill_balance(data: dict) -> None:
-    """Gives every piece of gear, NPC attack and boss the balance fields it
-    doesn't have yet, converted from its rhythm (balance.convert_gear and
-    friends), so the world in Redis always has them."""
-    for gid, gear in data.get("gear", {}).items():
-        if gear.get("cooldown") is None:
-            gear.update(balance.convert_gear(gid, gear))
-    for npc in data.get("npcs", {}).values():
-        boss = float(npc.get("respawn") or 0) >= 900 and bool(npc.get("attacks"))
-        for attack in npc.get("attacks", []):
-            if attack.get("kick") is None:
-                attack.update(balance.convert_attack(attack, boss))
-        if boss and npc.get("poise") is None:
-            npc["poise"] = balance.boss_poise(float(npc.get("max_hp") or 10))
 
 
 def load_seed(path: Path) -> dict:
@@ -374,7 +357,7 @@ def _npc_problems(npc: dict, factions: dict, gear: dict) -> list[str]:
             problems.append(f"attack {attack.get('name')!r}: period and damage must be positive whole numbers")
         if attack.get("defend", "both") not in DEFENCES:
             problems.append(f"attack {attack.get('name')!r}: defend must be one of {', '.join(DEFENCES)}")
-        if not _number(attack.get("kick", 0)) or not isinstance(attack.get("stagger", False), bool) \
+        if not _number(attack.get("kick")) or not isinstance(attack.get("stagger", False), bool) \
                 or not isinstance(attack.get("warn", 1), int):
             problems.append(f"attack {attack.get('name')!r}: kick must be a number, stagger true or false, warn whole ms")
         problems += [f"attack {attack.get('name')!r}: {p}" for p in _debuff_problems(attack.get("debuff"))]
@@ -391,17 +374,12 @@ def _gear_problems(gear: dict) -> list[str]:
             problems.append(f"missing {key}")
     if gear.get("effect") not in ("damage", "heal", "guard"):
         problems.append("effect must be 'damage', 'heal' or 'guard'")
-    period, window, perfect = (gear.get(key) for key in ("period", "window", "perfect_window"))
-    if not all(isinstance(n, int) and n > 0 for n in (period, window, perfect)):
-        problems.append("period, window and perfect_window must be positive whole ms")
-    elif not perfect <= window < period / 2:
-        problems.append("needs perfect_window <= window < half the period (windows can't overlap)")
+    if any(key in gear for key in ("period", "window", "perfect_window")):
+        problems.append("period, window and perfect_window are from rhythm combat: it has cooldown, kick and pattern now")
     amounts = gear.get("amounts")
     if not (isinstance(amounts, list) and len(amounts) == 3 and all(isinstance(n, int) and n > 0 for n in amounts)):
-        problems.append("amounts must be [opener, good, perfect], positive whole numbers")
-    if "cooldown" in gear:
-        problems += _balance_gear_problems(gear)
-    return problems
+        problems.append("amounts must be [edge, clean, perfect], positive whole numbers")
+    return problems + _balance_gear_problems(gear)
 
 
 PATTERNS = ("bump", "side", "taps")
@@ -424,7 +402,7 @@ def _debuff_problems(debuff) -> list[str]:
 def _balance_gear_problems(gear: dict) -> list[str]:
     """The balance fields (docs/combat-redesign.md, Data)."""
     problems = []
-    if not (isinstance(gear["cooldown"], int) and gear["cooldown"] > 0):
+    if not (isinstance(gear.get("cooldown"), int) and gear["cooldown"] > 0):
         problems.append("cooldown must be positive whole ms")
     if not _number(gear.get("kick", 0)):
         problems.append("kick must be a number, 0 or more")

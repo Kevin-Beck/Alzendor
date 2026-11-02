@@ -2310,12 +2310,14 @@
           "name": "cleaver",
           "period": 6000,
           "damage": 7,
+          "kick": 1.564,
           "hit": "{actor} hacks at {target} with a cleaver."
         },
         {
           "name": "shield bash",
           "period": 9000,
           "damage": 4,
+          "kick": 2.057,
           "hit": "{actor} slams a shield into {target}."
         }
       ],
@@ -2336,6 +2338,7 @@
           "name": "bite",
           "period": 5000,
           "damage": 1,
+          "kick": 1.345,
           "hit": "{actor} nips at {target}."
         }
       ],
@@ -2362,6 +2365,7 @@
           "name": "bite",
           "period": 5000,
           "damage": 1,
+          "kick": 1.345,
           "hit": "{actor} nips at {target}."
         }
       ],
@@ -2405,12 +2409,14 @@
           "name": "grasp",
           "period": 7000,
           "damage": 5,
+          "kick": 1.782,
           "hit": "{actor} drags at {target} with a muddy claw."
         },
         {
           "name": "mire spit",
           "period": 11000,
           "damage": 3,
+          "kick": 2.171,
           "hit": "{actor} spits stinking mire at {target}."
         }
       ],
@@ -2547,12 +2553,14 @@
           "name": "bite",
           "period": 6000,
           "damage": 5,
+          "kick": 1.564,
           "hit": "{actor} sinks its fangs into {target}."
         },
         {
           "name": "web lash",
           "period": 8000,
           "damage": 3,
+          "kick": 2.0,
           "hit": "{actor} lashes {target} with sticky silk."
         }
       ],
@@ -2591,18 +2599,26 @@
           "name": "fangs",
           "period": 7000,
           "damage": 12,
+          "kick": 1.782,
           "hit": "{actor} drives great fangs into {target}."
         },
         {
           "name": "venom spray",
           "period": 10000,
           "damage": 8,
+          "kick": 2.114,
           "hit": "{actor} sprays venom over {target}."
         },
         {
           "name": "web shroud",
           "period": 13000,
           "damage": 5,
+          "kick": 2.286,
+          "debuff": {
+            "kind": "reeling",
+            "strength": 1,
+            "ms": 5000
+          },
           "hit": "{actor} wraps {target} in choking silk."
         }
       ],
@@ -2635,6 +2651,7 @@
           "name": "wild swing",
           "period": 7000,
           "damage": 3,
+          "kick": 1.782,
           "hit": "{actor} takes a wild swing at {target}."
         }
       ],
@@ -2670,8 +2687,8 @@
           "name": "swinging arm",
           "period": 6000,
           "damage": 2,
-          "hit": "{actor}'s arm swings round and clips {target}.",
-          "kick": 1.564
+          "kick": 1.564,
+          "hit": "{actor}'s arm swings round and clips {target}."
         }
       ]
     },
@@ -2704,12 +2721,14 @@
           "name": "bite",
           "period": 5000,
           "damage": 7,
+          "kick": 1.345,
           "hit": "{actor} sinks its fangs into {target}."
         },
         {
           "name": "lunge",
           "period": 8000,
           "damage": 5,
+          "kick": 2.0,
           "hit": "{actor} slams into {target}, knocking them into the snow."
         }
       ],
@@ -2732,12 +2751,14 @@
           "name": "bite",
           "period": 5000,
           "damage": 7,
+          "kick": 1.345,
           "hit": "{actor} sinks its fangs into {target}."
         },
         {
           "name": "lunge",
           "period": 8000,
           "damage": 5,
+          "kick": 2.0,
           "hit": "{actor} slams into {target}, knocking them into the snow."
         }
       ],
@@ -2764,12 +2785,14 @@
           "name": "chill",
           "period": 6000,
           "damage": 9,
+          "kick": 1.564,
           "hit": "{actor} passes through {target}, freezing them to the bone."
         },
         {
           "name": "howl",
           "period": 11000,
           "damage": 6,
+          "kick": 2.171,
           "hit": "{actor} howls, and the wind tears at {target}."
         }
       ],
@@ -2792,6 +2815,7 @@
           "name": "sting",
           "period": 7000,
           "damage": 11,
+          "kick": 1.782,
           "hit": "{actor} drives its sting into {target}."
         }
       ],
@@ -2814,6 +2838,7 @@
           "name": "scour",
           "period": 5000,
           "damage": 6,
+          "kick": 1.345,
           "hit": "{actor} scours {target} with burning sand."
         }
       ],
@@ -2836,6 +2861,7 @@
           "name": "scour",
           "period": 5000,
           "damage": 6,
+          "kick": 1.345,
           "hit": "{actor} scours {target} with burning sand."
         }
       ],
@@ -2872,6 +2898,7 @@
           "name": "knife",
           "period": 3500,
           "damage": 4,
+          "kick": 1.018,
           "hit": "{actor} slashes at {target} with a long knife."
         }
       ]
@@ -2892,6 +2919,7 @@
           "name": "bite",
           "period": 2500,
           "damage": 3,
+          "kick": 0.8,
           "hit": "{actor} snaps at {target}."
         }
       ],
@@ -2940,6 +2968,7 @@
           "name": "claw",
           "period": 3000,
           "damage": 3,
+          "kick": 0.909,
           "hit": "{actor} nips {target} with a huge claw."
         }
       ],
@@ -3138,6 +3167,7 @@
           "name": "pinch",
           "period": 3000,
           "damage": 2,
+          "kick": 0.909,
           "hit": "{actor} pinches {target}."
         }
       ],
@@ -3166,6 +3196,7 @@
           "name": "pinch",
           "period": 3000,
           "damage": 2,
+          "kick": 0.909,
           "hit": "{actor} pinches {target}."
         }
       ],
@@ -3194,6 +3225,7 @@
           "name": "boathook",
           "period": 3500,
           "damage": 3,
+          "kick": 1.018,
           "hit": "{actor} jabs {target} with a boathook."
         }
       ]
@@ -3215,6 +3247,7 @@
           "name": "cutlass",
           "period": 3000,
           "damage": 4,
+          "kick": 0.909,
           "hit": "{actor} slashes at {target}."
         }
       ],
@@ -3422,6 +3455,7 @@
           "name": "bite",
           "period": 2500,
           "damage": 2,
+          "kick": 0.8,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -3449,6 +3483,7 @@
           "name": "bite",
           "period": 2500,
           "damage": 2,
+          "kick": 0.8,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -3476,6 +3511,7 @@
           "name": "swarm",
           "period": 3000,
           "damage": 4,
+          "kick": 0.909,
           "hit": "{actor} swarms over {target}.",
           "defend": "none"
         }
@@ -3623,6 +3659,7 @@
           "name": "sting",
           "period": 2500,
           "damage": 2,
+          "kick": 0.8,
           "hit": "{actor} stings {target} with cold light.",
           "defend": "dodge"
         }
@@ -3651,6 +3688,7 @@
           "name": "bite",
           "period": 2500,
           "damage": 3,
+          "kick": 0.8,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -3678,6 +3716,7 @@
           "name": "bite",
           "period": 2500,
           "damage": 3,
+          "kick": 0.8,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -3705,6 +3744,7 @@
           "name": "antlers",
           "period": 3500,
           "damage": 4,
+          "kick": 1.018,
           "hit": "{actor} lowers its antlers at {target}."
         }
       ]
@@ -3827,6 +3867,7 @@
           "name": "bite",
           "period": 3000,
           "damage": 3,
+          "kick": 0.909,
           "hit": "{actor} bites {target}."
         }
       ]
@@ -3848,6 +3889,7 @@
           "name": "club",
           "period": 3500,
           "damage": 3,
+          "kick": 1.018,
           "hit": "{actor} cracks {target} with a club."
         }
       ]
@@ -3869,6 +3911,7 @@
           "name": "club",
           "period": 3500,
           "damage": 3,
+          "kick": 1.018,
           "hit": "{actor} cracks {target} with a club."
         }
       ]
@@ -3890,6 +3933,7 @@
           "name": "bite",
           "period": 2800,
           "damage": 2,
+          "kick": 0.865,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -3917,6 +3961,7 @@
           "name": "bite",
           "period": 2800,
           "damage": 2,
+          "kick": 0.865,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -3981,12 +4026,14 @@
           "name": "bite",
           "period": 6000,
           "damage": 5,
+          "kick": 1.564,
           "hit": "{actor} sinks its fangs into {target}."
         },
         {
           "name": "web lash",
           "period": 8000,
           "damage": 3,
+          "kick": 2.0,
           "hit": "{actor} lashes {target} with sticky silk."
         }
       ],
@@ -4024,12 +4071,14 @@
           "name": "bite",
           "period": 6000,
           "damage": 5,
+          "kick": 1.564,
           "hit": "{actor} sinks its fangs into {target}."
         },
         {
           "name": "web lash",
           "period": 8000,
           "damage": 3,
+          "kick": 2.0,
           "hit": "{actor} lashes {target} with sticky silk."
         }
       ],
@@ -4056,9 +4105,9 @@
       "kind": "Light",
       "keywords": "knife",
       "effect": "damage",
-      "period": 1200,
-      "window": 200,
-      "perfect_window": 70,
+      "cooldown": 350,
+      "kick": 1.0,
+      "pattern": "bump",
       "amounts": [
         2,
         3,
@@ -4074,19 +4123,16 @@
         "energy": -0.6,
         "precipitation": "dry",
         "tier": "green"
-      },
-      "cooldown": 350,
-      "kick": 1.0,
-      "pattern": "bump"
+      }
     },
     "kick": {
       "name": "Kick",
       "kind": "Melee",
       "keywords": "",
       "effect": "damage",
-      "period": 2000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 871,
+      "kick": 1.145,
+      "pattern": "bump",
       "amounts": [
         4,
         5,
@@ -4103,9 +4149,9 @@
       "kind": "Weapon",
       "keywords": "blade",
       "effect": "damage",
-      "period": 2500,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1197,
+      "kick": 1.236,
+      "pattern": "bump",
       "amounts": [
         6,
         7,
@@ -4123,9 +4169,14 @@
       "kind": "Potion",
       "keywords": "draught",
       "effect": "heal",
-      "period": 2500,
-      "window": 250,
-      "perfect_window": 80,
+      "cooldown": 1197,
+      "kick": 0,
+      "pattern": "bump",
+      "debuff": {
+        "kind": "steady",
+        "strength": 1.5,
+        "ms": 3000
+      },
       "amounts": [
         4,
         6,
@@ -4142,9 +4193,14 @@
       "kind": "Spell",
       "keywords": "fire bolt",
       "effect": "damage",
-      "period": 4000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 2174,
+      "kick": 1.509,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 1.5,
+        "ms": 5000
+      },
       "amounts": [
         8,
         10,
@@ -4168,9 +4224,14 @@
       "kind": "Weapon",
       "keywords": "axe",
       "effect": "damage",
-      "period": 4500,
-      "window": 250,
-      "perfect_window": 80,
+      "cooldown": 2500,
+      "kick": 1.6,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 1.75,
+        "ms": 5000
+      },
       "amounts": [
         10,
         14,
@@ -4186,14 +4247,6 @@
         "energy": 0.7,
         "precipitation": "any",
         "tier": "blue"
-      },
-      "cooldown": 2500,
-      "kick": 1.6,
-      "pattern": "side",
-      "debuff": {
-        "kind": "heavy",
-        "strength": 1.75,
-        "ms": 5000
       }
     },
     "potion": {
@@ -4201,9 +4254,14 @@
       "kind": "Potion",
       "keywords": "potion hp",
       "effect": "heal",
-      "period": 5000,
-      "window": 350,
-      "perfect_window": 120,
+      "cooldown": 2786,
+      "kick": 0,
+      "pattern": "bump",
+      "debuff": {
+        "kind": "steady",
+        "strength": 1.5,
+        "ms": 3000
+      },
       "amounts": [
         10,
         15,
@@ -4220,9 +4278,11 @@
       "kind": "Spell",
       "keywords": "missile mm",
       "effect": "damage",
-      "period": 8000,
-      "window": 400,
-      "perfect_window": 130,
+      "cooldown": 4500,
+      "kick": 0.7,
+      "pattern": "taps",
+      "hits": 4,
+      "gap": 1000,
       "amounts": [
         14,
         18,
@@ -4232,12 +4292,7 @@
       "perfect_hit": "{actor}'s magic missile strikes {target} dead centre!",
       "miss": "{actor}'s magic missile streaks past {target}.",
       "whiff": "your magic missile fizzles.",
-      "description": "A dart of raw force. Like all spells, it's strongest when the air is restless.",
-      "cooldown": 4500,
-      "kick": 0.7,
-      "pattern": "taps",
-      "hits": 4,
-      "gap": 1000
+      "description": "A dart of raw force. Like all spells, it's strongest when the air is restless."
     },
     "mending": {
       "name": "Mending Light",
@@ -4245,9 +4300,9 @@
       "keywords": "mend heal light",
       "effect": "heal",
       "targets": "ally",
-      "period": 6000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 3357,
+      "kick": 0,
+      "pattern": "bump",
       "amounts": [
         8,
         12,
@@ -4272,9 +4327,14 @@
       "keywords": "storm call stormcall",
       "description": "A shard of the broodmother's lightning-glass. In a hot, wild downpour it is devastating; anywhere else it does nothing at all.",
       "effect": "damage",
-      "period": 5000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 2786,
+      "kick": 1.657,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 2.0,
+        "ms": 5000
+      },
       "amounts": [
         14,
         18,
@@ -4297,9 +4357,9 @@
       "keywords": "rimefang fang blade",
       "description": "A blade of ice that never melts, taken from an ice wraith. In a howling blizzard it bites deep; on a mild day it's dull.",
       "effect": "damage",
-      "period": 2000,
-      "window": 250,
-      "perfect_window": 80,
+      "cooldown": 871,
+      "kick": 1.145,
+      "pattern": "bump",
       "amounts": [
         7,
         9,
@@ -4321,9 +4381,9 @@
       "kind": "Weapon",
       "keywords": "cleave",
       "effect": "damage",
-      "period": 2500,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1197,
+      "kick": 1.236,
+      "pattern": "bump",
       "amounts": [
         6,
         7,
@@ -4346,9 +4406,9 @@
       "kind": "Light",
       "keywords": "flick knife",
       "effect": "damage",
-      "period": 1200,
-      "window": 200,
-      "perfect_window": 70,
+      "cooldown": 350,
+      "kick": 1.0,
+      "pattern": "bump",
       "amounts": [
         2,
         3,
@@ -4371,9 +4431,9 @@
       "kind": "Melee",
       "keywords": "shield bash",
       "effect": "damage",
-      "period": 3000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1523,
+      "kick": 1.327,
+      "pattern": "side",
       "amounts": [
         3,
         4,
@@ -4398,9 +4458,9 @@
       "kind": "Melee",
       "keywords": "guard up",
       "effect": "guard",
-      "period": 4000,
-      "window": 350,
-      "perfect_window": 120,
+      "cooldown": 2174,
+      "kick": 0,
+      "pattern": "bump",
       "amounts": [
         6,
         8,
@@ -4424,9 +4484,9 @@
       "kind": "Weapon",
       "keywords": "hamstring",
       "effect": "damage",
-      "period": 3000,
-      "window": 280,
-      "perfect_window": 90,
+      "cooldown": 1523,
+      "kick": 1.327,
+      "pattern": "side",
       "amounts": [
         3,
         4,
@@ -4454,9 +4514,9 @@
       "kind": "Melee",
       "keywords": "second breath",
       "effect": "heal",
-      "period": 3000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1523,
+      "kick": 0,
+      "pattern": "bump",
       "amounts": [
         3,
         5,
@@ -4480,9 +4540,14 @@
       "kind": "Weapon",
       "keywords": "heavy swing",
       "effect": "damage",
-      "period": 4500,
-      "window": 250,
-      "perfect_window": 80,
+      "cooldown": 2500,
+      "kick": 1.6,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 1.75,
+        "ms": 5000
+      },
       "amounts": [
         10,
         13,
@@ -4506,9 +4571,9 @@
       "kind": "Melee",
       "keywords": "brace",
       "effect": "guard",
-      "period": 3500,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1848,
+      "kick": 0,
+      "pattern": "bump",
       "amounts": [
         5,
         7,
@@ -4532,9 +4597,9 @@
       "kind": "Weapon",
       "keywords": "whirlwind",
       "effect": "damage",
-      "period": 3500,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1848,
+      "kick": 1.418,
+      "pattern": "side",
       "amounts": [
         8,
         10,
@@ -4558,9 +4623,9 @@
       "kind": "Melee",
       "keywords": "iron wall",
       "effect": "guard",
-      "period": 5000,
-      "window": 350,
-      "perfect_window": 120,
+      "cooldown": 2786,
+      "kick": 0,
+      "pattern": "bump",
       "amounts": [
         12,
         15,
@@ -4584,9 +4649,9 @@
       "kind": "Weapon",
       "keywords": "rending blow",
       "effect": "damage",
-      "period": 3500,
-      "window": 280,
-      "perfect_window": 90,
+      "cooldown": 1848,
+      "kick": 1.418,
+      "pattern": "side",
       "amounts": [
         6,
         8,
@@ -4614,9 +4679,9 @@
       "kind": "Melee",
       "keywords": "rallying shout",
       "effect": "heal",
-      "period": 5000,
-      "window": 350,
-      "perfect_window": 120,
+      "cooldown": 2786,
+      "kick": 0,
+      "pattern": "bump",
       "amounts": [
         10,
         14,
@@ -4641,9 +4706,14 @@
       "kind": "Weapon",
       "keywords": "earthbreaker",
       "effect": "damage",
-      "period": 6000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 3357,
+      "kick": 1.771,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 2.5,
+        "ms": 5000
+      },
       "amounts": [
         20,
         26,
@@ -4668,9 +4738,9 @@
       "kind": "Melee",
       "keywords": "unbroken",
       "effect": "guard",
-      "period": 5000,
-      "window": 350,
-      "perfect_window": 120,
+      "cooldown": 2786,
+      "kick": 0,
+      "pattern": "bump",
       "amounts": [
         18,
         22,
@@ -4694,9 +4764,14 @@
       "kind": "Weapon",
       "keywords": "executioner",
       "effect": "damage",
-      "period": 5500,
-      "window": 220,
-      "perfect_window": 70,
+      "cooldown": 3071,
+      "kick": 1.714,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 2.25,
+        "ms": 5000
+      },
       "amounts": [
         18,
         26,
@@ -4720,9 +4795,9 @@
       "kind": "Spell",
       "keywords": "spark",
       "effect": "damage",
-      "period": 1800,
-      "window": 220,
-      "perfect_window": 70,
+      "cooldown": 741,
+      "kick": 1.109,
+      "pattern": "bump",
       "amounts": [
         3,
         4,
@@ -4746,9 +4821,9 @@
       "kind": "Spell",
       "keywords": "frost shard",
       "effect": "damage",
-      "period": 3000,
-      "window": 280,
-      "perfect_window": 90,
+      "cooldown": 1523,
+      "kick": 1.327,
+      "pattern": "side",
       "amounts": [
         6,
         8,
@@ -4773,9 +4848,9 @@
       "kind": "Spell",
       "keywords": "gust",
       "effect": "damage",
-      "period": 3500,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1848,
+      "kick": 1.418,
+      "pattern": "side",
       "amounts": [
         3,
         4,
@@ -4800,9 +4875,9 @@
       "kind": "Spell",
       "keywords": "mist veil",
       "effect": "guard",
-      "period": 4000,
-      "window": 350,
-      "perfect_window": 120,
+      "cooldown": 2174,
+      "kick": 0,
+      "pattern": "bump",
       "amounts": [
         6,
         8,
@@ -4826,9 +4901,9 @@
       "kind": "Spell",
       "keywords": "cinder",
       "effect": "damage",
-      "period": 2500,
-      "window": 260,
-      "perfect_window": 90,
+      "cooldown": 1197,
+      "kick": 1.236,
+      "pattern": "bump",
       "amounts": [
         3,
         4,
@@ -4856,9 +4931,11 @@
       "kind": "Spell",
       "keywords": "chain lightning",
       "effect": "damage",
-      "period": 3000,
-      "window": 280,
-      "perfect_window": 90,
+      "cooldown": 1523,
+      "kick": 0.5,
+      "pattern": "taps",
+      "hits": 3,
+      "gap": 300,
       "amounts": [
         9,
         12,
@@ -4883,9 +4960,14 @@
       "kind": "Spell",
       "keywords": "ice lance",
       "effect": "damage",
-      "period": 5000,
-      "window": 260,
-      "perfect_window": 80,
+      "cooldown": 2786,
+      "kick": 1.657,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 2.0,
+        "ms": 5000
+      },
       "amounts": [
         14,
         18,
@@ -4909,9 +4991,11 @@
       "kind": "Spell",
       "keywords": "cinder rain",
       "effect": "damage",
-      "period": 4000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 2174,
+      "kick": 0.5,
+      "pattern": "taps",
+      "hits": 3,
+      "gap": 1000,
       "amounts": [
         6,
         8,
@@ -4939,9 +5023,9 @@
       "kind": "Spell",
       "keywords": "renewal",
       "effect": "heal",
-      "period": 5000,
-      "window": 350,
-      "perfect_window": 120,
+      "cooldown": 2786,
+      "kick": 0,
+      "pattern": "bump",
       "amounts": [
         12,
         16,
@@ -4966,9 +5050,14 @@
       "kind": "Spell",
       "keywords": "tempest",
       "effect": "damage",
-      "period": 5000,
-      "window": 280,
-      "perfect_window": 90,
+      "cooldown": 2786,
+      "kick": 1.657,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 2.0,
+        "ms": 5000
+      },
       "amounts": [
         20,
         26,
@@ -4992,9 +5081,14 @@
       "kind": "Spell",
       "keywords": "absolute zero",
       "effect": "damage",
-      "period": 6000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 3357,
+      "kick": 1.771,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 2.5,
+        "ms": 5000
+      },
       "amounts": [
         22,
         28,
@@ -5019,9 +5113,14 @@
       "kind": "Spell",
       "keywords": "sunlance",
       "effect": "damage",
-      "period": 5500,
-      "window": 260,
-      "perfect_window": 80,
+      "cooldown": 3071,
+      "kick": 1.714,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 2.25,
+        "ms": 5000
+      },
       "amounts": [
         22,
         30,
@@ -5045,9 +5144,9 @@
       "kind": "Spell",
       "keywords": "ember shield",
       "effect": "guard",
-      "period": 4500,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 2500,
+      "kick": 0,
+      "pattern": "bump",
       "amounts": [
         10,
         13,
@@ -5071,9 +5170,9 @@
       "kind": "Trick",
       "keywords": "caltrops",
       "effect": "damage",
-      "period": 3000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1523,
+      "kick": 1.327,
+      "pattern": "side",
       "amounts": [
         2,
         3,
@@ -5098,9 +5197,9 @@
       "kind": "Light",
       "keywords": "poisoned edge",
       "effect": "damage",
-      "period": 2000,
-      "window": 220,
-      "perfect_window": 70,
+      "cooldown": 871,
+      "kick": 1.145,
+      "pattern": "bump",
       "amounts": [
         2,
         3,
@@ -5128,9 +5227,9 @@
       "kind": "Light",
       "keywords": "low blow",
       "effect": "damage",
-      "period": 1500,
-      "window": 200,
-      "perfect_window": 70,
+      "cooldown": 545,
+      "kick": 1.055,
+      "pattern": "bump",
       "amounts": [
         3,
         4,
@@ -5154,9 +5253,9 @@
       "kind": "Trick",
       "keywords": "smoke pellet",
       "effect": "guard",
-      "period": 3500,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1848,
+      "kick": 0,
+      "pattern": "bump",
       "amounts": [
         5,
         7,
@@ -5180,9 +5279,9 @@
       "kind": "Trick",
       "keywords": "feint",
       "effect": "damage",
-      "period": 2500,
-      "window": 260,
-      "perfect_window": 90,
+      "cooldown": 1197,
+      "kick": 1.236,
+      "pattern": "bump",
       "amounts": [
         2,
         3,
@@ -5207,9 +5306,11 @@
       "kind": "Light",
       "keywords": "twin jab",
       "effect": "damage",
-      "period": 1000,
-      "window": 180,
-      "perfect_window": 60,
+      "cooldown": 300,
+      "kick": 0.4,
+      "pattern": "taps",
+      "hits": 2,
+      "gap": 150,
       "amounts": [
         1,
         2,
@@ -5233,9 +5334,14 @@
       "kind": "Light",
       "keywords": "garrote",
       "effect": "damage",
-      "period": 4000,
-      "window": 260,
-      "perfect_window": 80,
+      "cooldown": 2174,
+      "kick": 1.509,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 1.5,
+        "ms": 5000
+      },
       "amounts": [
         10,
         13,
@@ -5259,9 +5365,9 @@
       "kind": "Trick",
       "keywords": "shadowstep",
       "effect": "guard",
-      "period": 3000,
-      "window": 280,
-      "perfect_window": 90,
+      "cooldown": 1523,
+      "kick": 0,
+      "pattern": "bump",
       "amounts": [
         8,
         10,
@@ -5285,9 +5391,9 @@
       "kind": "Trick",
       "keywords": "venom cloud",
       "effect": "damage",
-      "period": 3500,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1848,
+      "kick": 1.418,
+      "pattern": "side",
       "amounts": [
         4,
         6,
@@ -5315,9 +5421,9 @@
       "kind": "Trick",
       "keywords": "gutter trick",
       "effect": "damage",
-      "period": 2500,
-      "window": 260,
-      "perfect_window": 90,
+      "cooldown": 1197,
+      "kick": 1.236,
+      "pattern": "bump",
       "amounts": [
         6,
         8,
@@ -5342,9 +5448,14 @@
       "kind": "Light",
       "keywords": "assassinate",
       "effect": "damage",
-      "period": 6000,
-      "window": 200,
-      "perfect_window": 60,
+      "cooldown": 3357,
+      "kick": 1.771,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 2.5,
+        "ms": 5000
+      },
       "amounts": [
         20,
         30,
@@ -5368,9 +5479,9 @@
       "kind": "Light",
       "keywords": "a thousand cuts",
       "effect": "damage",
-      "period": 1500,
-      "window": 220,
-      "perfect_window": 70,
+      "cooldown": 545,
+      "kick": 1.055,
+      "pattern": "bump",
       "amounts": [
         4,
         5,
@@ -5398,9 +5509,9 @@
       "kind": "Trick",
       "keywords": "vanishing act",
       "effect": "guard",
-      "period": 4000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 2174,
+      "kick": 0,
+      "pattern": "bump",
       "amounts": [
         16,
         20,
@@ -5424,9 +5535,9 @@
       "kind": "Weapon",
       "keywords": "boathook",
       "effect": "damage",
-      "period": 3000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1523,
+      "kick": 1.327,
+      "pattern": "side",
       "amounts": [
         6,
         8,
@@ -5450,9 +5561,9 @@
       "kind": "Trick",
       "keywords": "tar flask",
       "effect": "damage",
-      "period": 3500,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1848,
+      "kick": 1.418,
+      "pattern": "side",
       "amounts": [
         3,
         4,
@@ -5477,9 +5588,9 @@
       "kind": "Light",
       "keywords": "belaying pin",
       "effect": "damage",
-      "period": 1500,
-      "window": 220,
-      "perfect_window": 70,
+      "cooldown": 545,
+      "kick": 1.055,
+      "pattern": "bump",
       "amounts": [
         3,
         4,
@@ -5502,9 +5613,14 @@
       "kind": "Potion",
       "keywords": "sea biscuits",
       "effect": "heal",
-      "period": 4000,
-      "window": 350,
-      "perfect_window": 120,
+      "cooldown": 2174,
+      "kick": 0,
+      "pattern": "bump",
+      "debuff": {
+        "kind": "steady",
+        "strength": 1.5,
+        "ms": 3000
+      },
       "amounts": [
         6,
         9,
@@ -5521,9 +5637,9 @@
       "kind": "Weapon",
       "keywords": "cudgel",
       "effect": "damage",
-      "period": 3000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1523,
+      "kick": 1.327,
+      "pattern": "side",
       "amounts": [
         6,
         8,
@@ -5546,9 +5662,9 @@
       "kind": "Light",
       "keywords": "weighted purse",
       "effect": "damage",
-      "period": 1600,
-      "window": 220,
-      "perfect_window": 70,
+      "cooldown": 611,
+      "kick": 1.073,
+      "pattern": "bump",
       "amounts": [
         3,
         4,
@@ -5571,9 +5687,9 @@
       "kind": "Trick",
       "keywords": "pepper pouch",
       "effect": "damage",
-      "period": 3000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1523,
+      "kick": 1.327,
+      "pattern": "side",
       "amounts": [
         2,
         3,
@@ -5598,9 +5714,14 @@
       "kind": "Potion",
       "keywords": "tonic",
       "effect": "heal",
-      "period": 4000,
-      "window": 350,
-      "perfect_window": 120,
+      "cooldown": 2174,
+      "kick": 0,
+      "pattern": "bump",
+      "debuff": {
+        "kind": "steady",
+        "strength": 1.5,
+        "ms": 3000
+      },
       "amounts": [
         7,
         10,
@@ -5617,9 +5738,9 @@
       "kind": "Weapon",
       "keywords": "hatchet",
       "effect": "damage",
-      "period": 2800,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1392,
+      "kick": 1.291,
+      "pattern": "bump",
       "amounts": [
         6,
         7,
@@ -5643,9 +5764,9 @@
       "kind": "Light",
       "keywords": "skinning knife",
       "effect": "damage",
-      "period": 1300,
-      "window": 200,
-      "perfect_window": 70,
+      "cooldown": 415,
+      "kick": 1.018,
+      "pattern": "bump",
       "amounts": [
         2,
         3,
@@ -5668,9 +5789,9 @@
       "kind": "Trick",
       "keywords": "snare",
       "effect": "damage",
-      "period": 3000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1523,
+      "kick": 1.327,
+      "pattern": "side",
       "amounts": [
         2,
         3,
@@ -5695,9 +5816,14 @@
       "kind": "Potion",
       "keywords": "poultice",
       "effect": "heal",
-      "period": 4500,
-      "window": 350,
-      "perfect_window": 120,
+      "cooldown": 2500,
+      "kick": 0,
+      "pattern": "bump",
+      "debuff": {
+        "kind": "steady",
+        "strength": 1.5,
+        "ms": 3000
+      },
       "amounts": [
         8,
         11,
@@ -5714,9 +5840,9 @@
       "kind": "Light",
       "keywords": "shiv",
       "effect": "damage",
-      "period": 1100,
-      "window": 200,
-      "perfect_window": 70,
+      "cooldown": 325,
+      "kick": 0.9,
+      "pattern": "bump",
       "amounts": [
         2,
         3,
@@ -5739,9 +5865,9 @@
       "kind": "Trick",
       "keywords": "pocket sand",
       "effect": "damage",
-      "period": 2500,
-      "window": 280,
-      "perfect_window": 90,
+      "cooldown": 1197,
+      "kick": 1.236,
+      "pattern": "bump",
       "amounts": [
         1,
         2,
@@ -5766,9 +5892,9 @@
       "kind": "Weapon",
       "keywords": "cosh",
       "effect": "damage",
-      "period": 2600,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1262,
+      "kick": 1.255,
+      "pattern": "bump",
       "amounts": [
         5,
         7,
@@ -5791,9 +5917,14 @@
       "kind": "Potion",
       "keywords": "stolen tonic",
       "effect": "heal",
-      "period": 4000,
-      "window": 350,
-      "perfect_window": 120,
+      "cooldown": 2174,
+      "kick": 0,
+      "pattern": "bump",
+      "debuff": {
+        "kind": "steady",
+        "strength": 1.5,
+        "ms": 3000
+      },
       "amounts": [
         7,
         10,

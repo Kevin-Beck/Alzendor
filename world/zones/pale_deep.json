@@ -232,6 +232,7 @@
           "name": "bite",
           "period": 2500,
           "damage": 44,
+          "kick": 0.8,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -254,6 +255,7 @@
           "name": "bite",
           "period": 2500,
           "damage": 44,
+          "kick": 0.8,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -276,6 +278,7 @@
           "name": "bite",
           "period": 2500,
           "damage": 44,
+          "kick": 0.8,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -298,6 +301,7 @@
           "name": "bite",
           "period": 2500,
           "damage": 44,
+          "kick": 0.8,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -314,12 +318,20 @@
       "keywords": "the leviathan",
       "room": "pd_reach",
       "max_hp": 9000,
+      "poise": 325,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "swallow",
           "period": 15000,
           "damage": 400,
+          "kick": 2.4,
+          "stagger": true,
+          "debuff": {
+            "kind": "reeling",
+            "strength": 1,
+            "ms": 5000
+          },
           "hit": "{actor} opens its mouth around {target}!",
           "defend": "none"
         }
@@ -337,18 +349,27 @@
       "keywords": "angler queen",
       "room": "pd_angler",
       "max_hp": 4200,
+      "poise": 205,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "bite",
           "period": 4000,
           "damage": 55,
+          "kick": 1.127,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "lure",
           "period": 12000,
           "damage": 160,
+          "kick": 2.229,
+          "stagger": true,
+          "debuff": {
+            "kind": "reeling",
+            "strength": 1,
+            "ms": 5000
+          },
           "hit": "{actor}'s lure flares, and she snaps at {target}!",
           "defend": "dodge"
         }
@@ -364,9 +385,9 @@
       "kind": "Melee",
       "keywords": "trident tideglass",
       "effect": "damage",
-      "period": 3000,
-      "window": 300,
-      "perfect_window": 100,
+      "cooldown": 1523,
+      "kick": 1.327,
+      "pattern": "side",
       "amounts": [
         44,
         56,

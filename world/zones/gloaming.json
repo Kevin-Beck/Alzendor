@@ -276,6 +276,7 @@
           "name": "lance",
           "period": 4000,
           "damage": 55,
+          "kick": 1.127,
           "hit": "{actor} drives a thorned lance at {target}.",
           "defend": "block"
         }
@@ -300,6 +301,7 @@
           "name": "lance",
           "period": 4000,
           "damage": 55,
+          "kick": 1.127,
           "hit": "{actor} drives a thorned lance at {target}.",
           "defend": "block"
         }
@@ -324,6 +326,7 @@
           "name": "lance",
           "period": 4000,
           "damage": 55,
+          "kick": 1.127,
           "hit": "{actor} drives a thorned lance at {target}.",
           "defend": "block"
         }
@@ -342,12 +345,14 @@
       "keywords": "erlking",
       "room": "gl_court",
       "max_hp": 5000,
+      "poise": 225,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "spear",
           "period": 3500,
           "damage": 60,
+          "kick": 1.018,
           "hit": "{actor} thrusts his spear at {target}.",
           "defend": "dodge"
         },
@@ -355,6 +360,13 @@
           "name": "hunting horn",
           "period": 13000,
           "damage": 170,
+          "kick": 2.286,
+          "stagger": true,
+          "debuff": {
+            "kind": "reeling",
+            "strength": 1,
+            "ms": 5000
+          },
           "hit": "{actor} sounds his horn, and the hunt rides through {target}!",
           "defend": "none"
         }
@@ -371,9 +383,9 @@
       "kind": "Light",
       "keywords": "spear hunt wild",
       "effect": "damage",
-      "period": 2000,
-      "window": 230,
-      "perfect_window": 75,
+      "cooldown": 871,
+      "kick": 1.145,
+      "pattern": "bump",
       "amounts": [
         26,
         34,

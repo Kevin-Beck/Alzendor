@@ -222,12 +222,14 @@
           "name": "bite",
           "period": 3000,
           "damage": 58,
+          "kick": 0.909,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "bone-breath",
           "period": 11000,
           "damage": 140,
+          "kick": 2.171,
           "hit": "{actor} breathes a storm of bone splinters at {target}!",
           "defend": "dodge"
         }
@@ -251,12 +253,14 @@
           "name": "bite",
           "period": 3000,
           "damage": 58,
+          "kick": 0.909,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "bone-breath",
           "period": 11000,
           "damage": 140,
+          "kick": 2.171,
           "hit": "{actor} breathes a storm of bone splinters at {target}!",
           "defend": "dodge"
         }
@@ -280,12 +284,14 @@
           "name": "bite",
           "period": 3000,
           "damage": 58,
+          "kick": 0.909,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "bone-breath",
           "period": 11000,
           "damage": 140,
+          "kick": 2.171,
           "hit": "{actor} breathes a storm of bone splinters at {target}!",
           "defend": "dodge"
         }
@@ -309,12 +315,14 @@
           "name": "bite",
           "period": 3000,
           "damage": 58,
+          "kick": 0.909,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "bone-breath",
           "period": 11000,
           "damage": 140,
+          "kick": 2.171,
           "hit": "{actor} breathes a storm of bone splinters at {target}!",
           "defend": "dodge"
         }
@@ -338,6 +346,7 @@
           "name": "bite",
           "period": 2000,
           "damage": 40,
+          "kick": 0.8,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -360,6 +369,7 @@
           "name": "bite",
           "period": 2000,
           "damage": 40,
+          "kick": 0.8,
           "hit": "{actor} bites {target}."
         }
       ],
@@ -376,18 +386,27 @@
       "keywords": "marrow titan",
       "room": "bs_pit",
       "max_hp": 6000,
+      "poise": 250,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "fist",
           "period": 4500,
           "damage": 70,
+          "kick": 1.236,
           "hit": "{actor} swings a fist at {target}."
         },
         {
           "name": "stomp",
           "period": 14000,
           "damage": 220,
+          "kick": 2.343,
+          "stagger": true,
+          "debuff": {
+            "kind": "reeling",
+            "strength": 1,
+            "ms": 5000
+          },
           "hit": "{actor} stomps on {target}!",
           "defend": "block"
         }
@@ -403,9 +422,14 @@
       "kind": "Melee",
       "keywords": "maul marrowbone",
       "effect": "damage",
-      "period": 4000,
-      "window": 320,
-      "perfect_window": 110,
+      "cooldown": 2174,
+      "kick": 1.509,
+      "pattern": "side",
+      "debuff": {
+        "kind": "heavy",
+        "strength": 1.5,
+        "ms": 5000
+      },
       "amounts": [
         64,
         80,

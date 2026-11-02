@@ -207,6 +207,7 @@
           "name": "pounce",
           "period": 3000,
           "damage": 36,
+          "kick": 0.909,
           "hit": "{actor} pounces on {target}."
         }
       ],
@@ -230,6 +231,7 @@
           "name": "pounce",
           "period": 3000,
           "damage": 36,
+          "kick": 0.909,
           "hit": "{actor} pounces on {target}."
         }
       ],
@@ -253,6 +255,7 @@
           "name": "pounce",
           "period": 3000,
           "damage": 36,
+          "kick": 0.909,
           "hit": "{actor} pounces on {target}."
         }
       ],
@@ -276,6 +279,7 @@
           "name": "trample",
           "period": 10000,
           "damage": 220,
+          "kick": 2.114,
           "hit": "{actor} turns and tramples {target} without noticing!",
           "defend": "none"
         }
@@ -300,6 +304,7 @@
           "name": "trample",
           "period": 10000,
           "damage": 220,
+          "kick": 2.114,
           "hit": "{actor} turns and tramples {target} without noticing!",
           "defend": "none"
         }
@@ -318,12 +323,14 @@
       "keywords": "mantis queen",
       "room": "og_mantis",
       "max_hp": 3500,
+      "poise": 187,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "scythes",
           "period": 2500,
           "damage": 40,
+          "kick": 0.8,
           "hit": "{actor} slashes {target} with both scythes.",
           "defend": "block"
         },
@@ -331,6 +338,8 @@
           "name": "lunge",
           "period": 11000,
           "damage": 140,
+          "kick": 2.171,
+          "stagger": true,
           "hit": "{actor} lunges at {target}!",
           "defend": "dodge"
         }
@@ -346,9 +355,9 @@
       "kind": "Light",
       "keywords": "scythe mantis",
       "effect": "damage",
-      "period": 1700,
-      "window": 230,
-      "perfect_window": 75,
+      "cooldown": 676,
+      "kick": 1.091,
+      "pattern": "bump",
       "amounts": [
         18,
         24,

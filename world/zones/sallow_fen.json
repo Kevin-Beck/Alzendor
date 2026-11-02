@@ -204,12 +204,14 @@
           "name": "suck",
           "period": 3000,
           "damage": 7,
+          "kick": 0.909,
           "hit": "{actor} latches onto {target}."
         },
         {
           "name": "lunge",
           "period": 9000,
           "damage": 14,
+          "kick": 2.057,
           "hit": "{actor} lunges out of the water at {target}!",
           "defend": "dodge"
         }
@@ -233,12 +235,14 @@
           "name": "suck",
           "period": 3000,
           "damage": 7,
+          "kick": 0.909,
           "hit": "{actor} latches onto {target}."
         },
         {
           "name": "lunge",
           "period": 9000,
           "damage": 14,
+          "kick": 2.057,
           "hit": "{actor} lunges out of the water at {target}!",
           "defend": "dodge"
         }
@@ -262,12 +266,14 @@
           "name": "suck",
           "period": 3000,
           "damage": 7,
+          "kick": 0.909,
           "hit": "{actor} latches onto {target}."
         },
         {
           "name": "lunge",
           "period": 9000,
           "damage": 14,
+          "kick": 2.057,
           "hit": "{actor} lunges out of the water at {target}!",
           "defend": "dodge"
         }
@@ -291,12 +297,14 @@
           "name": "suck",
           "period": 3000,
           "damage": 7,
+          "kick": 0.909,
           "hit": "{actor} latches onto {target}."
         },
         {
           "name": "lunge",
           "period": 9000,
           "damage": 14,
+          "kick": 2.057,
           "hit": "{actor} lunges out of the water at {target}!",
           "defend": "dodge"
         }
@@ -320,6 +328,7 @@
           "name": "lure",
           "period": 4000,
           "damage": 9,
+          "kick": 1.127,
           "hit": "{actor} flickers, and {target} stumbles towards deep water.",
           "defend": "dodge"
         }
@@ -351,6 +360,7 @@
           "name": "lure",
           "period": 4000,
           "damage": 9,
+          "kick": 1.127,
           "hit": "{actor} flickers, and {target} stumbles towards deep water.",
           "defend": "dodge"
         }
@@ -376,18 +386,27 @@
       "keywords": "gnasher troll fen",
       "room": "sf_wallow",
       "max_hp": 700,
+      "poise": 117,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "grab",
           "period": 6000,
           "damage": 12,
+          "kick": 1.564,
           "hit": "{actor} grabs at {target}."
         },
         {
           "name": "club",
           "period": 14000,
           "damage": 70,
+          "kick": 2.343,
+          "stagger": true,
+          "debuff": {
+            "kind": "reeling",
+            "strength": 1,
+            "ms": 5000
+          },
           "hit": "{actor} swings a tree trunk at {target}!",
           "defend": "block"
         }
@@ -405,9 +424,14 @@
       "kind": "Potion",
       "keywords": "salve leech",
       "effect": "heal",
-      "period": 4500,
-      "window": 320,
-      "perfect_window": 100,
+      "cooldown": 2500,
+      "kick": 0,
+      "pattern": "bump",
+      "debuff": {
+        "kind": "steady",
+        "strength": 1.5,
+        "ms": 3000
+      },
       "amounts": [
         8,
         12,
