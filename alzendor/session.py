@@ -65,6 +65,36 @@ COMMAND_BURST = 10
 INPUTS_PER_SECOND = 30
 
 
+class Delay:
+    """Holds messages for a while, in order, then hands each on: the fake
+    latency (ALZ_FAKE_LATENCY_MS) for trying the game with lag locally."""
+
+    def __init__(self, seconds: float, deliver):
+        self.seconds = seconds
+        self.deliver = deliver
+        self.queue: asyncio.Queue = asyncio.Queue()
+        self.task = asyncio.create_task(self._run())
+
+    def put(self, item) -> None:
+        self.queue.put_nowait((time.monotonic() + self.seconds, item))
+
+    async def _run(self) -> None:
+        while True:
+            due, item = await self.queue.get()
+            wait = due - time.monotonic()
+            if wait > 0:
+                await asyncio.sleep(wait)
+            try:
+                await self.deliver(item)
+            except ConnectionClosed:
+                return
+            except Exception:
+                log.exception("a delayed message failed")
+
+    def cancel(self) -> None:
+        self.task.cancel()
+
+
 class Session:
     def __init__(self, server, ws: ServerConnection):
         self.server = server
@@ -80,6 +110,7 @@ class Session:
         self.encounter: str | None = None   # the encounter the player is in, whose state is forwarded
         self.encounter_owner: str | None = None  # the server that owns it
         self._input_seq = 0
+        self._out: Delay | None = None  # outgoing messages, when there's a fake latency
 
     @property
     def address(self) -> str:
@@ -119,14 +150,25 @@ class Session:
         log.info("%s entered the world from %s (session %s)", self.pid, self.address, self.id)
 
         self.server.sessions[self.id] = self
-        pump = asyncio.create_task(self._pump(feed))
         ctx = commands.Context(world, self.pid, self.pid in self.server.config.admins, self._quit)
+        lag = self.server.config.fake_latency_ms / 1000
+        if lag > 0:
+            # Everything the client sends and is sent, held for the fake latency each way.
+            self._out = Delay(lag, lambda send: send())
+            incoming = Delay(lag, lambda message: self._handle(ctx, message))
+        pump = asyncio.create_task(self._pump(feed))
         try:
             async for message in self.ws:
-                await self._handle(ctx, message)
+                if lag > 0:
+                    incoming.put(message)
+                else:
+                    await self._handle(ctx, message)
         except ConnectionClosed:
             pass
         finally:
+            if lag > 0:
+                incoming.cancel()
+                self._out.cancel()
             # A dropped connection leaves the player in the world; the reaper
             # removes them if no client resumes within the linkdead grace period.
             # In a fight, their keys are let go: the fight runs on without them.
@@ -235,7 +277,10 @@ class Session:
         """An encounter's state or refusal, from its owner, to this client."""
         if data.startswith('{"type":"refused"') and json.loads(data).get("pid") != self.pid:
             return
-        asyncio.ensure_future(self._send_raw(data))
+        if self._out:
+            self._out.put(lambda: self._send_raw(data))
+        else:
+            asyncio.ensure_future(self._send_raw(data))
 
     async def _follow(self, eid: str | None, owner: str | None) -> None:
         """Forwards the state of this encounter (or none) to the client."""
@@ -266,7 +311,7 @@ class Session:
                         elif event["op"] == "end" and event["id"] == self.encounter:
                             await self._follow(None, None)
                     await self._send(type="event", event=event)
-            await self.ws.close(1000, feed.ended[:120])
+            await self._later(lambda: self.ws.close(1000, feed.ended[:120]))
         except ConnectionClosed:
             pass
         except Exception:
@@ -291,7 +336,15 @@ class Session:
         return True
 
     async def _send(self, **message) -> None:
-        await self.ws.send(json.dumps(message))
+        data = json.dumps(message)
+        await self._later(lambda: self.ws.send(data))
+
+    async def _later(self, send) -> None:
+        """Sends now, or after the fake latency if there is one."""
+        if self._out:
+            self._out.put(send)
+        else:
+            await send()
 
     async def _send_raw(self, data: str) -> None:
         try:

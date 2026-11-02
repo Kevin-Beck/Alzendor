@@ -21,8 +21,8 @@ def free_port() -> int:
 
 
 @asynccontextmanager
-async def running_server(redis, server_id):
-    config = Config(host="127.0.0.1", port=free_port(), server_id=server_id, seed_file=SEED)
+async def running_server(redis, server_id, **settings):
+    config = Config(host="127.0.0.1", port=free_port(), server_id=server_id, seed_file=SEED, **settings)
     server = GameServer(config, redis)
     await server.prepare()
     stop = asyncio.get_running_loop().create_future()
@@ -212,3 +212,17 @@ async def test_a_fight_across_two_servers(redis):
             async with asyncio.timeout(5):
                 while int(await redis.hget("NPC:orc-1", "hp")) == hp:
                     await asyncio.sleep(0.05)
+
+
+async def test_fake_latency_holds_messages_each_way(redis):
+    async with running_server(redis, "one", fake_latency_ms=100) as url:
+        async with Client.open(url) as kevin:
+            await kevin.auth(type="register", name="Kevin", password="correct horse")
+            started = asyncio.get_running_loop().time()
+            await kevin.send(type="ping", t=1)
+            async with asyncio.timeout(5):
+                while json.loads(await kevin.ws.recv())["type"] != "pong":
+                    pass
+            assert asyncio.get_running_loop().time() - started >= 0.2  # 100 ms there, 100 back
+            await kevin.send(type="cmd", text="say hello")
+            await kevin.until('Kevin says, "hello"')  # and in order, as ever

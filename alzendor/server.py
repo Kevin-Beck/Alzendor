@@ -101,6 +101,9 @@ class GameServer:
             compression=None,
         ) as server:
             log.info("server %s listening on %s:%d", self.config.server_id, self.config.host, self.config.port)
+            if self.config.fake_latency_ms:
+                log.warning("faking %d ms of latency each way (ALZ_FAKE_LATENCY_MS): for local testing only",
+                            self.config.fake_latency_ms)
             await self.encounters.start()
             tasks = [asyncio.create_task(loop()) for loop in (self._heartbeats, self._ticker, self._world_tick)]
             try:

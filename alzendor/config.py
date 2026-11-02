@@ -36,6 +36,9 @@ class Config:
     # network (or every local client, via Docker's gateway) share an address.
     signups_per_hour: int = 20
     log_level: str = "INFO"
+    # For trying the game with lag on your own computer: every message to and
+    # from a client in the world is held this long, each way. Never set it live.
+    fake_latency_ms: int = 0
 
     @classmethod
     def from_env(cls, env=os.environ) -> "Config":
@@ -58,4 +61,5 @@ class Config:
             session_ttl_days=int(get("SESSION_TTL_DAYS", defaults.session_ttl_days)),
             signups_per_hour=int(get("SIGNUPS_PER_HOUR", defaults.signups_per_hour)),
             log_level=get("LOG_LEVEL", defaults.log_level).upper(),
+            fake_latency_ms=int(get("FAKE_LATENCY_MS", defaults.fake_latency_ms)),
         )

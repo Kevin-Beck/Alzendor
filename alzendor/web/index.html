@@ -3204,7 +3204,7 @@ const fight = (() => {
   let lastSent = 0;
   const results = {}; // slot -> { text, cls, until }: the last strike's tier, or why it didn't
   let status = { text: "", cls: "", until: 0 };
-  const stats = { states: 0, visible: 0 }; // state messages, and corrections bigger than a pixel or so
+  const stats = { states: 0, visible: 0, big: 0, worst: 0 }; // state messages; corrections over ~1 px, over ~5 px; the worst (circle radii)
 
   const active = () => Boolean(enc);
   const nowStep = () => Math.floor((serverNow() - enc.startMs) * Balance.HZ / 1000);
@@ -3275,7 +3275,10 @@ const fight = (() => {
     enc.dot = d;
     // For measuring (docs/combat-redesign.md, step 12): how often a correction would show.
     stats.states += 1;
-    if (Math.hypot(dx, dy) > 0.01) stats.visible += 1;
+    const off = Math.hypot(dx, dy);
+    if (off > 0.01) stats.visible += 1;
+    if (off > 0.05) stats.big += 1;
+    stats.worst = Math.max(stats.worst, off);
   }
 
   function onRefused(m) {

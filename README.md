@@ -637,6 +637,7 @@ Servers read `ALZ_*` environment variables (compose passes `.env` through):
 | `ALZ_SESSION_TTL_DAYS` | `7` | Lifetime of a "stay signed in" token, extended on use |
 | `ALZ_SIGNUPS_PER_HOUR` | `20` | New accounts per client address per hour. Locally, all clients share Docker's gateway address |
 | `ALZ_LOG_LEVEL` | `INFO` | |
+| `ALZ_FAKE_LATENCY_MS` | `0` | Local testing only: holds every message to and from a client in the world this long, each way, to try fights with lag (a round trip is twice this) |
 | `ALZ_DOMAIN` | | Production only: the public domain |
 | `ALZ_HTTP_PORT` / `ALZ_HTTPS_PORT` | `80` / `443` | Production only: Caddy's host ports |
 
