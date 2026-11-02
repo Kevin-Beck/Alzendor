@@ -302,13 +302,13 @@
       "details": "A salamander knight with a blade of white fire.",
       "keywords": "calder champion",
       "room": "ec_ring",
-      "max_hp": 1800,
+      "max_hp": 8080,
       "poise": 145,
       "disposition": "neutral",
       "attacks": [
         {
           "name": "blade",
-          "period": 3000,
+          "period": 4800,
           "damage": 28,
           "kick": 0.909,
           "hit": "{actor} cuts at {target}.",
@@ -316,7 +316,7 @@
         },
         {
           "name": "flare",
-          "period": 10000,
+          "period": 15600,
           "damage": 75,
           "kick": 2.114,
           "stagger": true,
@@ -338,12 +338,12 @@
       "details": "A hound of cooling lava, cracked and glowing.",
       "keywords": "magma hound",
       "room": "ec_gardens",
-      "max_hp": 500,
+      "max_hp": 384,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "bite",
-          "period": 2500,
+          "period": 3900,
           "damage": 30,
           "kick": 0.8,
           "hit": "{actor} bites {target}."
@@ -361,12 +361,12 @@
       "details": "A hound of cooling lava, cracked and glowing.",
       "keywords": "magma hound",
       "room": "ec_gardens",
-      "max_hp": 500,
+      "max_hp": 384,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "bite",
-          "period": 2500,
+          "period": 3900,
           "damage": 30,
           "kick": 0.8,
           "hit": "{actor} bites {target}."
@@ -384,12 +384,12 @@
       "details": "A hound of cooling lava, cracked and glowing.",
       "keywords": "magma hound",
       "room": "ec_flows",
-      "max_hp": 500,
+      "max_hp": 384,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "bite",
-          "period": 2500,
+          "period": 3900,
           "damage": 30,
           "kick": 0.8,
           "hit": "{actor} bites {target}."
@@ -407,12 +407,12 @@
       "details": "A hound of cooling lava, cracked and glowing.",
       "keywords": "magma hound",
       "room": "ec_pavilion",
-      "max_hp": 500,
+      "max_hp": 384,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "bite",
-          "period": 2500,
+          "period": 6200,
           "damage": 30,
           "kick": 0.8,
           "hit": "{actor} bites {target}."
@@ -430,12 +430,12 @@
       "details": "One of the Duke's guards, in armour of cinders.",
       "keywords": "cinder guard",
       "room": "ec_pavilion",
-      "max_hp": 600,
+      "max_hp": 461,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "halberd",
-          "period": 4500,
+          "period": 11300,
           "damage": 40,
           "kick": 1.236,
           "hit": "{actor} swings a halberd at {target}.",
@@ -454,20 +454,20 @@
       "details": "A salamander lord, grey with ash, smiling.",
       "keywords": "ashen duke",
       "room": "ec_pavilion",
-      "max_hp": 2800,
+      "max_hp": 12569,
       "poise": 170,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "blade",
-          "period": 3500,
+          "period": 8800,
           "damage": 35,
           "kick": 1.018,
           "hit": "{actor} cuts {target}."
         },
         {
           "name": "ash-storm",
-          "period": 13000,
+          "period": 32300,
           "damage": 110,
           "kick": 2.286,
           "stagger": true,

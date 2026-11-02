@@ -212,12 +212,12 @@
       "details": "A brass spider the size of a cart, clicking.",
       "keywords": "spider-engine",
       "room": "bm_plain",
-      "max_hp": 700,
+      "max_hp": 564,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "drill",
-          "period": 3000,
+          "period": 6000,
           "damage": 40,
           "kick": 0.909,
           "hit": "{actor} drills at {target}.",
@@ -236,12 +236,12 @@
       "details": "A brass spider the size of a cart, clicking.",
       "keywords": "spider-engine",
       "room": "bm_rail",
-      "max_hp": 700,
+      "max_hp": 564,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "drill",
-          "period": 3000,
+          "period": 6000,
           "damage": 40,
           "kick": 0.909,
           "hit": "{actor} drills at {target}.",
@@ -260,12 +260,12 @@
       "details": "A brass spider the size of a cart, clicking.",
       "keywords": "spider-engine",
       "room": "bm_rail",
-      "max_hp": 700,
+      "max_hp": 564,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "drill",
-          "period": 3000,
+          "period": 6000,
           "damage": 40,
           "kick": 0.909,
           "hit": "{actor} drills at {target}.",
@@ -284,12 +284,12 @@
       "details": "A brass soldier with a halberd.",
       "keywords": "brass sentinel",
       "room": "bm_engine_gate",
-      "max_hp": 900,
+      "max_hp": 725,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "halberd",
-          "period": 5000,
+          "period": 9800,
           "damage": 55,
           "kick": 1.345,
           "hit": "{actor} swings its halberd at {target}.",
@@ -308,12 +308,12 @@
       "details": "A brass soldier with a halberd.",
       "keywords": "brass sentinel",
       "room": "bm_engine_gate",
-      "max_hp": 900,
+      "max_hp": 725,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "halberd",
-          "period": 5000,
+          "period": 9800,
           "damage": 55,
           "kick": 1.345,
           "hit": "{actor} swings its halberd at {target}.",
@@ -332,13 +332,13 @@
       "details": "An automaton a hundred feet tall.",
       "keywords": "grand automaton engine",
       "room": "bm_engine",
-      "max_hp": 4500,
+      "max_hp": 10000,
       "poise": 212,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "piston",
-          "period": 4000,
+          "period": 10000,
           "damage": 60,
           "kick": 1.127,
           "hit": "{actor} drives a piston at {target}.",
@@ -346,7 +346,7 @@
         },
         {
           "name": "overload",
-          "period": 14000,
+          "period": 35000,
           "damage": 180,
           "kick": 2.343,
           "stagger": true,

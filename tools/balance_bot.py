@@ -503,8 +503,8 @@ def fmt(seconds: float | None) -> str:
 
 
 def _judge(args):
-    scale, nids, fights = args
-    return judge(World.load(scale), nids, fights)
+    scale, nids, fights, seed = args
+    return judge(World.load(scale), nids, fights, seed)
 
 
 def main() -> None:
@@ -514,11 +514,12 @@ def main() -> None:
     parser.add_argument("-n", "--fights", type=int, default=20)
     parser.add_argument("--scale", type=float, help="balance_damage_scale to try")
     parser.add_argument("--json", help="write the verdicts here")
+    parser.add_argument("--seed", type=int, default=1, help="another seed plays other fights (to check tuning on fights it wasn't tuned on)")
     args = parser.parse_args()
     world = World.load(args.scale)
     groups = [[n] for n in (args.npc or world.fighters())] if not args.rooms else world.rooms()
     with ProcessPoolExecutor() as pool:
-        verdicts = list(pool.map(_judge, [(args.scale, g, args.fights) for g in groups]))
+        verdicts = list(pool.map(_judge, [(args.scale, g, args.fights, args.seed) for g in groups]))
     ok = sum(v.ok for v in verdicts)
     for v in sorted(verdicts, key=lambda v: (v.kind, v.level, v.name)):
         print(f"{'ok ' if v.ok else 'OFF'} {v.kind:9} L{v.level:<2} {v.name:28} {v.why}; {v.staggers:.1f} staggers a fight")

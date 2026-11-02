@@ -410,7 +410,7 @@
       "details": "A blue-grey troll with icicles in its beard.",
       "keywords": "ice troll",
       "room": "cs_seracs",
-      "max_hp": 320,
+      "max_hp": 152,
       "disposition": "hostile",
       "attacks": [
         {
@@ -446,7 +446,7 @@
       "details": "A blue-grey troll with icicles in its beard.",
       "keywords": "ice troll",
       "room": "cs_cave_mouth",
-      "max_hp": 320,
+      "max_hp": 152,
       "disposition": "hostile",
       "attacks": [
         {
@@ -482,19 +482,19 @@
       "details": "A young white wyrm, all teeth and frost.",
       "keywords": "frost wyrmling wyrm",
       "room": "cs_ridge",
-      "max_hp": 260,
+      "max_hp": 230,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "claw",
-          "period": 2500,
+          "period": 4900,
           "damage": 12,
           "kick": 0.8,
           "hit": "{actor} claws {target}."
         },
         {
           "name": "frost breath",
-          "period": 9000,
+          "period": 17500,
           "damage": 40,
           "kick": 2.057,
           "hit": "{actor} breathes frost over {target}!",
@@ -513,19 +513,19 @@
       "details": "A young white wyrm, all teeth and frost.",
       "keywords": "frost wyrmling wyrm",
       "room": "cs_saddle",
-      "max_hp": 260,
+      "max_hp": 230,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "claw",
-          "period": 2500,
+          "period": 4900,
           "damage": 12,
           "kick": 0.8,
           "hit": "{actor} claws {target}."
         },
         {
           "name": "frost breath",
-          "period": 9000,
+          "period": 17500,
           "damage": 40,
           "kick": 2.057,
           "hit": "{actor} breathes frost over {target}!",
@@ -544,20 +544,20 @@
       "details": "A white beast the size of a house, asleep across the ridge.",
       "keywords": "white hunger beast yeti",
       "room": "cs_knife",
-      "max_hp": 1700,
+      "max_hp": 6052,
       "poise": 142,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "swipe",
-          "period": 5000,
+          "period": 12500,
           "damage": 25,
           "kick": 1.345,
           "hit": "{actor} swipes at {target}."
         },
         {
           "name": "crush",
-          "period": 14000,
+          "period": 35000,
           "damage": 110,
           "kick": 2.343,
           "stagger": true,

@@ -673,7 +673,7 @@
       "details": "A lean grey wolf.",
       "keywords": "bramble wolf",
       "room": "bw_edge",
-      "max_hp": 26,
+      "max_hp": 140,
       "disposition": "hostile",
       "attacks": [
         {
@@ -702,7 +702,7 @@
       "details": "A lean grey wolf.",
       "keywords": "bramble wolf",
       "room": "bw_thicket",
-      "max_hp": 26,
+      "max_hp": 140,
       "disposition": "hostile",
       "attacks": [
         {
@@ -731,7 +731,7 @@
       "details": "A lean grey wolf.",
       "keywords": "bramble wolf",
       "room": "bw_glade",
-      "max_hp": 26,
+      "max_hp": 140,
       "disposition": "hostile",
       "attacks": [
         {
@@ -760,19 +760,19 @@
       "details": "A huge grey she-wolf, scarred.",
       "keywords": "wolf mother she-wolf",
       "room": "bw_den",
-      "max_hp": 130,
+      "max_hp": 131,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "bite",
-          "period": 3000,
+          "period": 3800,
           "damage": 6,
           "kick": 0.909,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "maul",
-          "period": 12000,
+          "period": 15000,
           "damage": 14,
           "kick": 2.229,
           "debuff": {
@@ -801,7 +801,7 @@
       "details": "A bristling, tusked boar.",
       "keywords": "wild boar",
       "room": "ff_orchard",
-      "max_hp": 34,
+      "max_hp": 114,
       "disposition": "hostile",
       "attacks": [
         {
@@ -842,7 +842,7 @@
       "details": "A bristling, tusked boar.",
       "keywords": "wild boar",
       "room": "ff_orchard",
-      "max_hp": 34,
+      "max_hp": 114,
       "disposition": "hostile",
       "attacks": [
         {
@@ -883,7 +883,7 @@
       "details": "A bristling, tusked boar.",
       "keywords": "wild boar",
       "room": "ff_scarecrow",
-      "max_hp": 34,
+      "max_hp": 114,
       "disposition": "hostile",
       "attacks": [
         {
@@ -924,7 +924,7 @@
       "details": "A bandit in a red cap.",
       "keywords": "redcap cutthroat bandit",
       "room": "rh_camp",
-      "max_hp": 32,
+      "max_hp": 107,
       "disposition": "hostile",
       "attacks": [
         {
@@ -954,7 +954,7 @@
       "details": "A bandit in a red cap.",
       "keywords": "redcap cutthroat bandit",
       "room": "rh_camp",
-      "max_hp": 32,
+      "max_hp": 107,
       "disposition": "hostile",
       "attacks": [
         {
@@ -984,7 +984,7 @@
       "details": "A bandit in a red cap.",
       "keywords": "redcap cutthroat bandit",
       "room": "rh_lookout",
-      "max_hp": 32,
+      "max_hp": 107,
       "disposition": "hostile",
       "attacks": [
         {
@@ -1014,19 +1014,19 @@
       "details": "A big woman in a bigger red cap, with a cudgel.",
       "keywords": "mags redcap chief",
       "room": "rh_tent",
-      "max_hp": 150,
+      "max_hp": 151,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "jab",
-          "period": 3000,
+          "period": 3800,
           "damage": 4,
           "kick": 0.909,
           "hit": "{actor} jabs {target} with the cudgel's end."
         },
         {
           "name": "cudgel",
-          "period": 9000,
+          "period": 11200,
           "damage": 13,
           "kick": 2.057,
           "hit": "{actor} brings the cudgel down on {target}!",
@@ -1054,7 +1054,7 @@
       "details": "A grey, starved thing that was a man.",
       "keywords": "barrow ghoul",
       "room": "bk_passage",
-      "max_hp": 40,
+      "max_hp": 134,
       "disposition": "hostile",
       "attacks": [
         {
@@ -1076,7 +1076,7 @@
       "details": "A grey, starved thing that was a man.",
       "keywords": "barrow ghoul",
       "room": "bk_hall",
-      "max_hp": 40,
+      "max_hp": 134,
       "disposition": "hostile",
       "attacks": [
         {
@@ -1098,7 +1098,7 @@
       "details": "A crowned corpse with a pale fire in its eyes.",
       "keywords": "barrow wight",
       "room": "bk_crypt",
-      "max_hp": 160,
+      "max_hp": 789,
       "poise": 104,
       "disposition": "hostile",
       "attacks": [

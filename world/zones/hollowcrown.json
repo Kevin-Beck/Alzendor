@@ -317,12 +317,12 @@
       "details": "A suit of armour with nobody in it, sword raised.",
       "keywords": "hollow knight armour",
       "room": "hc_streets",
-      "max_hp": 520,
+      "max_hp": 544,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "greatsword",
-          "period": 4500,
+          "period": 11300,
           "damage": 40,
           "kick": 1.236,
           "hit": "{actor} swings a greatsword at {target}.",
@@ -330,7 +330,7 @@
         },
         {
           "name": "cleave",
-          "period": 12000,
+          "period": 30100,
           "damage": 85,
           "kick": 2.229,
           "debuff": {
@@ -354,12 +354,12 @@
       "details": "A suit of armour with nobody in it, sword raised.",
       "keywords": "hollow knight armour",
       "room": "hc_keepgate",
-      "max_hp": 520,
+      "max_hp": 544,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "greatsword",
-          "period": 4500,
+          "period": 11300,
           "damage": 40,
           "kick": 1.236,
           "hit": "{actor} swings a greatsword at {target}.",
@@ -367,7 +367,7 @@
         },
         {
           "name": "cleave",
-          "period": 12000,
+          "period": 30100,
           "damage": 85,
           "kick": 2.229,
           "debuff": {
@@ -391,12 +391,12 @@
       "details": "A suit of armour with nobody in it, sword raised.",
       "keywords": "hollow knight armour",
       "room": "hc_hall",
-      "max_hp": 520,
+      "max_hp": 544,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "greatsword",
-          "period": 4500,
+          "period": 11300,
           "damage": 40,
           "kick": 1.236,
           "hit": "{actor} swings a greatsword at {target}.",
@@ -404,7 +404,7 @@
         },
         {
           "name": "cleave",
-          "period": 12000,
+          "period": 30100,
           "damage": 85,
           "kick": 2.229,
           "debuff": {
@@ -428,12 +428,12 @@
       "details": "A hound of shadow with eyes like coals.",
       "keywords": "dreadhound hound",
       "room": "hc_market",
-      "max_hp": 300,
+      "max_hp": 314,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "bite",
-          "period": 2000,
+          "period": 2500,
           "damage": 22,
           "kick": 0.8,
           "hit": "{actor} bites {target}."
@@ -451,12 +451,12 @@
       "details": "A hound of shadow with eyes like coals.",
       "keywords": "dreadhound hound",
       "room": "hc_streets",
-      "max_hp": 300,
+      "max_hp": 314,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "bite",
-          "period": 2000,
+          "period": 2500,
           "damage": 22,
           "kick": 0.8,
           "hit": "{actor} bites {target}."
@@ -474,13 +474,13 @@
       "details": "A king in black armour, without a crown, before the sealed door.",
       "keywords": "crownless king",
       "room": "hc_door",
-      "max_hp": 3500,
+      "max_hp": 12816,
       "poise": 187,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "blade",
-          "period": 5000,
+          "period": 12500,
           "damage": 45,
           "kick": 1.345,
           "hit": "{actor} cuts at {target}.",
@@ -488,7 +488,7 @@
         },
         {
           "name": "wail",
-          "period": 13000,
+          "period": 32300,
           "damage": 140,
           "kick": 2.286,
           "stagger": true,

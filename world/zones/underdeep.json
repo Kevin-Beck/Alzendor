@@ -278,19 +278,19 @@
       "details": "A pale, many-legged thing as long as a cart.",
       "keywords": "deep crawler",
       "room": "ud_workings",
-      "max_hp": 300,
+      "max_hp": 231,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "mandibles",
-          "period": 3000,
+          "period": 4800,
           "damage": 22,
           "kick": 0.909,
           "hit": "{actor} snaps its mandibles on {target}."
         },
         {
           "name": "acid",
-          "period": 10000,
+          "period": 15600,
           "damage": 50,
           "kick": 2.114,
           "hit": "{actor} spits acid at {target}!",
@@ -309,19 +309,19 @@
       "details": "A pale, many-legged thing as long as a cart.",
       "keywords": "deep crawler",
       "room": "ud_gloom",
-      "max_hp": 300,
+      "max_hp": 231,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "mandibles",
-          "period": 3000,
+          "period": 4800,
           "damage": 22,
           "kick": 0.909,
           "hit": "{actor} snaps its mandibles on {target}."
         },
         {
           "name": "acid",
-          "period": 10000,
+          "period": 15600,
           "damage": 50,
           "kick": 2.114,
           "hit": "{actor} spits acid at {target}!",
@@ -340,19 +340,19 @@
       "details": "A pale, many-legged thing as long as a cart.",
       "keywords": "deep crawler",
       "room": "ud_crawl",
-      "max_hp": 300,
+      "max_hp": 231,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "mandibles",
-          "period": 3000,
+          "period": 4800,
           "damage": 22,
           "kick": 0.909,
           "hit": "{actor} snaps its mandibles on {target}."
         },
         {
           "name": "acid",
-          "period": 10000,
+          "period": 15600,
           "damage": 50,
           "kick": 2.114,
           "hit": "{actor} spits acid at {target}!",
@@ -371,7 +371,7 @@
       "details": "An eyeless miner-thing, head cocked, listening.",
       "keywords": "blind one miner",
       "room": "ud_pump",
-      "max_hp": 180,
+      "max_hp": 330,
       "disposition": "hostile",
       "attacks": [
         {
@@ -395,7 +395,7 @@
       "details": "An eyeless miner-thing, head cocked, listening.",
       "keywords": "blind one miner",
       "room": "ud_shore",
-      "max_hp": 180,
+      "max_hp": 330,
       "disposition": "hostile",
       "attacks": [
         {
@@ -419,20 +419,20 @@
       "details": "A worm of grey stone, its mouth a ring of grinding teeth.",
       "keywords": "stone worm",
       "room": "ud_worm",
-      "max_hp": 2200,
+      "max_hp": 9875,
       "poise": 155,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "grind",
-          "period": 5000,
+          "period": 12500,
           "damage": 30,
           "kick": 1.345,
           "hit": "{actor} grinds at {target}."
         },
         {
           "name": "crush",
-          "period": 15000,
+          "period": 37700,
           "damage": 150,
           "kick": 2.4,
           "stagger": true,

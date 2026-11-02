@@ -234,12 +234,12 @@
       "details": "A shape of darker dark, watching.",
       "keywords": "shadow stalker",
       "room": "hm_path",
-      "max_hp": 500,
+      "max_hp": 447,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "rake",
-          "period": 2500,
+          "period": 3900,
           "damage": 32,
           "kick": 0.8,
           "hit": "{actor} rakes {target} out of nowhere."
@@ -258,12 +258,12 @@
       "details": "A shape of darker dark, watching.",
       "keywords": "shadow stalker",
       "room": "hm_wood",
-      "max_hp": 500,
+      "max_hp": 447,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "rake",
-          "period": 2500,
+          "period": 3900,
           "damage": 32,
           "kick": 0.8,
           "hit": "{actor} rakes {target} out of nowhere."
@@ -282,12 +282,12 @@
       "details": "A shape of darker dark, watching.",
       "keywords": "shadow stalker",
       "room": "hm_glade",
-      "max_hp": 500,
+      "max_hp": 447,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "rake",
-          "period": 2500,
+          "period": 6200,
           "damage": 32,
           "kick": 0.8,
           "hit": "{actor} rakes {target} out of nowhere."
@@ -306,12 +306,12 @@
       "details": "A shape of darker dark, watching.",
       "keywords": "shadow stalker",
       "room": "hm_well",
-      "max_hp": 500,
+      "max_hp": 447,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "rake",
-          "period": 2500,
+          "period": 3900,
           "damage": 32,
           "kick": 0.8,
           "hit": "{actor} rakes {target} out of nowhere."
@@ -330,12 +330,12 @@
       "details": "A white moth as big as a dog.",
       "keywords": "moon moth",
       "room": "hm_glade",
-      "max_hp": 350,
+      "max_hp": 313,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "dust",
-          "period": 8000,
+          "period": 13800,
           "damage": 45,
           "kick": 2.0,
           "hit": "{actor} beats a cloud of moon-dust at {target}.",
@@ -354,12 +354,12 @@
       "details": "A white moth as big as a dog.",
       "keywords": "moon moth",
       "room": "hm_glade",
-      "max_hp": 350,
+      "max_hp": 313,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "dust",
-          "period": 8000,
+          "period": 15600,
           "damage": 45,
           "kick": 2.0,
           "hit": "{actor} beats a cloud of moon-dust at {target}.",
@@ -378,20 +378,20 @@
       "details": "A hound so black the moonlight bends round it.",
       "keywords": "eclipse hound",
       "room": "hm_den",
-      "max_hp": 3000,
+      "max_hp": 9076,
       "poise": 175,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "bite",
-          "period": 4000,
+          "period": 7800,
           "damage": 40,
           "kick": 1.127,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "eclipse",
-          "period": 14000,
+          "period": 27400,
           "damage": 120,
           "kick": 2.343,
           "stagger": true,
