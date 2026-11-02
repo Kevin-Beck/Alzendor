@@ -9,11 +9,13 @@ Client -> server
   {"type": "create",   "class": ..., "ancestry": ..., "passive": ..., "background": ...}
   {"type": "cmd",      "text": "move north", "target": "npc:orc-1"}   (target optional)
   {"type": "ping",     "t": <client clock ms>}   at most 5 a second
-  {"type": "input",    "seq": 812, "keys": 5, "act": "strike", "slot": 1, "target": "npc:orc-1"}
+  {"type": "input",    "seq": 812, "step": 4410, "keys": 5, "act": "strike", "slot": 1, "target": "npc:orc-1"}
       In a fight (an encounter): the steering keys held (1 up, 2 down, 4 left,
       8 right), and maybe an act: strike (slot, target), dodge, block,
-      unblock, or flee (dir). Sent on any change and every 100 ms; at most 30
-      a second, and the rest are dropped. See docs/combat-redesign.md.
+      unblock, or flee (dir). `step` is the encounter step the client applied
+      it at: the owner replays steering from there, up to 200 ms back. Sent on
+      any change and every 100 ms; at most 30 a second, and the rest are
+      dropped. See docs/combat-redesign.md.
 
 Server -> client
   {"type": "auth_ok", "player": <id>, "name": <display name>, "token": ..., "server": <id>}
@@ -45,6 +47,7 @@ player quits, is disconnected, or connects from somewhere else.
 import asyncio
 import json
 import logging
+import random
 import secrets
 import time
 
@@ -67,16 +70,22 @@ INPUTS_PER_SECOND = 30
 
 class Delay:
     """Holds messages for a while, in order, then hands each on: the fake
-    latency (ALZ_FAKE_LATENCY_MS) for trying the game with lag locally."""
+    latency (ALZ_FAKE_LATENCY_MS) and jitter (ALZ_FAKE_JITTER_MS, up to that
+    much more, at random) for trying the game with lag locally. Like TCP, a
+    late message holds up the ones behind it rather than being overtaken."""
 
-    def __init__(self, seconds: float, deliver):
+    def __init__(self, seconds: float, deliver, jitter: float = 0):
         self.seconds = seconds
+        self.jitter = jitter
         self.deliver = deliver
         self.queue: asyncio.Queue = asyncio.Queue()
+        self.last = 0.0
         self.task = asyncio.create_task(self._run())
 
     def put(self, item) -> None:
-        self.queue.put_nowait((time.monotonic() + self.seconds, item))
+        due = time.monotonic() + self.seconds + random.uniform(0, self.jitter)
+        self.last = max(self.last, due)
+        self.queue.put_nowait((self.last, item))
 
     async def _run(self) -> None:
         while True:
@@ -152,10 +161,12 @@ class Session:
         self.server.sessions[self.id] = self
         ctx = commands.Context(world, self.pid, self.pid in self.server.config.admins, self._quit)
         lag = self.server.config.fake_latency_ms / 1000
-        if lag > 0:
+        jitter = self.server.config.fake_jitter_ms / 1000
+        if lag > 0 or jitter > 0:
             # Everything the client sends and is sent, held for the fake latency each way.
-            self._out = Delay(lag, lambda send: send())
-            incoming = Delay(lag, lambda message: self._handle(ctx, message))
+            lag = max(lag, 1e-6)
+            self._out = Delay(lag, lambda send: send(), jitter)
+            incoming = Delay(lag, lambda message: self._handle(ctx, message), jitter)
         pump = asyncio.create_task(self._pump(feed))
         try:
             async for message in self.ws:
@@ -267,7 +278,7 @@ class Session:
         self._inputs.append(now)
         self.last_active = now
         out = {"pid": self.pid}
-        for key, kind in (("seq", int), ("keys", int), ("act", str), ("slot", int), ("target", str), ("dir", str)):
+        for key, kind in (("seq", int), ("step", int), ("keys", int), ("act", str), ("slot", int), ("target", str), ("dir", str)):
             value = message.get(key)
             if type(value) is kind:
                 out[key] = value[:100] if kind is str else value

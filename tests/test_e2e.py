@@ -226,3 +226,14 @@ async def test_fake_latency_holds_messages_each_way(redis):
             assert asyncio.get_running_loop().time() - started >= 0.2  # 100 ms there, 100 back
             await kevin.send(type="cmd", text="say hello")
             await kevin.until('Kevin says, "hello"')  # and in order, as ever
+
+
+async def test_fake_jitter_keeps_messages_in_order(redis):
+    async with running_server(redis, "one", fake_jitter_ms=80) as url:
+        async with Client.open(url) as kevin:
+            await kevin.auth(type="register", name="Kevin", password="correct horse")
+            for word in ("one", "two", "three", "four"):
+                await kevin.send(type="cmd", text=f"say {word}")
+            seen = await kevin.until('Kevin says, "four"')
+            said = [t for t in seen if t.startswith("Kevin says")]
+            assert said == ['Kevin says, "one"', 'Kevin says, "two"', 'Kevin says, "three"', 'Kevin says, "four"']

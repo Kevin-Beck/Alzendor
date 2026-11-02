@@ -39,6 +39,8 @@ class Config:
     # For trying the game with lag on your own computer: every message to and
     # from a client in the world is held this long, each way. Never set it live.
     fake_latency_ms: int = 0
+    # And up to this much more, at random, message by message: a shaky connection.
+    fake_jitter_ms: int = 0
 
     @classmethod
     def from_env(cls, env=os.environ) -> "Config":
@@ -62,4 +64,5 @@ class Config:
             signups_per_hour=int(get("SIGNUPS_PER_HOUR", defaults.signups_per_hour)),
             log_level=get("LOG_LEVEL", defaults.log_level).upper(),
             fake_latency_ms=int(get("FAKE_LATENCY_MS", defaults.fake_latency_ms)),
+            fake_jitter_ms=int(get("FAKE_JITTER_MS", defaults.fake_jitter_ms)),
         )

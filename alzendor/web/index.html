@@ -3222,7 +3222,7 @@ const fight = (() => {
       id: info.id, info, rules, startMs: info.start_ms,
       join: Math.floor((mine.join_ms + info.lead_ms - info.start_ms) * Balance.HZ / 1000),
       dot: Balance.makeDot(rules, info.seed, me, slots, mine.shield > 0), slots, shield: mine.shield > 0,
-      seq: 0, held: 0, stick: 0, log: [], acts: [], blows: [], bosses: {}, offset: { x: 0, y: 0 },
+      seq: 0, held: 0, stick: 0, log: [], acts: [], blows: new Map(), bosses: {}, offset: { x: 0, y: 0 },
       npcs: Object.fromEntries(info.npcs.map((n) => [n.id, n])),
     };
     if (!event.resumed) flash("Steady…", "", 900);
@@ -3248,16 +3248,22 @@ const fight = (() => {
   }
 
   // What the owner says: your dot as the server has it, and the blows announced.
+  // The owner sends your dot as it was 200 ms ago (the start of the window in
+  // which it can still apply a late input of yours where you pressed it).
+  // From there, replay what you did since, and the blows you know of.
   function onState(m) {
     if (!enc || m.id !== enc.id) return;
-    enc.blows = m.blows || [];
+    // Blows announced, kept until well after they land (the replay needs the recent ones).
+    const now = m.step;
+    for (const [key, b] of enc.blows) if (b.land > now || b.land < now - 2 * Balance.HZ) enc.blows.delete(key);
+    for (const b of m.blows || []) enc.blows.set(`${b.nid}#${b.n}#${b.land}`, b);
     enc.bosses = m.bosses || {};
     const snap = m.players && m.players[me];
     if (!snap) return;
-    enc.log = enc.log.filter((e) => e.seq > snap.seq);
+    // What the snapshot already has: inputs the server has seen, from before it.
+    enc.log = enc.log.filter((e) => e.n > snap.n || e.seq > snap.seq);
     const d = Balance.makeDot(enc.rules, enc.info.seed, me, enc.slots, enc.shield);
     Balance.restore(d, snap);
-    // Replay what you've done since (that the server hasn't yet) up to where the prediction was.
     let keys = snap.keys;
     const upTo = enc.dot.n;
     for (let n = d.n + 1; n <= upTo; n++) {
@@ -3306,8 +3312,11 @@ const fight = (() => {
 
   function blowsAt(step) {
     if (!enc) return [];
-    return enc.blows.filter((b) => b.land === step && b.pid === me)
-      .map((b) => ({ kick: b.kick, angle: b.angle, defend: b.defend, stagger: b.stagger, debuff: b.debuff }));
+    const out = [];
+    for (const b of enc.blows.values()) {
+      if (b.land === step && b.pid === me) out.push({ kick: b.kick, angle: b.angle, defend: b.defend, stagger: b.stagger, debuff: b.debuff });
+    }
+    return out;
   }
 
   // Sends your held keys and maybe an act, and applies it to the prediction at once.
@@ -3315,7 +3324,8 @@ const fight = (() => {
     if (!enc || !ws || ws.readyState !== WebSocket.OPEN) return;
     const keys = enc.held | enc.stick;
     enc.seq += 1;
-    const message = { type: "input", seq: enc.seq, keys, ...extra };
+    // The step it applies at here, so the owner can apply it there too (it replays your dot if it's already past it).
+    const message = { type: "input", seq: enc.seq, step: enc.dot.n + 1 + enc.join, keys, ...extra };
     if (act) message.act = act;
     ws.send(JSON.stringify(message));
     lastSent = performance.now();
@@ -3517,7 +3527,7 @@ const fight = (() => {
     ring(R * rules.perfect_r, `color-mix(in srgb, ${css("--up")} 30%, transparent)`, css("--up"), 1);
     // Blows on their way to you: an arrow on the rim, pointing the way it will knock you, filling as it comes.
     const step = (serverNow() - enc.startMs) * Balance.HZ / 1000;
-    for (const b of enc.blows) {
+    for (const b of enc.blows.values()) {
       if (b.pid !== me) continue;
       const left = b.land - step;
       if (left > b.warn || left < 0) continue;
@@ -3613,7 +3623,8 @@ const fight = (() => {
   function drawWarnings() {
     const step = (serverNow() - enc.startMs) * Balance.HZ / 1000;
     for (const node of document.querySelectorAll("#target-card .attack[data-n]")) {
-      const b = enc.blows.find((x) => "npc:" + x.nid === node.dataset.npc && String(x.n) === node.dataset.n);
+      let b = null;
+      for (const x of enc.blows.values()) if ("npc:" + x.nid === node.dataset.npc && String(x.n) === node.dataset.n && x.land >= step) b = x;
       const pct = b ? Math.max(0, Math.min(100, 100 * (1 - (b.land - step) / b.warn))) : 0;
       node.querySelector(".fill").style.width = pct + "%";
       node.querySelector(".marker").style.left = pct + "%";

@@ -29,7 +29,7 @@ import logging
 import math
 import random
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
@@ -43,6 +43,15 @@ log = logging.getLogger(__name__)
 LEASE_MS = 3000
 STATE_HZ = 15            # state messages a second
 MAX_CATCH_UP = 120       # steps a tick may run to catch up (2 s)
+# How far back a player's steering may be applied: an input says which step
+# the client applied it at, and the owner replays the dot from there, so lag
+# doesn't put the server's dot somewhere the player never steered it. Capped,
+# because a modified client could use it to revise its recent steering.
+REWIND_STEPS = b.steps(200)
+# What a rewind takes from the replay when something in the window has
+# already gone to Lua: where the dot is and how it's moving. Everything else
+# (cooldowns, a buffered strike, dodges, debuffs) stays as it happened.
+REWOUND = ("x", "y", "vx", "vy", "stagger", "sx", "sy", "immune", "wobble_clock")
 NEW_ENCOUNTERS = "alz:new_encounters"
 
 
@@ -135,6 +144,9 @@ class Player:
     seq: int = 0
     acts: list = field(default_factory=list)    # waiting for the next step
     flee: str | None = None
+    # The last REWIND_STEPS steps: [global step, snapshot before it, keys, acts, blows, what it reported].
+    history: deque = field(default_factory=lambda: deque(maxlen=REWIND_STEPS))
+    scratch: b.Dot | None = None                # a dot to replay on
 
 
 def steps_since(start_ms: float, ms: float) -> int:
@@ -161,6 +173,7 @@ class Owner:
         self.hz = 30
         self.seed = eid
         self.rng = random.Random()
+        self.late: list = []    # consequences of a rewind, to carry out with the next tick's
         self.remote = True      # whether sessions on other servers follow it (see _publish)
         self.probed = 0.0
 
@@ -198,20 +211,79 @@ class Owner:
         seq = m.get("seq")
         if isinstance(seq, int) and seq > p.seq:
             p.seq = seq
+        at = m.get("step") if isinstance(m.get("step"), int) else None
         if isinstance(m.get("keys"), int):
-            p.keys = m["keys"] & 15
+            keys = m["keys"] & 15
+            if keys != p.keys and at is not None:
+                self._rewind(p, at, keys=keys)
+            p.keys = keys
         act = m.get("act")
+        done = None
         if act == "strike":
             slot = m.get("slot")
             if isinstance(slot, int) and 1 <= slot <= 3:
-                p.acts.append(("strike", slot, self._target(p, slot, m.get("target"))))
+                done = ("strike", slot, self._target(p, slot, m.get("target")))
         elif act in ("dodge", "block", "unblock"):
-            p.acts.append((act,))
+            done = (act,)
+        if done and not (at is not None and self._rewind(p, at, act=done)):
+            p.acts.append(done)
         elif act == "flee" and isinstance(m.get("dir"), str):
             p.flee = m["dir"][:16]
         elif act == "release":
             p.keys = 0
             p.acts.append(("unblock",))
+
+    def _rewind(self, p: Player, at: int, keys: int | None = None, act: tuple | None = None) -> bool:
+        """Something the client did at step `at`, which the owner has already
+        run: replays the dot from there (or as far back as it may) with it.
+        When nothing in between has gone to Lua (no blow landed, nothing
+        reported), the replay replaces the dot outright, and what it does
+        (a strike) is reported now. Otherwise only steering is replayed, and
+        only where the dot is (REWOUND); an act then waits for the next step
+        (returns False)."""
+        if not p.history or at > p.history[-1][0]:
+            return False
+        entries = [e for e in p.history if e[0] >= at]
+        clean = all(not e[4] and not e[5] for e in entries)
+        if act is not None and not clean:
+            return False
+        scratch = p.scratch
+        b.restore(scratch, entries[0][1])
+        reported = []
+        for i, e in enumerate(entries):
+            e[1] = b.snapshot(scratch)
+            if keys is not None:
+                e[2] = keys
+            if i == 0 and act is not None:
+                e[3] = [*e[3], act]
+            events = b.step(scratch, e[2], e[3], e[4])
+            if clean:  # (no blows in it, so nothing to match up)
+                e[5] = self._reportable(p, events, [])
+                reported += e[5]
+        if clean:
+            b.restore(p.dot, b.snapshot(scratch))
+            self.late.extend(reported)
+        else:
+            for name in REWOUND:
+                setattr(p.dot, name, getattr(scratch, name))
+        return True
+
+    def _reportable(self, p: Player, events: list, mine: list) -> list:
+        """The consequences of a dot's step, as calls: strikes, blows (with
+        the NPC attacks that made them, `mine`), refusals."""
+        calls, k = [], 0
+        for e in events:
+            if e["type"] == "strike":
+                calls.append(("strike", p.pid, e))
+            elif e["type"] == "blow":
+                nid, an, _ = mine[k]
+                k += 1
+                calls.append(("blow", nid, an, p.pid, e["result"]))
+                if e["result"] == "perfect_block" and nid in self.npcs and self.npcs[nid].boss:
+                    calls.append(("poise", nid, None))
+            elif e["type"] == "refused":
+                calls.append(("refused", p.pid, {k2: e[k2] for k2 in ("act", "reason", "slot") if k2 in e}))
+        return calls
 
     def _target(self, p: Player, slot: int, target) -> str:
         """Who a strike is aimed at: an entity id, a word naming an NPC in the
@@ -268,6 +340,7 @@ class Owner:
         join = steps_since(self.start_ms, p["join_ms"] + self.lead_ms)
         dot = b.make_dot(rules, self.seed, p["pid"], slots, bool(p.get("shield")))
         player = Player(p["pid"], p, join, dot, {int(n): g for n, g in (p.get("slots") or {}).items()})
+        player.scratch = b.make_dot(rules, self.seed, p["pid"], slots, bool(p.get("shield")))
         if opening and p["pid"] not in self.opened:
             self.opened.add(p["pid"])
             player.acts.append(("strike", int(opening["slot"]), opening.get("target") or ""))
@@ -326,19 +399,11 @@ class Owner:
                     calls.append(("flee", p.pid, direction))
             acts, p.acts = p.acts, []
             mine = blows.get(p.pid, [])
-            events = b.step(p.dot, p.keys, acts, [x[2] for x in mine])
-            k = 0
-            for e in events:
-                if e["type"] == "strike":
-                    calls.append(("strike", p.pid, e))
-                elif e["type"] == "blow":
-                    nid, an, _ = mine[k]
-                    k += 1
-                    calls.append(("blow", nid, an, p.pid, e["result"]))
-                    if e["result"] == "perfect_block" and nid in self.npcs and self.npcs[nid].boss:
-                        calls.append(("poise", nid, None))
-                elif e["type"] == "refused":
-                    calls.append(("refused", p.pid, {k2: e[k2] for k2 in ("act", "reason", "slot") if k2 in e}))
+            landing = [x[2] for x in mine]
+            entry = [n, b.snapshot(p.dot), p.keys, acts, landing, []]
+            p.history.append(entry)
+            entry[5] = self._reportable(p, b.step(p.dot, p.keys, acts, landing), mine)
+            calls += entry[5]
         for npc in self.npcs.values():
             if npc.boss:
                 was = npc.boss.staggered
@@ -412,8 +477,15 @@ class Owner:
     def state(self) -> dict:
         players = {}
         for p in self.players.values():
-            snap = b.snapshot(p.dot)
-            snap.update(keys=p.keys, seq=p.seq, join=p.join)
+            # Each dot as it was at the start of its rewind window: a late input
+            # can still change anything after that, but nothing before it. The
+            # client replays its own inputs (and the blows it knows of) from there.
+            if p.history:
+                oldest = p.history[0]
+                snap = dict(oldest[1], keys=oldest[2])
+            else:
+                snap = dict(b.snapshot(p.dot), keys=p.keys)
+            snap.update(seq=p.seq, join=p.join)
             players[p.pid] = snap
         blows = []
         for npc in self.npcs.values():
@@ -471,7 +543,7 @@ class Owner:
                 if not ok:
                     return
             target = steps_since(self.start_ms, self.host.now_ms())
-            calls: list = []
+            calls, self.late = self.late, []
             ran = 0
             while self.step < target and ran < MAX_CATCH_UP:
                 self.step += 1

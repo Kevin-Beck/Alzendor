@@ -440,3 +440,77 @@ async def test_a_dead_owners_encounter_ends_and_starts_afresh(world, host):
     assert fresh and fresh != eid
     assert await world.redis.hget(f"ENC:{fresh}", "owner") == "local"
     assert await until(lambda: asyncio.sleep(0, fresh in host.owners))
+
+
+# Rewinding steering ------------------------------------------------------------------------
+
+from types import SimpleNamespace  # noqa: E402
+
+from alzendor import balance as bal  # noqa: E402
+from alzendor.encounter import REWIND_STEPS, Owner  # noqa: E402
+
+
+def bare_owner():
+    """An owner with one player and nothing to fight, run step by step by hand."""
+    owner = Owner(SimpleNamespace(world=None), "e1")
+    owner.start_ms, owner.lead_ms, owner.seed = 0, 0, "seed"
+    owner._add_player({"pid": "kevin", "join_ms": 0, "slots": {}, "stats": {}, "shield": 0}, None)
+    return owner
+
+
+def run(owner, steps):
+    for _ in range(steps):
+        owner.step += 1
+        owner._run_step(owner.step, [])
+
+
+def reference(keys_from: int, total: int, keys: int):
+    """The same dot, steered with `keys` from step keys_from on."""
+    dot = bal.make_dot(bal.Rules(), "seed", "kevin")
+    for n in range(1, total + 1):
+        bal.step(dot, keys if n >= keys_from else 0)
+    return dot
+
+
+def test_late_steering_is_applied_where_the_client_applied_it():
+    owner = bare_owner()
+    run(owner, 30)
+    owner._input({"pid": "kevin", "seq": 1, "keys": 8, "step": 25})  # pressed at 25, arrived at 30
+    run(owner, 10)
+    dot, want = owner.players["kevin"].dot, reference(25, 40, 8)
+    assert (dot.x, dot.y) == pytest.approx((want.x, want.y))
+
+
+def test_steering_rewinds_only_so_far():
+    owner = bare_owner()
+    run(owner, 60)
+    owner._input({"pid": "kevin", "seq": 1, "keys": 8, "step": 5})  # far too late: as far back as it may
+    run(owner, 10)
+    dot, want = owner.players["kevin"].dot, reference(61 - REWIND_STEPS, 70, 8)
+    assert (dot.x, dot.y) == pytest.approx((want.x, want.y))
+    assert REWIND_STEPS == 12  # 200 ms
+
+
+def test_steering_without_a_step_applies_from_now():
+    owner = bare_owner()
+    run(owner, 30)
+    owner._input({"pid": "kevin", "seq": 1, "keys": 8})
+    run(owner, 10)
+    dot, want = owner.players["kevin"].dot, reference(31, 40, 8)
+    assert (dot.x, dot.y) == pytest.approx((want.x, want.y))
+
+
+def test_a_late_strike_is_judged_where_the_client_pressed_it():
+    owner = bare_owner()
+    p = owner.players["kevin"]
+    for d in (p.dot, p.scratch):
+        d.slots[1] = bal.Gear(cooldown=350, kick=1.0)
+    p.gear[1] = {"effect": "damage", "kick": 1.0}
+    owner.npcs["orc"] = SimpleNamespace(nid="orc", join=0, info={"name": "Orc"}, attacks=[], boss=None)
+    run(owner, 10)
+    # Pressed at step 2, centred; it arrives at step 10, and is judged at step 2.
+    owner._input({"pid": "kevin", "seq": 1, "act": "strike", "slot": 1, "target": "npc:orc", "step": 2})
+    strikes = [c for c in owner.late if c[0] == "strike"]
+    assert len(strikes) == 1 and strikes[0][2]["tier"] == 2
+    assert p.dot.cool[1] == bal.steps(350) - 8  # its cooldown started back then
+    assert not p.acts
