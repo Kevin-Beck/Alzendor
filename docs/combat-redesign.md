@@ -579,9 +579,12 @@ does, what it deletes, and its tests. A phase ends at its gate, and the next
 phase doesn't start before the gate is met. Tests run against the test Redis
 on port 6380, never the live one.
 
-**Progress.** Phases 1 and 2 (Steps 1–12) are built. Gate 1 passed (the
-controls felt right). Gate 2 waits on a remote playtest and a CPU
-measurement on the t4g.micro (below).
+**Progress.** Phases 1 and 2 (Steps 1–12) are built, and Gates 1 and 2
+passed (the controls felt right; fake lag of 80 ms each way felt fine, and
+the CPU checked out). Phase 3 is built (Steps 13–18) except the per-NPC
+part of tuning: Gate 3 waits on retuning the content against the targets
+(the numbers are at the end of this note) and on the phone controls on a
+real phone.
 
 Phase 1: `alzendor/balance.py`, the `Balance` block in
 `alzendor/web/index.html`, `tools/make_vectors.py`, `tools/check_vectors.mjs`
@@ -620,10 +623,8 @@ Choices made that the rules above leave open:
   journey ambush is its rider's own and isn't the room's.
 - Striking first records the strike as the encounter's opening
   (`ENC:<id>:opening`); the owner lands it after the lead-in.
-- Until Step 13 converts the content, `world.py` fills in the balance fields
-  for unconverted gear, attacks and bosses as it seeds (the same
-  conversion, `balance.convert_gear` and friends). Weather no longer changes
-  timings; it scales amounts, as the plan says.
+- Weather no longer changes timings; it scales amounts, as the plan says.
+  GEAR hashes keep their amounts as `edge`, `clean` and `perfect`.
 - Owners deliver state to sessions on their own server directly, and
   publish to Redis only while a session elsewhere follows (checked once a
   second by what a publish reaches). Inputs to a local owner skip Redis too.
@@ -648,6 +649,68 @@ per player, and the room events of every strike and blow). So lowering
 `encounter_hz` barely helps; the levers are the message rates. Locally, a
 steering bot in the browser saw a visible correction on 4 of 270 state
 messages.
+
+**Lag.** `ALZ_FAKE_LATENCY_MS` and `ALZ_FAKE_JITTER_MS` fake a connection's
+delay locally. Corrections turned out not to come only at blows, as
+"Prediction and correction" above expects: the server applied inputs when
+they arrived, a round trip after the client did. So inputs carry the step
+the client applied them at, and the owner keeps each dot's last 200 ms
+(`REWIND_STEPS`) and replays it from that step: steering always; a strike,
+dodge or block only when nothing in between has gone to Lua yet. State
+messages carry each dot as it was at the start of that window (which no late
+input can change), and the client replays its own inputs and the blows it
+has seen from there. A modified client could revise its last 200 ms of
+steering; duels should shrink or drop the window. With a steering bot in the
+browser, visible corrections went from 72–177 in 240 state messages at
+100–150 ms each way to 1–2.
+
+**Phase 3 choices.**
+
+- `tools/convert_balance.py` converted all 92 gear, 282 attacks and 29
+  bosses; seed validation now requires the balance fields and refuses
+  rhythm ones.
+- Danger: an enemy is an NPC with attacks hostile to you (an ambusher only
+  to its rider). Darkness or heavy rain or snow in your room or the next one
+  hides it. `LOOK <dir>` emits a `look` event with the room's name, the
+  enemy cards and `danger`.
+- Passives on the dot: Steady Hands also saves you from the rim (you bounce).
+  Second Wind counts a knock (any kick, blow or stagger) until the dot comes
+  back into the core. Berserk Seal's seal and Second Wind's heal go to Lua
+  through `encounter_passive`.
+- Settings: dodge and block are bindable keys (Space and Shift by default),
+  steering is WASD, the arrows, or both, and block can toggle.
+
+**Tuning so far.** `tools/balance_bot.py` plays each class at the NPC's zone
+level (levels from docs/zones.md), with stat points spread evenly, the
+starting loadout, that level's talents, and, beyond the plan, the slot gear
+and armour that zones below that level give (quest rewards and drops).
+Without them, high-level fights were unwinnable. Step 1 set
+`balance_damage_scale` to 0.4: the median ordinary NPC dies in 28 s to the
+ideal player. With 20 fights a class (ideal win rate and sloppy win rate):
+
+| | Tier | NPCs | Ideal kills in (median) | Ideal wins | Sloppy wins | On target |
+|---|---|---|---|---|---|---|
+| ordinary | starting realms, Harrowgate (2–3) | 22 | 5 s | 100% | 100% | 0 |
+| ordinary | the Greyfold (4) | 17 | 7 s | 100% | 99% | 1 |
+| ordinary | the frontier (5–9) | 35 | 18 s | 100% | 89% | 9 |
+| ordinary | dangerous places, early realms (10–14) | 51 | 33 s | 92% | 34% | 4 |
+| ordinary | late realms (15–20) | 24 | 47 s | 43% | 19% | 0 |
+| boss | the Greyfold (4) | 1 | 36 s | 100% | 97% | 0 |
+| boss | the frontier (5–9) | 6 | 78 s | 36% | 13% | 0 |
+| boss, 1000+ (three players) | 10–14 | 11 | 51 s | 74% | | 0 |
+| boss, 1000+ (three players) | 15–20 | 11 | 60 s | 35% | | 0 |
+
+Rooms of three or more at once: 1 of 4 on target (the granary cellar; the
+abbey nave, the Ember Courts' pavilion and the Hollowmoon glade the sloppy
+player loses almost always).
+
+So one scale can't meet the targets: early enemies die in seconds, later
+ones get too strong, and bosses are too short for their 2–4 minutes. The
+spread comes from enemies' health and damage growing faster than a
+character's does. Steps 2 and 3 (an NPC's `kick` and `period`) can't close
+gaps this size on their own; it needs either per-tier health changes or
+targets that fit what each tier is meant to be (a rat isn't meant to last
+20 s). That's a design decision, so it waits.
 
 ### Phase 1: the simulation
 
