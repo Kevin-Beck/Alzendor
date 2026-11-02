@@ -84,7 +84,14 @@
   /* The top: the weather and the map side by side, the same width. */
   #top { display: flex; flex: 58 1 0; min-height: 120px; }
   #map-wrap { position: relative; flex: 1 1 0; min-width: 0; background: var(--map-bg); }
-  #weather-panel { flex: 1 1 0; min-width: 0; overflow-y: auto; padding: 12px 16px; background: var(--panel); container: wx / size; }
+  #combat-panel { flex: 1 1 0; min-width: 0; overflow-y: auto; padding: 10px 12px; background: var(--panel);
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto; gap: 10px 14px; align-content: start; }
+  #combat-panel .cell { min-width: 0; }
+  #combat-panel .here { display: flex; flex-direction: column; min-height: 0; }
+  #combat-panel h2 { display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; }
+  #combat-panel h2 .hint { text-transform: none; letter-spacing: 0; font-weight: normal; text-align: right; padding-left: 8px; }
+  #weather-panel { container: wx / inline-size; }
   #map { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; user-select: none; }
   #map.dragging { cursor: grabbing; }
   #map .node { cursor: pointer; }
@@ -268,20 +275,16 @@
   /* The weather panel: four boxes, always in the same order. They sit one
      above another when the pane is narrow, two by two when it's wider, and in
      a row when it's wide (or wide and short). The sky grid fits its box. */
-  .wxgrid { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
-  @container wx (min-width: 330px) { .wxgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @container wx (min-width: 600px) or ((min-width: 440px) and (min-aspect-ratio: 2 / 1)) {
-    .wxgrid { grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); }
-  }
+  .wxgrid { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .wxbox { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 0;
     padding: 10px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
   .wxhead { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
   .wxval { font-size: 12px; color: var(--text); text-align: center; line-height: 1.3; }
-  #wx-grid { width: min(100%, 230px, 52cqh); aspect-ratio: 1; height: auto; border: 1px solid var(--border); border-radius: 6px; background: var(--map-bg); }
+  #wx-grid { width: min(100%, 150px); aspect-ratio: 1; height: auto; border: 1px solid var(--border); border-radius: 6px; background: var(--map-bg); }
   #wx-grid text { font-family: system-ui, sans-serif; fill: var(--muted); }
-  #wx-precip-bar { width: 16px; height: min(120px, 30cqh); border: 1px solid var(--border); border-radius: 7px; background: var(--hp-track); position: relative; overflow: hidden; }
+  #wx-precip-bar { width: 16px; height: 90px; border: 1px solid var(--border); border-radius: 7px; background: var(--hp-track); position: relative; overflow: hidden; }
   #wx-precip-bar .fill { position: absolute; left: 0; right: 0; bottom: 0; background: var(--wet); transition: height .6s; }
-  #wx-wheel { width: min(84px, 26cqh); height: min(84px, 26cqh); }
+  #wx-wheel { width: 72px; height: 72px; }
   .ground-icon { font-size: 30px; line-height: 1; height: 38px; display: grid; place-items: center; }
   #weather-panel .about { margin-top: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 3px; }
   #weather-panel .about .main { color: var(--text); }
@@ -290,7 +293,7 @@
 
   /* The combat panel. Your health is the faint fill behind it, rising from the
      bottom; as you're hit it drops past the target and the slots. */
-  #combat-panel { position: relative; isolation: isolate; overflow: hidden; }
+  #combat-panel { position: relative; isolation: isolate; }
   #hp-wash { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
   #hp-wash .level, #hp-wash .trail { position: absolute; left: 0; right: 0; bottom: 0; }
   /* Opaque (mixed with the panel colour), so the red trail only shows above the level. */
@@ -301,11 +304,18 @@
   #hp-wash.low .level { background: color-mix(in srgb, var(--hp-low) 12%, var(--panel)); border-top-color: color-mix(in srgb, var(--hp-low) 65%, var(--panel)); }
   #combat-panel.struck #hp-wash .level { animation: wash .5s; }
   @keyframes wash { from { background: color-mix(in srgb, var(--hp-low) 35%, var(--panel)); } }
-  #entities { max-height: 132px; overflow-y: auto; margin-bottom: 8px; }
+  #entities { max-height: 300px; overflow-y: auto; margin: 0; }
+  #roster, #ground { margin: 0 0 6px; }
+  #roster li button.who { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; border: 0; background: none; padding: 2px 4px; }
+  #roster li button.who.selected { color: var(--accent); font-weight: bold; }
+  #roster .icon { width: 1.4em; text-align: center; }
+  aside h2.sub { margin-top: 10px; }
   #entities .card { padding: 4px 8px; margin-bottom: 4px; background: color-mix(in srgb, var(--bg) 85%, transparent); }
   #entities .card .desc { display: none; }
   /* The target pops up between the room's list and your slots, in a space of its own. */
-  #target-card { min-height: 150px; margin: 0 0 8px; }
+  #target-card { min-height: 150px; margin: 0; }
+  /* In a fight the target is its attacks: who they are and how they see you can wait. */
+  #combat-panel.fighting #target-card .desc, #combat-panel.fighting #target-card .standing { display: none; }
   #target-card .tcard { animation: pop .18s ease-out; background: color-mix(in srgb, var(--bg) 88%, transparent); }
   @keyframes pop { from { transform: scale(.96); opacity: 0; } }
   .thp { position: relative; height: 12px; margin-top: 8px; border-radius: 6px; background: var(--hp-track); overflow: hidden; }
@@ -332,19 +342,18 @@
   #balance { margin: 0 0 10px; }
   #balance.fighting { padding: 8px; border: 1px solid var(--border); border-radius: 8px;
     background: color-mix(in srgb, var(--bg) 88%, transparent); }
-  #balance:not(.fighting) .bhead { display: none; }
   #balance .bhead .boss { color: var(--hp-low); font-size: 11px; letter-spacing: .05em; }
-  #balance .strike .wxbadge { font-size: 11px; font-weight: bold; }
-  #balance .strike .wxbadge.up { color: var(--up); } #balance .strike .wxbadge.down { color: var(--down); }
-  #balance .strike.empty .nm { color: var(--muted); }
-  #balance .strike[data-passive]:not([data-passive=""])::after { content: attr(data-passive); display: block; font-size: 10px; color: var(--accent); }
-  #balance .strike.t0 .res { color: var(--text); }
+  #slots .strike .wxbadge { font-size: 11px; font-weight: bold; }
+  #slots .strike .wxbadge.up { color: var(--up); } #slots .strike .wxbadge.down { color: var(--down); }
+  #slots .strike.empty .nm { color: var(--muted); }
+  #slots .strike[data-passive]:not([data-passive=""])::after { content: attr(data-passive); display: block; font-size: 10px; color: var(--accent); }
+  #slots .strike.t0 .res { color: var(--text); }
   #balance .bhead { display: flex; align-items: center; gap: 8px; font-size: 12px; }
   #balance .bhead b { color: var(--accent); }
   #balance .bhead .mode { margin-left: auto; color: var(--muted); font-size: 11px; }
   #balance .bhead .mode.on { color: var(--up); }
   #balance .arena { display: flex; gap: 10px; align-items: center; justify-content: center; margin: 6px 0; flex-wrap: wrap; }
-  #balance canvas { width: 220px; height: 220px; max-width: 100%; touch-action: none; }
+  #balance canvas { width: min(100%, 170px); aspect-ratio: 1; height: auto; touch-action: none; }
   #balance .bstatus { text-align: center; font-size: 12px; min-height: 1.4em; font-weight: bold; }
   #balance .bstatus.bad { color: var(--hp-low); } #balance .bstatus.good { color: var(--up); }
   #balance .chips { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; min-height: 20px; }
@@ -352,22 +361,22 @@
   #balance .chip.heavy, #balance .chip.reeling { border-color: var(--hp-low); color: var(--hp-low); }
   #balance .chip.wobble { border-color: var(--hp-mid); color: var(--hp-mid); }
   #balance .chip.steady, #balance .chip.immune { border-color: var(--up); color: var(--up); }
-  #balance .strikes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
-  #balance .strike { position: relative; overflow: hidden; padding: 6px 4px; font-size: 12px; text-align: center; min-height: 44px; }
-  #balance .strike .k { font-weight: bold; color: var(--accent); }
-  #balance .strike .cd { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); width: 0; }
-  #balance .strike .res { display: block; font-size: 11px; min-height: 1.2em; color: var(--muted); }
-  #balance .strike.t2 .res { color: var(--up); font-weight: bold; } #balance .strike.t1 .res { color: var(--text); }
-  #balance .strike.no .res { color: var(--hp-low); }
-  #balance .defs { display: flex; gap: 6px; margin-top: 6px; }
-  #balance .defs button { flex: 1; min-height: 40px; position: relative; overflow: hidden; }
-  #balance .defs button.held { border-color: var(--accent); color: var(--accent); }
-  #balance .defs .cd { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); width: 0; }
+  #slots .strikes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+  #slots .strike { position: relative; overflow: hidden; padding: 6px 4px; font-size: 12px; text-align: center; min-height: 44px; }
+  #slots .strike .k { font-weight: bold; color: var(--accent); }
+  #slots .strike .cd { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); width: 0; }
+  #slots .strike .res { display: block; font-size: 11px; min-height: 1.2em; color: var(--muted); }
+  #slots .strike.t2 .res { color: var(--up); font-weight: bold; } #slots .strike.t1 .res { color: var(--text); }
+  #slots .strike.no .res { color: var(--hp-low); }
+  #slots .defs { display: flex; gap: 6px; margin-top: 6px; }
+  #slots .defs button { flex: 1; min-height: 40px; position: relative; overflow: hidden; }
+  #slots .defs button.held { border-color: var(--accent); color: var(--accent); }
+  #slots .defs .cd { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); width: 0; }
   #balance .stick { width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--border); position: relative;
     touch-action: none; background: var(--panel); display: none; }
   #balance .stick .knob { position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px;
     border-radius: 50%; background: color-mix(in srgb, var(--accent) 45%, var(--panel)); pointer-events: none; }
-  @media (pointer: coarse) { #balance .stick { display: block; } #balance .kh { display: none; } }
+  @media (pointer: coarse) { #balance .stick { display: block; } #slots .kh { display: none; } }
   #balance.touch .stick { display: block; }
 
   /* Rarity: the colour of a thing's name. Weather sensitivity: dots. */
@@ -475,7 +484,8 @@
     #top { flex: none !important; flex-direction: column; }
     #map-wrap { flex: none !important; height: 42vh; border-bottom: 1px solid var(--border); }
     /* The weather is a slim strip until you open it. */
-    #weather-panel { flex: none; border-bottom: 1px solid var(--border); padding: 8px 16px; container-type: inline-size; }
+    #weather-panel { padding: 8px 16px; }
+    #combat-panel { flex: none; grid-template-columns: minmax(0, 1fr); border-bottom: 1px solid var(--border); }
     #weather-panel:not(.open) .wxgrid { grid-template-columns: repeat(4, auto); justify-content: space-between; gap: 6px; }
     #weather-panel:not(.open) .wxbox { padding: 4px; border: 0; background: none; }
     #weather-panel:not(.open) #wx-grid { width: 64px; }
@@ -535,23 +545,17 @@
 <main id="world" class="hidden">
   <section id="left">
     <div id="top">
-      <!-- Weather: the sky (temperature across, energy up), what's falling, the
-           time of day and the ground underfoot, in four boxes that sit in a row,
-           two by two, or one above another, as the pane's shape allows. -->
-      <section id="weather-panel" class="hidden">
-        <h2 id="wx-head" title="On a phone, tap to open or close">Weather <span class="hint" id="wx-place"></span></h2>
-        <div class="wxgrid">
-          <div class="wxbox"><div class="wxhead">Sky</div><svg id="wx-grid" role="img" aria-label="The weather: temperature across, energy up"></svg></div>
-          <div class="wxbox"><div class="wxhead">Rain</div><div class="precip" id="wx-precip-bar"><div class="fill" id="wx-precip"></div></div>
-            <div class="wxval" id="wx-precip-text"></div></div>
-          <div class="wxbox"><div class="wxhead">Time</div><svg id="wx-wheel" role="img" aria-label="Time of day"></svg>
-            <div class="wxval" id="wx-time-text"></div></div>
-          <div class="wxbox"><div class="wxhead">Ground</div><div class="ground-icon" id="wx-ground-icon"></div>
-            <div class="wxval" id="wx-ground-text"></div></div>
-        </div>
-        <div class="about" id="wx-about"></div>
+      <!-- The fight, two by two: your balance and who's here, your slots and
+           your target (its attacks, their timers and a boss's stagger). Your
+           health fills it from the bottom, faintly, behind it all. -->
+      <section id="combat-panel">
+        <div id="hp-wash" aria-hidden="true"><div class="trail"></div><div class="level"></div></div>
+        <div class="cell"><div id="balance" aria-label="Your balance"></div></div>
+        <div class="cell here"><h2>Here <span class="hint">Tab to target</span></h2><ul id="entities"></ul></div>
+        <div class="cell"><h2>Slots <span class="hint" id="slot-hint">hover for details</span></h2><div id="slots" aria-label="Your slots, and dodge, block and flee"></div></div>
+        <div class="cell"><div id="target-card" aria-live="polite"></div></div>
       </section>
-      <div class="splitter" id="split-weather" role="separator" aria-orientation="vertical" tabindex="0" title="Drag to resize the weather and the map · double-click to reset"></div>
+      <div class="splitter" id="split-weather" role="separator" aria-orientation="vertical" tabindex="0" title="Drag to resize the fight panel and the map · double-click to reset"></div>
       <div id="map-wrap">
         <svg id="map" role="img" aria-label="Map of explored rooms"></svg>
         <div id="map-tools">
@@ -591,18 +595,27 @@
       <div id="exposure" class="hidden" role="status"></div>
       <div id="exits"></div>
     </section>
-    <!-- Combat, top to bottom: who's here, your target, your slots and defence.
-         Your health fills the panel from the bottom, faintly, behind it all. -->
-    <section id="combat-panel">
-      <div id="hp-wash" aria-hidden="true"><div class="trail"></div><div class="level"></div></div>
-      <h2>Here <span class="hint">Tab to target</span></h2>
-      <ul id="entities"></ul>
-      <div id="target-card" aria-live="polite"></div>
-      <h2>Slots <span class="hint" id="slot-hint">4 3 2 use your slots · hover for details</span></h2>
-      <div id="balance" aria-label="Your slots, and your balance in a fight"></div>
+    <!-- Weather: the sky (temperature across, energy up), what's falling, the
+         time of day and the ground underfoot, in four boxes that sit in a row,
+         two by two, or one above another, as the pane's shape allows. -->
+    <section id="weather-panel" class="hidden">
+      <h2 id="wx-head" title="On a phone, tap to open or close">Weather <span class="hint" id="wx-place"></span></h2>
+      <div class="wxgrid">
+        <div class="wxbox"><div class="wxhead">Sky</div><svg id="wx-grid" role="img" aria-label="The weather: temperature across, energy up"></svg></div>
+        <div class="wxbox"><div class="wxhead">Rain</div><div class="precip" id="wx-precip-bar"><div class="fill" id="wx-precip"></div></div>
+          <div class="wxval" id="wx-precip-text"></div></div>
+        <div class="wxbox"><div class="wxhead">Time</div><svg id="wx-wheel" role="img" aria-label="Time of day"></svg>
+          <div class="wxval" id="wx-time-text"></div></div>
+        <div class="wxbox"><div class="wxhead">Ground</div><div class="ground-icon" id="wx-ground-icon"></div>
+          <div class="wxval" id="wx-ground-text"></div></div>
+      </div>
+      <div class="about" id="wx-about"></div>
     </section>
+    <!-- What's here: who (just a name and an icon; the fight panel has the rest), and things. -->
     <section>
-      <h2>On the ground</h2>
+      <h2>In the room</h2>
+      <ul id="roster"></ul>
+      <h2 class="sub">On the ground</h2>
       <ul id="ground"></ul>
     </section>
   </aside>
@@ -1526,9 +1539,25 @@ function disposition(card) {
   return card.disposition || card.base_disposition || "neutral";
 }
 
+// The side panel's list of who's here: an icon and a name (click to target).
+function renderRoster(cards) {
+  if (!cards.length) return $("roster").replaceChildren(el("li", "empty", "No one else is here."));
+  $("roster").replaceChildren(...cards.map((card) => {
+    const li = el("li");
+    const b = el("button", "who" + (card.id === target ? " selected" : ""));
+    b.type = "button";
+    b.append(el("span", "icon", card.icon || (card.kind === "npc" ? "•" : "👤")), el("span", "", card.name));
+    if (card.label) b.title = card.label;
+    b.onclick = () => { setTarget(card.id === target ? null : card.id); $("input").focus(); };
+    li.append(b);
+    return li;
+  }));
+}
+
 function renderEntities() {
   const cards = room ? room.entities : [];
   renderTarget();
+  renderRoster(cards);
   if (!cards.length) return $("entities").replaceChildren(el("li", "empty", "No one else is here."));
   $("entities").replaceChildren(...cards.map((card) => {
     const li = el("li");
@@ -1865,7 +1894,8 @@ function bindKey(action, k) {
 function showKeys() {
   $("input").placeholder = `Type a command — Tab picks a target; 1, 2 and 3 use your slots`;
   const steerWords = { both: "WASD or the arrows steer", wasd: "WASD steers", arrows: "the arrows steer" }[fightPrefs.steer];
-  $("slot-hint").textContent = `${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} · in a fight ${steerWords}, `
+  $("slot-hint").textContent = [1, 2, 3].map((n) => keyLabel(keys[n])).join(" ");
+  $("slot-hint").title = `${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} · in a fight ${steerWords}, `
     + `${keyLabel(keys.dodge)} dodges, ${keyLabel(keys.block)} ${fightPrefs.toggleBlock ? "toggles a block" : "blocks"}, `
     + `${keyLabel(keys.flee)} flees back the way you came`;
   fight.render();
@@ -3012,16 +3042,16 @@ window.addEventListener("resize", () => applyLayout(false));
 // Sizes are a per-browser preference.
 
 const SIDE = { min: 260, max: 640, initial: 360 };
-const MAP = { min: 0.2, max: 0.8, initial: 0.58 };
+const MAP = { min: 0.2, max: 0.8, initial: 0.64 };
 // The weather pane: by default (null) just wide enough for its four boxes to sit
 // two by two (about 420px inside, short of where a wide, short pane puts them in
 // a row), whatever the screen; dragging its bar sets a share of the top instead.
-const WEATHER = { min: 0.15, max: 0.75, initial: null, twoByTwo: 420 };
+const WEATHER = { min: 0.15, max: 0.75, initial: null, twoByTwo: 500 }; // the fight panel's two by two
 let sideWidth = SIDE.initial, mapShare = MAP.initial, weatherShare = WEATHER.initial;
 
 function weatherDefault() {
   const top = $("top").getBoundingClientRect().width;
-  const pane = $("weather-panel");
+  const pane = $("combat-panel");
   const padding = pane.offsetWidth - pane.clientWidth + parseFloat(getComputedStyle(pane).paddingLeft) * 2;
   return top > 0 ? (WEATHER.twoByTwo + padding) / top : 0.5;
 }
@@ -3032,7 +3062,7 @@ function applyLayout(save) {
   mapShare = Math.min(Math.max(mapShare, MAP.min), MAP.max);
   if (weatherShare != null) weatherShare = Math.min(Math.max(weatherShare, WEATHER.min), WEATHER.max);
   const share = weatherShare ?? Math.min(Math.max(weatherDefault(), WEATHER.min), WEATHER.max);
-  $("weather-panel").style.flexGrow = Math.round(share * 1000);
+  $("combat-panel").style.flexGrow = Math.round(share * 1000);
   $("map-wrap").style.flexGrow = 1000 - Math.round(share * 1000);
   $("split-weather").setAttribute("aria-valuenow", Math.round(share * 100));
   $("world").style.setProperty("--side-width", `${sideWidth}px`);
@@ -3593,7 +3623,8 @@ const fight = (() => {
     fleeB.append(el("span", "kh flee-key"));
     fleeB.addEventListener("pointerdown", (e) => { e.preventDefault(); fleeKey(); });
     defs.append(dodge, block, fleeB);
-    box.append(head, arena, status_, chips, strikes, defs);
+    box.append(head, arena, status_, chips);
+    $("slots").append(strikes, defs);
     // The touch stick: eight ways, like the keys.
     let stickId = null;
     const move = (e) => {
@@ -3628,6 +3659,18 @@ const fight = (() => {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
 
+  // Out of a fight: a dot at rest in the middle, with your stats' circles.
+  let rest = null;
+  function resting() {
+    const stats = (character && character.stats) || {};
+    const key = JSON.stringify(stats);
+    if (!rest || rest.key !== key) {
+      rest = { key, dot: Balance.makeDot(Balance.forPlayer(Balance.rulesFrom({}), stats), "rest", me || "me"),
+        blows: new Map(), startMs: 0, offset: { x: 0, y: 0 } };
+    }
+    return rest;
+  }
+
   function draw() {
     const canvas = ui.canvas;
     const size = canvas.clientWidth || 220;
@@ -3637,7 +3680,8 @@ const fight = (() => {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, size, size);
     const c = size / 2, R = size / 2 - 8;
-    const dot = enc.dot, rules = dot.rules;
+    const view = enc || resting();
+    const dot = view.dot, rules = dot.rules;
     const ring = (r, fill, stroke, width = 1, dash = []) => {
       g.beginPath();
       g.arc(c, c, r, 0, Balance.TAU);
@@ -3652,8 +3696,8 @@ const fight = (() => {
     ring(R * rules.clean_r, null, css("--accent"), 1, [3, 3]);
     ring(R * rules.perfect_r, `color-mix(in srgb, ${css("--up")} 30%, transparent)`, css("--up"), 1);
     // Blows on their way to you: an arrow on the rim, pointing the way it will knock you, filling as it comes.
-    const step = (serverNow() - enc.startMs) * Balance.HZ / 1000;
-    for (const b of enc.blows.values()) {
+    const step = (serverNow() - view.startMs) * Balance.HZ / 1000;
+    for (const b of view.blows.values()) {
       if (b.pid !== me) continue;
       const left = b.land - step;
       if (left > b.warn || left < 0) continue;
@@ -3677,7 +3721,7 @@ const fight = (() => {
       g.strokeStyle = css("--hp-low");
       g.stroke();
     }
-    const x = c + R * (dot.x + enc.offset.x), y = c + R * (dot.y + enc.offset.y);
+    const x = c + R * (dot.x + view.offset.x), y = c + R * (dot.y + view.offset.y);
     g.beginPath();
     g.arc(x, y, 7, 0, Balance.TAU);
     g.globalAlpha = dot.invuln > 0 ? 0.45 : 1;
@@ -3696,8 +3740,10 @@ const fight = (() => {
   function render() {
     if (!ui) build();
     const fighting = Boolean(enc);
-    for (const node of [ui.arena, ui.status, ui.chips, ui.defs]) node.classList.toggle("hidden", !fighting);
+    ui.chips.classList.toggle("hidden", !fighting);
+    for (const b of ui.defs.querySelectorAll("button")) b.disabled = !fighting;
     ui.box.classList.toggle("fighting", fighting);
+    $("combat-panel").classList.toggle("fighting", fighting);
     const t = performance.now();
     for (const n of [1, 2, 3]) {
       const s = ui.buttons[n], g = slotGear(n);
@@ -3719,6 +3765,10 @@ const fight = (() => {
     if (!fighting) {
       ui.mode.textContent = "";
       ui.boss.textContent = "";
+      ui.status.textContent = "At rest";
+      ui.status.className = "bstatus";
+      ui.block.classList.remove("hidden");
+      draw();
       return;
     }
     const dot = enc.dot;
