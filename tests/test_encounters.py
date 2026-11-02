@@ -60,7 +60,7 @@ async def test_encounter_info(world):
     data = await info(world, eid)
     assert data["room"] == "back_alley" and data["owner"] == "local" and data["lead_ms"] == 1000
     assert [p["pid"] for p in data["players"]] == ["kevin"]
-    assert data["npcs"][0]["nid"] == "orc-1" and data["npcs"][0]["max_hp"] == 80
+    assert data["npcs"][0]["nid"] == "orc-1" and data["npcs"][0]["max_hp"] == 124
     assert await info(world, "e999") is None
 
 
@@ -105,7 +105,7 @@ async def test_a_lost_encounter_starts_afresh(world):
 async def test_a_strike_lands_by_tier(world):
     feed, _, eid = await in_back_alley(world)
     result = await strike(world, eid, "kevin", "npc:orc-1", 1, 2)
-    assert result == {"damage": 10, "hp": 70, "stagger_ms": 0}  # the kick's perfect 8, +25% in this weather
+    assert result == {"damage": 10, "hp": 114, "stagger_ms": 0}  # the kick's perfect 8, +25% in this weather
     events = await drain(feed)
     combat = of_type(events, "combat")[0]
     assert (combat["tier"], combat["damage"], combat["target"]) == ("perfect", 10, "npc:orc-1")
@@ -364,7 +364,7 @@ async def test_a_strike_from_the_centre_is_perfect(world, host):
     await send(world, eid, pid="kevin", seq=1, keys=0, act="strike", slot=1, target="npc:orc-1")
 
     async def struck():
-        return int(await world.redis.hget("NPC:orc-1", "hp")) < 80
+        return int(await world.redis.hget("NPC:orc-1", "hp")) < 124
     assert await until(struck)
     combat = of_type(await drain(feed), "combat", actor="kevin")[0]
     assert combat["tier"] in ("perfect", "clean")
@@ -555,7 +555,7 @@ async def test_the_deeds_of_a_fight(world):
     assert "The Back-Alley Orcs: A clean killing blow. They respect that. (respect +3)" in said
     # Fleeing: each culture judges it.
     await world.redis.delete("PLAYER:kevin:rep:orcs")
-    await world.redis.hset("NPC:orc-1", "hp", 80)
+    await world.redis.hset("NPC:orc-1", "hp", 124)
     await world.redis.sadd("ROOM:back_alley:npcs", "orc-1")
     await world.call("goto", "kevin", "back_alley")
     eid = await world.redis.get("PLAYER:kevin:encounter")

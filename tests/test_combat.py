@@ -155,6 +155,7 @@ async def test_only_npcs_can_be_attacked(world):
 
 async def test_npcs_go_down_and_come_back(world):
     kevin = await at_fish_market(world)
+    await world.redis.hset("NPC:rat-1", "hp", 1)
     result = await hit(world, "kevin", "npc:rat-1", tier=2)
     assert result["killed"]
     events = await drain(kevin)
@@ -168,7 +169,7 @@ async def test_npcs_go_down_and_come_back(world):
     await world.redis.zadd("alz:respawns", {"rat-1": 0})
     await world.call("respawn")
     arrive = of_type(await drain(kevin), "arrive")[0]
-    assert arrive["text"] == "The Dock Rat appears." and arrive["entity"]["hp"] == 6
+    assert arrive["text"] == "The Dock Rat appears." and arrive["entity"]["hp"] == 142  # at full health
 
 
 # Slots and gear ------------------------------------------------------------------------

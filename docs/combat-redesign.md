@@ -704,13 +704,39 @@ Rooms of three or more at once: 1 of 4 on target (the granary cellar; the
 abbey nave, the Ember Courts' pavilion and the Hollowmoon glade the sloppy
 player loses almost always).
 
-So one scale can't meet the targets: early enemies die in seconds, later
-ones get too strong, and bosses are too short for their 2–4 minutes. The
-spread comes from enemies' health and damage growing faster than a
-character's does. Steps 2 and 3 (an NPC's `kick` and `period`) can't close
-gaps this size on their own; it needs either per-tier health changes or
-targets that fit what each tier is meant to be (a rat isn't meant to last
-20 s). That's a design decision, so it waits.
+So one scale couldn't meet the targets: early enemies died in seconds,
+later ones got too strong, and bosses were too short for their 2–4
+minutes. The decision was to retune enemy health by tier.
+`tools/tune_balance.py` did it, and wrote it into the content: a health
+multiplier per kind and level (from x6.3 for the starting realms' ordinary
+enemies to x0.4 at level 19, and about x3 for big bosses); then a nudge
+for each NPC still outside its window; then slower attacks (up to 2.5x,
+damage per blow unchanged) where the sloppy player lost too often; and
+rooms staggered. Each NPC keeps its experience. Checked on fights it wasn't
+tuned on (`--seed 7`, 20 fights a class):
+
+| | Tier | NPCs | Ideal kills in (median) | Ideal wins | Sloppy wins | On target |
+|---|---|---|---|---|---|---|
+| ordinary | 2–3 | 22 | 29 s | 100% | 100% | 22 |
+| ordinary | 4 | 17 | 28 s | 100% | 100% | 17 |
+| ordinary | 5–9 | 35 | 28 s | 100% | 99% | 33 |
+| ordinary | 10–14 | 51 | 25 s | 100% | 91% | 40 |
+| ordinary | 15–20 | 24 | 31 s | 100% | 76% | 16 |
+| boss | 4 | 1 | 180 s | 100% | 35% | 1 |
+| boss | 5–9 | 6 | 187 s | 52% | 22% | 1 |
+| boss, 1000+ (three players) | 10–14 | 11 | 170 s | 50% | | 4 |
+| boss, 1000+ (three players) | 15–20 | 11 | 176 s | 33% | | 3 |
+
+137 of 178 on target, and 2 of 4 rooms (the Ember Courts' pavilion and the
+Hollowmoon glade still beat the sloppy player). What's left: late-realm
+ordinary enemies the sloppy player beats too rarely, and bosses the ideal
+player loses to over 3 minutes. Both have their attacks slowed as far as
+the tuner may (2.5x), so the next lever is the damage of their biggest blows
+or how many can be met (`defend`), which the plan kept off limits.
+
+The per-NPC nudges evened ordinary enemies out within a tier: a dock rat
+(6 health) has 142 now, about as tough as a wolf, because the target asks
+every ordinary enemy for a 20–40 s fight.
 
 ### Phase 1: the simulation
 

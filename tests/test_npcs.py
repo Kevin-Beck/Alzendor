@@ -31,7 +31,7 @@ async def test_hostile_npcs_attack_on_sight(world):
     assert "The Orc Warrior turns on Kevin!" in texts(events)
     start = [e for e in of_type(events, "encounter") if e["op"] == "start"][0]["encounter"]
     assert [n["nid"] for n in start["npcs"]] == ["orc-1"]  # the whelp isn't hostile
-    assert [(a["name"], a["period"]) for a in start["npcs"][0]["attacks"]] == [("cleaver", 6000), ("shield bash", 9000)]
+    assert [(a["name"], a["period"]) for a in start["npcs"][0]["attacks"]] == [("cleaver", 7500), ("shield bash", 11200)]
     room = of_type(events, "room")[-1]["room"]
     cards = {c["id"]: c for c in room["entities"]}
     assert cards["npc:orc-1"]["disposition"] == "hostile" and cards["npc:orc-2"]["disposition"] == "neutral"
