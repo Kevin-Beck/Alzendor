@@ -332,8 +332,7 @@
   #balance { margin: 0 0 10px; }
   #balance.fighting { padding: 8px; border: 1px solid var(--border); border-radius: 8px;
     background: color-mix(in srgb, var(--bg) 88%, transparent); }
-  #balance .bhead { display: none; }
-  #balance.fighting .bhead { display: flex; }
+  #balance:not(.fighting) .bhead { display: none; }
   #balance .bhead .boss { color: var(--hp-low); font-size: 11px; letter-spacing: .05em; }
   #balance .strike .wxbadge { font-size: 11px; font-weight: bold; }
   #balance .strike .wxbadge.up { color: var(--up); } #balance .strike .wxbadge.down { color: var(--down); }
@@ -1799,11 +1798,28 @@ function renderTarget() {
   v.rest.replaceChildren(...rest);
 }
 
-// Key bindings: a key for each slot, chosen in Settings and
-// remembered per browser (alz.keys). A key is one character (letters are kept
-// lowercase) or F1 to F12. Choosing a key that's in use swaps the two.
-const KEY_DEFAULTS = { 1: "4", 2: "3", 3: "2" };
-const KEY_NAMES = { 1: "Slot 1", 2: "Slot 2", 3: "Slot 3" };
+// Key bindings: a key for each slot, and for dodging and blocking in a fight,
+// chosen in Settings and remembered per browser (alz.keys). A key is one
+// character (letters are kept lowercase), Space, Shift or F1 to F12. Choosing
+// a key that's in use swaps the two. Fight settings (alz.fight): which keys
+// steer (WASD, the arrows, or both), and whether the block key holds or toggles.
+const KEY_DEFAULTS = { 1: "4", 2: "3", 3: "2", dodge: " ", block: "Shift" };
+const KEY_NAMES = { 1: "Slot 1", 2: "Slot 2", 3: "Slot 3", dodge: "Dodge", block: "Block (with a shield)" };
+const FIGHT_DEFAULTS = { steer: "both", toggleBlock: false };
+
+function loadFightPrefs() {
+  let saved = {};
+  try { saved = JSON.parse(store.get("alz.fight") || "{}") || {}; } catch {}
+  return { ...FIGHT_DEFAULTS, ...saved };
+}
+
+const fightPrefs = loadFightPrefs();
+
+function setFightPref(name, value) {
+  fightPrefs[name] = value;
+  store.set("alz.fight", JSON.stringify(fightPrefs));
+  showKeys();
+}
 
 function loadKeys() {
   let saved = {};
@@ -1820,11 +1836,11 @@ function keyOf(e) {
 }
 
 function keyLabel(k) {
-  return k.length === 1 ? k.toUpperCase() : k;
+  return k === " " ? "Space" : k.length === 1 ? k.toUpperCase() : k;
 }
 
 function bindable(k) {
-  return (k.length === 1 && k.trim() !== "") || /^F([1-9]|1[0-2])$/.test(k);
+  return k.length === 1 || k === "Shift" || /^F([1-9]|1[0-2])$/.test(k);
 }
 
 // Binds a key to an action, swapping with whatever had it, and shows it everywhere.
@@ -1838,7 +1854,9 @@ function bindKey(action, k) {
 
 function showKeys() {
   $("input").placeholder = `Type a command — Tab picks a target, ${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} use your slots`;
-  $("slot-hint").textContent = `${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} · in a fight WASD steers, Space dodges, Shift blocks`;
+  const steerWords = { both: "WASD or the arrows steer", wasd: "WASD steers", arrows: "the arrows steer" }[fightPrefs.steer];
+  $("slot-hint").textContent = `${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} · in a fight ${steerWords}, `
+    + `${keyLabel(keys.dodge)} dodges, ${keyLabel(keys.block)} ${fightPrefs.toggleBlock ? "toggles a block" : "blocks"}`;
   fight.render();
 }
 
@@ -1849,7 +1867,7 @@ let choosing = null; // the action whose key is being chosen
 function renderSettings() {
   const body = $("settings-body");
   const list = el("ul", "keys");
-  for (const action of [1, 2, 3]) {
+  for (const action of [1, 2, 3, "dodge", "block"]) {
     const li = el("li");
     const b = el("button", "keycap" + (choosing === String(action) ? " listening" : ""),
       choosing === String(action) ? "Press a key…" : keyLabel(keys[action]));
@@ -1859,7 +1877,7 @@ function renderSettings() {
     li.append(el("span", "", KEY_NAMES[action]), b);
     list.append(li);
   }
-  const reset = el("button", "", "Reset to 4, 3 and 2");
+  const reset = el("button", "", "Reset keys (4, 3, 2, Space, Shift)");
   reset.type = "button";
   reset.addEventListener("click", () => {
     for (const [action, k] of Object.entries(KEY_DEFAULTS)) keys[action] = k;
@@ -1868,10 +1886,31 @@ function renderSettings() {
     showKeys();
     renderSettings();
   });
+  // Fight settings: which keys steer, and how blocking works.
+  const fightList = el("ul", "keys");
+  const steerLi = el("li");
+  const steer = document.createElement("select");
+  for (const [value, label] of [["both", "WASD and the arrows"], ["wasd", "WASD"], ["arrows", "The arrows"]]) {
+    const o = el("option", "", label);
+    o.value = value;
+    o.selected = fightPrefs.steer === value;
+    steer.append(o);
+  }
+  steer.addEventListener("change", () => setFightPref("steer", steer.value));
+  steerLi.append(el("span", "", "Steering"), steer);
+  const toggleLi = el("li");
+  const toggle = document.createElement("input");
+  toggle.type = "checkbox";
+  toggle.checked = fightPrefs.toggleBlock;
+  toggle.addEventListener("change", () => setFightPref("toggleBlock", toggle.checked));
+  const toggleLabel = el("label", "", "Block toggles (press to raise, press again to lower) instead of holding");
+  toggleLabel.prepend(toggle, " ");
+  toggleLi.append(toggleLabel);
+  fightList.append(steerLi, toggleLi);
   body.replaceChildren(el("h3", "", "Keys"),
     el("p", "note", "Click a key, then press the one you want; Esc keeps the old one. A key that's already in use swaps over. "
       + "Keys work when the command line is empty (or in a fight), so a letter can't start a command."),
-    list, reset);
+    list, reset, el("h3", "", "In a fight"), fightList);
   const focus = body.querySelector(`.keycap[data-action="${choosing}"]`);
   if (focus) focus.focus();
 }
@@ -3222,12 +3261,14 @@ $("input").addEventListener("keydown", (e) => {
 //
 // In a fight, with the command line empty, the page is in combat focus: WASD
 // (or the arrows) steer, your slot keys strike, Space dodges and Shift (held)
-// blocks with a shield in hand. Enter or / types a command; Esc goes back.
+// blocks with a shield in hand (all of which Settings can change). Enter or / types a command; Esc goes back.
 // Out of a fight the slot row still works: a heal or guard just happens, and
 // damage gear on your target strikes first, which starts a fight.
 const fight = (() => {
-  const STEER = { w: Balance.UP, s: Balance.DOWN, a: Balance.LEFT, d: Balance.RIGHT,
-    ArrowUp: Balance.UP, ArrowDown: Balance.DOWN, ArrowLeft: Balance.LEFT, ArrowRight: Balance.RIGHT };
+  const WASD = { w: Balance.UP, s: Balance.DOWN, a: Balance.LEFT, d: Balance.RIGHT };
+  const ARROWS = { ArrowUp: Balance.UP, ArrowDown: Balance.DOWN, ArrowLeft: Balance.LEFT, ArrowRight: Balance.RIGHT };
+  // The steering bit for a key, as Settings choose (fightPrefs.steer), or 0.
+  const steerOf = (k) => (fightPrefs.steer !== "arrows" && WASD[k]) || (fightPrefs.steer !== "wasd" && ARROWS[k]) || 0;
   const TIER_WORDS = { edge: "Edge", clean: "Clean", perfect: "Perfect!" };
   const REFUSED = { not_steady: "Not steady", cooldown: "Not ready", staggered: "Staggered", blocking: "Blocking",
     empty: "Empty slot", no_shield: "No shield", gone: "Gone", no_exit: "No way out", dark: "Too dark" };
@@ -3411,12 +3452,13 @@ const fight = (() => {
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const slot = [1, 2, 3].find((n) => keys[n] === k);
+    const bound = slot || k === keys.dodge || k === keys.block;
     if (k === "Enter" || k === "/") setFocus(false);
-    else if (STEER[k]) steer(enc.held | STEER[k]);
-    else if (e.repeat) { /* held: nothing more */ }
+    else if (bound && e.repeat) { /* held: nothing more */ }
     else if (slot) strike(slot);
-    else if (k === " ") input("dodge");
-    else if (k === "Shift") input("block");
+    else if (k === keys.dodge) input("dodge");
+    else if (k === keys.block) raise();
+    else if (steerOf(k)) steer(enc.held | steerOf(k));
     else if (k === "Tab") cycleTarget(e.shiftKey ? -1 : 1);
     else if (k === "Escape") { /* already fighting */ }
     else return;
@@ -3427,9 +3469,15 @@ const fight = (() => {
   document.addEventListener("keyup", (e) => {
     if (!enc) return;
     const k = keyOf(e);
-    if (STEER[k]) steer(enc.held & ~STEER[k]);
-    if (k === "Shift") input("unblock");
+    if (steerOf(k) && ![1, 2, 3].some((n) => keys[n] === k)) steer(enc.held & ~steerOf(k));
+    if (k === keys.block && !fightPrefs.toggleBlock) input("unblock");
   }, true);
+
+  // The block key (or button): held, or (in Settings) a toggle.
+  function raise() {
+    if (fightPrefs.toggleBlock && enc.dot.blocking) input("unblock");
+    else input("block");
+  }
 
   window.addEventListener("blur", () => { if (enc) { enc.held = 0; input("unblock"); } });
   $("input").addEventListener("focus", () => { if (enc && focus) setFocus(false); });
@@ -3498,15 +3546,15 @@ const fight = (() => {
     const defs = el("div", "defs");
     const dodge = el("button", "", "Dodge");
     dodge.type = "button";
-    dodge.append(el("span", "kh", " (Space)"));
+    dodge.append(el("span", "kh dodge-key"));
     const dodgeCd = el("div", "cd");
     dodge.append(dodgeCd);
     dodge.addEventListener("pointerdown", (e) => { e.preventDefault(); input("dodge"); });
     const block = el("button", "", "Block");
     block.type = "button";
-    block.append(el("span", "kh", " (hold Shift)"));
-    block.addEventListener("pointerdown", (e) => { e.preventDefault(); block.setPointerCapture(e.pointerId); input("block"); });
-    for (const ev of ["pointerup", "pointercancel"]) block.addEventListener(ev, () => input("unblock"));
+    block.append(el("span", "kh block-key"));
+    block.addEventListener("pointerdown", (e) => { e.preventDefault(); block.setPointerCapture(e.pointerId); if (enc) raise(); });
+    for (const ev of ["pointerup", "pointercancel"]) block.addEventListener(ev, () => { if (enc && !fightPrefs.toggleBlock) input("unblock"); });
     defs.append(dodge, block);
     box.append(head, arena, status_, chips, strikes, defs);
     // The touch stick: eight ways, like the keys.
@@ -3638,6 +3686,8 @@ const fight = (() => {
     }
     const dot = enc.dot;
     ui.block.classList.toggle("hidden", !enc.shield);
+    ui.dodge.querySelector(".dodge-key").textContent = ` (${keyLabel(keys.dodge)})`;
+    ui.block.querySelector(".block-key").textContent = fightPrefs.toggleBlock ? ` (${keyLabel(keys.block)} toggles)` : ` (hold ${keyLabel(keys.block)})`;
     ui.block.classList.toggle("held", dot.blocking);
     ui.dodgeCd.style.width = dot.dodge_cd ? (100 * dot.dodge_cd) / Balance.steps(dot.rules.dodge_cd_ms) + "%" : "0";
     let text = "", cls = "";
@@ -3675,7 +3725,7 @@ const fight = (() => {
   }
 
   return { active, onEncounter, onState, onRefused, onCombat, strike, flee, render, end, sent() { if (enc) setFocus(true); },
-    stats: () => ({ ...stats }), dot: () => (enc ? { x: enc.dot.x, y: enc.dot.y, n: enc.dot.n } : null) };
+    stats: () => ({ ...stats }), dot: () => (enc ? { x: enc.dot.x, y: enc.dot.y, n: enc.dot.n, held: enc.held, blocking: enc.dot.blocking, dodge_cd: enc.dot.dodge_cd } : null) };
 })();
 
 $("reconnect").addEventListener("click", resume);
