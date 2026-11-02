@@ -144,6 +144,7 @@ class Player:
     seq: int = 0
     acts: list = field(default_factory=list)    # waiting for the next step
     flee: str | None = None
+    sealed: bool = False                        # Berserk Seal has sealed its slot this fight
     # The last REWIND_STEPS steps: [global step, snapshot before it, keys, acts, blows, what it reported].
     history: deque = field(default_factory=lambda: deque(maxlen=REWIND_STEPS))
     scratch: b.Dot | None = None                # a dot to replay on
@@ -283,6 +284,11 @@ class Owner:
                     calls.append(("poise", nid, None))
             elif e["type"] == "refused":
                 calls.append(("refused", p.pid, {k2: e[k2] for k2 in ("act", "reason", "slot") if k2 in e}))
+            elif e["type"] == "second_wind":
+                calls.append(("passive", p.pid, "second_wind"))
+            elif e["type"] == "stagger" and p.info.get("berserk") and not p.sealed:
+                p.sealed = True
+                calls.append(("passive", p.pid, "seal"))
         return calls
 
     def _target(self, p: Player, slot: int, target) -> str:
@@ -338,9 +344,10 @@ class Owner:
         rules = self.rules.for_player(poise=stats.get("poise", 0), focus=stats.get("focus", 0), resilience=stats.get("resilience", 0))
         slots = {int(n): b.Gear.from_dict(g) for n, g in (p.get("slots") or {}).items()}
         join = steps_since(self.start_ms, p["join_ms"] + self.lead_ms)
-        dot = b.make_dot(rules, self.seed, p["pid"], slots, bool(p.get("shield")))
+        perks = p.get("perks") or []
+        dot = b.make_dot(rules, self.seed, p["pid"], slots, bool(p.get("shield")), perks)
         player = Player(p["pid"], p, join, dot, {int(n): g for n, g in (p.get("slots") or {}).items()})
-        player.scratch = b.make_dot(rules, self.seed, p["pid"], slots, bool(p.get("shield")))
+        player.scratch = b.make_dot(rules, self.seed, p["pid"], slots, bool(p.get("shield")), perks)
         if opening and p["pid"] not in self.opened:
             self.opened.add(p["pid"])
             player.acts.append(("strike", int(opening["slot"]), opening.get("target") or ""))
@@ -393,7 +400,7 @@ class Owner:
                 continue
             if p.flee is not None:
                 direction, p.flee = p.flee, None
-                if p.dot.staggered or p.dot.dist > p.dot.rules.core:
+                if p.dot.staggered or p.dot.dist > p.dot.core:
                     calls.append(("refused", p.pid, {"act": "flee", "reason": "not_steady"}))
                 else:
                     calls.append(("flee", p.pid, direction))
@@ -459,6 +466,8 @@ class Owner:
             if npc and npc.boss and npc.boss.perfect_block():
                 self._boss_reels(npc)
                 await w.call("encounter_note", self.id, npc.nid, "reels")
+        elif kind == "passive":
+            await w.call("encounter_passive", self.id, call[1], call[2])
         elif kind == "note":
             await w.call("encounter_note", self.id, call[1], call[2])
         elif kind == "flee":

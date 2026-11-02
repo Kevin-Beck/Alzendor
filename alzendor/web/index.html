@@ -701,12 +701,13 @@ const Balance = (() => {
     return { kick: 0, angle: 0, defend: "both", stagger: false, debuff: null, parting: false, ...b };
   }
 
-  function makeDot(rules, encounterSeed, pid, slots = {}, shield = false) {
+  function makeDot(rules, encounterSeed, pid, slots = {}, shield = false, perks = []) {
     const next = rng(seedFor(encounterSeed, pid));
     const [lo, hi] = rules.well_radius;
     const dot = { rules, next, slots: {}, shield, x: 0, y: 0, vx: 0, vy: 0, well_a: 0, well_r: 0, well_target: 0,
       spin: 1, n: 0, cool: {}, dodge_cd: 0, invuln: 0, wobble_after: false, stagger: 0, sx: 0, sy: 0, immune: 0,
-      debuffs: {}, blocking: false, block_n: 0, wobble_clock: 0, pending: null, volleys: [], draws: [0, 0, 0, 0] };
+      debuffs: {}, blocking: false, block_n: 0, wobble_clock: 0, pending: null, volleys: [], draws: [0, 0, 0, 0],
+      perks: new Set(perks), breath: 0, steadied: false, knocked: false, inside: true };
     dot.well_a = next() * TAU;
     dot.well_r = lo + (hi - lo) * next();
     dot.well_target = dot.well_r;
@@ -716,6 +717,7 @@ const Balance = (() => {
   }
 
   const dist = (dot) => Math.sqrt(dot.x * dot.x + dot.y * dot.y);
+  const coreOf = (dot) => (dot.breath > 0 ? dot.rules.core * 1.2 : dot.rules.core);
   const fade = (dot, kind) => { const d = dot.debuffs[kind]; return d ? d[0] * d[1] / d[2] : 0; };
 
   function addDebuff(dot, kind, strength, ms) {
@@ -733,7 +735,7 @@ const Balance = (() => {
 
   function strikeCheck(dot, slot) {
     if (dot.stagger > 0) return "staggered";
-    if (dot.blocking || dist(dot) > dot.rules.core) return "not_steady";
+    if (dot.blocking || dist(dot) > coreOf(dot)) return "not_steady";
     if ((dot.cool[slot] || 0) > 0) return "cooldown";
     if (!(slot in dot.slots)) return "empty";
     return null;
@@ -747,9 +749,11 @@ const Balance = (() => {
       const dx = sign * kick, dy = kick * 0.2 * lean;
       dot.vx += dx;
       dot.vy += dy;
+      if (kick > 0) dot.knocked = true;
       return Math.atan2(dy, dx);
     }
     if (angle === null) angle = u * TAU;
+    if (kick > 0) dot.knocked = true;
     dot.vx += kick * Math.cos(angle);
     dot.vy += kick * Math.sin(angle);
     return angle;
@@ -760,14 +764,23 @@ const Balance = (() => {
     dot.y = Math.sin(angle);
     dot.vx = dot.vy = 0;
     dot.stagger = steps(dot.rules.stagger_ms);
+    dot.knocked = true;
     const back = angle + (dot.draws[3] * 2 - 1) * 0.8;
     dot.sx = 0.35 * Math.cos(back);
     dot.sy = 0.35 * Math.sin(back);
   }
 
+  function steadyHands(dot, events) {
+    if (!dot.perks.has("steady_hands") || dot.steadied) return false;
+    dot.steadied = true;
+    events.push({ type: "steadied" });
+    return true;
+  }
+
   function strike(dot, slot, target, events) {
     const g = dot.slots[slot];
     const t = tier(dot);
+    if (t === 2 && dot.perks.has("long_breath")) dot.breath = steps(3000);
     dot.cool[slot] = steps(g.cooldown);
     const angle = applyKick(dot, g.kick, g.pattern);
     if (g.debuff) addDebuff(dot, g.debuff.kind, Number(g.debuff.strength), Number(g.debuff.ms));
@@ -779,7 +792,7 @@ const Balance = (() => {
     dot.volleys = dot.volleys.filter((v) => target !== null && v[1] !== target);
   }
 
-  function applyBlow(dot, b) {
+  function applyBlow(dot, b, events = []) {
     const r = dot.rules;
     if (b.parting) return { result: "parting", stagger: false };
     if (dot.invuln > 0 && b.defend !== "block" && b.defend !== "none") return { result: "dodge", stagger: false };
@@ -794,8 +807,10 @@ const Balance = (() => {
     if (!was) {
       dot.vx += b.kick * Math.cos(b.angle);
       dot.vy += b.kick * Math.sin(b.angle);
+      if (b.kick > 0) dot.knocked = true;
     }
-    const staggers = Boolean((b.stagger || b.kick >= r.stagger_kick) && !was && dot.immune === 0);
+    let staggers = Boolean((b.stagger || b.kick >= r.stagger_kick) && !was && dot.immune === 0);
+    if (staggers && steadyHands(dot, events)) staggers = false;
     if (staggers) stagger(dot, b.angle);
     if (b.debuff) addDebuff(dot, b.debuff.kind, Number(b.debuff.strength), Number(b.debuff.ms));
     return { result: was ? "staggered" : "hit", stagger: staggers };
@@ -805,6 +820,7 @@ const Balance = (() => {
     for (const slot of Object.keys(dot.cool)) if (dot.cool[slot] > 0) dot.cool[slot] -= 1;
     if (dot.dodge_cd > 0) dot.dodge_cd -= 1;
     if (dot.immune > 0) dot.immune -= 1;
+    if (dot.breath > 0) dot.breath -= 1;
     if (dot.invuln > 0) {
       dot.invuln -= 1;
       if (dot.invuln === 0 && dot.wobble_after) {
@@ -879,6 +895,7 @@ const Balance = (() => {
       dot.x += (dot.sx - dot.x) * ease;
       dot.y += (dot.sy - dot.y) * ease;
       dot.vx = dot.vy = 0;
+      dot.inside = false;
       return;
     }
     const reel = Math.min(1, fade(dot, "reeling"));
@@ -928,7 +945,7 @@ const Balance = (() => {
     const d = dist(dot);
     if (d >= 1) {
       const nx = dot.x / d, ny = dot.y / d;
-      if (wob > 0.15 || dot.immune > 0) {
+      if (wob > 0.15 || dot.immune > 0 || steadyHands(dot, events)) {
         const vn = dot.vx * nx + dot.vy * ny;
         if (vn > 0) { dot.vx -= 2 * vn * nx; dot.vy -= 2 * vn * ny; }
         dot.x = nx * 0.999;
@@ -938,6 +955,13 @@ const Balance = (() => {
         events.push({ type: "stagger", by: "rim" });
       }
     }
+    // Second Wind: back in the core after a knock (which may take a few steps to carry it out).
+    const inside = dot.stagger === 0 && dist(dot) <= coreOf(dot);
+    if (inside && !dot.inside && dot.knocked) {
+      dot.knocked = false;
+      if (dot.perks.has("second_wind")) events.push({ type: "second_wind" });
+    }
+    dot.inside = inside;
   }
 
   // One step: timers, the four draws, the well, acts, a buffered strike,
@@ -964,8 +988,9 @@ const Balance = (() => {
     }
     volleys(dot, events);
     for (const b of blows) {
-      const result = applyBlow(dot, blow(b));
-      events.push({ type: "blow", ...result });
+      const caught = [];
+      const result = applyBlow(dot, blow(b), caught);
+      events.push({ type: "blow", ...result }, ...caught);
       if (result.stagger) events.push({ type: "stagger", by: "blow" });
     }
     physics(dot, keys, events);
@@ -977,12 +1002,13 @@ const Balance = (() => {
     for (const k of Object.keys(dot.cool).sort()) if (dot.cool[k] > 0) cool[k] = dot.cool[k];
     for (const k of Object.keys(dot.debuffs).sort()) { const d = dot.debuffs[k]; debuffs[k] = [Math.round(d[0] * 1e6) / 1e6, d[1], d[2]]; }
     return { n: dot.n, x: dot.x, y: dot.y, vx: dot.vx, vy: dot.vy, well: [dot.well_a, dot.well_r], stagger: dot.stagger,
-      immune: dot.immune, invuln: dot.invuln, blocking: dot.blocking, dodge_cd: dot.dodge_cd, cool, debuffs };
+      immune: dot.immune, invuln: dot.invuln, blocking: dot.blocking, dodge_cd: dot.dodge_cd, breath: dot.breath,
+      steadied: dot.steadied, knocked: dot.knocked, inside: dot.inside, cool, debuffs };
   }
 
   // Everything that makes a dot what it is, as balance.snapshot and restore.
   const SNAPSHOT = ["n", "x", "y", "vx", "vy", "well_a", "well_r", "well_target", "spin", "dodge_cd", "invuln", "wobble_after",
-    "stagger", "sx", "sy", "immune", "blocking", "block_n", "wobble_clock"];
+    "stagger", "sx", "sy", "immune", "blocking", "block_n", "wobble_clock", "breath", "steadied", "knocked", "inside"];
   function snapshot(dot) {
     const out = {};
     for (const k of SNAPSHOT) out[k] = dot[k];
@@ -1009,7 +1035,7 @@ const Balance = (() => {
   // A scripted run, as balance.replay.
   function replay(script) {
     const rules = forPlayer(rulesFrom(script.rules || {}), script.stats || {});
-    const dot = makeDot(rules, script.seed, script.pid, script.slots || {}, script.shield || false);
+    const dot = makeDot(rules, script.seed, script.pid, script.slots || {}, script.shield || false, script.perks || []);
     const keysAt = new Map((script.keys || []).map(([n, k]) => [n, k]));
     const actsAt = new Map(), blowsAt = new Map();
     for (const [n, ...a] of script.acts || []) actsAt.set(n, [...(actsAt.get(n) || []), a]);
@@ -1041,7 +1067,7 @@ const Balance = (() => {
   }
 
   return { HZ, DT, TAU, UP, DOWN, LEFT, RIGHT, TIERS, steps, rng, fnv1a, seedFor, rulesFrom, forPlayer, makeDot,
-    dist, fade, addDebuff, tier, strikeCheck, applyKick, stagger, cancelVolleys, applyBlow, step, state, replay, snapshot, restore,
+    dist, coreOf, fade, addDebuff, tier, strikeCheck, applyKick, stagger, cancelVolleys, applyBlow, step, state, replay, snapshot, restore,
     boss, bossAdd, bossStep };
 })();
 /* BALANCE END */
@@ -3232,7 +3258,8 @@ const fight = (() => {
     enc = {
       id: info.id, info, rules, startMs: info.start_ms,
       join: Math.floor((mine.join_ms + info.lead_ms - info.start_ms) * Balance.HZ / 1000),
-      dot: Balance.makeDot(rules, info.seed, me, slots, mine.shield > 0), slots, shield: mine.shield > 0,
+      dot: Balance.makeDot(rules, info.seed, me, slots, mine.shield > 0, mine.perks || []), slots, shield: mine.shield > 0,
+      perks: mine.perks || [],
       seq: 0, held: 0, stick: 0, log: [], acts: [], blows: new Map(), bosses: {}, offset: { x: 0, y: 0 },
       npcs: Object.fromEntries(info.npcs.map((n) => [n.id, n])),
     };
@@ -3273,7 +3300,7 @@ const fight = (() => {
     if (!snap) return;
     // What the snapshot already has: inputs the server has seen, from before it.
     enc.log = enc.log.filter((e) => e.n > snap.n || e.seq > snap.seq);
-    const d = Balance.makeDot(enc.rules, enc.info.seed, me, enc.slots, enc.shield);
+    const d = Balance.makeDot(enc.rules, enc.info.seed, me, enc.slots, enc.shield, enc.perks);
     Balance.restore(d, snap);
     let keys = snap.keys;
     const upTo = enc.dot.n;
@@ -3423,6 +3450,8 @@ const fight = (() => {
         if (e.type === "refused") onRefused(e);
         else if (e.type === "stagger") flash(e.by === "rim" ? "Off balance!" : "Staggered!", "bad", 1200);
         else if (e.type === "recover") flash("Back on your feet", "good", 700);
+        else if (e.type === "steadied") flash("Steady Hands!", "good", 900);
+        else if (e.type === "second_wind") flash("Second Wind", "good", 600);
       }
     }
     enc.offset.x *= BLEND;
@@ -3532,8 +3561,9 @@ const fight = (() => {
     };
     const immune = dot.immune > 0;
     ring(R, css("--panel"), immune ? css("--up") : css("--edge"), 3, immune ? [6, 4] : []);
-    const steady = dot.stagger === 0 && Balance.dist(dot) <= rules.core && !dot.blocking;
-    ring(R * rules.core, `color-mix(in srgb, ${css("--accent")} ${steady ? 26 : 12}%, transparent)`, css("--accent"), 1.5);
+    const core = Balance.coreOf(dot);
+    const steady = dot.stagger === 0 && Balance.dist(dot) <= core && !dot.blocking;
+    ring(R * core, `color-mix(in srgb, ${css("--accent")} ${steady ? 26 : 12}%, transparent)`, css("--accent"), dot.breath > 0 ? 3 : 1.5);
     ring(R * rules.clean_r, null, css("--accent"), 1, [3, 3]);
     ring(R * rules.perfect_r, `color-mix(in srgb, ${css("--up")} 30%, transparent)`, css("--up"), 1);
     // Blows on their way to you: an arrow on the rim, pointing the way it will knock you, filling as it comes.
@@ -3615,7 +3645,7 @@ const fight = (() => {
     else if (status.until > t) { text = status.text; cls = status.cls; }
     else if (dot.stagger > 0) { text = "Staggered!"; cls = "bad"; }
     else if (dot.blocking) text = "Blocking";
-    else if (Balance.dist(dot) <= dot.rules.core) { text = "Steady"; cls = "good"; }
+    else if (Balance.dist(dot) <= Balance.coreOf(dot)) { text = "Steady"; cls = "good"; }
     else text = "Off centre";
     ui.status.textContent = text;
     ui.status.className = "bstatus" + (cls ? " " + cls : "");

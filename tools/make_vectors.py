@@ -53,10 +53,11 @@ def make_run(i: int) -> dict:
     slots = dict(SLOTS)
     if i % 3 == 1:
         slots[3] = POTION
+    perks = [["second_wind"], ["steady_hands"], ["long_breath"], ["second_wind", "steady_hands", "long_breath"], []][i % 5]
     script = {"seed": f"vec-{i}", "pid": f"p{i}", "rules": rules, "stats": stats, "slots": {str(k): v for k, v in slots.items()},
-              "shield": i % 2 == 0, "steps": 600 + 60 * (i % 5)}
+              "shield": i % 2 == 0, "perks": perks, "steps": 600 + 60 * (i % 5)}
     rs = b.Rules.from_seed(rules).for_player(**stats)
-    dot = b.make_dot(rs, script["seed"], script["pid"], slots, script["shield"])
+    dot = b.make_dot(rs, script["seed"], script["pid"], slots, script["shield"], perks)
     dead = 0.02 + 0.08 * r.next()
     lazy = 0
     keys, key_log, acts, blows, pending_blows = 0, [], [], [], []

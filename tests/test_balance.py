@@ -24,8 +24,8 @@ def still(**over) -> b.Rules:
     return b.Rules(**{"gravity": 0, **over})
 
 
-def dot(rules=None, slots=None, shield=False, pid="p1") -> b.Dot:
-    return b.make_dot(rules or still(), "enc-1", pid, slots if slots is not None else {1: DAGGER}, shield)
+def dot(rules=None, slots=None, shield=False, pid="p1", perks=()) -> b.Dot:
+    return b.make_dot(rules or still(), "enc-1", pid, slots if slots is not None else {1: DAGGER}, shield, perks)
 
 
 def run(d, n, keys=0):
@@ -419,6 +419,50 @@ def test_rules_from_the_seed():
     assert b.Rules.from_seed({"balance_well_radius": "0.4,0.8"}).well_radius == (0.4, 0.8)
 
 
+# Passives --------------------------------------------------------------------------------
+
+
+def test_steady_hands_catches_the_first_stagger_only():
+    d = dot(perks=["steady_hands"])
+    events = b.step(d, 0, blows=[b.Blow(kick=2.5)])
+    assert "steadied" in kinds(events) and "stagger" not in kinds(events) and not d.staggered
+    run(d, 120)
+    d.x = d.y = d.vx = d.vy = 0
+    assert "stagger" in kinds(b.step(d, 0, blows=[b.Blow(kick=2.5)]))
+
+
+def test_steady_hands_saves_you_from_the_rim_once():
+    d = dot(perks=["steady_hands"])
+    d.x, d.vx = 0.99, 3
+    assert kinds(b.step(d)) == ["steadied"]
+    assert not d.staggered and d.dist < 1
+
+
+def test_long_breath_widens_the_core_after_a_perfect_strike():
+    d = dot(perks=["long_breath"])
+    b.step(d, 0, [("strike", 1, None)])  # from the centre: perfect
+    assert d.breath == b.steps(3000) - 0
+    assert d.core == pytest.approx(0.22 * 1.2)
+    d.x, d.y, d.vx, d.vy = 0.25, 0, 0, 0  # outside the plain core, inside the wider one
+    d.cool[1] = 0
+    assert b.strike_check(d, 1) is None
+    run(d, b.steps(3000))
+    assert d.core == pytest.approx(0.22)
+
+
+def test_second_wind_when_the_dot_comes_back_in_after_a_knock():
+    for perks, want in ((["second_wind"], True), ((), False)):
+        d = dot(perks=perks)
+        b.step(d, 0, [("strike", 1, None)])  # the dagger knocks it out of the core
+        events = run(d, 30)
+        assert d.dist > d.core
+        for _ in range(240):
+            k = (b.LEFT if d.x > 0.02 else b.RIGHT if d.x < -0.02 else 0) | (b.UP if d.y > 0.02 else b.DOWN if d.y < -0.02 else 0)
+            events += b.step(d, k)
+        assert ("second_wind" in kinds(events)) is want
+        assert kinds(events).count("second_wind") <= 1
+
+
 # The boss meter ---------------------------------------------------------------------------
 
 
@@ -458,7 +502,8 @@ def test_the_vectors_cover_every_kind_of_event():
         for e in run_["expect"]["events"]:
             seen.add(e["type"] + ":" + str(e.get("result") or e.get("by") or e.get("reason") or ""))
     for want in ["strike:", "dodge:", "recover:", "blow:hit", "blow:dodge", "blow:block", "blow:perfect_block",
-                 "blow:staggered", "blow:parting", "stagger:blow", "stagger:rim", "refused:not_steady", "refused:cooldown"]:
+                 "blow:staggered", "blow:parting", "stagger:blow", "stagger:rim", "refused:not_steady", "refused:cooldown",
+                 "second_wind:", "steadied:"]:
         assert want in seen, want
 
 

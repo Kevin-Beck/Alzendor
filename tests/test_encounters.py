@@ -514,3 +514,51 @@ def test_a_late_strike_is_judged_where_the_client_pressed_it():
     assert len(strikes) == 1 and strikes[0][2]["tier"] == 2
     assert p.dot.cool[1] == bal.steps(350) - 8  # its cooldown started back then
     assert not p.acts
+
+
+# Passives and deeds ---------------------------------------------------------------------------
+
+
+async def test_the_encounter_knows_your_dot_passives(world):
+    await world.redis.sadd("PLAYER:kevin:perks", "steady_hands", "long_breath", "berserk_seal", "quick_study")
+    await world.redis.hset("PLAYER:kevin:attuned", "berserk_seal", 2)
+    _, events, eid = await in_back_alley(world)
+    me = (await info(world, eid))["players"][0]
+    assert sorted(me["perks"]) == ["long_breath", "steady_hands"] and me["berserk"] == 2
+
+
+async def test_second_wind_heals_one(world):
+    await world.redis.sadd("PLAYER:kevin:perks", "second_wind")
+    _, _, eid = await in_back_alley(world)
+    await world.redis.hset("ACCOUNT:kevin", "hp", 50)
+    assert await world.call("encounter_passive", eid, "kevin", "second_wind") == 1
+    assert await world.redis.hget("ACCOUNT:kevin", "hp") == "51"
+
+
+async def test_berserk_seal_seals_its_slot_at_the_first_stagger(world):
+    await world.redis.sadd("PLAYER:kevin:perks", "berserk_seal")
+    await world.redis.hset("PLAYER:kevin:attuned", "berserk_seal", 1)
+    feed, _, eid = await in_back_alley(world)
+    assert await world.call("encounter_passive", eid, "kevin", "seal") == 1
+    assert await world.call("encounter_passive", eid, "kevin", "seal") == 0  # once a fight
+    assert await strike(world, eid, "kevin", "npc:orc-1", 1, 2) == {"sealed": True}
+    assert "Berserk Seal: you stagger, and slot 1 is sealed until the fight ends." in texts(await drain(feed))
+    await world.call("encounter_leave", eid, "pc:kevin", "fled")
+    assert not await world.redis.exists("PLAYER:kevin:sealed")  # out of the fight, it's gone
+
+
+async def test_the_deeds_of_a_fight(world):
+    feed, _, eid = await in_back_alley(world)
+    await world.redis.hset("NPC:orc-1", "hp", 1)
+    await strike(world, eid, "kevin", "npc:orc-1", 1, 2)  # a perfect killing blow
+    said = texts(await drain(feed))
+    assert "The Back-Alley Orcs: A clean killing blow. They respect that. (respect +3)" in said
+    # Fleeing: each culture judges it.
+    await world.redis.delete("PLAYER:kevin:rep:orcs")
+    await world.redis.hset("NPC:orc-1", "hp", 80)
+    await world.redis.sadd("ROOM:back_alley:npcs", "orc-1")
+    await world.call("goto", "kevin", "back_alley")
+    eid = await world.redis.get("PLAYER:kevin:encounter")
+    await drain(feed)
+    await world.call("encounter_flee", eid, "kevin", "west")
+    assert "The Back-Alley Orcs: You ran. (respect -3)" in texts(await drain(feed))

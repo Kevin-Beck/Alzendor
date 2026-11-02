@@ -39,7 +39,7 @@ vectors.runs.forEach((run, i) => {
   compare(`run ${i}`, run.expect, Balance.replay(run.script));
   // The server's snapshot, restored here mid-run, carries on exactly as the run did.
   const s = run.script;
-  const dot = Balance.makeDot(Balance.forPlayer(Balance.rulesFrom(s.rules || {}), s.stats || {}), s.seed, s.pid, s.slots || {}, s.shield);
+  const dot = Balance.makeDot(Balance.forPlayer(Balance.rulesFrom(s.rules || {}), s.stats || {}), s.seed, s.pid, s.slots || {}, s.shield, s.perks || []);
   Balance.restore(dot, run.expect.snap);
   let keys = 0;
   for (const [n, k] of s.keys) if (n <= s.snap_at) keys = k;

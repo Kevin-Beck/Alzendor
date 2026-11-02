@@ -208,6 +208,13 @@ class Dot:
     volleys: list = field(default_factory=list)  # [slot, target, tier, next hit, steps to it, angle]
     draws: tuple = (0.0, 0.0, 0.0, 0.0)
     rng: Rng = None
+    # Passives that work on the dot (docs/combat-redesign.md, Passives):
+    # second_wind, steady_hands, long_breath.
+    perks: frozenset = frozenset()
+    breath: int = 0                             # Long Breath: steps the core stays 20% larger
+    steadied: bool = False                      # Steady Hands: its one stagger an encounter is spent
+    knocked: bool = False                       # knocked since the dot was last in the core (Second Wind)
+    inside: bool = True                         # in the core at the end of the last step
 
     def __post_init__(self):
         self.rng = Rng(self.seed)
@@ -217,10 +224,16 @@ class Dot:
         self.well_target = self.well_r
         self.spin = -1 if self.rng.next() < 0.5 else 1
         self.slots = {int(k): v if isinstance(v, Gear) else Gear.from_dict(v) for k, v in self.slots.items()}
+        self.perks = frozenset(self.perks)
 
     @property
     def dist(self) -> float:
         return math.sqrt(self.x * self.x + self.y * self.y)
+
+    @property
+    def core(self) -> float:
+        """The core's radius now: 20% larger while Long Breath lasts."""
+        return self.rules.core * 1.2 if self.breath > 0 else self.rules.core
 
     @property
     def staggered(self) -> bool:
@@ -235,13 +248,14 @@ class Dot:
         """What the server sends (and the vectors record) of a dot."""
         return {"n": self.n, "x": self.x, "y": self.y, "vx": self.vx, "vy": self.vy,
                 "well": [self.well_a, self.well_r], "stagger": self.stagger, "immune": self.immune,
-                "invuln": self.invuln, "blocking": self.blocking, "dodge_cd": self.dodge_cd,
+                "invuln": self.invuln, "blocking": self.blocking, "dodge_cd": self.dodge_cd, "breath": self.breath,
+                "steadied": self.steadied, "knocked": self.knocked, "inside": self.inside,
                 "cool": {str(k): v for k, v in sorted(self.cool.items()) if v > 0},
                 "debuffs": {k: [round(v[0], 6), v[1], v[2]] for k, v in sorted(self.debuffs.items())}}
 
 
 SNAPSHOT = ("n", "x", "y", "vx", "vy", "well_a", "well_r", "well_target", "spin", "dodge_cd", "invuln", "wobble_after",
-            "stagger", "sx", "sy", "immune", "blocking", "block_n", "wobble_clock")
+            "stagger", "sx", "sy", "immune", "blocking", "block_n", "wobble_clock", "breath", "steadied", "knocked", "inside")
 
 
 def snapshot(dot: Dot) -> dict:
@@ -266,9 +280,9 @@ def restore(dot: Dot, snap: dict) -> None:
     dot.volleys = [list(v) for v in snap["volleys"]]
 
 
-def make_dot(rules: Rules, encounter_seed, pid: str, slots: dict | None = None, shield: bool = False) -> Dot:
+def make_dot(rules: Rules, encounter_seed, pid: str, slots: dict | None = None, shield: bool = False, perks=()) -> Dot:
     """A player's dot at the start of an encounter, at the centre."""
-    return Dot(rules=rules, seed=seed_for(encounter_seed, pid), slots=slots or {}, shield=shield)
+    return Dot(rules=rules, seed=seed_for(encounter_seed, pid), slots=slots or {}, shield=shield, perks=frozenset(perks))
 
 
 def add_debuff(dot: Dot, kind: str, strength: float, ms: float) -> None:
@@ -293,7 +307,7 @@ def strike_check(dot: Dot, slot: int) -> str | None:
     """Why a strike with this slot can't happen now, or None if it can."""
     if dot.staggered:
         return "staggered"
-    if dot.blocking or dot.dist > dot.rules.core:
+    if dot.blocking or dot.dist > dot.core:
         return "not_steady"
     if dot.cool.get(slot, 0) > 0:
         return "cooldown"
@@ -312,9 +326,13 @@ def apply_kick(dot: Dot, kick: float, pattern: str, angle: float | None = None) 
         dx, dy = sign * kick, kick * 0.2 * lean
         dot.vx += dx
         dot.vy += dy
+        if kick > 0:
+            dot.knocked = True
         return math.atan2(dy, dx)
     if angle is None:
         angle = u * TAU
+    if kick > 0:
+        dot.knocked = True
     dot.vx += kick * math.cos(angle)
     dot.vy += kick * math.sin(angle)
     return angle
@@ -327,9 +345,20 @@ def stagger(dot: Dot, angle: float) -> None:
     dot.y = math.sin(angle)
     dot.vx = dot.vy = 0.0
     dot.stagger = steps(dot.rules.stagger_ms)
+    dot.knocked = True
     back = angle + (dot.draws[3] * 2 - 1) * 0.8
     dot.sx = 0.35 * math.cos(back)
     dot.sy = 0.35 * math.sin(back)
+
+
+def steady_hands(dot: Dot, events: list) -> bool:
+    """Steady Hands: the first stagger in an encounter doesn't happen. True
+    if it caught this one."""
+    if "steady_hands" not in dot.perks or dot.steadied:
+        return False
+    dot.steadied = True
+    events.append({"type": "steadied"})
+    return True
 
 
 def _strike(dot: Dot, slot: int, target, events: list) -> None:
@@ -337,6 +366,8 @@ def _strike(dot: Dot, slot: int, target, events: list) -> None:
     debuff on yourself, and the first hit of a volley (the rest follow)."""
     gear = dot.slots[slot]
     t = tier(dot)
+    if t == 2 and "long_breath" in dot.perks:
+        dot.breath = steps(3000)
     dot.cool[slot] = steps(gear.cooldown)
     angle = apply_kick(dot, gear.kick, gear.pattern)
     if gear.debuff:
@@ -351,7 +382,7 @@ def cancel_volleys(dot: Dot, target=None) -> None:
     dot.volleys = [v for v in dot.volleys if target is not None and v[1] != target]
 
 
-def apply_blow(dot: Dot, blow: Blow) -> dict:
+def apply_blow(dot: Dot, blow: Blow, events: list | None = None) -> dict:
     """An NPC attack landing on this dot. Returns `result` (parting, dodge,
     block, perfect_block, staggered or hit: `staggered` means it landed while
     you were staggered, for the extra damage) and `stagger` (it staggered you)."""
@@ -370,7 +401,11 @@ def apply_blow(dot: Dot, blow: Blow) -> dict:
     if not was:
         dot.vx += blow.kick * math.cos(blow.angle)
         dot.vy += blow.kick * math.sin(blow.angle)
+        if blow.kick > 0:
+            dot.knocked = True
     staggers = (blow.stagger or blow.kick >= r.stagger_kick) and not was and dot.immune == 0
+    if staggers and steady_hands(dot, events if events is not None else []):
+        staggers = False
     if staggers:
         stagger(dot, blow.angle)
     if blow.debuff:
@@ -386,6 +421,8 @@ def _timers(dot: Dot, events: list) -> None:
         dot.dodge_cd -= 1
     if dot.immune > 0:
         dot.immune -= 1
+    if dot.breath > 0:
+        dot.breath -= 1
     if dot.invuln > 0:
         dot.invuln -= 1
         if dot.invuln == 0 and dot.wobble_after:
@@ -462,6 +499,7 @@ def _physics(dot: Dot, keys: int, events: list) -> None:
         dot.x += (dot.sx - dot.x) * ease
         dot.y += (dot.sy - dot.y) * ease
         dot.vx = dot.vy = 0.0
+        dot.inside = False
         return
     reel = min(1.0, dot.fade("reeling"))
     calm = 0.1 if dot.blocking else 1.0
@@ -513,7 +551,7 @@ def _physics(dot: Dot, keys: int, events: list) -> None:
     d = dot.dist
     if d >= 1:
         nx, ny = dot.x / d, dot.y / d
-        if wob > 0.15 or dot.immune > 0:
+        if wob > 0.15 or dot.immune > 0 or steady_hands(dot, events):
             vn = dot.vx * nx + dot.vy * ny
             if vn > 0:
                 dot.vx -= 2 * vn * nx
@@ -523,6 +561,13 @@ def _physics(dot: Dot, keys: int, events: list) -> None:
         else:
             stagger(dot, math.atan2(ny, nx))
             events.append({"type": "stagger", "by": "rim"})
+    # Second Wind: back in the core after a knock (which may take a few steps to carry it out).
+    inside = dot.stagger == 0 and dot.dist <= dot.core
+    if inside and not dot.inside and dot.knocked:
+        dot.knocked = False
+        if "second_wind" in dot.perks:
+            events.append({"type": "second_wind"})
+    dot.inside = inside
 
 
 def step(dot: Dot, keys: int = 0, acts=(), blows=()) -> list[dict]:
@@ -550,8 +595,10 @@ def step(dot: Dot, keys: int = 0, acts=(), blows=()) -> list[dict]:
             dot.pending[2] = left - 1
     _volleys(dot, events)
     for blow in blows:
-        result = apply_blow(dot, blow)
+        caught: list = []
+        result = apply_blow(dot, blow, caught)
         events.append({"type": "blow", **result})
+        events += caught
         if result["stagger"]:
             events.append({"type": "stagger", "by": "blow"})
     _physics(dot, keys, events)
@@ -613,7 +660,8 @@ def replay(script: dict) -> dict:
     vectors (tests/balance_vectors.json) are scripts like this, and the
     client's copy of the simulation must replay them the same way."""
     rules = Rules.from_seed(script.get("rules", {})).for_player(**script.get("stats", {}))
-    dot = make_dot(rules, script["seed"], script["pid"], script.get("slots", {}), script.get("shield", False))
+    dot = make_dot(rules, script["seed"], script["pid"], script.get("slots", {}), script.get("shield", False),
+                   script.get("perks", ()))
     keys_at = {int(n): int(k) for n, k in script.get("keys", [])}
     acts_at: dict[int, list] = {}
     for n, *act in script.get("acts", []):

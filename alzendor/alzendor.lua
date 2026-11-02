@@ -1367,8 +1367,15 @@ function enc.player_info(pid)
     end
   end
   local hand = travel.worn(pid, 'hand')
+  -- Passives that work on the dot; and the slot Berserk Seal seals at the first stagger.
+  local perks = list()
+  for _, perk in ipairs({'second_wind', 'steady_hands', 'long_breath'}) do
+    if has_perk(pid, perk) then perks[#perks + 1] = perk end
+  end
+  local berserk = has_perk(pid, 'berserk_seal') and tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':attuned', 'berserk_seal')) or nil
   return {pid = pid, name = name_of(pid), slots = slots, shield = hand and hand.type == 'shield' and (tonumber(hand.block) or 1) or 0,
-    stats = {poise = stat(pid, 'poise'), focus = stat(pid, 'focus'), resilience = stat(pid, 'resilience')}}
+    stats = {poise = stat(pid, 'poise'), focus = stat(pid, 'focus'), resilience = stat(pid, 'resilience')},
+    perks = perks, berserk = berserk}
 end
 
 function enc.npc_info(nid)
@@ -3352,6 +3359,30 @@ redis.register_function('encounter_note', function(keys, args)
   local text = args[3] == 'reels' and (who .. ' reels!') or (who .. ' steadies itself.')
   emit('ROOM:' .. rid, {type = 'emote', verb = args[3], entity_id = 'npc:' .. args[2], text = text})
   return 1
+end)
+
+-- args: id, pid, what. A passive at work on the dot: `second_wind` (back in
+-- the core after a knock: 1 health) or `seal` (Berserk Seal: the first
+-- stagger seals its slot for the rest of the fight).
+redis.register_function('encounter_passive', function(keys, args)
+  local id, pid, what = args[1], args[2], args[3]
+  local rid = redis.call('HGET', enc_key(id), 'room')
+  if not rid or redis.call('ZSCORE', enc_key(id, 'players'), pid) == false then return 0 end
+  if what == 'second_wind' and has_perk(pid, 'second_wind') then
+    local card = player_card(pid)
+    if card.hp >= card.max_hp then return 0 end
+    redis.call('HSET', 'ACCOUNT:' .. pid, 'hp', card.hp + 1)
+    emit('ROOM:' .. rid, {type = 'entity', entity = player_card(pid)})
+    emit('PLAYER:' .. pid, {type = 'passive', perk = 'second_wind', amount = 1})
+    return 1
+  elseif what == 'seal' and has_perk(pid, 'berserk_seal') then
+    local n = tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':attuned', 'berserk_seal'))
+    if not n or redis.call('EXISTS', 'PLAYER:' .. pid .. ':sealed') == 1 then return 0 end
+    redis.call('SADD', 'PLAYER:' .. pid .. ':sealed', n)
+    notice(pid, 'Berserk Seal: you stagger, and slot ' .. n .. ' is sealed until the fight ends.')
+    return 1
+  end
+  return 0
 end)
 
 -- args: id. Everything about it, as JSON ('' if it's over).
