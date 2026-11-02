@@ -465,7 +465,9 @@ def judge(world: World, nids: list[str], fights: int, seed: int = 1) -> Verdict:
     level = max(world.levels[n] for n in nids)
     room = len(nids) > 1
     boss = not room and world.is_boss(nids[0])
-    big = boss and data["npcs"][nids[0]].get("max_hp", 10) >= 1000
+    # A boss for three: one of 1000 health or more as the content first placed it, which its
+    # poise still says (it was set to 100 + health / 40); its health may have been retuned since.
+    big = boss and float(data["npcs"][nids[0]].get("poise") or 0) >= 125
     kind = "room" if room else "big boss" if big else "boss" if boss else "ordinary"
     times, ideal_wins, sloppy_wins, staggers, played = [], 0, 0, 0, 0
     for cid in sorted(data["classes"]):
