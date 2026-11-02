@@ -3249,6 +3249,18 @@ function slotKey(e) {
 
 document.addEventListener("keydown", slotKey);
 
+// Enter (or /) anywhere on the page opens the command line, ready to type,
+// wherever focus was left (a clicked button, the map). In a fight, combat
+// focus has these keys first (see fight).
+document.addEventListener("keydown", (e) => {
+  if ((e.key !== "Enter" && e.key !== "/") || e.ctrlKey || e.metaKey || e.altKey) return;
+  if ($("world").classList.contains("hidden") || document.querySelector("dialog[open]")) return;
+  const field = e.target;
+  if (field === $("input") || (field.closest && field.closest("input, textarea, select, [contenteditable]"))) return;
+  e.preventDefault();
+  $("input").focus();
+});
+
 $("input").addEventListener("keydown", (e) => {
   if (e.key === "Tab") {
     e.preventDefault();
@@ -3331,6 +3343,7 @@ const fight = (() => {
     setFocus(false, true);
     render();
     renderPanels();
+    if (!document.querySelector("dialog[open]")) $("input").focus(); // ready to type again
   }
 
   function onEncounter(event) {
