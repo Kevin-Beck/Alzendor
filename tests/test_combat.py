@@ -255,3 +255,65 @@ async def test_gear_lists_what_you_own_quickest_first(world):
     assert "  Dagger (light, green): every 0.3s, 2 / 3 / 4 damage [weather -14%]" in lines
     assert "  Magic Missile (spell, grey): every 4.5s, 14 / 18 / 30 damage in 4 hits" in lines
     assert lines[-1].startswith("Your slots: 1 Kick · 2 Magic Missile · 3 Health Potion.")
+
+
+# Seeing danger ---------------------------------------------------------------------------
+
+from .conftest import set_weather  # noqa: E402
+
+
+def last_room(events):
+    return of_type(events, "room")[-1]["room"]
+
+
+async def test_rings_show_enemies_next_door_and_not_neutral_npcs(world):
+    kevin = await enter(world, "kevin")  # the tavern; the back alley (east) has the orc warrior
+    assert last_room(await drain(kevin))["danger"] == ["back_alley"]
+    await world.redis.srem("ROOM:back_alley:npcs", "orc-1")  # just the whelp: neutral
+    await world.call("look", "kevin", "")
+    assert last_room(await drain(kevin))["danger"] == []
+
+
+async def test_heavy_rain_hides_danger_and_hunters_nose_smells_it(world):
+    await set_weather(world.redis, "alzendor", 0, 0, 1)  # a downpour (the tavern itself is dry)
+    kevin = await enter(world, "kevin")
+    room = last_room(await drain(kevin))
+    assert room["danger"] == [] and "scents" not in room
+    await world.call("look", "kevin", "east")
+    assert texts(await drain(kevin)) == ["The rain hides what's east."]
+    await world.redis.sadd("PLAYER:kevin:perks", "hunters_nose")
+    await world.call("look", "kevin", "")
+    room = last_room(await drain(kevin))
+    assert room["danger"] == ["back_alley"] and room["scents"] == ["east"]
+    await world.call("look", "kevin", "east")
+    assert texts(await drain(kevin)) == ["The rain hides what's east. You smell an Orc Warrior to the east."]
+
+
+async def test_looking_a_way_shows_the_enemies_there(world):
+    kevin = await enter(world, "kevin")
+    await drain(kevin)
+    await world.call("look", "kevin", "east")
+    look = of_type(await drain(kevin), "look")[0]
+    assert look["text"] == "East: Back Alley. The Orc Warrior waits there."
+    assert [c["id"] for c in look["entities"]] == ["npc:orc-1"] and look["entities"][0]["disposition"] == "hostile"
+    assert look["danger"] == ["back_alley"]
+    await world.call("look", "kevin", "north")
+    assert of_type(await drain(kevin), "look")[0]["text"].endswith("Nothing hostile that you can see.")
+
+
+async def test_rings_are_a_snapshot(world):
+    kevin = await enter(world, "kevin")
+    await drain(kevin)
+    await world.redis.srem("ROOM:back_alley:npcs", "orc-1")  # the orc wanders off: nothing tells Kevin
+    assert of_type(await drain(kevin), "room") == []
+    await world.call("look", "kevin", "")  # until he looks
+    assert last_room(await drain(kevin))["danger"] == []
+
+
+async def test_too_dark_to_see_that_way(world):
+    await world.redis.hset("ACCOUNT:kevin", "name", "Kevin")
+    assert await world.call("create_character", "kevin", "rogue", "human", "last_stand", "sailor") == ""
+    kevin = await enter(world, "kevin")  # on the slipway; the sail loft (east) is shuttered and dark
+    await drain(kevin)
+    await world.call("look", "kevin", "east")
+    assert texts(await drain(kevin)) == ["It's too dark to make out what's east."]

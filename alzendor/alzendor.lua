@@ -1044,6 +1044,38 @@ local function quest_items_here(pid, rid)
   return out
 end
 
+-- Seeing danger (docs/combat-redesign.md): the enemies in a room (NPCs with
+-- attacks, hostile to this player; an ambusher only to its rider), and the
+-- rooms past this one's exits that have any. Darkness and heavy rain or snow
+-- hide them (here or there), unless the player has Hunter's Nose, which
+-- smells them anyway. Worked out on arrival and on LOOK, never pushed live.
+local function enemies_in(pid, rid)
+  local out = {}
+  for _, nid in ipairs(sorted(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':npcs'))) do
+    local owner = redis.call('HGET', 'NPC:' .. nid, 'owner')
+    if #npc_attacks(nid) > 0 and disposition_for(pid, nid) == 'hostile' and (not owner or owner == pid) then out[#out + 1] = nid end
+  end
+  return out
+end
+
+-- The rooms next door with enemies in them ({room ids}, and the directions
+-- smelled rather than seen), as far as the player can tell.
+local function danger_near(pid, rid)
+  local rooms, smelled = list(), list()
+  local here_seen = can_see(weather_at(rid), pid)
+  local nose = has_perk(pid, 'hunters_nose')
+  if not here_seen and not nose then return rooms, smelled end
+  for _, dir in ipairs(sorted(redis.call('HKEYS', 'ROOM:' .. rid .. ':exits'))) do
+    local dest = redis.call('HGET', 'ROOM:' .. rid .. ':exits', dir)
+    local seen = here_seen and can_see(weather_at(dest), pid)
+    if (seen or nose) and #enemies_in(pid, dest) > 0 then
+      rooms[#rooms + 1] = dest
+      if not seen then smelled[#smelled + 1] = dir end
+    end
+  end
+  return rooms, smelled
+end
+
 local function room_event(pid, rid, cause)
   local info = hgetall('ROOM:' .. rid .. ':info')
   -- In heavy rain or snow, only the ways you already know show.
@@ -1109,20 +1141,9 @@ local function room_event(pid, rid, cause)
   end
   if #items > 0 then lines[#lines + 1] = 'You see: ' .. table.concat(item_names, ', ') end
   if #entities > 0 then lines[#lines + 1] = 'Also here: ' .. table.concat(entity_names, ', ') end
-  -- Hunter's Nose: creatures in the rooms next door.
-  local scents = list()
-  if has_perk(pid, 'hunters_nose') then
-    for _, dir in ipairs(exits) do
-      local dest = redis.call('HGET', 'ROOM:' .. rid .. ':exits', dir)
-      for _, nid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. dest .. ':npcs')) do
-        if redis.call('HGET', 'NPC:' .. nid, 'disposition') == 'hostile' and not redis.call('HGET', 'NPC:' .. nid, 'owner') then
-          scents[#scents + 1] = dir
-          break
-        end
-      end
-    end
-    if #scents > 0 then lines[#lines + 1] = 'You smell something to the ' .. table.concat(scents, ', ') .. '.' end
-  end
+  -- Danger next door, as a ring on the map; with Hunter's Nose, what you can't see you smell.
+  local danger, scents = danger_near(pid, rid)
+  if #scents > 0 then lines[#lines + 1] = 'You smell something to the ' .. table.concat(scents, ', ') .. '.' end
 
   return emit('PLAYER:' .. pid, {
     type = 'room',
@@ -1132,7 +1153,7 @@ local function room_event(pid, rid, cause)
       exits = exits, exits_hidden = hidden, routes = routes, items = items, features = features, entities = entities,
       dark = dark or nil, self = player_card(pid), safe = is_safe(pid, rid), indoor = w.indoor or false, step_ms = step_ms(pid, rid),
       waypoint = info.waypoint == '1' or nil, pos = info.waypoint == '1' and room_pos(info) or nil,
-      scents = #scents > 0 and scents or nil,
+      scents = #scents > 0 and scents or nil, danger = danger,
     },
     text = table.concat(lines, '\n'),
   })
@@ -1837,12 +1858,53 @@ local function inspect(pid, rid, word)
   end
 end
 
+-- LOOK <direction>: what's that way. The room's name and the enemies in it,
+-- as cards, or why you can't see; with Hunter's Nose, what you smell there.
+-- It refreshes the danger rings too.
+local function look_toward(pid, rid, dir, dest)
+  local here_w, there_w = weather_at(rid), weather_at(dest)
+  local seen = can_see(here_w, pid) and can_see(there_w, pid)
+  local enemies = enemies_in(pid, dest)
+  local danger = danger_near(pid, rid)
+  local name = redis.call('HGET', 'ROOM:' .. dest .. ':info', 'name') or dest
+  local event = {type = 'look', dir = dir, room = dest, danger = danger}
+  if seen then
+    local cards, names = list(), {}
+    for i, nid in ipairs(enemies) do
+      local card = npc_card(nid)
+      card.disposition = 'hostile'
+      cards[i], names[i] = card, npc_display(nid)
+    end
+    event.name, event.entities = name, cards
+    event.text = capitalize(dir) .. ': ' .. name .. '. '
+      .. (#names > 0 and (capitalize(table.concat(names, ', ')) .. (#names > 1 and ' wait there.' or ' waits there.'))
+        or 'Nothing hostile that you can see.')
+  else
+    local hidden = can_see(here_w, pid) and obscured_by(there_w) or obscured_by(here_w)
+    event.text = hidden == 'darkness' and ("It's too dark to make out what's " .. dir .. '.')
+      or ('The ' .. hidden .. " hides what's " .. dir .. '.')
+    if has_perk(pid, 'hunters_nose') then
+      local names = {}
+      for i, nid in ipairs(enemies) do
+        local what = redis.call('HGET', 'NPC:' .. nid, 'name') or nid
+        names[i] = (string.find(string.lower(what), '^[aeiou]') and 'an ' or 'a ') .. what
+      end
+      event.smelled = #names > 0
+      if #names > 0 then event.text = event.text .. ' You smell ' .. table.concat(names, ', ') .. ' to the ' .. dir .. '.' end
+    end
+  end
+  emit('PLAYER:' .. pid, event)
+end
+
 redis.register_function('look', action(function(pid, rid, args)
-  if (args[2] or '') == '' then
+  local word = args[2] or ''
+  if word == '' then
     if can_see(weather_at(rid), pid) and glimpse(pid, rid) then map_event(pid, {rid}, false) end
     return room_event(pid, rid, 'look')
   end
-  inspect(pid, rid, args[2])
+  local dest = redis.call('HGET', 'ROOM:' .. rid .. ':exits', word)
+  if dest then return look_toward(pid, rid, word, dest) end
+  inspect(pid, rid, word)
 end))
 
 redis.register_function('inspect', action(function(pid, rid, args)

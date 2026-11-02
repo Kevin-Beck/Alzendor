@@ -163,9 +163,11 @@ def _channel(rest: str) -> str:
 # Looking around ---------------------------------------------------------------
 
 
-@command("look", "LOOK [thing]", "Describe the room, or something in it.", aliases=("l",))
+@command("look", "LOOK [thing or direction]", "Describe the room, something in it, or what's that way (LOOK NORTH, L N).",
+         aliases=("l",))
 async def look(ctx: Context, rest: str) -> None:
-    await ctx.call("look", _thing(rest))
+    thing = _thing(rest)
+    await ctx.call("look", SHORT_DIRECTIONS.get(thing, thing))
 
 
 @command("inspect", "INSPECT <thing>", "Examine something closely.", aliases=("examine", "x"))

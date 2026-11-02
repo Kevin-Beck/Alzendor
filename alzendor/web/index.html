@@ -1289,6 +1289,7 @@ function show(event) {
   if (event.type === "intro") return line(event.text, "intro");
   if (event.type === "character") { character = event; renderCharacter(); fight.render(); return renderTarget(); }
   if (event.type === "encounter") return fight.onEncounter(event);
+  if (event.type === "look" && room) { room.danger = event.danger || []; renderMap(); }
   if (event.type === "dispositions") return applyDispositions(event.dispositions, event.talk || {});
   if (event.type === "quest_update") return questUpdate(event);
   if (event.type === "exposure") { exposure = event.kind ? event : null; return renderExposure(); }
@@ -2827,6 +2828,11 @@ function drawMap() {
     const g = svgEl("g", { class: "node" + (current ? " current" : ""), "data-room": r.id }, svg);
     svgEl("title", {}, g).textContent = r.explored ? r.name : "Unexplored";
     if (current) svgEl("circle", { cx: r.pos[0], cy: r.pos[1], r: 12 * k, fill: "none", stroke: "var(--accent)", "stroke-width": 2, ...line }, g);
+    // Danger next door: a thin red ring (as of when you arrived or last looked).
+    if (!current && room && room.danger && room.danger.includes(r.id)) {
+      svgEl("circle", { class: "danger", cx: r.pos[0], cy: r.pos[1], r: 10 * k, fill: "none", stroke: "var(--hp-low)", "stroke-width": 1.5, ...line }, g);
+      svgEl("title", {}, g).textContent = "Something hostile is there. LOOK that way to see what.";
+    }
     svgEl("circle", { class: "dot", cx: r.pos[0], cy: r.pos[1], r: radius * k,
       fill: r.explored ? areaColor(r.area) : "var(--map-bg)", stroke: r.explored ? "var(--map-bg)" : "var(--fog)",
       "stroke-width": r.explored ? 2 : 1.5, ...line }, g);
@@ -3050,6 +3056,11 @@ function walkTo(id) {
 }
 
 function nextStep() {
+  // Never into danger: a walk stops before a ringed room.
+  if (room && room.danger && room.danger.includes(walk.steps[0].to)) {
+    line(`Something hostile is to the ${walk.steps[0].dir}. (LOOK ${walk.steps[0].dir.toUpperCase()} to see what.)`, "t-system");
+    return stopWalk();
+  }
   walk.expect = walk.steps[0].to;
   sendCmd("move " + walk.steps[0].dir);
 }
