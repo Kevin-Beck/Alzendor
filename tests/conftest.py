@@ -40,6 +40,8 @@ async def world(redis):
     await redis.hset("alz:rules", "event_chance", 0)
     # The next quest in a chain is offered at once, not a beat later; offers have a test of their own.
     await redis.hset("alz:rules", "offer_beat_ms", 0)
+    # Gear lands its amounts as listed; the tuned scale has a test of its own (test_tuning).
+    await redis.hset("alz:rules", "balance_damage_scale", 1)
     # Lures only come when a test asks for them.
     await redis.hset("alz:rules", "lure_chance", 0)
     # Tests run on a mild, dry, temperate day in every realm; weather tests set their own.

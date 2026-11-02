@@ -6289,7 +6289,7 @@
     "balance_boss_stagger_ms": 4000,
     "balance_boss_stagger_dmg": 1.5,
     "balance_boss_poise_decay": 5,
-    "balance_damage_scale": 1
+    "balance_damage_scale": 0.4
   },
   "channels": [
     "general"
