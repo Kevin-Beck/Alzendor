@@ -269,12 +269,12 @@
       "details": "A knight in armour of thorns, watching.",
       "keywords": "thorn knight",
       "room": "gl_maze1",
-      "max_hp": 600,
+      "max_hp": 413,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "lance",
-          "period": 7800,
+          "period": 10000,
           "damage": 55,
           "kick": 1.127,
           "hit": "{actor} drives a thorned lance at {target}.",
@@ -294,12 +294,12 @@
       "details": "A knight in armour of thorns, watching.",
       "keywords": "thorn knight",
       "room": "gl_maze3",
-      "max_hp": 600,
+      "max_hp": 413,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "lance",
-          "period": 7800,
+          "period": 10000,
           "damage": 55,
           "kick": 1.127,
           "hit": "{actor} drives a thorned lance at {target}.",
@@ -319,12 +319,12 @@
       "details": "A knight in armour of thorns, watching.",
       "keywords": "thorn knight",
       "room": "gl_hall",
-      "max_hp": 600,
+      "max_hp": 413,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "lance",
-          "period": 7800,
+          "period": 10000,
           "damage": 55,
           "kick": 1.127,
           "hit": "{actor} drives a thorned lance at {target}.",
@@ -344,7 +344,7 @@
       "details": "A lord of the hunt, antlered, with a spear and a horn.",
       "keywords": "erlking",
       "room": "gl_court",
-      "max_hp": 10122,
+      "max_hp": 5000,
       "poise": 225,
       "disposition": "hostile",
       "attacks": [
@@ -383,7 +383,7 @@
       "kind": "Light",
       "keywords": "spear hunt wild",
       "effect": "damage",
-      "cooldown": 871,
+      "cooldown": 1306,
       "kick": 1.145,
       "pattern": "bump",
       "amounts": [

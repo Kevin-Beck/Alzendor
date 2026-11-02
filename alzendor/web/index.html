@@ -668,7 +668,7 @@ const Balance = (() => {
     core: 0.22, perfect_r: 0.06, clean_r: 0.14, damping: 2.5, block_damping: 10, push: 2.6, gravity: 0.9,
     gravity_falloff: 0.3, well_radius: [0.5, 0.85], well_speed: 0.3, warn_ms: 1500, buffer_ms: 100,
     stagger_ms: 1200, stagger_dmg: 1.5, stagger_kick: 1.8, stagger_immune_ms: 3000, dodge_ms: 600,
-    dodge_cd_ms: 3000, wobble_ms: 2500, block_cut: 0.7, block_kick: 0.15, perfect_block_poise: 40,
+    dodge_cd_ms: 3000, global_cd_ms: 0, wobble_ms: 2500, block_cut: 0.7, block_kick: 0.15, perfect_block_poise: 40,
     boss_stagger_ms: 4000, boss_stagger_dmg: 1.5, boss_poise_decay: 5, damage_scale: 1, defend_perfect_ms: 60,
     debuff_scale: 1,
   };
@@ -780,7 +780,9 @@ const Balance = (() => {
     const g = dot.slots[slot];
     const t = tier(dot);
     if (t === 2 && dot.perks.has("long_breath")) dot.breath = steps(3000);
-    dot.cool[slot] = steps(g.cooldown);
+    const shared = steps(dot.rules.global_cd_ms);
+    for (const other of Object.keys(dot.slots)) if ((dot.cool[other] || 0) < shared) dot.cool[other] = shared;
+    dot.cool[slot] = Math.max(steps(g.cooldown), shared);
     const angle = applyKick(dot, g.kick, g.pattern);
     if (g.debuff) addDebuff(dot, g.debuff.kind, Number(g.debuff.strength), Number(g.debuff.ms));
     events.push({ type: "strike", slot, target, tier: t, hit: 1, hits: g.hits });
@@ -1089,6 +1091,7 @@ let lastSeq = 0;        // highest event sequence number shown
 let retries = 0;
 let reconnectTimer = null;
 let room = null;        // latest room snapshot, kept current by room events
+
 let resuming = false;   // waiting to hear whether a saved session is still valid
 let target = null;      // selected entity id ('pc:…' or 'npc:…')
 let walk = null;        // a click-to-walk in progress: { dest, steps: [{dir, to}], expect, timer }
@@ -1402,10 +1405,11 @@ function renderPanels() {
   if (room && room.safe) $("room-area").append(" · ", el("span", "safe", "safe to rest"));
   const fleeing = fight.active();
   $("exits").replaceChildren(...(room ? room.exits : []).map((dir) => {
-    const b = el("button", fleeing ? "flee" : "", fleeing ? `flee ${dir}` : dir);
+    const b = el("button", "", dir);
     b.type = "button";
-    if (fleeing) b.title = `FLEE ${dir.toUpperCase()}: steady first; the toughest enemy gets one parting blow`;
-    b.onclick = () => { stopWalk(); fleeing ? fight.flee(dir) : sendCmd("move " + dir); };
+    b.disabled = fleeing;
+    if (fleeing) b.title = `In a fight: press ${keyLabel(keys.flee)} (or Flee) to run back the way you came`;
+    b.onclick = () => { stopWalk(); sendCmd("move " + dir); };
     return b;
   }));
   if (room && room.dark) {
@@ -1803,8 +1807,9 @@ function renderTarget() {
 // character (letters are kept lowercase), Space, Shift or F1 to F12. Choosing
 // a key that's in use swaps the two. Fight settings (alz.fight): which keys
 // steer (WASD, the arrows, or both), and whether the block key holds or toggles.
-const KEY_DEFAULTS = { 1: "4", 2: "3", 3: "2", dodge: " ", block: "Shift" };
-const KEY_NAMES = { 1: "Slot 1", 2: "Slot 2", 3: "Slot 3", dodge: "Dodge", block: "Block (with a shield)" };
+const KEY_DEFAULTS = { 1: "j", 2: "k", 3: "l", dodge: " ", block: "Shift", flee: "f" };
+const KEY_NAMES = { 1: "Slot 1", 2: "Slot 2", 3: "Slot 3", dodge: "Dodge", block: "Block (with a shield)",
+  flee: "Flee (back the way you came)" };
 const FIGHT_DEFAULTS = { steer: "both", toggleBlock: false };
 
 function loadFightPrefs() {
@@ -1825,7 +1830,12 @@ function loadKeys() {
   let saved = {};
   try { saved = JSON.parse(store.get("alz.keys") || "{}") || {}; } catch {}
   delete saved.defend; // from before balance
-  return { ...KEY_DEFAULTS, ...saved };
+  const merged = { ...KEY_DEFAULTS, ...saved };
+  // Two actions on one key (a saved key that's now another's default): the saved one keeps it.
+  for (const action of Object.keys(KEY_DEFAULTS)) {
+    if (!(action in saved) && Object.keys(saved).some((a) => saved[a] === merged[action])) merged[action] = "";
+  }
+  return merged;
 }
 
 const keys = loadKeys();
@@ -1836,7 +1846,7 @@ function keyOf(e) {
 }
 
 function keyLabel(k) {
-  return k === " " ? "Space" : k.length === 1 ? k.toUpperCase() : k;
+  return !k ? "none" : k === " " ? "Space" : k.length === 1 ? k.toUpperCase() : k;
 }
 
 function bindable(k) {
@@ -1853,10 +1863,11 @@ function bindKey(action, k) {
 }
 
 function showKeys() {
-  $("input").placeholder = `Type a command — Tab picks a target, ${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} use your slots`;
+  $("input").placeholder = `Type a command — Tab picks a target; 1, 2 and 3 use your slots`;
   const steerWords = { both: "WASD or the arrows steer", wasd: "WASD steers", arrows: "the arrows steer" }[fightPrefs.steer];
   $("slot-hint").textContent = `${[1, 2, 3].map((n) => keyLabel(keys[n])).join(" ")} · in a fight ${steerWords}, `
-    + `${keyLabel(keys.dodge)} dodges, ${keyLabel(keys.block)} ${fightPrefs.toggleBlock ? "toggles a block" : "blocks"}`;
+    + `${keyLabel(keys.dodge)} dodges, ${keyLabel(keys.block)} ${fightPrefs.toggleBlock ? "toggles a block" : "blocks"}, `
+    + `${keyLabel(keys.flee)} flees back the way you came`;
   fight.render();
 }
 
@@ -1867,7 +1878,7 @@ let choosing = null; // the action whose key is being chosen
 function renderSettings() {
   const body = $("settings-body");
   const list = el("ul", "keys");
-  for (const action of [1, 2, 3, "dodge", "block"]) {
+  for (const action of [1, 2, 3, "dodge", "block", "flee"]) {
     const li = el("li");
     const b = el("button", "keycap" + (choosing === String(action) ? " listening" : ""),
       choosing === String(action) ? "Press a key…" : keyLabel(keys[action]));
@@ -1877,7 +1888,7 @@ function renderSettings() {
     li.append(el("span", "", KEY_NAMES[action]), b);
     list.append(li);
   }
-  const reset = el("button", "", "Reset keys (4, 3, 2, Space, Shift)");
+  const reset = el("button", "", "Reset keys (J, K, L, Space, Shift, F)");
   reset.type = "button";
   reset.addEventListener("click", () => {
     for (const [action, k] of Object.entries(KEY_DEFAULTS)) keys[action] = k;
@@ -1909,7 +1920,8 @@ function renderSettings() {
   fightList.append(steerLi, toggleLi);
   body.replaceChildren(el("h3", "", "Keys"),
     el("p", "note", "Click a key, then press the one you want; Esc keeps the old one. A key that's already in use swaps over. "
-      + "Keys work when the command line is empty (or in a fight), so a letter can't start a command."),
+      + "In a fight, keys go to the fight; Enter opens the command line, and Enter on an empty line goes back. "
+      + "Out of a fight a letter key types as usual (use the slot buttons, or type 1, 2 or 3)."),
     list, reset, el("h3", "", "In a fight"), fightList);
   const focus = body.querySelector(`.keycap[data-action="${choosing}"]`);
   if (focus) focus.focus();
@@ -3203,7 +3215,7 @@ $("login").addEventListener("submit", (e) => {
 $("command").addEventListener("submit", (e) => {
   e.preventDefault();
   const text = $("input").value.trim();
-  if (!text) return;
+  if (!text) return fight.sent(); // Enter on an empty line: back to the fight's keys
   stopWalk();
   history.push(text);
   scrollToLatest();
@@ -3224,6 +3236,7 @@ function slotKey(e) {
   if ($("world").classList.contains("hidden") || document.querySelector("dialog[open]")) return false;
   const field = e.target;
   if (field === $("input")) {
+    if (/^[a-z]$/.test(k)) return false; // a letter types, so it can start a command
     const all = field.selectionStart === 0 && field.selectionEnd === field.value.length;
     if (field.value && !all) return false;
   } else if (field.closest && field.closest("input, textarea, select, [contenteditable]")) {
@@ -3261,7 +3274,8 @@ $("input").addEventListener("keydown", (e) => {
 //
 // In a fight, with the command line empty, the page is in combat focus: WASD
 // (or the arrows) steer, your slot keys strike, Space dodges and Shift (held)
-// blocks with a shield in hand (all of which Settings can change). Enter or / types a command; Esc goes back.
+// blocks with a shield in hand, F flees back the way you came (all of which Settings can change).
+// Enter or / types a command; Enter on an empty line (or Esc, or sending a command) goes back.
 // Out of a fight the slot row still works: a heal or guard just happens, and
 // damage gear on your target strikes first, which starts a fight.
 const fight = (() => {
@@ -3271,7 +3285,8 @@ const fight = (() => {
   const steerOf = (k) => (fightPrefs.steer !== "arrows" && WASD[k]) || (fightPrefs.steer !== "wasd" && ARROWS[k]) || 0;
   const TIER_WORDS = { edge: "Edge", clean: "Clean", perfect: "Perfect!" };
   const REFUSED = { not_steady: "Not steady", cooldown: "Not ready", staggered: "Staggered", blocking: "Blocking",
-    empty: "Empty slot", no_shield: "No shield", gone: "Gone", no_exit: "No way out", dark: "Too dark" };
+    empty: "Empty slot", no_shield: "No shield", gone: "Gone", no_exit: "No way out", dark: "Too dark",
+    no_way_back: "No way back" };
   const STEP_MS = 1000 / Balance.HZ;
   const BLEND = 0.6; // how much of a correction is left after each frame (gone in ~6)
 
@@ -3422,9 +3437,12 @@ const fight = (() => {
     input("strike", { slot: n, target: target || "" });
   }
 
-  function flee(dir) {
-    if (enc) input("flee", { dir });
-    else sendCmd("move " + dir);
+  // The flee key: steady first, back the way you came (the server knows it).
+  function fleeKey() {
+    if (!enc) return;
+    if (enc.dot.stagger > 0 || Balance.dist(enc.dot) > Balance.coreOf(enc.dot)) return flash("Not steady", "bad", 700); // ignored off centre
+    flash("Fleeing…", "", 900);
+    input("flee", { dir: "back" });
   }
 
   function steer(mask) {
@@ -3438,7 +3456,7 @@ const fight = (() => {
     if (focus && document.activeElement === $("input")) $("input").blur();
     if (!focus && enc && !quiet) $("input").focus();
     if (ui) {
-      ui.mode.textContent = focus ? "combat keys · Enter or / to type" : enc ? "typing · Esc to fight" : "";
+      ui.mode.textContent = focus ? "combat keys · Enter to type" : enc ? "typing · Enter on an empty line (or Esc) to fight" : "";
       ui.mode.classList.toggle("on", focus);
     }
   }
@@ -3452,12 +3470,13 @@ const fight = (() => {
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const slot = [1, 2, 3].find((n) => keys[n] === k);
-    const bound = slot || k === keys.dodge || k === keys.block;
+    const bound = slot || k === keys.dodge || k === keys.block || k === keys.flee;
     if (k === "Enter" || k === "/") setFocus(false);
     else if (bound && e.repeat) { /* held: nothing more */ }
     else if (slot) strike(slot);
     else if (k === keys.dodge) input("dodge");
     else if (k === keys.block) raise();
+    else if (k === keys.flee) fleeKey();
     else if (steerOf(k)) steer(enc.held | steerOf(k));
     else if (k === "Tab") cycleTarget(e.shiftKey ? -1 : 1);
     else if (k === "Escape") { /* already fighting */ }
@@ -3555,7 +3574,12 @@ const fight = (() => {
     block.append(el("span", "kh block-key"));
     block.addEventListener("pointerdown", (e) => { e.preventDefault(); block.setPointerCapture(e.pointerId); if (enc) raise(); });
     for (const ev of ["pointerup", "pointercancel"]) block.addEventListener(ev, () => { if (enc && !fightPrefs.toggleBlock) input("unblock"); });
-    defs.append(dodge, block);
+    const fleeB = el("button", "", "Flee");
+    fleeB.type = "button";
+    fleeB.title = "Back the way you came, steady first: the toughest enemy gets one parting blow";
+    fleeB.append(el("span", "kh flee-key"));
+    fleeB.addEventListener("pointerdown", (e) => { e.preventDefault(); fleeKey(); });
+    defs.append(dodge, block, fleeB);
     box.append(head, arena, status_, chips, strikes, defs);
     // The touch stick: eight ways, like the keys.
     let stickId = null;
@@ -3578,7 +3602,7 @@ const fight = (() => {
       stick.addEventListener(ev, () => { stickId = null; knob.style.transform = ""; if (enc && enc.stick) { enc.stick = 0; input(null); } });
     }
     if (new URLSearchParams(location.search).get("touch") === "1") box.classList.add("touch");
-    ui = { box, mode, boss: head.querySelector(".boss"), arena, canvas, status: status_, chips, buttons, defs, dodge, dodgeCd, block };
+    ui = { box, mode, boss: head.querySelector(".boss"), arena, canvas, status: status_, chips, buttons, defs, dodge, dodgeCd, block, flee: fleeB };
   }
 
   // A slot's gear, as the kit describes it (with the weather now).
@@ -3673,7 +3697,7 @@ const fight = (() => {
       s.res.textContent = res ? res.text : g ? `every ${(g.cooldown_ms / 1000).toFixed(1)}s` : "";
       s.b.className = "strike" + (res ? " " + res.cls : "") + (g ? "" : " empty");
       const left = enc ? enc.dot.cool[n] || 0 : 0;
-      const total = enc && enc.slots[n] ? Balance.steps(enc.slots[n].cooldown) : 1;
+      const total = enc && enc.slots[n] ? Math.max(Balance.steps(enc.slots[n].cooldown), Balance.steps(enc.dot.rules.global_cd_ms), left) : 1;
       s.cd.style.width = left ? (100 * left) / total + "%" : "0";
       // A passive attuned to this slot, named.
       const attuned = character ? character.perks.filter((p) => p.attuned === n) : [];
@@ -3687,6 +3711,7 @@ const fight = (() => {
     const dot = enc.dot;
     ui.block.classList.toggle("hidden", !enc.shield);
     ui.dodge.querySelector(".dodge-key").textContent = ` (${keyLabel(keys.dodge)})`;
+    ui.flee.querySelector(".flee-key").textContent = ` (${keyLabel(keys.flee)})`;
     ui.block.querySelector(".block-key").textContent = fightPrefs.toggleBlock ? ` (${keyLabel(keys.block)} toggles)` : ` (hold ${keyLabel(keys.block)})`;
     ui.block.classList.toggle("held", dot.blocking);
     ui.dodgeCd.style.width = dot.dodge_cd ? (100 * dot.dodge_cd) / Balance.steps(dot.rules.dodge_cd_ms) + "%" : "0";
@@ -3724,7 +3749,7 @@ const fight = (() => {
     }
   }
 
-  return { active, onEncounter, onState, onRefused, onCombat, strike, flee, render, end, sent() { if (enc) setFocus(true); },
+  return { active, onEncounter, onState, onRefused, onCombat, strike, render, end, sent() { if (enc) setFocus(true); },
     stats: () => ({ ...stats }), dot: () => (enc ? { x: enc.dot.x, y: enc.dot.y, n: enc.dot.n, held: enc.held, blocking: enc.dot.blocking, dodge_cd: enc.dot.dodge_cd } : null) };
 })();
 

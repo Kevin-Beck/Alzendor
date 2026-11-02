@@ -1781,6 +1781,7 @@ local function relocate(pid, rid, dest, verb, target, leave, arrive)
     emit('ROOM:' .. rid, {type = 'leave', actor = pid, verb = verb, target = target, entity_id = 'pc:' .. pid, text = leave})
   end
   redis.call('SET', 'PLAYER:' .. pid .. ':room', dest)
+  redis.call('DEL', 'PLAYER:' .. pid .. ':came') -- finish_move sets it again for a walk
   if not is_waypoint(dest) then
     redis.call('SADD', 'ROOM:' .. dest .. ':players', pid)
     emit('ROOM:' .. dest, {type = 'arrive', actor = pid, verb = verb, target = target, entity = player_card(pid), text = arrive})
@@ -2075,6 +2076,7 @@ end
 local function finish_move(pid, rid, dir, dest, careful)
   local me, from = name_of(pid), ARRIVE_FROM[dir]
   relocate(pid, rid, dest, 'move', dir, me .. (careful and ' creeps ' or ' heads ') .. dir .. '.', me .. (from and (' arrives from ' .. from .. '.') or ' arrives.'))
+  redis.call('SET', 'PLAYER:' .. pid .. ':came', rid) -- the way back, for the flee key
   room_event(pid, dest, 'move')
   if weather_changes(rid, dest) then
     weather_event(pid)
@@ -2104,7 +2106,7 @@ redis.register_function('move', action(function(pid, rid, args)
   local dir = args[2]
   local dest = redis.call('HGET', 'ROOM:' .. rid .. ':exits', dir)
   if not dest then return notice(pid, "You can't go that way.") end
-  if enc.of_player(pid) then return notice(pid, "You're in a fight. FLEE " .. string.upper(dir) .. ' to break away.') end
+  if enc.of_player(pid) then return notice(pid, "You're in a fight. Get steady and press your flee key (F) to run back the way you came.") end
   if redis.call('EXISTS', 'PLAYER:' .. pid .. ':pending') == 1 then return notice(pid, "You're still making your way.") end
   -- In the dark you can only feel your way back along ways you know.
   local here = weather_at(rid)
@@ -2643,7 +2645,7 @@ redis.register_function('flee', action(function(pid, rid, args)
   if redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'ambush') then
     return strand(pid, 'You run, and keep running, and the road is lost behind you. You come to your senses somewhere in the wilds, bruised and alone.')
   end
-  if enc.of_player(pid) then return notice(pid, 'Flee which way? FLEE NORTH, say.') end
+  if enc.of_player(pid) then return notice(pid, 'Get steady and press your flee key (F) to run back the way you came.') end
   notice(pid, 'There is nothing here to flee from.')
 end))
 
@@ -3245,13 +3247,29 @@ function enc.attack(pid, rid, nid, n)
   enc.add_player(id, pid)
 end
 
--- FLEE <direction>: the owner has checked the player is steady. The toughest
+-- The flee key ('back': the way the player walked in; on a journey ambush,
+-- off into the wilds): the owner has checked the player is steady. The toughest
 -- enemy in the fight (most health; ties to the harder hitter) lands its
 -- hardest attack as a parting blow, then the player is out and away, at a run.
 -- The NPCs don't follow.
 function enc.flee(id, pid, dir)
   local rid = redis.call('HGET', enc_key(id), 'room')
   if not rid or redis.call('ZSCORE', enc_key(id, 'players'), pid) == false then return {gone = true} end
+  if dir == 'back' then
+    if redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'ambush') then
+      travel.strand(pid, 'You run, and keep running, and the road is lost behind you. You come to your senses somewhere in the wilds, bruised and alone.')
+      return {fled = true}
+    end
+    local came = redis.call('GET', 'PLAYER:' .. pid .. ':came')
+    dir = nil
+    for d, to in pairs(hgetall('ROOM:' .. rid .. ':exits')) do
+      if to == came then dir = d end
+    end
+    if not dir then
+      notice(pid, "There's no way back the way you came: you'll have to fight.")
+      return {refused = 'no_way_back'}
+    end
+  end
   local dest = redis.call('HGET', 'ROOM:' .. rid .. ':exits', dir or '')
   if not dest then
     notice(pid, "You can't go that way.")
@@ -3403,7 +3421,8 @@ redis.register_function('use', action(function(pid, rid, args)
   if not gear then return notice(pid, 'Slot ' .. n .. " is empty. Try EQUIP <gear> " .. n .. ", or GEAR to see what you have.") end
   local word = args[3] or ''
   if gear.effect == 'heal' or gear.effect == 'guard' then
-    local cooldown = tonumber(gear.cooldown) or 0
+    -- Out of a fight, gear waits longer (out_of_fight_cooldown_scale) than it does in one.
+    local cooldown = math.floor((tonumber(gear.cooldown) or 0) * rule('out_of_fight_cooldown_scale', 3))
     if cooldown > 0 and not redis.call('SET', 'PLAYER:' .. pid .. ':cd:' .. n, '1', 'NX', 'PX', cooldown) then
       return notice(pid, gear.name .. " isn't ready yet.")
     end
@@ -3870,7 +3889,7 @@ local function reset_character(pid)
   redis.call('HDEL', 'ACCOUNT:' .. pid, unpack(CHARACTER_FIELDS))
   for _, suffix in ipairs({'room', 'gear', 'slots', 'inv', 'perks', 'passives', 'talents', 'attuned', 'bonus', 'explored',
     'glimpsed', 'regions', 'realms', 'rumours', 'lore', 'traps', 'events', 'taken', 'quests', 'journey', 'pending',
-    'guard', 'sealed', 'steadied', 'ambushers', 'wardrobe', 'worn', 'worn_stats', 'exposure'}) do
+    'guard', 'sealed', 'steadied', 'ambushers', 'wardrobe', 'worn', 'worn_stats', 'exposure', 'came'}) do
     redis.call('DEL', 'PLAYER:' .. pid .. ':' .. suffix)
   end
   for _, pattern in ipairs({'rep', 'quest', 'social', 'unseen'}) do
@@ -5035,6 +5054,13 @@ redis.register_function('seed', function(keys, args)
   for nid, npc in pairs(world.npcs or {}) do
     local key = 'NPC:' .. nid
     local new = redis.call('EXISTS', key) == 0
+    -- Its health changed in the seed: what it has left keeps its share of the new.
+    local old_max = tonumber(redis.call('HGET', key, 'max_hp'))
+    local max_hp = npc.max_hp or 10
+    if old_max and old_max > 0 and old_max ~= max_hp then
+      local hp = tonumber(redis.call('HGET', key, 'hp')) or old_max
+      if hp > 0 then redis.call('HSET', key, 'hp', math.max(1, math.min(max_hp, math.floor(hp * max_hp / old_max + 0.5)))) end
+    end
     redis.call('HSET', key, 'name', npc.name, 'label', npc.label or '', 'description', npc.description or '',
       'details', npc.details or '', 'keywords', npc.keywords or '', 'max_hp', npc.max_hp or 10,
       'proper', npc.proper and '1' or '0', 'respawn', npc.respawn or 300, 'icon', npc.icon or '',

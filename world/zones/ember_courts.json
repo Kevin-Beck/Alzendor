@@ -302,13 +302,13 @@
       "details": "A salamander knight with a blade of white fire.",
       "keywords": "calder champion",
       "room": "ec_ring",
-      "max_hp": 8080,
+      "max_hp": 6570,
       "poise": 145,
       "disposition": "neutral",
       "attacks": [
         {
           "name": "blade",
-          "period": 4800,
+          "period": 6000,
           "damage": 28,
           "kick": 0.909,
           "hit": "{actor} cuts at {target}.",
@@ -316,7 +316,7 @@
         },
         {
           "name": "flare",
-          "period": 15600,
+          "period": 19500,
           "damage": 75,
           "kick": 2.114,
           "stagger": true,
@@ -338,7 +338,7 @@
       "details": "A hound of cooling lava, cracked and glowing.",
       "keywords": "magma hound",
       "room": "ec_gardens",
-      "max_hp": 384,
+      "max_hp": 192,
       "disposition": "hostile",
       "attacks": [
         {
@@ -361,7 +361,7 @@
       "details": "A hound of cooling lava, cracked and glowing.",
       "keywords": "magma hound",
       "room": "ec_gardens",
-      "max_hp": 384,
+      "max_hp": 192,
       "disposition": "hostile",
       "attacks": [
         {
@@ -384,7 +384,7 @@
       "details": "A hound of cooling lava, cracked and glowing.",
       "keywords": "magma hound",
       "room": "ec_flows",
-      "max_hp": 384,
+      "max_hp": 192,
       "disposition": "hostile",
       "attacks": [
         {
@@ -407,7 +407,7 @@
       "details": "A hound of cooling lava, cracked and glowing.",
       "keywords": "magma hound",
       "room": "ec_pavilion",
-      "max_hp": 384,
+      "max_hp": 192,
       "disposition": "hostile",
       "attacks": [
         {
@@ -430,7 +430,7 @@
       "details": "One of the Duke's guards, in armour of cinders.",
       "keywords": "cinder guard",
       "room": "ec_pavilion",
-      "max_hp": 461,
+      "max_hp": 366,
       "disposition": "hostile",
       "attacks": [
         {
@@ -454,7 +454,7 @@
       "details": "A salamander lord, grey with ash, smiling.",
       "keywords": "ashen duke",
       "room": "ec_pavilion",
-      "max_hp": 12569,
+      "max_hp": 10220,
       "poise": 170,
       "disposition": "hostile",
       "attacks": [
@@ -492,7 +492,7 @@
       "kind": "Light",
       "keywords": "rapier ember",
       "effect": "damage",
-      "cooldown": 545,
+      "cooldown": 818,
       "kick": 1.055,
       "pattern": "bump",
       "amounts": [

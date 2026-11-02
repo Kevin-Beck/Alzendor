@@ -169,7 +169,7 @@ async def test_npcs_go_down_and_come_back(world):
     await world.redis.zadd("alz:respawns", {"rat-1": 0})
     await world.call("respawn")
     arrive = of_type(await drain(kevin), "arrive")[0]
-    assert arrive["text"] == "The Dock Rat appears." and arrive["entity"]["hp"] == 142  # at full health
+    assert arrive["text"] == "The Dock Rat appears." and arrive["entity"]["hp"] == 56  # at full health
 
 
 # Slots and gear ------------------------------------------------------------------------
@@ -180,7 +180,7 @@ async def test_equipping_changes_a_slots_gear(world):
     await drain(kevin)
     await world.call("equip", "kevin", "dagger", 1)
     events = await drain(kevin)
-    assert texts(events) == ["Slot 1: Dagger, ready every 0.3s."]
+    assert texts(events) == ["Slot 1: Dagger, ready every 0.5s."]
     assert of_type(events, "kit")[0]["slots"] == ["dagger", "missile", "potion"]
     assert await world.redis.hget("PLAYER:kevin:slots", "1") == "dagger"
 
@@ -192,7 +192,7 @@ async def test_equipping_changes_a_slots_gear(world):
     await world.call("equip", "kevin", "banjo", 1)
     await world.call("equip", "kevin", "dagger", 4)
     assert texts(await drain(kevin)) == [
-        "Slot 1: Magic Missile, ready every 4.5s.", "You don't have Greataxe.", "Slot 1: Greataxe, ready every 2.5s.",
+        "Slot 1: Magic Missile, ready every 6.8s.", "You don't have Greataxe.", "Slot 1: Greataxe, ready every 3.8s.",
         "Slot 1 already holds Greataxe.", "There's no gear called 'banjo'. Type GEAR to see what you have.",
         "Your slots are 1, 2 and 3.",
     ]
@@ -230,7 +230,7 @@ async def test_gear_is_locked_in_a_fight_and_free_between(world):
     assert texts(await drain(kevin)) == ["You can't change your gear mid-fight."] * 2
     await flee(world, "kevin", "west")
     await world.call("equip", "kevin", "dagger", 1)
-    assert texts(await drain(kevin))[-1] == "Slot 1: Dagger, ready every 0.3s."
+    assert texts(await drain(kevin))[-1] == "Slot 1: Dagger, ready every 0.5s."
 
 
 async def test_the_starting_loadout_is_only_given_once(world):
@@ -249,12 +249,12 @@ async def test_gear_lists_what_you_own_quickest_first(world):
     assert [g["id"] for g in event["gear"]] == ["dagger", "kick", "potion", "missile"]
     assert event["slots"] == ["kick", "missile", "potion"]
     dagger = next(g for g in event["gear"] if g["id"] == "dagger")
-    assert (dagger["cooldown_ms"], dagger["kick"], dagger["pattern"]) == (350, 1, "bump")
+    assert (dagger["cooldown_ms"], dagger["kick"], dagger["pattern"]) == (525, 1, "bump")
     lines = event["text"].split("\n")
     # Indoors it's always dead neutral and dry: grey gear at its best, and the frost
     # dagger out of its element (-14% all told).
-    assert "  Dagger (light, green): every 0.3s, 2 / 3 / 4 damage [weather -14%]" in lines
-    assert "  Magic Missile (spell, grey): every 4.5s, 14 / 18 / 30 damage in 4 hits" in lines
+    assert "  Dagger (light, green): every 0.5s, 2 / 3 / 4 damage [weather -14%]" in lines
+    assert "  Magic Missile (spell, grey): every 6.8s, 14 / 18 / 30 damage in 4 hits" in lines
     assert lines[-1].startswith("Your slots: 1 Kick · 2 Magic Missile · 3 Health Potion.")
 
 

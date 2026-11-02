@@ -14,9 +14,16 @@ class RecordingRedis:
     def __init__(self):
         self.encounter = None
         self.published = []
+        self.strings, self.hashes, self.sets = {}, {}, {}
 
     async def get(self, key):
-        return self.encounter if key.endswith(":encounter") else None
+        return self.encounter if key.endswith(":encounter") else self.strings.get(key)
+
+    async def hget(self, key, field):
+        return self.hashes.get(key, {}).get(field)
+
+    async def sismember(self, key, member):
+        return member in self.sets.get(key, set())
 
     async def publish(self, channel, data):
         self.published.append((channel, json.loads(data)))
@@ -242,7 +249,7 @@ async def test_fight_commands_are_inputs_in_a_fight(ctx):
     ctx.world.calls.clear()
     ctx.world.redis.encounter = "e7"
     ctx.target = "npc:rat-2"
-    for text in ["1", "use 2 the orc", "dodge", "block", "unblock", "flee n", "flee"]:
+    for text in ["1", "use 2 the orc", "dodge", "block", "unblock", "flee n", "flee", "north"]:
         await dispatch(ctx, text)
     assert ctx.world.redis.published == [
         ("enc:e7:in", {"pid": "kevin", "act": "strike", "slot": 1, "target": "npc:rat-2"}),
@@ -250,6 +257,27 @@ async def test_fight_commands_are_inputs_in_a_fight(ctx):
         ("enc:e7:in", {"pid": "kevin", "act": "dodge"}),
         ("enc:e7:in", {"pid": "kevin", "act": "block"}),
         ("enc:e7:in", {"pid": "kevin", "act": "unblock"}),
-        ("enc:e7:in", {"pid": "kevin", "act": "flee", "dir": "north"}),
     ]
-    assert ctx.world.calls == [("flee", "kevin")]  # with no direction: Lua says which way
+    # Fleeing is the flee key (an input from the client); typed, Lua says so. A move is refused there too.
+    assert ctx.world.calls == [("flee", "kevin"), ("flee", "kevin"), ("move", "kevin", "north")]
+
+
+async def test_a_waiting_quest_offer_holds_up_other_actions(ctx):
+    r = ctx.world.redis
+    r.hashes = {"PLAYER:kevin:offer": {"quest": "gf_boars", "npc": "fenwick"}, "NPC:fenwick": {"name": "Fenwick"}}
+    r.strings = {"PLAYER:kevin:room": "mb_mill"}
+    r.sets = {"ROOM:mb_mill:npcs": {"fenwick"}}
+    for text in ["north", "get apple", "discuss marta quests", "look", "say hi", "accept"]:
+        await dispatch(ctx, text)
+    held = "Fenwick is waiting for your answer: ACCEPT or DECLINE first."
+    assert ctx.world.replies == [held, held, held]
+    assert [c[0] for c in ctx.world.calls if c[0] != "notify"] == ["look", "say", "accept"]
+    ctx.world.calls.clear()
+    r.sets = {}  # Fenwick isn't here (gone off somewhere): nothing holds you
+    await dispatch(ctx, "north")
+    assert ctx.world.calls == [("move", "kevin", "north")]
+    ctx.world.calls.clear()
+    r.sets = {"ROOM:mb_mill:npcs": {"fenwick"}}
+    r.encounter = "e7"  # nor in a fight
+    await dispatch(ctx, "use 1")
+    assert ctx.world.replies == []

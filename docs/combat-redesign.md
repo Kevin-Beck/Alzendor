@@ -107,12 +107,17 @@ your reputation turns an NPC hostile.
 
 ### Fleeing
 
-During an encounter a plain move is refused: "You're in a fight. FLEE NORTH
-to break away." **FLEE &lt;direction&gt;** (also `RUN`, or a flee button on
-each exit during a fight):
+During an encounter a plain move is refused, and so is a typed FLEE: "Get
+steady and press your flee key (F) to run back the way you came." Fleeing
+is only the **flee key** (F by default, or the Flee button by the dodge and
+block buttons), and it only goes **back the way you came**: the exit to the
+room you last walked in from (`PLAYER:<id>:came`, set by a walk and cleared
+by any other way of arriving, such as GOTO, a shrine or a journey). With no
+way back ("No way back"), you fight. The exits can't be clicked during a
+fight. The key:
 
-1. needs your dot in the core, and you not staggered: otherwise "Steady
-   yourself first.";
+1. needs your dot in the core, and you not staggered: pressed off centre,
+   it's ignored ("Not steady");
 2. the **toughest** enemy in the encounter (highest `max_hp`; ties go to the
    harder hitter) lands its **hardest** attack at once, as a parting blow.
    It can't be blocked or dodged; guard and armour count. If it kills you,
@@ -128,8 +133,8 @@ room you shouldn't have entered always works, for the price of one blow.
 You can come straight back in, and the fight starts again with the NPCs as
 hurt as you left them. Stepping out and back in is a legitimate tactic.
 
-On a journey ambush there are no exits. FLEE there (no direction) keeps
-today's meaning: you're stranded in the wilds.
+On a journey ambush there are no exits. The flee key there strands you in
+the wilds, as FLEE always has.
 
 ### Outside an encounter
 
@@ -137,7 +142,9 @@ There's no dot outside a fight. Using a slot outside an encounter:
 
 - a damage gear on an NPC is attacking first, and starts an encounter;
 - a heal or guard (on yourself, or an ally with `targets: ally`) just works,
-  with its cooldown and its *clean* amount.
+  at its *clean* amount, and then waits `out_of_fight_cooldown_scale` (3)
+  times its cooldown, so resting does the healing between fights, not
+  potions.
 
 ## The rules in detail
 
@@ -185,7 +192,10 @@ receives them (or the client presses them).
 ### Strikes
 
 - **Valid** when: dot within the core radius, not staggered, not blocking,
-  the slot's cooldown is up, the target is still in the encounter (or, for an
+  the slot's cooldown is up (any strike also holds every other slot for
+  `balance_global_cd_ms`, 900 ms, a little longer than getting a light
+  strike's kick back to the perfect circle takes, so holding the centre
+  doesn't let you rattle through three slots), the target is still in the encounter (or, for an
   ally heal, still in the room).
 - **Buffer.** A strike pressed when it isn't valid is held for
   `balance_buffer_ms` (100 ms) and fires on the first step it becomes valid.
@@ -447,6 +457,8 @@ perfect-block window).
 | `balance_stagger_immune_ms` | 3000 |
 | `balance_dodge_ms` | 600 |
 | `balance_dodge_cd_ms` | 3000 |
+| `balance_global_cd_ms` | 900 (playtest: every slot waits this long after any strike) |
+| `out_of_fight_cooldown_scale` | 3 (playtest: heals and guards outside a fight) |
 | `balance_wobble_ms` | 2500 |
 | `balance_block_cut` | 0.7 |
 | `balance_block_kick` | 0.15 |
@@ -896,6 +908,28 @@ work on a real phone.
 6380), from the `balance` branch, with a small group for two weeks. Their
 fights are logged (encounter length, staggers, deaths, flees, `LOOK`s before
 entering a ringed room), and tuning follows the Tuning procedure.
+
+**Playtest, round 1** (production, 2 Nov 2026: the balance build went
+live early, characters reset, the pre-balance Redis kept on the instance as
+`/opt/alzendor/backups/pre-balance-20261102T144819Z.rdb`). Changes from it:
+
+- Slot keys default to J, K and L (dodge Space, block Shift, flee F). Out of
+  a fight a letter types, so slots there are their buttons or 1, 2 and 3.
+  In a fight, Enter opens the command line and Enter on an empty line goes
+  back to the fight's keys; any command sent goes back too.
+- Fleeing is the flee key only, back the way you came (Fleeing, above).
+- Spamming: light gear's kick never left the core, so three slots with
+  300–500 ms cooldowns struck nonstop. Every gear cooldown went up 1.5x,
+  any strike holds all slots for `balance_global_cd_ms` (900 ms), and
+  out of a fight cooldowns are 3x. The content was retuned from its
+  pre-tuning NPCs with these (the tuning note above is from before).
+- A quest offer holds you: while the NPC who made it is in the room, moving,
+  using, taking, giving, talking to NPCs and changing gear wait for ACCEPT
+  or DECLINE (looking, talking to players and checking your things don't; a
+  fight isn't held up).
+- Health bars: a reseed kept each NPC's old health under its new maximum
+  (the Broodmother 200 of 142, a full bar until it fell below 142). Now a
+  changed maximum scales what's left.
 
 *Gate 4:* median fight length is within target for ordinary NPCs and
 bosses, the playtesters prefer balance to rhythm, and there are no open bugs

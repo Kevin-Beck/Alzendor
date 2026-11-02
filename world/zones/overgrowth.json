@@ -200,12 +200,12 @@
       "details": "A striped cat as big as a horse, watching from the ferns.",
       "keywords": "canopy cat",
       "room": "og_ferns",
-      "max_hp": 320,
+      "max_hp": 328,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "pounce",
-          "period": 3800,
+          "period": 7500,
           "damage": 36,
           "kick": 0.909,
           "hit": "{actor} pounces on {target}."
@@ -224,12 +224,12 @@
       "details": "A striped cat as big as a horse, watching from the ferns.",
       "keywords": "canopy cat",
       "room": "og_ferns",
-      "max_hp": 320,
+      "max_hp": 328,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "pounce",
-          "period": 3800,
+          "period": 7500,
           "damage": 36,
           "kick": 0.909,
           "hit": "{actor} pounces on {target}."
@@ -248,12 +248,12 @@
       "details": "A striped cat as big as a horse, watching from the ferns.",
       "keywords": "canopy cat",
       "room": "og_river",
-      "max_hp": 320,
+      "max_hp": 328,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "pounce",
-          "period": 3800,
+          "period": 7500,
           "damage": 36,
           "kick": 0.909,
           "hit": "{actor} pounces on {target}."
@@ -322,13 +322,13 @@
       "details": "A mantis taller than a tree, very still.",
       "keywords": "mantis queen",
       "room": "og_mantis",
-      "max_hp": 12816,
+      "max_hp": 6775,
       "poise": 187,
       "disposition": "hostile",
       "attacks": [
         {
           "name": "scythes",
-          "period": 6100,
+          "period": 6200,
           "damage": 40,
           "kick": 0.8,
           "hit": "{actor} slashes {target} with both scythes.",
@@ -336,7 +336,7 @@
         },
         {
           "name": "lunge",
-          "period": 26900,
+          "period": 27500,
           "damage": 140,
           "kick": 2.171,
           "stagger": true,
@@ -355,7 +355,7 @@
       "kind": "Light",
       "keywords": "scythe mantis",
       "effect": "damage",
-      "cooldown": 676,
+      "cooldown": 1014,
       "kick": 1.091,
       "pattern": "bump",
       "amounts": [

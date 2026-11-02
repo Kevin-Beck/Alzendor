@@ -193,6 +193,18 @@ def test_cooldown_refuses_and_then_allows():
     assert "strike" in kinds(b.step(d, 0, [("strike", 1, "npc:orc")]))
 
 
+def test_a_strike_holds_every_slot_for_the_shared_cooldown():
+    from dataclasses import replace
+    d = dot(replace(still(), global_cd_ms=900), slots={1: DAGGER, 2: DAGGER, 3: {"cooldown": 2000, "kick": 0, "pattern": "bump"}})
+    b.step(d, 0, [("strike", 1, "npc:orc")])
+    shared = b.steps(900)
+    assert d.cool[2] == shared and d.cool[1] == shared  # the dagger's own 350 ms is shorter
+    d.cool[3] = 0
+    d.x = d.y = d.vx = d.vy = 0
+    b.step(d, 0, [("strike", 3, "npc:orc")])
+    assert d.cool[3] == b.steps(2000)  # its own, when that's longer
+
+
 def test_off_centre_strikes_wait_briefly_then_drop():
     d = dot()
     d.x = 0.5

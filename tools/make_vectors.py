@@ -49,7 +49,8 @@ def make_run(i: int) -> dict:
     stats = {"poise": int(r.next() * 4), "focus": int(r.next() * 4), "resilience": int(r.next() * 6)}
     rules = {}
     if i % 5 == 4:  # a few runs with other rules, so the client is seen to use the ones it's sent
-        rules = {"balance_push": 2.2, "balance_gravity": 1.2, "balance_well_radius": [0.4, 0.9], "balance_damping": 3}
+        rules = {"balance_push": 2.2, "balance_gravity": 1.2, "balance_well_radius": [0.4, 0.9], "balance_damping": 3,
+                 "balance_global_cd_ms": 900}
     slots = dict(SLOTS)
     if i % 3 == 1:
         slots[3] = POTION

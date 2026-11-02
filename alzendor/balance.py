@@ -98,6 +98,7 @@ class Rules:
     stagger_immune_ms: float = 3000
     dodge_ms: float = 600
     dodge_cd_ms: float = 3000
+    global_cd_ms: float = 0      # after any strike, every slot waits at least this long
     wobble_ms: float = 2500
     block_cut: float = 0.7
     block_kick: float = 0.15
@@ -368,7 +369,11 @@ def _strike(dot: Dot, slot: int, target, events: list) -> None:
     t = tier(dot)
     if t == 2 and "long_breath" in dot.perks:
         dot.breath = steps(3000)
-    dot.cool[slot] = steps(gear.cooldown)
+    shared = steps(dot.rules.global_cd_ms)
+    for other in dot.slots:
+        if dot.cool.get(other, 0) < shared:
+            dot.cool[other] = shared
+    dot.cool[slot] = max(steps(gear.cooldown), shared)
     angle = apply_kick(dot, gear.kick, gear.pattern)
     if gear.debuff:
         add_debuff(dot, gear.debuff["kind"], float(gear.debuff["strength"]), float(gear.debuff["ms"]))

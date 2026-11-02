@@ -114,6 +114,25 @@ def parse(text: str) -> tuple[str, str] | None:
     return ALIASES.get(first, first), rest
 
 
+# What a quest offer holds up: while the NPC who made it waits beside you for
+# an answer, these wait for ACCEPT or DECLINE (looking, talking to players and
+# checking your things don't). A fight isn't held up.
+OFFER_HOLDS = {"discuss", "greet", "give", "choose", "flee", "travel", "move", "creep", "disarm", "use", "learn",
+               "attune", "respec", "equip", "unequip", "wear", "hold", "remove", "train", "get", "drop"}
+
+
+async def waiting_on(ctx: Context) -> str | None:
+    """The name of the NPC here waiting for this player's answer to a quest, if any."""
+    r = ctx.world.redis
+    npc = await r.hget(f"PLAYER:{ctx.pid}:offer", "npc")
+    if not npc:
+        return None
+    room = await r.get(f"PLAYER:{ctx.pid}:room")
+    if not room or not await r.sismember(f"ROOM:{room}:npcs", npc) or await ctx.encounter():
+        return None
+    return await r.hget(f"NPC:{npc}", "name") or "Someone"
+
+
 async def dispatch(ctx: Context, text: str) -> None:
     parsed = parse(text)
     if parsed is None:
@@ -123,6 +142,11 @@ async def dispatch(ctx: Context, text: str) -> None:
     if cmd is None or (cmd.admin and not ctx.is_admin):
         await ctx.reply(f"Unknown command '{name[:20]}'. Type HELP for a list.")
         return
+    if name in OFFER_HOLDS:
+        who = await waiting_on(ctx)
+        if who:
+            await ctx.reply(f"{who} is waiting for your answer: ACCEPT or DECLINE first.")
+            return
     try:
         await cmd.handler(ctx, rest)
     except Usage as hint:
@@ -258,17 +282,10 @@ async def choose(ctx: Context, rest: str) -> None:
     await ctx.call("choose", number)
 
 
-@command("flee", "FLEE <direction>", "Break away from a fight, steady first: the toughest enemy gets one parting blow. "
-         "On the road, FLEE alone runs from an ambush, and leaves you in the wilds.", aliases=("run",))
+@command("flee", "FLEE", "In a fight, fleeing is the flee key (F): steady first, it runs back the way you came, "
+         "and the toughest enemy gets one parting blow. On the road it runs from an ambush, and leaves you in the wilds.",
+         aliases=("run",))
 async def flee(ctx: Context, rest: str) -> None:
-    direction = rest.lower().strip()
-    direction = SHORT_DIRECTIONS.get(direction, direction)
-    eid = await ctx.encounter()
-    if direction and eid:
-        if direction not in DIRECTIONS:
-            raise Usage("Flee which way? e.g. FLEE NORTH.")
-        await ctx.input(eid, act="flee", dir=direction)
-        return
     await ctx.call("flee")
 
 

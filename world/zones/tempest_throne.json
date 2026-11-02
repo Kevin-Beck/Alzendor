@@ -195,7 +195,7 @@
       "details": "A lord of the wind, shaped of weather.",
       "keywords": "the rime lord",
       "room": "tt_rime",
-      "max_hp": 12676,
+      "max_hp": 7861,
       "poise": 200,
       "disposition": "hostile",
       "attacks": [
@@ -233,7 +233,7 @@
       "details": "A lord of the wind, shaped of weather.",
       "keywords": "the scorch lord",
       "room": "tt_scorch",
-      "max_hp": 12676,
+      "max_hp": 7861,
       "poise": 200,
       "disposition": "hostile",
       "attacks": [
@@ -271,7 +271,7 @@
       "details": "A lord of the wind, shaped of weather.",
       "keywords": "the gale lord",
       "room": "tt_gale",
-      "max_hp": 12676,
+      "max_hp": 7861,
       "poise": 200,
       "disposition": "hostile",
       "attacks": [
@@ -309,7 +309,7 @@
       "details": "A lord of the wind, shaped of weather.",
       "keywords": "the tempest lord",
       "room": "tt_tempest",
-      "max_hp": 12676,
+      "max_hp": 7861,
       "poise": 200,
       "disposition": "hostile",
       "attacks": [
@@ -347,7 +347,7 @@
       "details": "The weather itself, on a throne, with a crown of lightning.",
       "keywords": "storm king",
       "room": "tt_throne",
-      "max_hp": 38028,
+      "max_hp": 23582,
       "poise": 400,
       "disposition": "hostile",
       "attacks": [

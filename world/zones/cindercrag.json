@@ -264,7 +264,7 @@
       "details": "A small soot-black raider with a hot pick.",
       "keywords": "slagborn raider",
       "room": "cc_slagrun",
-      "max_hp": 113,
+      "max_hp": 39,
       "disposition": "hostile",
       "attacks": [
         {
@@ -287,7 +287,7 @@
       "details": "A small soot-black raider with a hot pick.",
       "keywords": "slagborn raider",
       "room": "cc_kilns",
-      "max_hp": 113,
+      "max_hp": 39,
       "disposition": "hostile",
       "attacks": [
         {
@@ -310,7 +310,7 @@
       "details": "A small soot-black raider with a hot pick.",
       "keywords": "slagborn raider",
       "room": "cc_kilns",
-      "max_hp": 113,
+      "max_hp": 39,
       "disposition": "hostile",
       "attacks": [
         {
@@ -333,7 +333,7 @@
       "details": "A small soot-black raider with a hot pick.",
       "keywords": "slagborn raider",
       "room": "cc_tip",
-      "max_hp": 113,
+      "max_hp": 39,
       "disposition": "hostile",
       "attacks": [
         {
@@ -356,7 +356,7 @@
       "details": "A slagborn with a sack of fire-pots.",
       "keywords": "slagborn fire thrower",
       "room": "cc_slagrun",
-      "max_hp": 156,
+      "max_hp": 55,
       "disposition": "hostile",
       "attacks": [
         {
@@ -380,7 +380,7 @@
       "details": "An ogre with a boulder in each hand.",
       "keywords": "brakka ogre",
       "room": "cc_pit",
-      "max_hp": 1641,
+      "max_hp": 1268,
       "poise": 111,
       "disposition": "hostile",
       "attacks": [
@@ -418,7 +418,7 @@
       "kind": "Melee",
       "keywords": "maul quarry",
       "effect": "damage",
-      "cooldown": 1653,
+      "cooldown": 2480,
       "kick": 1.364,
       "pattern": "side",
       "amounts": [

@@ -60,7 +60,7 @@ async def test_encounter_info(world):
     data = await info(world, eid)
     assert data["room"] == "back_alley" and data["owner"] == "local" and data["lead_ms"] == 1000
     assert [p["pid"] for p in data["players"]] == ["kevin"]
-    assert data["npcs"][0]["nid"] == "orc-1" and data["npcs"][0]["max_hp"] == 124
+    assert data["npcs"][0]["nid"] == "orc-1" and data["npcs"][0]["max_hp"] == 49
     assert await info(world, "e999") is None
 
 
@@ -105,7 +105,7 @@ async def test_a_lost_encounter_starts_afresh(world):
 async def test_a_strike_lands_by_tier(world):
     feed, _, eid = await in_back_alley(world)
     result = await strike(world, eid, "kevin", "npc:orc-1", 1, 2)
-    assert result == {"damage": 10, "hp": 114, "stagger_ms": 0}  # the kick's perfect 8, +25% in this weather
+    assert result == {"damage": 10, "hp": 39, "stagger_ms": 0}  # the kick's perfect 8, +25% in this weather
     events = await drain(feed)
     combat = of_type(events, "combat")[0]
     assert (combat["tier"], combat["damage"], combat["target"]) == ("perfect", 10, "npc:orc-1")
@@ -214,7 +214,7 @@ async def test_moving_is_refused_in_a_fight(world):
     feed, _, _ = await in_back_alley(world)
     exits = await world.redis.hkeys("ROOM:back_alley:exits")
     await world.call("move", "kevin", exits[0])
-    assert texts(await drain(feed)) == [f"You're in a fight. FLEE {exits[0].upper()} to break away."]
+    assert texts(await drain(feed)) == ["You're in a fight. Get steady and press your flee key (F) to run back the way you came."]
     assert await world.redis.get("PLAYER:kevin:room") == "back_alley"
 
 
@@ -235,6 +235,31 @@ async def test_fleeing_takes_a_parting_blow_from_the_toughest(world):
     await world.redis.delete("PLAYER:kevin:moved")
     await world.call("move", "kevin", back)
     assert await world.redis.get("PLAYER:kevin:encounter")
+
+
+async def test_the_flee_key_runs_back_the_way_you_came(world):
+    feed = await enter(world, "kevin")
+    exits = await world.redis.hgetall("ROOM:back_alley:exits")
+    outside = None
+    for there in exits.values():
+        back = [d for d, to in (await world.redis.hgetall(f"ROOM:{there}:exits")).items() if to == "back_alley"]
+        if back:
+            outside, way_in = there, back[0]
+            break
+    await world.call("goto", "kevin", outside)
+    await world.redis.delete("PLAYER:kevin:encounter", "PLAYER:kevin:moved")
+    await world.call("move", "kevin", way_in)
+    eid = await world.redis.get("PLAYER:kevin:encounter")
+    assert eid and await world.redis.get("PLAYER:kevin:room") == "back_alley"
+    assert json.loads(await world.call("encounter_flee", eid, "kevin", "back")) == {"fled": True}
+    assert await world.redis.get("PLAYER:kevin:room") == outside
+
+
+async def test_the_flee_key_needs_a_way_back(world):
+    feed, _, eid = await in_back_alley(world)  # arrived by GOTO: no way back
+    assert json.loads(await world.call("encounter_flee", eid, "kevin", "back")) == {"refused": "no_way_back"}
+    assert "There's no way back the way you came: you'll have to fight." in texts(await drain(feed))
+    assert await world.redis.get("PLAYER:kevin:encounter") == eid
 
 
 async def test_flee_needs_a_way_out(world):
@@ -280,6 +305,9 @@ async def test_heals_out_of_a_fight_work_at_once_then_cool_down(world):
     assert events[0].endswith("(+18)")  # the clean amount, 15, +20% in the tavern's weather
     assert "Health Potion isn't ready yet." in events
     assert not await world.redis.get("PLAYER:kevin:encounter")
+    # Out of a fight it waits out three times its cooldown.
+    cooldown = int(await world.redis.hget("GEAR:potion", "cooldown"))
+    assert abs(await world.redis.pttl("PLAYER:kevin:cd:3") - 3 * cooldown) < 500
 
 
 # Owners ----------------------------------------------------------------------------------

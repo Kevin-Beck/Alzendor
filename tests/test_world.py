@@ -325,6 +325,18 @@ async def test_npcs_keep_their_state_across_reseeds(world):
     assert await world.redis.hget("NPC:orc-1", "hp") == "12"
 
 
+async def test_a_reseed_that_changes_health_keeps_its_share(world):
+    max_hp = int(await world.redis.hget("NPC:orc-1", "max_hp"))
+    await world.redis.hset("NPC:orc-1", mapping={"max_hp": max_hp * 2, "hp": max_hp * 2})  # unhurt, under the old health
+    await world.redis.hset("NPC:brood-1", mapping={"max_hp": 1000, "hp": 500})  # half health
+    await world.redis.hset("NPC:rat-1", mapping={"max_hp": 6, "hp": 0})  # down, waiting to respawn
+    await world.seed(SEED)
+    assert await world.redis.hget("NPC:orc-1", "hp") == str(max_hp)
+    brood = int(await world.redis.hget("NPC:brood-1", "max_hp"))
+    assert int(await world.redis.hget("NPC:brood-1", "hp")) == round(brood / 2)
+    assert await world.redis.hget("NPC:rat-1", "hp") == "0"
+
+
 async def test_leaving_a_region_enters_another(world):
     kevin = await enter(world, "kevin")
     for direction in ("north", "north", "north"):  # tavern -> market -> temple steps -> north gate
@@ -485,16 +497,16 @@ def test_seed_validation_checks_gear(change, message):
 async def test_reseeding_replaces_the_gear_catalog(world):
     await world.redis.hset("GEAR:kick", "cooldown", 1)
     await world.seed(SEED)
-    assert await world.redis.hget("GEAR:kick", "cooldown") == "871"
+    assert await world.redis.hget("GEAR:kick", "cooldown") == "1306"
     assert await world.redis.lrange("alz:default_loadout", 0, -1) == ["kick", "missile", "potion"]
 
 
 async def test_balance_fields_are_seeded(world):
-    assert await world.redis.hmget("GEAR:dagger", "cooldown", "kick", "pattern") == ["350", "1", "bump"]
+    assert await world.redis.hmget("GEAR:dagger", "cooldown", "kick", "pattern") == ["525", "1", "bump"]
     assert await world.redis.hmget("GEAR:missile", "hits", "gap", "pattern") == ["4", "1000", "taps"]
     assert json.loads(await world.redis.hget("GEAR:greataxe", "debuff")) == {"kind": "heavy", "strength": 1.75, "ms": 5000}
     assert json.loads(await world.redis.hget("NPC:post-1", "attacks"))[0]["kick"] == 1.564
-    assert await world.redis.hmget("GEAR:kick", "cooldown", "kick") == ["871", "1.145"]
+    assert await world.redis.hmget("GEAR:kick", "cooldown", "kick") == ["1306", "1.145"]
     assert not await world.redis.hexists("GEAR:kick", "period")
     # The rules, a list as "low,high".
     assert await world.redis.hmget("alz:rules", "balance_core", "balance_well_radius", "encounter_hz") == ["0.22", "0.5,0.85", "30"]

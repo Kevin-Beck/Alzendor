@@ -197,7 +197,7 @@
       "details": "A leech as long as your arm.",
       "keywords": "giant leech",
       "room": "sf_peatcut",
-      "max_hp": 108,
+      "max_hp": 40,
       "disposition": "hostile",
       "attacks": [
         {
@@ -228,7 +228,7 @@
       "details": "A leech as long as your arm.",
       "keywords": "giant leech",
       "room": "sf_peatcut",
-      "max_hp": 108,
+      "max_hp": 40,
       "disposition": "hostile",
       "attacks": [
         {
@@ -259,7 +259,7 @@
       "details": "A leech as long as your arm.",
       "keywords": "giant leech",
       "room": "sf_mire",
-      "max_hp": 108,
+      "max_hp": 40,
       "disposition": "hostile",
       "attacks": [
         {
@@ -290,7 +290,7 @@
       "details": "A leech as long as your arm.",
       "keywords": "giant leech",
       "room": "sf_reeds",
-      "max_hp": 108,
+      "max_hp": 40,
       "disposition": "hostile",
       "attacks": [
         {
@@ -321,7 +321,7 @@
       "details": "A hovering light with a face in it.",
       "keywords": "lantern man wisp",
       "room": "sf_reeds",
-      "max_hp": 89,
+      "max_hp": 33,
       "disposition": "hostile",
       "attacks": [
         {
@@ -353,7 +353,7 @@
       "details": "A hovering light with a face in it.",
       "keywords": "lantern man wisp",
       "room": "sf_causeway",
-      "max_hp": 89,
+      "max_hp": 33,
       "disposition": "hostile",
       "attacks": [
         {
@@ -385,7 +385,7 @@
       "details": "A fen troll the size of a haycart, dozing in the mud.",
       "keywords": "gnasher troll fen",
       "room": "sf_wallow",
-      "max_hp": 1624,
+      "max_hp": 1247,
       "poise": 117,
       "disposition": "hostile",
       "attacks": [
@@ -424,7 +424,7 @@
       "kind": "Potion",
       "keywords": "salve leech",
       "effect": "heal",
-      "cooldown": 2500,
+      "cooldown": 3750,
       "kick": 0,
       "pattern": "bump",
       "debuff": {
