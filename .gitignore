@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .env
+# Redis data: a local redis-server started here writes these. Never commit them.
+*.rdb
+*.aof
+appendonlydir/

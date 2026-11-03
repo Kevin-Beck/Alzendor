@@ -1,6 +1,8 @@
 """Characters: class, ancestry and background, talents and passives, and the
 starting realms. See docs/characters.md."""
 
+import pytest
+
 from .conftest import blow, drain, enter, go, hit, ride, texts
 
 
@@ -202,18 +204,18 @@ async def test_a_starting_realm_from_start_to_finish(world):
     await do("accept", "kevin")
     events = await drain(kevin)
     assert of_type(events, "quest_update")[0]["text"].startswith("New quest: Gutter Weather.")
-    await do("ask", "kevin", "nan", "weather")
+    await do("discuss", "kevin", "nan", "weather")
     events = await drain(kevin)
     assert of_type(events, "say")[-1]["text"].startswith('Nan Gristle says, "Rain empties the streets.')
-    assert of_type(events, "guide")[0]["text"].startswith("Your weather panel, left to right:")  # and what it means
-    await do("ask", "kevin", "nan", "sensitivity")
+    assert of_type(events, "guide")[0]["text"].startswith("Your weather panel, in four boxes")  # and what it means
+    await do("discuss", "kevin", "nan", "sensitivity")
     assert await world.redis.sismember("PLAYER:kevin:wardrobe", "torch")
     await do("move", "kevin", "east")
     await world.redis.hset("NPC:alley_rat", "hp", 1)
     await hit(world, "kevin", "npc:alley_rat")
     await do("move", "kevin", "west")
     await drain(kevin)
-    await do("ask", "kevin", "nan", "rats")  # report back, and Nan has the next job
+    await do("discuss", "kevin", "nan", "rats")  # report back, and Nan has the next job
     events = await drain(kevin)
     assert of_type(events, "character")[-1]["level"] == 2
     assert of_type(events, "character")[-1]["talent_picks"] == 0  # level 2 is a stat point, no talent
@@ -321,7 +323,7 @@ async def test_copperstall_ends_with_your_aunt_and_a_caravan_you_choose_to_take(
     assert any(t.startswith("New quest: Your Own Road. Ask Aunt Brisa") for t in texts(await drain(kevin)))
 
     await world.call("goto", "kevin", "stall_row")
-    await world.call("ask", "kevin", "brisa", "future")
+    await world.call("discuss", "kevin", "brisa", "future")
     said = texts(await drain(kevin))
     assert any("Wenna and Hob" in t and "Go and see the world" in t for t in said)
 
@@ -332,7 +334,7 @@ async def test_copperstall_ends_with_your_aunt_and_a_caravan_you_choose_to_take(
     await drain(kevin)
     await world.call("travel", "kevin")
     assert texts(await drain(kevin)) == ["No routes leave from here."]  # not until you've asked
-    await world.call("ask", "kevin", "dace", "travel")
+    await world.call("discuss", "kevin", "dace", "travel")
     events = await drain(kevin)
     assert of_type(events, "guide")[0]["text"].endswith("When you're ready, type TRAVEL to see it, then TRAVEL CARAVAN.")
     assert await world.redis.get("PLAYER:kevin:room") == "coach_stand"  # nobody's thrust onto the road
@@ -407,3 +409,67 @@ async def test_anyone_can_hunt_for_wren(world):
     await world.call("discuss", "kevin", "wren", "webs")
     assert await world.redis.hget("PLAYER:kevin:quests", "wr_webs") == "done"
     assert any("broodmother" in t for t in texts(await drain(kevin)))
+
+
+async def test_a_second_tab_cant_wipe_a_character_already_in_the_world(world):
+    kevin = await create(world, "kevin")
+    await world.call("move", "kevin", "north")
+    room = await world.redis.get("PLAYER:kevin:room")
+    assert await world.call("create_character", "kevin", "fighter", "human", "second_wind", "merchant") \
+        == "Your character already exists."
+    assert await world.redis.get("PLAYER:kevin:room") == room
+    assert await world.redis.sismember(f"ROOM:{room}:players", "kevin")
+    assert await world.redis.hget("ACCOUNT:kevin", "class") == "rogue"
+
+
+async def test_a_reset_leaves_nothing_of_the_old_character(world):
+    kevin = await create(world, "kevin", background="merchant")
+    await world.call("goto", "kevin", "tavern")
+    await world.call("greet", "kevin", "marta")
+    await world.call("discuss", "kevin", "marta", "work")
+    await world.redis.hset("PLAYER:kevin:offer", mapping={"quest": "gf_wolfmother", "npc": "cobb"})
+    await world.redis.hset("PLAYER:kevin:declined", "gf_boars", "fenwick")
+    await drain(kevin)
+    assert await world.redis.exists("PLAYER:kevin:met", "PLAYER:kevin:rapport", "PLAYER:kevin:discussed")
+    await world.call("reset_character", "kevin")
+    left = []
+    for key in await world.redis.keys("PLAYER:kevin:*"):
+        if await world.redis.ttl(key) == -1 and key != "PLAYER:kevin:channels":  # chat channels are the account's
+            left.append(key)
+    assert left == []  # anything lasting a reset leaves behind carries into the next character
+
+
+async def test_only_players_in_the_world_are_kept_on_the_healing_list(world):
+    await create(world, "kevin")
+    await world.redis.hset("ACCOUNT:kevin", "hp", 10)
+    await world.redis.sadd("alz:wounded", "kevin")
+    await world.call("disconnect", "kevin", "", "", "Bye.")
+    assert not await world.redis.sismember("alz:wounded", "kevin")
+    await world.call("upkeep")
+    assert await world.redis.hget("ACCOUNT:kevin", "hp") == "10"
+    await enter(world, "kevin", session="again")
+    assert await world.redis.sismember("alz:wounded", "kevin")
+
+
+@pytest.mark.parametrize("function, args, kind", [
+    ("who", [], "who"),
+    ("stats", [], "stats"),
+    ("inventory", [], "inventory"),
+    ("channels", [], "channels"),
+    ("notify", ["Hello."], "system"),
+    ("attune", ["moonlit edge", "1"], "system"),
+    ("announce", ["area", "The gates close at dusk."], "system"),
+])
+async def test_everyday_functions_run_and_answer(world, function, args, kind):
+    kevin = await create(world, "kevin", ancestry="elf", passive="moonlit_edge")
+    await drain(kevin)
+    assert await world.call(function, "kevin", *args) == 1
+    events = await drain(kevin)
+    assert kind in [e["type"] for e in events], [e["type"] for e in events]
+
+
+async def test_a_boss_reeling_is_told_to_the_room(world):
+    from .test_encounters import in_back_alley
+    feed, _, eid = await in_back_alley(world)
+    assert await world.call("encounter_note", eid, "orc-1", "reels") == 1
+    assert "The Orc Warrior reels!" in texts(await drain(feed))

@@ -11,7 +11,7 @@ from alzendor.config import Config
 from alzendor.feed import FEED_BLOCK_MS
 from alzendor.server import GameServer, open_redis
 
-from .conftest import SEED
+from .conftest import REDIS_URL, SEED
 
 
 def free_port() -> int:
@@ -108,7 +108,7 @@ def test_redis_reads_outlast_a_feed_block():
     """A quiet room must not drop the connection: a Redis read timeout shorter
     than a feed's blocking read once did. (Checking the setting is enough; the
     other tests here exercise real feeds.)"""
-    client = open_redis("redis://localhost:6379/15")
+    client = open_redis(REDIS_URL)
     assert client.connection_pool.connection_kwargs["socket_timeout"] > FEED_BLOCK_MS / 1000
 
 
@@ -237,3 +237,4 @@ async def test_fake_jitter_keeps_messages_in_order(redis):
             seen = await kevin.until('Kevin says, "four"')
             said = [t for t in seen if t.startswith("Kevin says")]
             assert said == ['Kevin says, "one"', 'Kevin says, "two"', 'Kevin says, "three"', 'Kevin says, "four"']
+

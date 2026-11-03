@@ -19,12 +19,16 @@ browser ── https ──▶ CloudFront (iterbotgames.com)
 | Access | no SSH: commands go over SSM (the instance role has `AmazonSSMManagedInstanceCore`) |
 | Releases | a private S3 bucket (`alzendor-releases-…`), kept 30 days |
 | CloudFront | distribution `E1HHTSHZV5KSH8`: an `alzendor` origin and a `/alzendor/*` behavior (no caching; the `alzendor-origin` request policy from main.tf passes the websocket handshake, Origin and `CloudFront-Viewer-Address`, not Host) |
-| Data | Redis in a Docker volume on the instance's disk. It survives deploys and reboots; it doesn't survive destroying the instance |
+| Data | Redis in a Docker volume on the instance's disk. It survives deploys and reboots; it doesn't survive destroying the instance, so the disk is snapshotted daily (kept 7 days) and every deploy saves a copy first (see Backups) |
 
 Players register in the game itself (a name and a password), so there's
 nothing else to set up for them. The server trusts CloudFront's
 `CloudFront-Viewer-Address` for each player's address (sign-up and login
-limits), and only accepts browsers from `https://iterbotgames.com`.
+limits), and only accepts browsers from `https://iterbotgames.com`. Port 443
+is open to all of CloudFront, so our distribution also sends a secret header
+(`X-Alzendor-Origin`, kept in `origin-secret` here, not in git) and Caddy
+refuses anything without it: only iterbotgames.com's CloudFront reaches the
+game.
 
 ## Setting it up (once)
 
@@ -35,7 +39,7 @@ terraform init
 terraform plan -out=tfplan # the server, its name, the bucket, CloudFront's request policy
 terraform apply tfplan     # (a few minutes to boot)
 ./cloudfront.sh --dryrun   # see the change to the distribution first
-./cloudfront.sh            # the /alzendor/* route (CloudFront takes a few minutes)
+./cloudfront.sh            # the /alzendor/* route and the secret header (a few minutes)
 ALZ_ADMINS=kev ./deploy.sh # the game itself
 ```
 
@@ -47,8 +51,15 @@ updates only Alzendor's origin and behavior, and running it again is safe.
 
 ```sh
 git commit ...             # deploy.sh sends the committed code (HEAD)
-./deploy.sh                # upload, swap in and rebuild over SSM, then report
+./deploy.sh                # back up, upload, swap in, rebuild, wait for health, report
 ```
+
+A deploy first saves Redis to `/opt/alzendor/backups/pre-<sha>-<time>.rdb` on
+the server (the last ten are kept), then waits up to two minutes for the new
+server's health check. If it doesn't pass, the deploy fails ("Deploy Failed.")
+and prints the server's last log lines. The admins carry over from the last
+release; `ALZ_ADMINS=name,name ./deploy.sh` changes them (`ALZ_ADMINS=` alone
+can't clear them: edit `.env` on the server for that).
 
 A shell on the server, if you need one:
 
@@ -58,8 +69,54 @@ sudo docker compose -f /opt/alzendor/release/deploy/iterbotgames/compose.yml log
 ```
 
 Admin commands in the game (`announce`, `goto`, `setweather`, `setclock`) are for the accounts in
-`ALZ_ADMINS`, set at deploy time. To wipe a character from a shell on the
+`ALZ_ADMINS`, set at deploy time and kept by later deploys. To wipe a character from a shell on the
 server: `sudo docker compose ... exec redis redis-cli FCALL reset_character 0 <name>`.
+
+## The origin secret
+
+`cloudfront.sh` makes `origin-secret` the first time it runs and gives it to
+CloudFront; `deploy.sh` passes it to Caddy, and won't deploy without it.
+**Order matters:** run `./cloudfront.sh` and wait for CloudFront to finish
+rolling out (a few minutes) before the first deploy that requires the
+header, or Caddy refuses every request until it has. To change the secret,
+delete the file, run `./cloudfront.sh`, wait, then `./deploy.sh`; players are
+refused in between. Keep the file with the Terraform state: a deploy from
+another machine needs both.
+
+## Rolling back
+
+Redeploy a commit you know was good: `git checkout <good sha> && ./deploy.sh`
+(it sends HEAD), then `git checkout -` to come back. That's the usual way.
+
+If deploying isn't possible, on the server (`aws ssm start-session ...`, then
+`sudo -i`):
+
+```sh
+cd /opt/alzendor
+mv release release.bad && mv release.old release
+cd release/deploy/iterbotgames
+docker tag alzendor:previous alzendor:latest    # the image before the last deploy
+docker compose up -d --no-build --wait
+```
+
+If the bad release also damaged players' data, restore a backup (below).
+
+## Backups
+
+Two kinds, both on the server's side:
+
+- **Before each deploy**: `/opt/alzendor/backups/pre-<sha>-<time>.rdb`, the
+  last ten. Restoring one stops the game for a few seconds:
+  ```sh
+  sh /opt/alzendor/release/deploy/iterbotgames/restore-redis.sh /opt/alzendor/backups/<file>.rdb
+  ```
+  (Don't just copy a dump.rdb into the volume: Redis keeps an append-only file,
+  and starts empty rather than load the dump. The script handles that.)
+- **Daily disk snapshots** (Data Lifecycle Manager, main.tf), kept 7 days:
+  `aws ec2 describe-snapshots --owner-ids self --filters Name=tag:alzendor-backup,Values=daily --profile admin-dev`.
+  To restore, create a volume from the snapshot in the instance's zone, stop
+  the instance, swap it in as the root volume (EC2 console: *Replace root
+  volume* takes a snapshot directly), and start it again.
 
 ## Taking it down
 
@@ -70,4 +127,4 @@ behavior and the `alzendor` origin in the CloudFront console (or with
 ## Cost
 
 About $10 a month: the instance (~$6), its public IPv4 address (~$3.60),
-12 GB of disk (~$1), and pennies for the bucket and CloudFront.
+12 GB of disk (~$1), and pennies for the bucket, the week of snapshots and CloudFront.

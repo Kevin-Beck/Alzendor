@@ -1,4 +1,4 @@
-"""The balance bot (docs/combat-redesign.md, Tuning): plays fights with
+"""The balance bot (docs/combat.md, Tuning): plays fights with
 alzendor/balance.py and no server, and reports how long they take and who
 wins, against the tuning targets.
 
@@ -43,11 +43,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from alzendor import balance as b
-from alzendor.world import load_seed
+from alzendor.world import STATS, load_seed
 
 SEED = Path(__file__).parent.parent / "world" / "seed.json"
-STATS = ("vigor", "poise", "focus", "presence", "resilience")
-BASE_HP, VIGOR_HP = 100, 8   # as in alzendor.lua
+BASE_HP, VIGOR_HP = 100, 8   # as in alzendor.lua (tests/test_balance.py checks)
 LEAD = b.steps(1000)
 REACTION = b.steps(250)      # the sloppy player's
 
@@ -74,6 +73,7 @@ class World:
     levels: dict           # nid: level
     sources: dict          # nid: zone file
     rewards: list          # (zone level, gear or wearable id): what quests give and NPCs drop, zone by zone
+    armor_k: float = 30    # the seed's rules.armor_k: armour's share of a blow is armor / (armor + armor_k)
 
     @classmethod
     def load(cls, scale: float | None = None) -> "World":
@@ -84,7 +84,9 @@ class World:
         sources, rewards = {}, []
         for path in [SEED, *sorted((SEED.parent / "zones").glob("*.json"))]:
             zone = json.loads(path.read_text(encoding="utf-8"))
-            level = ZONE_LEVELS.get(path.stem, 2)
+            if path != SEED and path.stem not in ZONE_LEVELS:
+                raise ValueError(f"{path.name}: no level for this zone in ZONE_LEVELS (tools/balance_bot.py; docs/zones.md)")
+            level = ZONE_LEVELS.get(path.stem, 2)  # the seed file's own rewards: the starting realms
             for nid, npc in zone.get("npcs", {}).items():
                 sources[nid] = path.stem
                 rewards += [(level, g) for g in npc.get("drops", [])]
@@ -96,9 +98,11 @@ class World:
             if sources.get(nid) == "seed" and npc.get("room"):
                 region = data["areas"][data["rooms"][npc["room"]]["area"]]["region"]
                 levels[nid] = SEED_REGION_LEVELS.get(region, 2)
+            elif sources.get(nid) == "seed":
+                levels[nid] = 10  # a template (ambushers): placed wherever the road is
             else:
-                levels[nid] = ZONE_LEVELS.get(sources.get(nid, ""), 10)
-        return cls(data, b.Rules.from_seed(raw), levels, sources, rewards)
+                levels[nid] = ZONE_LEVELS[sources[nid]]
+        return cls(data, b.Rules.from_seed(raw), levels, sources, rewards, float(raw.get("armor_k", 30)))
 
     def fighters(self) -> list[str]:
         """Every NPC there is to fight: with attacks, placed, mortal, and not one to sneak past."""
@@ -380,7 +384,7 @@ def fight(world: World, chars: list[Character], styles: list[str], nids: list[st
         for p in alive:
             if n <= LEAD:  # still finding their feet: blows just land
                 for f, a, blow in (landing[0] if p is first else []):
-                    p.hp -= damage_taken(p, a, "hit", rules)
+                    p.hp -= damage_taken(p, a, "hit", rules, world.armor_k)
                 continue
             foe = "npc:" + living[0]["nid"]
             acts = p.defend(n, [(land, blow, (id(at), land)) for land, blow, at in coming[0]] if p is first else [])
@@ -397,7 +401,7 @@ def fight(world: World, chars: list[Character], styles: list[str], nids: list[st
                 elif e["type"] == "blow":
                     f, a, _ = mine[k]
                     k += 1
-                    p.hp -= damage_taken(p, a, e["result"], rules)
+                    p.hp -= damage_taken(p, a, e["result"], rules, world.armor_k)
                     if e["result"] == "perfect_block" and f["boss"] and f["boss"].perfect_block():
                         reels(f, n)
                 elif e["type"] == "strike":
@@ -430,17 +434,23 @@ def reels(foe: dict, n: int) -> None:
             at["land"], at["angle"] = end, None
 
 
-def damage_taken(p: Player, a: dict, how: str, rules: b.Rules) -> int:
-    """A blow's damage, as encounter_blow works it out (no guard)."""
+def damage_taken(p: Player, a: dict, how: str, rules: b.Rules, armor_k: float = 30) -> int:
+    """A blow's damage, as encounter_blow works it out (the bots never guard).
+    tests/test_tuning.py checks this against encounter_blow itself."""
     dmg = a["damage"]
     if how in ("dodge", "perfect_block"):
         return 0
     if how == "block":
-        dmg -= min(dmg, round(dmg * min(1, rules.block_cut * p.me.shield)))
-    dmg -= min(dmg, round(dmg * p.me.armor / (p.me.armor + 30)))
+        dmg -= min(dmg, lua_round(dmg * min(1, rules.block_cut * p.me.shield)))
+    dmg -= min(dmg, lua_round(dmg * p.me.armor / (p.me.armor + armor_k)))
     if how == "staggered":
-        dmg = round(dmg * rules.stagger_dmg)
+        dmg = lua_round(dmg * rules.stagger_dmg)
     return dmg
+
+
+def lua_round(x: float) -> int:
+    """Halves away from zero, as alzendor.lua's round (Python's round goes to even)."""
+    return math.floor(x + 0.5) if x >= 0 else -math.floor(-x + 0.5)
 
 
 # Judging ----------------------------------------------------------------------------------

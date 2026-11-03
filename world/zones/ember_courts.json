@@ -468,7 +468,7 @@
         {
           "name": "ash-storm",
           "period": 32300,
-          "damage": 110,
+          "damage": 80,
           "kick": 2.286,
           "stagger": true,
           "debuff": {
@@ -502,8 +502,6 @@
       ],
       "hit": "{actor} lunges at {target}.",
       "perfect_hit": "{actor} lunges at {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Ember Rapier finds nothing.",
       "description": "Sir Calder's rapier, burning white. In the heat it's quicker than thought.",
       "weather": {
         "temperature": 0.8,

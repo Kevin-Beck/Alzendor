@@ -1,13 +1,19 @@
 """The game server: accepts WebSocket connections and serves the web client.
 
-A server holds client connections and nothing else. World state, subscriptions
-and events all live in Redis, so any number of servers can run side by side and
-a client can reconnect to any of them.
+A server keeps no lasting game state. The world, subscriptions and events all
+live in Redis, so several servers can run side by side and a client can
+reconnect to any of them. A fight is the exception: each one is simulated by
+one server, its owner, and starts again on another if that server dies
+(encounter.py, docs/combat.md). Each server needs an id of its own
+(ALZ_SERVER_ID) for that, and claims it in Redis while it runs.
 """
 
 import asyncio
+import hashlib
+import json
 import logging
 import random
+import secrets
 import signal
 import time
 from pathlib import Path
@@ -23,7 +29,7 @@ from .config import Config
 from .encounter import EncounterHost
 from .feed import FEED_BLOCK_MS
 from .session import Session
-from .world import World
+from .world import LUA_LIBRARY, World, load_seed, validate_seed
 
 log = logging.getLogger(__name__)
 
@@ -31,6 +37,7 @@ WEB_CLIENT = Path(__file__).with_name("web") / "index.html"
 MAX_MESSAGE_BYTES = 16 * 1024
 MAX_REDIS_CONNECTIONS = 1000
 WEATHER_SECONDS = 30  # how often weather_tick runs (ground, NPCs, everyone's weather)
+UPKEEP_SECONDS = 5  # how often upkeep runs (respawns, healing): once per slot, across all servers
 SECURITY_HEADERS = {
     "Content-Security-Policy": (
         "default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
@@ -54,14 +61,59 @@ class GameServer:
         self._web_client = WEB_CLIENT.read_bytes()
         # The encounters this server owns, and the bus their inputs and state travel on.
         self.encounters = EncounterHost(self.world, config.server_id, self.now_ms)
+        self.version = ""  # of the rules and content this server loaded (rules_version)
+        self._claim = secrets.token_hex(8)  # proves alz:server:<id> is this process's
 
     async def prepare(self) -> None:
-        """Installs the game rules and loads the map. Safe to run on every
-        server at every start: it never overwrites live state."""
+        """Checks the map, then installs the game rules and loads it. Safe to
+        run on every server at every start: it never overwrites live state. The
+        rules belong to the whole Redis, so the last server to start decides
+        them for every server: one from another version is logged."""
+        data = load_seed(self.config.seed_file)
+        validate_seed(data)  # before anything is installed: a bad map changes nothing
+        self.version = rules_version(data)
+        loaded = await self.world.redis.hgetall("alz:version")
+        if loaded and loaded.get("version") != self.version:
+            log.warning("replacing rules and content %s (loaded by server %s) with %s: servers still running "
+                        "the old version will call rules they weren't written for until they restart",
+                        loaded.get("version"), loaded.get("server"), self.version)
         await self.world.load_rules()
-        seed = await self.world.seed(self.config.seed_file)
+        seed = await self.world.seed(self.config.seed_file, data)
+        await self.world.redis.hset("alz:version", mapping={"version": self.version, "server": self.config.server_id,
+                                                            "at": int(time.time())})
+        log.info("rules and content version %s", self.version)
         self.ambient = seed.get("ambient", [])
         await self.sync_clock()
+
+    def _claim_ttl(self) -> int:
+        return max(30, 3 * self.config.heartbeat_seconds)
+
+    async def claim_server_id(self, wait: int | None = None) -> None:
+        """Holds alz:server:<id> while running: two servers with one id would
+        both run every fight that id owns. Waits out a claim left by a server
+        that stopped without letting go (up to `wait` seconds, by default as
+        long as a claim lasts), then gives up."""
+        key, ttl = f"alz:server:{self.config.server_id}", self._claim_ttl()
+        wait = ttl if wait is None else wait
+        for attempt in range(wait + 1):
+            if await self.world.redis.set(key, self._claim, nx=True, ex=ttl):
+                return
+            if attempt == wait:
+                break
+            if attempt == 0:
+                log.warning("server id %r is held by another server; waiting up to %d s for it to go",
+                            self.config.server_id, wait)
+            await asyncio.sleep(1)
+        raise RuntimeError(f"Server id {self.config.server_id!r} is in use by another running server. "
+                           "Give each server its own ALZ_SERVER_ID.")
+
+    async def release_server_id(self) -> None:
+        key = f"alz:server:{self.config.server_id}"
+        try:
+            if await self.world.redis.get(key) == self._claim:
+                await self.world.redis.delete(key)
+        except Exception:
+            log.exception("couldn't release the server id")
 
     async def sync_clock(self) -> None:
         before = time.time()
@@ -84,7 +136,7 @@ class GameServer:
             headers = Headers({"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache", **SECURITY_HEADERS})
             return Response(200, "OK", headers, self._web_client)
         if path == "/healthz":
-            return connection.respond(200, "ok\n")
+            return connection.respond(200, f"ok {self.version}\n")
         return connection.respond(404, "Not found\n")
 
     async def serve(self, stop: asyncio.Future) -> None:
@@ -104,6 +156,7 @@ class GameServer:
             if self.config.fake_latency_ms or self.config.fake_jitter_ms:
                 log.warning("faking %d ms of latency (and up to %d ms of jitter) each way: for local testing only",
                             self.config.fake_latency_ms, self.config.fake_jitter_ms)
+            await self.claim_server_id()
             await self.encounters.start()
             tasks = [asyncio.create_task(loop()) for loop in (self._heartbeats, self._ticker, self._world_tick)]
             try:
@@ -112,6 +165,7 @@ class GameServer:
                 for task in tasks:
                     task.cancel()
                 await self.encounters.close()
+                await self.release_server_id()
                 server.close()
 
     async def _heartbeats(self) -> None:
@@ -120,6 +174,7 @@ class GameServer:
         redis = self.world.redis
         while True:
             try:
+                await self.world.redis.set(f"alz:server:{self.config.server_id}", self._claim, ex=self._claim_ttl())
                 await self.sync_clock()
                 now = int(time.time() * 1000)
                 live = {s.pid: now for s in self.sessions.values()}
@@ -155,17 +210,29 @@ class GameServer:
                 log.exception("world tick failed")
                 await asyncio.sleep(1)
 
+    async def upkeep(self) -> bool:
+        """The world's upkeep, once per UPKEEP_SECONDS slot across every
+        server: it heals by a fixed amount a call, so it isn't safe to run once
+        per server. Returns whether this server ran it."""
+        slot = int(time.time() // UPKEEP_SECONDS)
+        if not await self.world.redis.set(f"alz:upkeep:{slot}", self.config.server_id, nx=True, ex=UPKEEP_SECONDS * 4):
+            return False
+        await self.world.call("upkeep")
+        return True
+
     async def _ticker(self) -> None:
         """Runs the world's upkeep (respawns, sleeping bodies fading, healing out
         of a fight), the weather's 30-second tick, and the map's ambient events.
-        Every server runs this loop: upkeep is atomic in Redis, and a Redis key
-        per time slot makes sure only one server fires each ambient."""
+        Every server runs this loop, so each of them takes a Redis key per time
+        slot first: only one server fires each (atomic isn't enough; upkeep
+        and the weather change the world each time they run)."""
         last_slot = {i: int(time.time() // a["every"]) for i, a in enumerate(self.ambient)}
         last_weather = 0
         while True:
-            await asyncio.sleep(5)
+            # Just past the start of the next slot, so no slot is skipped.
+            await asyncio.sleep(UPKEEP_SECONDS - time.time() % UPKEEP_SECONDS + random.uniform(0.05, 0.3))
             try:
-                await self.world.call("upkeep")
+                await self.upkeep()
             except Exception:
                 log.exception("upkeep failed")
             # The weather's beat: one server per 30 s slot (see weather_tick).
@@ -232,3 +299,11 @@ async def main(config: Config) -> None:
         await server.serve(stop)
     finally:
         await redis.aclose()
+
+
+def rules_version(data: dict) -> str:
+    """Names the rules library and the content a server loads, so servers of
+    different versions on one Redis show up (alz:version, /healthz, auth_ok)."""
+    digest = hashlib.sha1(LUA_LIBRARY.read_bytes())
+    digest.update(json.dumps(data, sort_keys=True).encode())
+    return digest.hexdigest()[:12]

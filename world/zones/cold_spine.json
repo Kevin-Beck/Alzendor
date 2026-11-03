@@ -558,7 +558,7 @@
         {
           "name": "crush",
           "period": 35000,
-          "damage": 110,
+          "damage": 80,
           "kick": 2.343,
           "stagger": true,
           "debuff": {
@@ -592,8 +592,6 @@
       ],
       "hit": "{actor} drives the ice-pick into {target}.",
       "perfect_hit": "{actor} drives the ice-pick into {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Spine Pick finds nothing.",
       "description": "Halvard's ice-pick. In the cold it bites deep.",
       "weather": {
         "temperature": -0.7,

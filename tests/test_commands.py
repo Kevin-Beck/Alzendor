@@ -153,7 +153,7 @@ async def test_free_emote_gets_punctuation(ctx):
         ("unequip", "Unequip which slot?"),
         ("stand on table", "Just STAND."),
         ("say", "Say what?"),
-        ("tell mara", "Usage: tell <player> <message>"),
+        ("tell mara", "Usage: TELL <player> <message>"),
         ("juggle", "Unknown command 'juggle'"),
         ("train", "Train which stat?"),
         ("train strength", "Train which stat?"),

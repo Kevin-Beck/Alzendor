@@ -3,3 +3,4 @@
 *.tfstate.*
 .terraform.lock.hcl.bak
 tfplan
+origin-secret

@@ -186,7 +186,8 @@
       ],
       "description": "A hideout in the thorns: a fire, stolen saddles, and Captain Crowe.",
       "exits": {
-        "west": "gm_hide"
+        "west": "gm_hide",
+        "northeast": "rw_outpost"
       },
       "features": {},
       "terrain": "moor"
@@ -195,7 +196,7 @@
   "items": {
     "riders_lantern_item": {
       "name": "Rider's lantern",
-      "keywords": "lantern rider",
+      "keywords": "lantern",
       "description": "An iron lantern with no candle, still warm.",
       "quest": true,
       "room": "gm_gibbet"
@@ -424,14 +425,14 @@
         {
           "name": "sabre",
           "period": 6200,
-          "damage": 10,
+          "damage": 8,
           "kick": 0.8,
           "hit": "{actor} fences {target} back."
         },
         {
           "name": "pistol shot",
           "period": 30100,
-          "damage": 45,
+          "damage": 22,
           "kick": 2.229,
           "stagger": true,
           "debuff": {
@@ -465,7 +466,7 @@
         {
           "name": "scythe",
           "period": 32300,
-          "damage": 120,
+          "damage": 60,
           "kick": 2.286,
           "stagger": true,
           "debuff": {
@@ -479,7 +480,7 @@
         {
           "name": "trample",
           "period": 12500,
-          "damage": 18,
+          "damage": 15,
           "kick": 1.345,
           "hit": "{actor} rides {target} down."
         }
@@ -518,8 +519,6 @@
       ],
       "hit": "{actor} shoots {target}.",
       "perfect_hit": "{actor} shoots {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Crowe's Pistol finds nothing.",
       "description": "Captain Crowe's long pistol. Slow to load, and it hates the wet.",
       "weather": {
         "temperature": 0.2,

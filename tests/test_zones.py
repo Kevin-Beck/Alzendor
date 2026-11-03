@@ -95,7 +95,7 @@ async def test_some_things_only_come_out_at_night(world):
 async def test_quests_can_give_gear(world):
     kevin = await create(world, "kevin")
     await world.call("goto", "kevin", "smithy")
-    await world.call("ask", "kevin", "brannoc", "iron")
+    await world.call("discuss", "kevin", "brannoc", "iron")
     await world.call("accept", "kevin")
     await world.call("goto", "kevin", "ff_ditch")
     await world.call("get", "kevin", "iron")
@@ -124,3 +124,17 @@ def test_nothing_comes_back_in_under_five_minutes():
     seed = load_seed("world/seed.json")
     quick = [nid for nid, n in seed["npcs"].items() if n.get("attacks") and n.get("respawn", 300) < 300]
     assert quick == []
+
+
+async def test_the_throne_door_waits_for_the_relic_quests(world):
+    # Opening the door takes the relics; done first, it would leave the relic
+    # quests with nothing to show. So Corvin speaks of it only after all three.
+    kevin = await create(world, "kevin")
+    await world.call("goto", "kevin", "hc_streets")
+    await world.call("discuss", "kevin", "corvin", "throne")
+    assert await world.redis.hget("PLAYER:kevin:quests", "hc_throne") is None
+    await world.redis.hset("PLAYER:kevin:quests", mapping={"ec_crown": "done", "pd_pearl": "done", "st_heart": "done"})
+    await drain(kevin)
+    await world.call("discuss", "kevin", "corvin", "throne")
+    await world.call("accept", "kevin")
+    assert await world.redis.hget("PLAYER:kevin:quests", "hc_throne") == "active"

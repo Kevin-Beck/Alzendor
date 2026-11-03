@@ -275,7 +275,7 @@
         {
           "name": "lance",
           "period": 10000,
-          "damage": 55,
+          "damage": 34,
           "kick": 1.127,
           "hit": "{actor} drives a thorned lance at {target}.",
           "defend": "block"
@@ -300,7 +300,7 @@
         {
           "name": "lance",
           "period": 10000,
-          "damage": 55,
+          "damage": 34,
           "kick": 1.127,
           "hit": "{actor} drives a thorned lance at {target}.",
           "defend": "block"
@@ -325,7 +325,7 @@
         {
           "name": "lance",
           "period": 10000,
-          "damage": 55,
+          "damage": 34,
           "kick": 1.127,
           "hit": "{actor} drives a thorned lance at {target}.",
           "defend": "block"
@@ -359,7 +359,7 @@
         {
           "name": "hunting horn",
           "period": 32300,
-          "damage": 170,
+          "damage": 104,
           "kick": 2.286,
           "stagger": true,
           "debuff": {
@@ -393,8 +393,6 @@
       ],
       "hit": "{actor} spears {target}.",
       "perfect_hit": "{actor} spears {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Wild Hunt Spear finds nothing.",
       "description": "The Erlking's spear. It wants to hunt, in any weather.",
       "weather": {
         "temperature": 0,
@@ -434,6 +432,18 @@
           "note": "A bold thing, to kill a fey."
         }
       ]
+    }
+  },
+  "routes": {
+    "moon-arch": {
+      "name": "the arch",
+      "keywords": "arch moon hollowmoon home",
+      "from": "gl_landing",
+      "to": "hm_moongate",
+      "kind": "portal",
+      "depart": "You step back through the arch, and the moon is up again.",
+      "leave": "{actor} is gone.",
+      "arrive": "{actor} steps out of the Moon Gate."
     }
   },
   "quests": {

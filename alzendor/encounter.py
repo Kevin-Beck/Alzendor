@@ -1,4 +1,4 @@
-"""Encounters, as their owner runs them (docs/combat-redesign.md).
+"""Encounters, as their owner runs them (docs/combat.md).
 
 Every fight is an encounter, and one server runs each: the server that caused
 it, its owner. The owner simulates every player's dot (alzendor/balance.py)
@@ -223,7 +223,11 @@ class Owner:
         if act == "strike":
             slot = m.get("slot")
             if isinstance(slot, int) and 1 <= slot <= 3:
-                done = ("strike", slot, self._target(p, slot, m.get("target")))
+                aim = self._target(p, slot, m.get("target"))
+                if aim is None:  # a name that matched no one: say so, rather than guess
+                    self.late.append(("refused", p.pid, {"act": "strike", "slot": slot, "reason": "no_target"}))
+                else:
+                    done = ("strike", slot, aim)
         elif act in ("dodge", "block", "unblock"):
             done = (act,)
         if done and not (at is not None and self._rewind(p, at, act=done)):
@@ -291,9 +295,21 @@ class Owner:
                 calls.append(("passive", p.pid, "seal"))
         return calls
 
-    def _target(self, p: Player, slot: int, target) -> str:
-        """Who a strike is aimed at: an entity id, a word naming an NPC in the
-        fight, or (for damage gear, with nothing named) the first NPC in it."""
+    def _skip_to(self, target: int) -> None:
+        """Jumps to a step without running the ones between (after a stall).
+        Each NPC attack moves to its next landing after that step, so the
+        skipped blows don't all land at once in the steps that follow."""
+        self.step = target
+        for npc in self.npcs.values():
+            for a in npc.attacks:
+                if a.land <= target and a.period > 0:
+                    a.land += a.period * math.ceil((target + 1 - a.land) / a.period)
+                    a.angle = a.target = None
+
+    def _target(self, p: Player, slot: int, target) -> str | None:
+        """Who a strike is aimed at: an entity id, a word naming an NPC or a
+        player in the fight, or, with nothing named, yourself (heals and guards)
+        or the first NPC in it. None if a word named no one here."""
         gear = p.gear.get(slot) or {}
         if isinstance(target, str) and target.startswith(("npc:", "pc:")):
             return target[:100]
@@ -303,6 +319,10 @@ class Owner:
                 words = f" {npc.info['name'].lower()} {npc.info.get('keywords', '')} "
                 if word == npc.nid or f" {word} " in words:
                     return "npc:" + npc.nid
+            for other in self.players.values():
+                if word in (other.pid, str(other.info.get("name", "")).lower()):
+                    return "pc:" + other.pid
+            return None
         if gear.get("effect") in ("heal", "guard"):
             return ""
         first = min(self.npcs.values(), key=lambda n: n.join, default=None)
@@ -559,7 +579,7 @@ class Owner:
                 ran += 1
                 self._run_step(self.step, calls)
             if ran >= MAX_CATCH_UP:
-                self.step = target  # too far behind: skip ahead rather than run slow for ever
+                self._skip_to(target)  # too far behind: skip ahead rather than run slow for ever
             for call in calls:
                 if self.ended:
                     break
@@ -638,10 +658,15 @@ class EncounterHost:
             await self.world.redis.publish(f"enc:{eid}:in", data)
 
     async def _discover(self) -> None:
-        """Watches for new encounters, and runs the ones this server owns."""
-        last = "$"
+        """Watches for new encounters, and runs the ones this server owns.
+        Reads on from the last entry seen, never from "$" (which, read again
+        after each idle second, would skip anything added in between)."""
+        last = None
         while True:
             try:
+                if last is None:
+                    newest = await self.world.redis.xrevrange(NEW_ENCOUNTERS, count=1)
+                    last = newest[0][0] if newest else "0-0"
                 reply = await self.world.redis.xread({NEW_ENCOUNTERS: last}, block=1000)
                 for _stream, entries in reply or ():
                     for entry_id, fields in entries:

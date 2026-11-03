@@ -4,6 +4,7 @@ client's copy is checked against."""
 
 import json
 import math
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -519,7 +520,76 @@ def test_the_vectors_cover_every_kind_of_event():
         assert want in seen, want
 
 
-@pytest.mark.skipif(not shutil.which("node"), reason="node isn't installed")
+def node_or_skip() -> str:
+    """A node binary: ALZ_NODE, or node on the PATH. In CI and the test image
+    (ALZ_REQUIRE_NODE or CI set) a missing node fails rather than skips."""
+    node = os.environ.get("ALZ_NODE") or shutil.which("node")
+    if not node:
+        if os.environ.get("ALZ_REQUIRE_NODE") or os.environ.get("CI"):
+            pytest.fail("node isn't installed, and this run requires it (ALZ_REQUIRE_NODE or CI)")
+        pytest.skip("node isn't installed (set ALZ_NODE to a node binary to run it)")
+    return node
+
+
+def test_the_client_script_parses(tmp_path):
+    """A syntax error in the web client's script blanks the game for everyone;
+    nothing else would catch it before a deploy."""
+    import re
+    node = node_or_skip()
+    html = (ROOT / "alzendor" / "web" / "index.html").read_text()
+    scripts = re.findall(r"<script>(.*?)</script>", html, re.S)
+    assert scripts
+    for i, script in enumerate(scripts):
+        path = tmp_path / f"script{i}.js"
+        path.write_text(script)
+        result = subprocess.run([node, "--check", str(path)], capture_output=True, text=True, timeout=60)
+        assert result.returncode == 0, result.stderr
+
+
 def test_javascript_matches_the_vectors():
-    result = subprocess.run(["node", str(ROOT / "tools" / "check_vectors.mjs")], capture_output=True, text=True, timeout=60)
+    # The client's copy of the simulation must agree with this one.
+    node = node_or_skip()
+    result = subprocess.run([node, str(ROOT / "tools" / "check_vectors.mjs")], capture_output=True, text=True, timeout=60)
     assert result.returncode == 0, result.stderr + result.stdout
+
+
+def test_stat_factors_agree_in_python_lua_and_the_client():
+    """What a point of Poise, Focus or Resilience does is typed in three places:
+    balance.py (the authority), alzendor.lua (which words it for players) and
+    the client's forPlayer."""
+    import re
+    lua = (ROOT / "alzendor" / "alzendor.lua").read_text()
+    table = re.search(r"local STAT_FACTORS = \{(.*?)\}", lua, re.S).group(1)
+    in_lua = {k: float(v) for k, v in re.findall(r"(\w+) = ([\d.]+)", table)}
+    for name, value in b.STAT_FACTORS.items():
+        assert in_lua[name] == value, name
+    js = (ROOT / "alzendor" / "web" / "index.html").read_text()
+    body = re.search(r"function forPlayer\(.*?\{(.*?)\};", js, re.S).group(1)
+    assert float(re.search(r"core \* \(1 \+ ([\d.]+) \* poise\)", body).group(1)) == b.STAT_FACTORS["poise_core"]
+    assert float(re.search(r"perfect_r \* \(1 \+ ([\d.]+) \* focus\)", body).group(1)) == b.STAT_FACTORS["focus_perfect"]
+    cap, per = re.search(r"Math\.max\(([\d.]+), 1 - ([\d.]+) \* resilience\)", body).groups()
+    assert (1 - float(cap), float(per)) == (b.STAT_FACTORS["resilience_debuff_cap"], b.STAT_FACTORS["resilience_debuff"])
+
+
+def test_copies_of_the_lua_tables_agree_with_it():
+    """world.py validates content with copies of alzendor.lua's stats, slots
+    and deeds, and the tuning bot works out health with its numbers."""
+    import re
+    from alzendor import world
+    from tools import balance_bot as bot
+    lua = (ROOT / "alzendor" / "alzendor.lua").read_text()
+    stats = re.search(r"local STATS = \{(.*?)\}", lua).group(1)
+    assert tuple(re.findall(r"'(\w+)'", stats)) == world.STATS
+    assert int(re.search(r"local SLOTS = (\d+)", lua).group(1)) == world.SLOTS
+    social = re.search(r"local SOCIAL = \{([^}]*)\}", lua).group(1)
+    deeds = set(re.findall(r"deed\(pid, '(\w+)'", lua)) | set(re.findall(r"= '(\w+)'", social))
+    assert deeds == set(world.DEEDS)
+    base, vigor = re.search(r"local BASE_HP, VIGOR_HP = (\d+), STAT_FACTORS.vigor_hp", lua).group(1), \
+        re.search(r"vigor_hp = (\d+)", lua).group(1)
+    assert (bot.BASE_HP, bot.VIGOR_HP) == (int(base), int(vigor))
+
+
+def test_every_zone_has_a_level_for_the_tuning_bot():
+    from tools import balance_bot as bot
+    zones = {p.stem for p in (ROOT / "world" / "zones").glob("*.json")}
+    assert set(bot.ZONE_LEVELS) == zones

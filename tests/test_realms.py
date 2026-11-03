@@ -38,7 +38,7 @@ async def test_a_passage_npc_takes_you_to_another_realm_and_back(world):
     kevin = await enter(world, "kevin")
     await world.call("goto", "kevin", "chapel")
     await drain(kevin)
-    await world.call("ask", "kevin", "ilse", "passage")
+    await world.call("discuss", "kevin", "ilse", "passage")
     events = await drain(kevin)
     assert "Sister Ilse traces a ring of frost in the air" in texts(events)[1]
     assert await world.redis.get("PLAYER:kevin:room") == "rime_landing"
@@ -50,7 +50,7 @@ async def test_a_passage_npc_takes_you_to_another_realm_and_back(world):
     assert {g["realm"] for g in full["regions"]} == {"alzendor", "rimewaste"}  # the home map is kept for the buttons
     assert of_type(events, "weather")[-1]["place"] == "Frostfell"
 
-    await world.call("ask", "kevin", "veyra", "passage")
+    await world.call("discuss", "kevin", "veyra", "passage")
     await drain(kevin)
     assert await world.redis.get("PLAYER:kevin:room") == "chapel"
     assert "REALM:alzendor" in kevin.subs
@@ -59,7 +59,7 @@ async def test_a_passage_npc_takes_you_to_another_realm_and_back(world):
 async def test_realm_channels_reach_the_whole_realm(world):
     kevin, mara = await enter(world, "kevin"), await enter(world, "mara")
     await world.call("goto", "kevin", "chapel")
-    await world.call("ask", "kevin", "ilse", "passage")
+    await world.call("discuss", "kevin", "ilse", "passage")
     await drain(kevin), await drain(mara)
     await world.call("ambient", "REALM:rimewaste", "The ground shudders.")
     assert texts(await drain(kevin)) == ["The ground shudders."]
@@ -69,7 +69,7 @@ async def test_realm_channels_reach_the_whole_realm(world):
 async def test_the_rift_is_one_way_and_the_portal_home_needs_wind_and_no_wraiths(world):
     kevin = await enter(world, "kevin")
     await world.call("goto", "kevin", "chapel")
-    await world.call("ask", "kevin", "ilse", "passage")
+    await world.call("discuss", "kevin", "ilse", "passage")
     await walk(world, "kevin", "north", "north")  # past the ice wraith to the rift
     await drain(kevin)
     await world.call("look", "kevin")
@@ -106,7 +106,7 @@ async def test_the_rift_is_one_way_and_the_portal_home_needs_wind_and_no_wraiths
 async def test_a_storm_glass_teaches_the_rimewastes_skies(world):
     kevin = await enter(world, "kevin")
     await world.call("goto", "kevin", "chapel")
-    await world.call("ask", "kevin", "ilse", "passage")
+    await world.call("discuss", "kevin", "ilse", "passage")
     await walk(world, "kevin", "north", "west")  # Ember Hollow, the one warm place
     await drain(kevin)
     await world.call("get", "kevin", "glass")

@@ -218,7 +218,7 @@
         {
           "name": "drill",
           "period": 7700,
-          "damage": 40,
+          "damage": 25,
           "kick": 0.909,
           "hit": "{actor} drills at {target}.",
           "defend": "block"
@@ -242,7 +242,7 @@
         {
           "name": "drill",
           "period": 7700,
-          "damage": 40,
+          "damage": 25,
           "kick": 0.909,
           "hit": "{actor} drills at {target}.",
           "defend": "block"
@@ -266,7 +266,7 @@
         {
           "name": "drill",
           "period": 7700,
-          "damage": 40,
+          "damage": 25,
           "kick": 0.909,
           "hit": "{actor} drills at {target}.",
           "defend": "block"
@@ -290,7 +290,7 @@
         {
           "name": "halberd",
           "period": 12500,
-          "damage": 55,
+          "damage": 29,
           "kick": 1.345,
           "hit": "{actor} swings its halberd at {target}.",
           "defend": "block"
@@ -314,7 +314,7 @@
         {
           "name": "halberd",
           "period": 12500,
-          "damage": 55,
+          "damage": 29,
           "kick": 1.345,
           "hit": "{actor} swings its halberd at {target}.",
           "defend": "block"
@@ -339,7 +339,7 @@
         {
           "name": "piston",
           "period": 10000,
-          "damage": 60,
+          "damage": 51,
           "kick": 1.127,
           "hit": "{actor} drives a piston at {target}.",
           "defend": "block"
@@ -347,7 +347,7 @@
         {
           "name": "overload",
           "period": 35000,
-          "damage": 180,
+          "damage": 90,
           "kick": 2.343,
           "stagger": true,
           "debuff": {
@@ -380,8 +380,6 @@
       ],
       "hit": "{actor} brings the gavel down on {target}.",
       "perfect_hit": "{actor} brings the gavel down on {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Arbiter's Gavel finds nothing.",
       "description": "The Arbiter's gavel. In dead-still air, every blow is a verdict.",
       "weather": {
         "temperature": 0.1,

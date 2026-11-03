@@ -1,4 +1,4 @@
-"""Retunes the content against the tuning targets (docs/combat-redesign.md,
+"""Retunes the content against the tuning targets (docs/combat.md,
 Tuning), with the balance bot (tools/balance_bot.py), and writes the result
 into world/seed.json and world/zones/*.json:
 
@@ -20,6 +20,12 @@ In order:
 4. Rooms of three or more enemies: their attack periods are staggered so the
    blows don't land together, and slowed as above if the sloppy player
    still loses.
+5. Biggest blows: where the player still loses too often (step 3 has done
+   all it may), the NPC's hardest-hitting attack loses 15% of its damage a
+   round, down to half what it had when this step began.
+
+`--steps 5` runs step 5 alone, on the content as it is (steps 1-4 have been
+run on it already; running them again would retune every NPC's health).
 
 Health changes keep an NPC's experience where it was (its `xp` is written
 down if it came from its health). Bosses keep their poise.
@@ -38,6 +44,8 @@ from tools import balance_bot as bot
 TARGET = {"ordinary": (20, 30, 40), "boss": (120, 180, 240), "big boss": (120, 180, 240)}
 FIGHTS = 6
 MAX_SLOW = 2.5  # attacks at most this much slower than the content placed them
+SOFTEN = 0.85    # step 5: the biggest blow's damage, each round
+MIN_DAMAGE = 0.5  # step 5: never below this share of what it was
 
 _world: bot.World | None = None
 
@@ -125,6 +133,39 @@ class Tuner:
                 break
         return verdicts
 
+    def losing(self, v: bot.Verdict) -> bool:
+        return v.sloppy_wins < 0.8 if v.kind == "ordinary" else v.ideal_wins < 0.9
+
+    def soften(self, nid: str) -> bool:
+        """Takes SOFTEN off the damage of this NPC's biggest blow; False if
+        it's as soft as it may get."""
+        attacks = self.npcs[nid]["attacks"]
+        floor = {i: max(1, round(a["damage"] * MIN_DAMAGE)) for i, a in enumerate(self.original[nid]["attacks"])}
+        for i in sorted(range(len(attacks)), key=lambda i: -attacks[i]["damage"]):
+            new = max(floor[i], round(attacks[i]["damage"] * SOFTEN))
+            if new < attacks[i]["damage"]:
+                attacks[i]["damage"] = new
+                return True
+        return False
+
+    def biggest_blows(self, rounds: int) -> dict:
+        verdicts = self.judge([[n] for n in self.fighters])
+        todo = [nid for (nid,), v in verdicts.items() if self.losing(v)]
+        print(f"  {len(todo)} NPCs the player loses to too often")
+        for r in range(rounds):
+            moved = [nid for nid in todo if self.soften(nid)]
+            if not moved:
+                break
+            again = self.judge([[n] for n in moved])
+            verdicts.update(again)
+            todo = [nid for (nid,), v in again.items() if self.losing(v)]
+            print(f"  round {r + 1}: {len(moved)} softened, {len(todo)} still losing")
+            if not todo:
+                break
+        on = sum(v.ok for v in verdicts.values())
+        print(f"  {on} of {len(verdicts)} on target")
+        return verdicts
+
     def tune_rooms(self, rounds: int) -> dict:
         # Stagger: each member's attacks a little slower than the last, so blows drift apart.
         for room in self.rooms:
@@ -149,9 +190,11 @@ class Tuner:
         for nid in self.fighters:
             old, new = self.original[nid], self.npcs[nid]
             periods = [(a["period"], b["period"]) for a, b in zip(old["attacks"], new["attacks"])]
-            if old["max_hp"] != new["max_hp"] or any(a != b for a, b in periods):
+            damage = [(a["damage"], b["damage"]) for a, b in zip(old["attacks"], new["attacks"])]
+            if old["max_hp"] != new["max_hp"] or any(a != b for a, b in periods + damage):
                 out.append(f"{nid}: health {old['max_hp']} -> {new['max_hp']}, "
-                           f"periods {', '.join(f'{a}->{b}' for a, b in periods)}")
+                           f"periods {', '.join(f'{a}->{b}' for a, b in periods)}, "
+                           f"damage {', '.join(f'{a}->{b}' for a, b in damage)}")
         return out
 
     def write(self) -> None:
@@ -166,7 +209,7 @@ class Tuner:
                     npc["xp"] = npc["max_hp"] // 2  # what it gave before; health no longer decides it
                 npc["max_hp"] = new["max_hp"]
                 for a, b in zip(npc["attacks"], new["attacks"]):
-                    a["period"] = b["period"]
+                    a["period"], a["damage"] = b["period"], b["damage"]
                 touched = True
             if touched:
                 path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -177,15 +220,19 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("-n", "--fights", type=int, default=FIGHTS)
     parser.add_argument("--rounds", type=int, default=6)
+    parser.add_argument("--steps", default="1-5", help="which steps: 1-5 (all), or 5 (on the content as it is)")
     args = parser.parse_args()
     t = Tuner(args.fights)
-    print("1. health by tier")
-    t.tiers()
-    t.tiers()
-    print("2-3. outliers and survival")
-    t.outliers_and_survival(args.rounds)
-    print("4. rooms")
-    t.tune_rooms(args.rounds)
+    if args.steps != "5":
+        print("1. health by tier")
+        t.tiers()
+        t.tiers()
+        print("2-3. outliers and survival")
+        t.outliers_and_survival(args.rounds)
+        print("4. rooms")
+        t.tune_rooms(args.rounds)
+    print("5. biggest blows")
+    t.biggest_blows(args.rounds)
     changes = t.changes()
     print(f"{len(changes)} NPCs changed")
     if args.dry_run:

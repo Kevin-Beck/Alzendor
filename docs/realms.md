@@ -93,7 +93,7 @@ later.
   Pass drops you onto its dunes, and the only way home is the portal at the
   Sun Altar. It opens only when a breath of wind stirs (energy −0.78 or
   more), and only when the altar is clear of sand wraiths, who come back
-  every 20 seconds. Exits can be very harsh.
+  five minutes after they fall. Exits can be very harsh.
 
 ## Death and home
 

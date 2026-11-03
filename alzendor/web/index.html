@@ -79,9 +79,9 @@
   .splitter:hover, .splitter:focus-visible, .splitter.dragging { background: var(--accent); outline: none; }
   #split-side { width: 1px; cursor: col-resize; }
   #split-map { height: 1px; cursor: row-resize; }
-  #split-weather { width: 1px; cursor: col-resize; }
+  #split-fight { width: 1px; cursor: col-resize; }
   #left { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  /* The top: the weather and the map side by side, the same width. */
+  /* The top: the fight panel and the map side by side. */
   #top { display: flex; flex: 58 1 0; min-height: 120px; }
   #map-wrap { position: relative; flex: 1 1 0; min-width: 0; background: var(--map-bg); }
   #combat-panel { flex: 1 1 0; min-width: 0; overflow-y: auto; padding: 10px 12px; background: var(--panel);
@@ -272,9 +272,8 @@
   #exits .hidden-ways { font-size: 12px; color: var(--muted); font-style: italic; align-self: center; }
   .boon.off { opacity: .6; }
 
-  /* The weather panel: four boxes, always in the same order. They sit one
-     above another when the pane is narrow, two by two when it's wider, and in
-     a row when it's wide (or wide and short). The sky grid fits its box. */
+  /* The weather panel (in the side panel): four boxes, always in the same
+     order, two by two. The sky grid fits its box. */
   .wxgrid { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .wxbox { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 0;
     padding: 10px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
@@ -483,9 +482,24 @@
     #left { flex: none; }
     #top { flex: none !important; flex-direction: column; }
     #map-wrap { flex: none !important; height: 42vh; border-bottom: 1px solid var(--border); }
-    /* The weather is a slim strip until you open it. */
+    /* The weather panel is a slim strip until you open it. */
     #weather-panel { padding: 8px 16px; }
     #combat-panel { flex: none; grid-template-columns: minmax(0, 1fr); border-bottom: 1px solid var(--border); }
+    /* Typing stays near the top: out of a fight the log and the command line
+       come first, then the map, then who's here; in a fight the fight panel
+       comes first. The resting balance and an empty target card are hidden. */
+    #left { display: flex; flex-direction: column; }
+    #top { display: contents; }
+    #combat-panel.fighting { order: 1; }
+    #quest-bar { order: 2; }
+    #log-wrap { order: 3; }
+    #command { order: 4; }
+    #map-wrap { order: 5; }
+    #combat-panel { order: 6; }
+    #combat-panel:not(.fighting) .cell:has(#balance),
+    #combat-panel:not(.fighting) .cell:has(#target-card > .empty),
+    #combat-panel:not(.fighting) .cell:has(#target-card:empty) { display: none; }
+    #target-card { min-height: 0; }
     #weather-panel:not(.open) .wxgrid { grid-template-columns: repeat(4, auto); justify-content: space-between; gap: 6px; }
     #weather-panel:not(.open) .wxbox { padding: 4px; border: 0; background: none; }
     #weather-panel:not(.open) #wx-grid { width: 64px; }
@@ -555,7 +569,7 @@
         <div class="cell"><h2>Slots <span class="hint" id="slot-hint">hover for details</span></h2><div id="slots" aria-label="Your slots, and dodge, block and flee"></div></div>
         <div class="cell"><div id="target-card" aria-live="polite"></div></div>
       </section>
-      <div class="splitter" id="split-weather" role="separator" aria-orientation="vertical" tabindex="0" title="Drag to resize the fight panel and the map · double-click to reset"></div>
+      <div class="splitter" id="split-fight" role="separator" aria-orientation="vertical" tabindex="0" title="Drag to resize the fight panel and the map · double-click to reset"></div>
       <div id="map-wrap">
         <svg id="map" role="img" aria-label="Map of explored rooms"></svg>
         <div id="map-tools">
@@ -579,11 +593,11 @@
       <button id="latest" class="hidden" type="button">↓ Latest</button>
     </div>
     <form id="command" autocomplete="off">
-      <span id="target-chip" class="hidden" title="Your slots (1, 2, 3) and commands like 'inspect' go to your target. Esc clears it.">
+      <span id="target-chip" class="hidden" title="Your slots (1, 2, 3) and commands like INSPECT go to your target. Esc clears it.">
         ▸ <span class="name" id="target-name"></span>
         <button id="target-clear" type="button" aria-label="Clear target">×</button>
       </span>
-      <input id="input" placeholder="Type a command — Tab picks a target, 4 3 2 use your slots, 7 blocks or dodges" maxlength="500" aria-label="Command">
+      <input id="input" placeholder="Type a command — Tab picks a target; 1, 2 and 3 use your slots" maxlength="500" aria-label="Command">
       <button type="submit">Send</button>
     </form>
   </section>
@@ -596,8 +610,7 @@
       <div id="exits"></div>
     </section>
     <!-- Weather: the sky (temperature across, energy up), what's falling, the
-         time of day and the ground underfoot, in four boxes that sit in a row,
-         two by two, or one above another, as the pane's shape allows. -->
+         time of day and the ground underfoot, in four boxes, two by two. -->
     <section id="weather-panel" class="hidden">
       <h2 id="wx-head" title="On a phone, tap to open or close">Weather <span class="hint" id="wx-place"></span></h2>
       <div class="wxgrid">
@@ -1186,6 +1199,15 @@ function handle(message) {
       $("world").classList.remove("hidden");
       $("panel-buttons").classList.remove("hidden");
       setStatus("connected · " + message.server, true);
+      // Whatever was under way when the connection dropped: the server sends
+      // again what's still true (the fight, the journey, a travel event) right
+      // after this, so anything it doesn't send ended while we were away.
+      fight.end();
+      if (travelEvent) {
+        for (const b of travelEvent.card.querySelectorAll("button")) b.disabled = true;
+        travelEvent = null;
+      }
+      if (journey) { journey = null; renderPanels(); renderMap(); }
       startClockSync();
       $("input").focus();
       break;
@@ -1867,8 +1889,7 @@ function loadKeys() {
   return merged;
 }
 
-const keys = loadKeys();
-const SLOT_KEYS = keys; // slot n's key is keys[n]
+const keys = loadKeys(); // slot n's key is keys[n]
 
 function keyOf(e) {
   return e.key.length === 1 ? e.key.toLowerCase() : e.key;
@@ -2180,7 +2201,8 @@ function wornSection(c) {
       info.append(rarityName(w, "div"), el("div", "sub", `${PLACE_NAMES[w.place]} · ${w.type}${w.usable ? "" : " · your class can't use it"}`));
       li.append(info);
       withTip(li, () => wearTip(w));
-      const b = button(w.place === "hand" ? "Hold" : "Wear", () => sendCmd("wear " + w.id), `WEAR ${w.name.toUpperCase()}`);
+      const verb = w.place === "hand" ? "hold" : "wear";
+      const b = button(verb === "hold" ? "Hold" : "Wear", () => sendCmd(`${verb} ${w.id}`), `${verb.toUpperCase()} ${w.name.toUpperCase()}`);
       b.disabled = !w.usable;
       li.append(b);
       more.append(li);
@@ -2248,39 +2270,27 @@ for (const dialog of document.querySelectorAll("dialog")) {
 // Precipitation is the bar beside it. The same grid shows where a piece of gear
 // works best (its spot, shaded in its tier's colour) against today's weather.
 
-// How the weather moves gear, by tier, as in alzendor.lua: +peak at its spot, falling off evenly to −far at
-// `radius` away. In between is the ring where it's no better or worse than usual.
-const TIERS = { grey: { radius: 1.2, peak: 0.20, far: 0.20 }, green: { radius: 0.92, peak: 0.30, far: 0.25 },
-  blue: { radius: 0.71, peak: 0.45, far: 0.35 }, purple: { radius: 0.53, peak: 0.65, far: 0.50 }, orange: { radius: 0.4, peak: 1.00, far: 1.00 } };
-
-function evenRadius(tier) {
-  const t = TIERS[tier] || TIERS.grey;
-  return t.radius * t.peak / (t.peak + t.far);
+// How the weather moves a piece of gear (its `ring`, from the server): +peak at
+// its spot, falling off evenly to −far at `radius` away. In between is the ring
+// where it's no better or worse than usual.
+function evenRadius(ring) {
+  return ring.radius * ring.peak / (ring.peak + ring.far);
 }
 const ZONES = [["Gale", -0.95, -0.82, "start"], ["Tempest", 0.95, -0.82, "end"], ["Rime", -0.95, 0.93, "start"], ["Scorch", 0.95, 0.93, "end"]];
 let gradients = 0;
 
 const capital = (text) => text ? text[0].toUpperCase() + text.slice(1) : "";
 
-function zoneOf(x, y) {
-  if (Math.abs(x) < 0.5 && Math.abs(y) < 0.5) return "Temperate";
-  if (x > 0.5 && y < -0.5) return "Scorch";
-  if (x > 0.5 && y > 0.5) return "Tempest";
-  if (x < -0.5 && y > 0.5) return "Gale";
-  if (x < -0.5 && y < -0.5) return "Rime";
-  return null;
-}
-
-// Where a gear's spot is, in words: "Gale: cold and wild" or "warm, with lively air".
-function spotName({ temperature: x, energy: y }) {
-  const zone = zoneOf(x, y);
+// Where a gear's spot is, in words: "Gale: cold and wild" or "warm, with lively
+// air". Its zone (a named corner, or Temperate) comes from the server.
+function spotName({ temperature: x, energy: y, zone }) {
   if (zone && zone !== "Temperate") return `${zone}: ${x > 0 ? "hot" : "cold"} and ${y > 0 ? "wild" : "dead still"}`;
   const t = x > 0.5 ? "hot" : x < -0.5 ? "cold" : x > 0.2 ? "warm" : x < -0.2 ? "cool" : "mild";
   const e = y > 0.5 ? "wild, energetic air" : y < -0.5 ? "dead-still air" : y > 0.2 ? "lively air" : y < -0.2 ? "quiet air" : "a light breeze";
   return `${t}, with ${e}`;
 }
 
-function drawWeatherGrid(svg, { here = null, exact = true, trail = [], spot = null, tier = "grey", label = 0.15 }) {
+function drawWeatherGrid(svg, { here = null, exact = true, trail = [], spot = null, label = 0.15 }) {
   svg.setAttribute("viewBox", "-1 -1 2 2");
   svg.replaceChildren();
   const thin = { "vector-effect": "non-scaling-stroke" };
@@ -2299,7 +2309,7 @@ function drawWeatherGrid(svg, { here = null, exact = true, trail = [], spot = nu
     const id = `grid-clip-${++gradients}`;
     const clip = svgEl("clipPath", { id }, svgEl("defs", {}, svg));
     svgEl("rect", { x: -1, y: -1, width: 2, height: 2 }, clip);
-    const ring = { cx: spot.temperature, cy: -spot.energy, r: evenRadius(tier), "clip-path": `url(#${id})` };
+    const ring = { cx: spot.temperature, cy: -spot.energy, r: evenRadius(spot.ring), "clip-path": `url(#${id})` };
     svgEl("circle", { ...ring, fill: "var(--spot)", "fill-opacity": 0.22, stroke: "var(--spot)", "stroke-dasharray": "3 2", ...thin }, svg);
     svgEl("circle", { cx: spot.temperature, cy: -spot.energy, r: 0.08, fill: "var(--spot)", stroke: "var(--panel)", "stroke-width": 1.5, ...thin }, svg);
   }
@@ -2454,8 +2464,7 @@ function pips(n) {
 }
 
 // What the ring on the tooltip's grid means, with the tier's numbers.
-function ringText(tier) {
-  const t = TIERS[tier] || TIERS.grey;
+function ringText(t) {
   return `Up to +${Math.round(t.peak * 100)}% at the dot. Inside the ring it's stronger than usual; outside, weaker (down to −${Math.round(t.far * 100)}%).`;
 }
 
@@ -2551,11 +2560,11 @@ function gearTip(g, extra = [], key = null) {
     head.append(el("span", "", "Weather"), pips(n));
     const row = el("div", "wx");
     const svg = document.createElementNS(SVG, "svg");
-    drawWeatherGrid(svg, { here: wx, exact: wx ? wx.exact : true, spot: g.weather, tier: g.weather.tier, label: 0.17 });
+    drawWeatherGrid(svg, { here: wx, exact: wx ? wx.exact : true, spot: g.weather, label: 0.17 });
     const about = el("div", "about");
     about.append(el("div", "", `Best: ${spotName(g.weather)}`));
     if (RAIN_WORDS[g.weather.precipitation]) about.append(el("div", "rain", RAIN_WORDS[g.weather.precipitation]));
-    about.append(el("div", "sub", capital(SENSITIVITY[n]) + "."), el("div", "sub", ringText(g.weather.tier)));
+    about.append(el("div", "sub", capital(SENSITIVITY[n]) + "."), el("div", "sub", ringText(g.weather.ring)));
     row.append(svg, about);
     card.append(gsec(head, row));
   }
@@ -2585,7 +2594,7 @@ function wearTip(w) {
   if (w.armor) rows.push(["Armour", String(w.armor)]);
   for (const [stat, n] of Object.entries(w.stats || {})) rows.push([capital(stat), signed(n)]);
   if (w.light) rows.push(["Light", "lights the way in the dark"]);
-  if (w.type === "shield") rows.push(["Defend", "blocks instead of dodging"]);
+  if (w.type === "shield") rows.push(["Block", `in a fight, hold ${keyLabel(keys.block)} to brace: blows cut`]);
   if (rows.length) card.append(gsec("What it does", kv(rows)));
   if (w.usable === false) card.append(gsec(null, el("div", "warn", "Your class can't use this.")));
   if (w.description) card.append(gsec(null, el("div", "flavour", w.description)));
@@ -3043,34 +3052,34 @@ window.addEventListener("resize", () => applyLayout(false));
 
 const SIDE = { min: 260, max: 640, initial: 360 };
 const MAP = { min: 0.2, max: 0.8, initial: 0.64 };
-// The weather pane: by default (null) just wide enough for its four boxes to sit
-// two by two (about 420px inside, short of where a wide, short pane puts them in
-// a row), whatever the screen; dragging its bar sets a share of the top instead.
-const WEATHER = { min: 0.15, max: 0.75, initial: null, twoByTwo: 500 }; // the fight panel's two by two
-let sideWidth = SIDE.initial, mapShare = MAP.initial, weatherShare = WEATHER.initial;
+// The fight panel beside the map: by default (null) just wide enough for its
+// four cells to sit two by two, whatever the screen; dragging its bar sets a
+// share of the top instead.
+const FIGHT = { min: 0.15, max: 0.75, initial: null, twoByTwo: 500 }; // the fight panel's two by two
+let sideWidth = SIDE.initial, mapShare = MAP.initial, fightShare = FIGHT.initial;
 
-function weatherDefault() {
+function fightDefault() {
   const top = $("top").getBoundingClientRect().width;
   const pane = $("combat-panel");
   const padding = pane.offsetWidth - pane.clientWidth + parseFloat(getComputedStyle(pane).paddingLeft) * 2;
-  return top > 0 ? (WEATHER.twoByTwo + padding) / top : 0.5;
+  return top > 0 ? (FIGHT.twoByTwo + padding) / top : 0.5;
 }
 
 function applyLayout(save) {
   const room = innerWidth - 320; // always leave the map and log some width
   sideWidth = Math.round(Math.min(Math.max(sideWidth, SIDE.min), SIDE.max, Math.max(room, SIDE.min)));
   mapShare = Math.min(Math.max(mapShare, MAP.min), MAP.max);
-  if (weatherShare != null) weatherShare = Math.min(Math.max(weatherShare, WEATHER.min), WEATHER.max);
-  const share = weatherShare ?? Math.min(Math.max(weatherDefault(), WEATHER.min), WEATHER.max);
+  if (fightShare != null) fightShare = Math.min(Math.max(fightShare, FIGHT.min), FIGHT.max);
+  const share = fightShare ?? Math.min(Math.max(fightDefault(), FIGHT.min), FIGHT.max);
   $("combat-panel").style.flexGrow = Math.round(share * 1000);
   $("map-wrap").style.flexGrow = 1000 - Math.round(share * 1000);
-  $("split-weather").setAttribute("aria-valuenow", Math.round(share * 100));
+  $("split-fight").setAttribute("aria-valuenow", Math.round(share * 100));
   $("world").style.setProperty("--side-width", `${sideWidth}px`);
   $("top").style.flexGrow = Math.round(mapShare * 100);
   $("log-wrap").style.flexGrow = 100 - Math.round(mapShare * 100);
   $("split-side").setAttribute("aria-valuenow", sideWidth);
   $("split-map").setAttribute("aria-valuenow", Math.round(mapShare * 100));
-  if (save) store.set("layout", JSON.stringify({ side: sideWidth, map: mapShare, wx: weatherShare }));
+  if (save) store.set("layout", JSON.stringify({ side: sideWidth, map: mapShare, fight: fightShare }));
   renderMap();
   if (following) scrollToLatest();
 }
@@ -3100,14 +3109,14 @@ dragBar($("split-map"), (e) => {
   const map = $("top").getBoundingClientRect(), log = $("log-wrap").getBoundingClientRect();
   mapShare = (e.clientY - map.top) / (log.bottom - map.top);
 });
-dragBar($("split-weather"), (e) => {
+dragBar($("split-fight"), (e) => {
   const top = $("top").getBoundingClientRect();
-  weatherShare = (e.clientX - top.left) / top.width;
+  fightShare = (e.clientX - top.left) / top.width;
 });
-$("split-weather").addEventListener("dblclick", () => { weatherShare = WEATHER.initial; applyLayout(true); });
-$("split-weather").addEventListener("keydown", (e) => {
+$("split-fight").addEventListener("dblclick", () => { fightShare = FIGHT.initial; applyLayout(true); });
+$("split-fight").addEventListener("keydown", (e) => {
   const step = { ArrowLeft: -0.04, ArrowRight: 0.04 }[e.key];
-  if (step) { e.preventDefault(); weatherShare = (weatherShare ?? weatherDefault()) + step; applyLayout(true); }
+  if (step) { e.preventDefault(); fightShare = (fightShare ?? fightDefault()) + step; applyLayout(true); }
 });
 $("split-side").addEventListener("dblclick", () => { sideWidth = SIDE.initial; applyLayout(true); });
 $("split-map").addEventListener("dblclick", () => { mapShare = MAP.initial; applyLayout(true); });
@@ -3123,7 +3132,8 @@ try {
   const saved = JSON.parse(store.get("layout") || "{}");
   if (Number.isFinite(saved.side)) sideWidth = saved.side;
   if (Number.isFinite(saved.map)) mapShare = saved.map;
-  if (Number.isFinite(saved.wx)) weatherShare = saved.wx; // (an older "weather" share is ignored: the default changed)
+  // (Older "weather" and "wx" shares were the weather pane's, which used to sit here: ignored.)
+  if (Number.isFinite(saved.fight)) fightShare = saved.fight;
 } catch {}
 applyLayout(false);
 
@@ -3255,10 +3265,11 @@ $("command").addEventListener("submit", (e) => {
   fight.sent(); // back to combat focus
 });
 
-// The keys that use each slot (4, 3 and 2 unless you've chosen others in
-// Settings, so a resting finger sits on the first slot), out of a fight. They
-// work straight away, without Enter, on an empty command line. (In a fight,
-// combat focus has them: see fight.)
+// The keys that use each slot (J, K and L unless you've chosen others in
+// Settings), out of a fight. They work straight away, without Enter, when the
+// command line isn't focused; in it, a letter types (it can start a command),
+// and any other key works only on an empty line. (In a fight, combat focus
+// has them: see fight.)
 function slotKey(e) {
   const k = keyOf(e);
   const n = Number([1, 2, 3].find((slot) => keys[slot] === k));
@@ -3280,13 +3291,15 @@ function slotKey(e) {
 document.addEventListener("keydown", slotKey);
 
 // Enter (or /) anywhere on the page opens the command line, ready to type,
-// wherever focus was left (a clicked button, the map). In a fight, combat
-// focus has these keys first (see fight).
+// wherever focus was left (the map, the log). Enter on a focused button or
+// link presses it, as usual. In a fight, combat focus has these keys first
+// (see fight).
 document.addEventListener("keydown", (e) => {
   if ((e.key !== "Enter" && e.key !== "/") || e.ctrlKey || e.metaKey || e.altKey) return;
   if ($("world").classList.contains("hidden") || document.querySelector("dialog[open]")) return;
   const field = e.target;
   if (field === $("input") || (field.closest && field.closest("input, textarea, select, [contenteditable]"))) return;
+  if (e.key === "Enter" && field.closest && field.closest("button, a, summary")) return;
   e.preventDefault();
   $("input").focus();
 });
@@ -3306,7 +3319,7 @@ $("input").addEventListener("keydown", (e) => {
 });
 
 // Fights ------------------------------------------------------------------------------------
-// Every fight is an encounter (docs/combat-redesign.md), run by one server, its
+// Every fight is an encounter (docs/combat.md), run by one server, its
 // owner, which simulates every dot in it. This page predicts your own dot with
 // the Balance block at the top of the script: your inputs apply at once, and
 // each state message from the owner (15 a second) resets the dot to the
@@ -3328,7 +3341,7 @@ const fight = (() => {
   const TIER_WORDS = { edge: "Edge", clean: "Clean", perfect: "Perfect!" };
   const REFUSED = { not_steady: "Not steady", cooldown: "Not ready", staggered: "Staggered", blocking: "Blocking",
     empty: "Empty slot", no_shield: "No shield", gone: "Gone", no_exit: "No way out", dark: "Too dark",
-    no_way_back: "No way back" };
+    no_way_back: "No way back", no_target: "No such target" };
   const STEP_MS = 1000 / Balance.HZ;
   const BLEND = 0.6; // how much of a correction is left after each frame (gone in ~6)
 
@@ -3362,7 +3375,8 @@ const fight = (() => {
       npcs: Object.fromEntries(info.npcs.map((n) => [n.id, n])),
     };
     if (!event.resumed) flash("Steady…", "", 900);
-    setFocus(true);
+    // Combat keys at once, unless the player is halfway through typing something.
+    setFocus(!(document.activeElement === $("input") && $("input").value));
     render();
     if (!frame) frame = requestAnimationFrame(tick);
   }
@@ -3416,7 +3430,7 @@ const fight = (() => {
     enc.offset.x += dx;
     enc.offset.y += dy;
     enc.dot = d;
-    // For measuring (docs/combat-redesign.md, step 12): how often a correction would show.
+    // For measuring (docs/combat.md, "Prediction and correction"): how often a correction would show.
     stats.states += 1;
     const off = Math.hypot(dx, dy);
     if (off > 0.01) stats.visible += 1;
@@ -3456,9 +3470,14 @@ const fight = (() => {
     return out;
   }
 
-  // Sends your held keys and maybe an act, and applies it to the prediction at once.
+  // Sends your held keys and maybe an act, and applies it to the prediction at
+  // once. Returns whether it went: with the connection down, nothing does.
   function input(act, extra = {}) {
-    if (!enc || !ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!enc) return false;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      if (act) flash("Offline: reconnecting…", "bad", 1200);
+      return false;
+    }
     const keys = enc.held | enc.stick;
     enc.seq += 1;
     // The step it applies at here, so the owner can apply it there too (it replays your dot if it's already past it).
@@ -3471,6 +3490,7 @@ const fight = (() => {
     else if (["dodge", "block", "unblock"].includes(act)) local = [act];
     enc.log.push({ seq: enc.seq, n: enc.dot.n + 1, keys, act: local });
     if (local) enc.acts.push(local);
+    return true;
   }
 
   function strike(n) {
@@ -3484,8 +3504,7 @@ const fight = (() => {
   function fleeKey() {
     if (!enc) return;
     if (enc.dot.stagger > 0 || Balance.dist(enc.dot) > Balance.coreOf(enc.dot)) return flash("Not steady", "bad", 700); // ignored off centre
-    flash("Fleeing…", "", 900);
-    input("flee", { dir: "back" });
+    if (input("flee", { dir: "back" })) flash("Fleeing…", "", 900);
   }
 
   function steer(mask) {

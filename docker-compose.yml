@@ -1,6 +1,8 @@
 # Local setup: Redis plus two game servers, to show that players on different
 # servers share one world. Open http://localhost:8001 and http://localhost:8002.
-# Production adds docker-compose.prod.yml on top of this file (see README).
+# Production is deploy/iterbotgames. Redis isn't published on the host: a
+# checkout's `python -m alzendor` or tests can't reach the game's rules.
+# To look inside: docker compose exec redis redis-cli
 name: alzendor
 
 x-server-env: &server-env
@@ -24,8 +26,6 @@ services:
     restart: unless-stopped
     volumes:
       - redis-data:/data
-    ports:
-      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -48,15 +48,28 @@ services:
     ports:
       - "8002:8000"
 
+  # `docker compose --profile test run --rm test` runs the tests against a Redis
+  # of their own: never the game's, since Redis functions are server-wide and the
+  # tests load this checkout's rules.
+  test-redis:
+    image: redis:7.4-alpine
+    profiles: [test]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
   test:
     build:
       context: .
       target: test
     profiles: [test]
     environment:
-      ALZ_TEST_REDIS_URL: redis://redis:6379/15
+      ALZ_TEST_REDIS_URL: redis://test-redis:6379/15
+      ALZ_REQUIRE_NODE: "1"
     depends_on:
-      redis:
+      test-redis:
         condition: service_healthy
 
 volumes:

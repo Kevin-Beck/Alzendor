@@ -6,7 +6,13 @@
 - Login failures give one message whether or not the account exists, and an
   unknown account still costs one hash verification so timing doesn't tell.
 - Failed logins are rate limited per client address and per account;
-  account creation is rate limited per client address.
+  account creation attempts are rate limited per client address, and a taken
+  name is refused before any hashing. The per-account limit means anyone can
+  lock an account out of password logins for LOGIN_WINDOW_SECONDS by failing
+  on purpose; that's the price of stopping guesses spread over many addresses.
+  A player with a session token (the web client keeps one) isn't affected.
+- Before logging in, a connection gets the same message allowance as after
+  (session.py), so it can't ask for hashes as fast as it can send.
 - A successful login issues a random session token for reconnecting. Only its
   SHA-256 is stored, with a sliding expiry, and logging out revokes it.
 """
@@ -54,13 +60,18 @@ class Auth:
         limit_key = f"RATE:register:{address}"
         if await self._count(limit_key) >= self.signups_per_hour:
             raise AuthError("Too many new accounts from your address. Try again later.")
+        # Every attempt that gets this far counts, taken name or not: each one
+        # can cost a hash, and hashes are what a flood would aim at.
+        await self._bump(limit_key, ACCOUNT_WINDOW_SECONDS)
 
         pid = name.lower()
+        if await self.redis.exists(f"ACCOUNT:{pid}"):
+            raise AuthError("That name is taken.")  # no hash spent on it
         digest = await asyncio.to_thread(self.hasher.hash, password)
         if not await self.redis.hsetnx(f"ACCOUNT:{pid}", "hash", digest):
             raise AuthError("That name is taken.")
-        await self.redis.hset(f"ACCOUNT:{pid}", mapping={"name": name, "created": int(time.time())})
-        await self._bump(limit_key, ACCOUNT_WINDOW_SECONDS)
+        # `registered` is when; `created` is the character's flag (alzendor.lua).
+        await self.redis.hset(f"ACCOUNT:{pid}", mapping={"name": name, "registered": int(time.time())})
         return pid
 
     async def login(self, name: str, password: str, address: str) -> str:

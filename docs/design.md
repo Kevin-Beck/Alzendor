@@ -20,23 +20,23 @@ So each stat plugs straight into a system you can feel:
 | Stat | What it does | Why |
 |---|---|---|
 | **Vigor** | +8 max health per point | Survive longer; the baseline. |
-| **Poise** | timing windows 15 ms wider per point | The timing game is the core skill; this makes it more forgiving. |
-| **Focus** | perfect windows 10 ms wider per point | Rewards players who already hit their windows. |
+| **Poise** | the core of your balance 4% wider per point; better odds of going unnoticed and of spotting traps | Keeping steady is the core skill; this makes it more forgiving. |
+| **Focus** | the perfect centre 5% wider per point | Rewards players who already keep their dot centred. |
 | **Presence** | reputation moves 15% further per point | Your deeds matter more, good *or* bad. A social stat. |
-| **Resilience** | weather penalties 10% softer per point (up to 50%); bonuses kept | Insurance against the weather. It never adds a bonus, so a specialist still wants its own weather. |
+| **Resilience** | weather penalties 10% softer per point (up to 50%), bonuses kept; debuffs 5% shorter per point (up to half) | Insurance against the weather and what knocks you off balance. It never adds a bonus, so a specialist still wants its own weather. |
 
 Stats can also come from **boons**: factions grant a stat bonus while your
 standing with them is high enough (see [weather.md](weather.md)). That gives
 reputation a payoff you can feel in every fight.
 
-Windows are capped so they never reach halfway to the next beat (and perfect
-never exceeds the window), so the timing game never goes away.
+The core and the perfect centre grow by a share, not a fixed amount, so
+keeping steady never stops being the skill ([combat.md](combat.md)).
 
 Ideas for later, if stats ever need more flavour:
 
-- **Tempo:** slightly faster beats. It's strong, and it changes how gear
-  combines, so it should probably come from gear or abilities rather than
-  points.
+- **Tempo:** slightly shorter cooldowns. It's strong, and it changes how
+  gear combines, so it should probably come from gear or abilities rather
+  than points.
 - Stats that only matter in some places, like **Nerve** working only in
   arenas, or **Bearings** making you harder to ambush in the forest.
 - Stats that touch the weather in other ways: **Wayfinding** (shorter travel
@@ -101,21 +101,11 @@ friendly at ≥ 25; hostile ones stay their hand at respect ≥ 30 or affinity �
 25, and become friendly at ≥ 50. Later, respect could open doors: trainers,
 duels, quests, prices.
 
-## NPC timing
+## NPCs in a fight
 
-Players' attacks are judged against a beat, because timing is the skill. NPCs
-never miss, so there's nothing to judge, and NPC timing needs no client
-verification. But it still lives on the server, because the server is what
-lands the damage: every attack is in a schedule (`alz:npc_attacks`, a sorted
-set by due time), and every server runs a combat tick ten times a second that
-lands whatever is due. Taking an attack off the schedule is atomic, so with
-several servers each attack still lands exactly once. Clients get each
-attack's `next_ms` and draw the bars themselves; they never decide anything.
-
-NPC attacks are deliberately slow (5–13 s) and few, so they're readable next
-to the player's own three rhythms. An NPC can carry several attacks with
-different periods, so its pattern has a shape you can learn: the orc warrior's
-cleaver every 6 s and shield bash every 9 s line up every 18 s.
+Fights are encounters, each simulated by one server and settled by Redis;
+NPC attacks run on the encounter's clock, warned on the target card before
+they land. [combat.md](combat.md) has the rules and the architecture.
 
 ## Leaving the world, in the lore
 
@@ -127,9 +117,9 @@ world:
 - **Anywhere else** you "lie down to rest", and your sleeping body stays,
   visible to everyone, for two minutes. Then it "fades away". Come back in
   time and you "wake and get up" where you lay. This makes safe places
-  meaningful, and makes logging out mid-fight no escape: whatever was
-  fighting you keeps hitting your sleeping body, and you can wake at the
-  shrine.
+  meaningful, and makes logging out mid-fight no escape: your body lies down
+  even somewhere safe, and whatever was fighting you keeps hitting it until
+  it fades, or falls and you wake at the shrine.
 - **Abilities** can make terrain safe for you (Woodcraft, Shore-sleeper), so
   a ranger can camp anywhere in the woods.
 - **Dropped connections and idling** lead to the same thing. After

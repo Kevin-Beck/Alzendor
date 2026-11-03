@@ -1,16 +1,42 @@
 import os
+from urllib.parse import urlsplit
 from pathlib import Path
 
 import pytest
+from redis.asyncio import Redis
 from redis.exceptions import ConnectionError as RedisConnectionError
 
 from alzendor.feed import Feed
 from alzendor.server import open_redis
 from alzendor.world import World
 
-# Tests use a database of their own and empty it before and after each test.
-REDIS_URL = os.environ.get("ALZ_TEST_REDIS_URL", "redis://localhost:6379/15")
+# Tests use a database of their own on a Redis of their own, and empty it
+# before and after each test. Never point them at a game's Redis: Redis
+# functions belong to the whole server, so the first test's FUNCTION LOAD would
+# put the game's players onto this checkout's rules (README, "Running the tests").
+REDIS_URL = os.environ.get("ALZ_TEST_REDIS_URL", "redis://localhost:6380/15")
 SEED = Path(__file__).parent.parent / "world" / "seed.json"
+START_ONE = "docker run -d --rm --name alz-test-redis -p 127.0.0.1:6380:6379 redis:7.4-alpine"
+_checked: set[str] = set()
+
+
+async def refuse_a_game_redis(client, url: str) -> None:
+    """Stops the run if the URL is db 0, or if db 0 on that server holds a game."""
+    if url in _checked:
+        return
+    db = client.connection_pool.connection_kwargs.get("db", 0)
+    if int(db or 0) == 0:
+        pytest.exit(f"ALZ_TEST_REDIS_URL={url} is db 0, where a game keeps its world; the tests "
+                    "empty their database. Use another db, e.g. redis://localhost:6380/15.", returncode=2)
+    # A client of its own: SELECT on a pooled connection would leave it pointing at db 0.
+    zero = Redis.from_url(urlsplit(url)._replace(path="/0").geturl())
+    try:
+        if await zero.exists("alz:seq", "alz:rules"):
+            pytest.exit(f"The Redis at {url} has a game in db 0 (alz:seq). The tests would replace its rules "
+                        f"(FUNCTION LOAD is server-wide). Start a Redis of their own: {START_ONE}", returncode=2)
+    finally:
+        await zero.aclose()
+    _checked.add(url)
 
 
 @pytest.fixture
@@ -20,7 +46,8 @@ async def redis():
         await client.ping()
     except (RedisConnectionError, OSError):
         await client.aclose()
-        pytest.skip(f"no Redis at {REDIS_URL} (start one with: docker compose up -d redis)")
+        pytest.skip(f"no Redis at {REDIS_URL} (start one of the tests' own with: {START_ONE})")
+    await refuse_a_game_redis(client, REDIS_URL)
     await client.flushdb()
     yield client
     await client.flushdb()
@@ -74,12 +101,15 @@ async def ride(world: World, pid: str, stages: int = 100) -> None:
         await world.call("tick")
 
 
-async def drain(feed: Feed) -> list[dict]:
-    """Reads everything currently waiting for this feed."""
+async def drain(feed: Feed, wait_ms: int | None = None) -> list[dict]:
+    """Reads everything currently waiting for this feed. A Lua function's events
+    are written before world.call returns, so there's nothing to wait for;
+    `wait_ms` waits that long for more, for events an encounter's owner (a
+    task of its own) may not have caused yet."""
     events = []
     while True:
         before = feed.cursor
-        events += await feed.read(block_ms=50)
+        events += await feed.read(block_ms=wait_ms)
         if feed.cursor == before or feed.ended:
             return events
 

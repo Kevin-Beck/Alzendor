@@ -368,7 +368,7 @@ async def test_marooned_you_mend_the_ferry_and_sail_on(world):
     await walk(world, "kevin", "west", "north")
     await world.call("get", "kevin", "pitch")
     await walk(world, "kevin", "east")
-    await world.call("ask", "kevin", "ness", "ferry")
+    await world.call("discuss", "kevin", "ness", "ferry")
     await world.call("get", "kevin", "rope")
     events = await drain(kevin)
     assert "Marooned: Mend the ferry: USE PLANK ON FERRY in Wreck Cove." in texts(events)
@@ -414,3 +414,20 @@ async def test_npcs_talk_about_their_topics(world):
     assert texts(await drain(kevin))[-1] == 'Sergeant Holt says, "Can\'t help you with that, I\'m afraid."'
     await world.call("discuss", "kevin", "holt", "")
     assert texts(await drain(kevin)) == ["Sergeant Holt will discuss: quests, rumours, training. (DISCUSS <topic>)"]
+
+
+async def test_a_journey_whose_route_is_gone_ends_somewhere_real(world):
+    # A new seed removed or renamed the route while someone was aboard.
+    kevin = await enter(world, "kevin")
+    await board_coach(world, "kevin")
+    assert await world.redis.hget("ROOM:" + await world.redis.get("PLAYER:kevin:room") + ":info", "waypoint") == "1"
+    route = await world.redis.hget("PLAYER:kevin:journey", "route")
+    await world.redis.delete(f"ROUTE:{route}")
+    await world.redis.srem("alz:routes", route)
+    await world.redis.srem("ROOM:market_square:routes", route)
+    await drain(kevin)
+    await world.redis.zadd("alz:journeys", {"kevin": 0})
+    assert await world.call("tick") == 1
+    assert await world.redis.get("PLAYER:kevin:room") == "tavern"
+    assert not await world.redis.exists("PLAYER:kevin:journey")
+    assert any("gone from the world" in t for t in texts(await drain(kevin)))

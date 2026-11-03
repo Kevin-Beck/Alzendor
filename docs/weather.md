@@ -2,9 +2,8 @@
 
 Weather in Alzendor isn't scenery. It is a number every player shares, and it
 moves through combat, travel, discovery, NPCs, stats and reputation. This
-document is the design. How to build it is in
-[weather-plan.md](weather-plan.md), and the README covers what players and
-seed authors need.
+document is the design (the build plan it came with is in git history), and
+the README covers what players and seed authors need.
 
 ## The rule: every mechanic is used, remembered and leveraged
 
@@ -170,17 +169,8 @@ reach 0. Grey stays within about ±30% and green ±50%, so no common gear is eve
 useless and the right choice still clearly wins. Blue, purple and orange
 break that on purpose.
 
-### Gear: timing
-
-The weather also changes the rhythm of every slot, whatever the gear:
-
-- **Heat** (x > ½) makes you sluggish: beats come up to 30% slower at x = 1.
-- **Chaos** (y > ½) buffets you: timing windows up to 30% narrower at y = 1.
-- **Dead stillness** (y < −½) sets your nerves on edge: perfect windows up
-  to 30% narrower at y = −1.
-
-A rhythm takes its timings when it starts (its opener) and keeps them until
-it ends, so the weather never shifts a beat under you mid-rhythm.
+The weather changes only gear's amounts, never the fight's timings or the
+balance simulation ([combat.md](combat.md)).
 
 ### Resilience softens the bad, keeps the good
 
@@ -193,8 +183,8 @@ factor' = 1 − (1 − factor) × (1 − resilience)    when factor < 1
 
 So an orange spell outside its weather does half damage at 5 Resilience
 instead of none, and still gets its full +100% inside. Resilience also
-shortens travel delays and softens the timing penalties and the cold's slow
-healing.
+shortens travel delays and softens the cold's slow healing (and, in a fight,
+shortens debuffs: [combat.md](combat.md)).
 
 ### Travel
 
@@ -319,19 +309,19 @@ used, and the Character panel shows where each bonus comes from.
 Spare gear only matters if carrying it costs something and swapping has a
 moment:
 
-- Your **pack** holds 12 things (`pack_size`): carried items plus gear that
-  isn't in a slot. You can't pick things up with a full pack. Gear from a
-  level-up or a kill always arrives, even over the limit.
-- **No swapping mid-fight**: you can't change slots while anything is
-  fighting you. So you choose your loadout before the fight, for the weather
-  you expect.
+- Your **pack** holds 12 things (`pack_size`): the items you carry. You
+  can't pick things up with a full pack. Gear doesn't count: it can't be
+  dropped or sold, and counting it filled packs until quest items couldn't be
+  picked up.
+- **No swapping mid-fight**: you can't change slots during an encounter.
+  So you choose your loadout before the fight, for the weather you expect.
 
 ## Seeing it all
 
 Weather is only fair if it's readable:
 
-- **The weather panel** (always visible) is four columns, always in the same
-  order, each with its heading, so you find each thing by where it is rather
+- **The weather panel** (in the side panel) is four boxes, two by two,
+  always in the same order, each with its heading, so you find each thing by where it is rather
   than by reading: **Sky** (the grid, with the current point as a dot, a
   blurred patch without lore, and the forecast as a trail of fading dots),
   **Rain** (a vertical bar: what's falling and how hard), **Time** (a
@@ -353,20 +343,19 @@ Weather is only fair if it's readable:
   Firebolt
   Rare · Spell
   A bolt of fire that loves a hot, wild sky and hates the wet.
-  8 / 10 / 16 damage (opener / hit / perfect) · every 4.0 s
+  8 / 10 / 16 damage (edge / clean / perfect) · ready every 4.0 s
   Weather sensitivity ●●●○○
   [grid: its spot in Tempest, shaded; today's dot nearby] [bar: empty, wants dry]
   Right now · Harrowgate
   Hot and gusty, light rain
     Weather: near its spot                      +20%
     Rain (it wants dry)                         −2%
-    Heat: beats slower                          +5% beat
     Resilience 2: penalties softened            20% softer
-    → 9 / 12 / 19 damage · every 4.2 s · ±300 ms (perfect ±100)
+    → 9 / 12 / 19 damage
   ```
 
   (Temperature 0.6, energy 0.3, precipitation 0.3, and Resilience 2: the
-  heat's +6% is softened to +5%.)
+  rain's −2.5% is softened to −2%.)
 
 - The `weather` command prints the same as text, and the `gear` command shows
   each piece's current effect.
@@ -381,7 +370,7 @@ These are defaults chosen to get the design built, all easy to change:
 | Where a grey item's spot is | its kind's default (spells high on energy) |
 | Wet/dry on items | wet, dry or any; strength scales with intensity or dryness |
 | What heavy precipitation hides | unexplored exits in `look`, glimpses on the map, discovering borders |
-| What the pack holds | items and unslotted gear, 12 in all |
+| What the pack holds | carried items, 12 in all (gear doesn't count) |
 | Where weather lives | one sky per realm, never per region; realms never share |
 | Indoors | always neutral and dry; a fixed `climate` only for exceptional places |
 | New stat | Resilience added as a fifth stat |

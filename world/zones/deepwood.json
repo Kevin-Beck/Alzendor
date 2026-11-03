@@ -367,7 +367,7 @@
         {
           "name": "venom",
           "period": 27500,
-          "damage": 60,
+          "damage": 30,
           "kick": 2.171,
           "stagger": true,
           "hit": "{actor} strikes at {target} with venom-dripping fangs!",
@@ -376,7 +376,7 @@
         {
           "name": "web shroud",
           "period": 37700,
-          "damage": 25,
+          "damage": 21,
           "kick": 2.4,
           "stagger": true,
           "debuff": {
@@ -410,8 +410,6 @@
       ],
       "hit": "{actor} stabs {target}.",
       "perfect_hit": "{actor} stabs {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Weaver's Fang finds nothing.",
       "description": "One of the Weaver Queen's fangs, still venomous. Best in still, damp air.",
       "weather": {
         "temperature": -0.1,

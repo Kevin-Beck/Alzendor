@@ -177,7 +177,7 @@
   "items": {
     "star_heart": {
       "name": "Star Heart",
-      "keywords": "heart star",
+      "keywords": "heart",
       "description": "The Fallen Star's heart, still warm. One of three relics.",
       "quest": true,
       "room": "st_heart"
@@ -225,7 +225,7 @@
         {
           "name": "crush",
           "period": 10000,
-          "damage": 70,
+          "damage": 60,
           "kick": 1.127,
           "hit": "{actor} crushes {target}.",
           "defend": "block"
@@ -233,7 +233,7 @@
         {
           "name": "shard-burst",
           "period": 30100,
-          "damage": 160,
+          "damage": 80,
           "kick": 2.229,
           "debuff": {
             "kind": "reeling",
@@ -262,7 +262,7 @@
         {
           "name": "crush",
           "period": 10000,
-          "damage": 70,
+          "damage": 60,
           "kick": 1.127,
           "hit": "{actor} crushes {target}.",
           "defend": "block"
@@ -270,7 +270,7 @@
         {
           "name": "shard-burst",
           "period": 30100,
-          "damage": 160,
+          "damage": 80,
           "kick": 2.229,
           "debuff": {
             "kind": "reeling",
@@ -299,7 +299,7 @@
         {
           "name": "crush",
           "period": 10000,
-          "damage": 70,
+          "damage": 60,
           "kick": 1.127,
           "hit": "{actor} crushes {target}.",
           "defend": "block"
@@ -307,7 +307,7 @@
         {
           "name": "shard-burst",
           "period": 30100,
-          "damage": 160,
+          "damage": 80,
           "kick": 2.229,
           "debuff": {
             "kind": "reeling",
@@ -336,7 +336,7 @@
         {
           "name": "crush",
           "period": 10000,
-          "damage": 70,
+          "damage": 60,
           "kick": 1.127,
           "hit": "{actor} crushes {target}.",
           "defend": "block"
@@ -344,7 +344,7 @@
         {
           "name": "shard-burst",
           "period": 30100,
-          "damage": 160,
+          "damage": 80,
           "kick": 2.229,
           "debuff": {
             "kind": "reeling",
@@ -422,7 +422,7 @@
         {
           "name": "ray",
           "period": 10000,
-          "damage": 75,
+          "damage": 64,
           "kick": 1.127,
           "hit": "{actor} fires a ray of light at {target}.",
           "defend": "dodge"
@@ -430,7 +430,7 @@
         {
           "name": "starfire",
           "period": 32300,
-          "damage": 260,
+          "damage": 130,
           "kick": 2.286,
           "stagger": true,
           "debuff": {

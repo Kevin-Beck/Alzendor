@@ -3,3 +3,14 @@
 **/__pycache__
 .pytest_cache
 .env
+# Redis data and deploy state never belong in an image (deploy/ holds ~700 MB of Terraform).
+*.rdb
+*.aof
+appendonlydir/
+deploy/
+**/.terraform
+*.tfstate*
+tfplan
+# Review working files.
+formal_review.md
+issues_hierarchy.md

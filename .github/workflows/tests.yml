@@ -1,0 +1,33 @@
+# Runs the whole suite, including the slow tuning tests and the client's twin
+# of the balance simulation (node), on every push and pull request.
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    services:
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 2s --health-timeout 3s --health-retries 10
+    env:
+      ALZ_TEST_REDIS_URL: redis://localhost:6380/15
+      ALZ_REQUIRE_NODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest -q -m "slow or not slow"

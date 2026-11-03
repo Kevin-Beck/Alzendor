@@ -110,7 +110,8 @@
       "description": "Mud to the knee, and a stink of troll. Huge footprints lead on.",
       "exits": {
         "northwest": "sf_peatcut",
-        "southeast": "sf_wallow"
+        "southeast": "sf_wallow",
+        "east": "sa_path"
       },
       "features": {},
       "terrain": "marsh"
@@ -392,14 +393,14 @@
         {
           "name": "grab",
           "period": 15200,
-          "damage": 12,
+          "damage": 10,
           "kick": 1.564,
           "hit": "{actor} grabs at {target}."
         },
         {
           "name": "club",
           "period": 35000,
-          "damage": 70,
+          "damage": 35,
           "kick": 2.343,
           "stagger": true,
           "debuff": {
@@ -439,8 +440,6 @@
       ],
       "hit": "{actor} rubs in leech salve.",
       "perfect_hit": "{actor} rubs in leech salve, and it takes.",
-      "miss": "{actor} fumbles Leech Salve.",
-      "whiff": "your Leech Salve finds nothing.",
       "description": "Odile's salve, from what the leeches had in them. Works best in damp weather.",
       "weather": {
         "temperature": 0,

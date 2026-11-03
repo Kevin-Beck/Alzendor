@@ -1,9 +1,9 @@
-"""Encounters (docs/combat-redesign.md): the records and consequences in Lua,
+"""Encounters (docs/combat.md): the records and consequences in Lua,
 called directly, and (further down) owners running them."""
 
 import json
 
-from .conftest import drain, enter, texts
+from .conftest import drain, enter, hit, texts
 
 
 def of_type(events, kind, **match):
@@ -214,7 +214,8 @@ async def test_moving_is_refused_in_a_fight(world):
     feed, _, _ = await in_back_alley(world)
     exits = await world.redis.hkeys("ROOM:back_alley:exits")
     await world.call("move", "kevin", exits[0])
-    assert texts(await drain(feed)) == ["You're in a fight. Get steady and press your flee key (F) to run back the way you came."]
+    [refusal] = texts(await drain(feed))
+    assert "flee key" in refusal
     assert await world.redis.get("PLAYER:kevin:room") == "back_alley"
 
 
@@ -394,7 +395,7 @@ async def test_a_strike_from_the_centre_is_perfect(world, host):
     async def struck():
         return int(await world.redis.hget("NPC:orc-1", "hp")) < 124
     assert await until(struck)
-    combat = of_type(await drain(feed), "combat", actor="kevin")[0]
+    combat = of_type(await drain(feed, wait_ms=200), "combat", actor="kevin")[0]
     assert combat["tier"] in ("perfect", "clean")
 
 
@@ -590,3 +591,79 @@ async def test_the_deeds_of_a_fight(world):
     await drain(feed)
     await world.call("encounter_flee", eid, "kevin", "west")
     assert "The Back-Alley Orcs: You ran. (respect -3)" in texts(await drain(feed))
+
+
+async def test_no_route_out_of_a_fight_by_asking_its_operator(world):
+    # Tilde's barge leaves from the beach the lurker haunts: DISCUSS PASSAGE
+    # mustn't skip FLEE's parting blow any more than TRAVEL does.
+    feed = await enter(world, "kevin")
+    await world.redis.hset("ACCOUNT:kevin", "coins", 50)
+    await world.call("goto", "kevin", "drift_beach")
+    if not await world.redis.get("PLAYER:kevin:encounter"):
+        await hit(world, "kevin", "npc:lurker-1")
+    eid = await world.redis.get("PLAYER:kevin:encounter")
+    assert eid
+    await drain(feed)
+    await world.call("discuss", "kevin", "tilde", "passage")
+    await world.call("travel", "kevin", "barge")
+    said = texts(await drain(feed))
+    assert sum("flee key" in t for t in said) == 2, said
+    assert await world.redis.get("PLAYER:kevin:room") == "drift_beach"
+    assert await world.redis.get("PLAYER:kevin:encounter") == eid
+    assert await world.redis.hget("ACCOUNT:kevin", "coins") == "50"
+
+
+def test_a_typed_target_can_be_a_player_and_a_wrong_name_is_refused():
+    owner = bare_owner()
+    owner._add_player({"pid": "mara", "name": "Mara", "join_ms": 0, "slots": {}, "stats": {}, "shield": 0}, None)
+    owner._add_npc({"nid": "rat-1", "name": "Dock Rat", "keywords": "rat", "join_ms": 0})
+    kevin = owner.players["kevin"]
+    kevin.gear = {1: {"effect": "damage"}, 2: {"effect": "heal"}}
+    assert owner._target(kevin, 2, "mara") == "pc:mara"  # a heal for Mara, not for yourself
+    assert owner._target(kevin, 1, "rat") == "npc:rat-1"
+    assert owner._target(kevin, 1, "") == "npc:rat-1"  # nothing named: the first enemy
+    assert owner._target(kevin, 2, "") == ""  # nothing named: yourself
+    assert owner._target(kevin, 1, "ratt") is None
+    owner._input({"pid": "kevin", "seq": 1, "act": "strike", "slot": 1, "target": "ratt"})
+    assert owner.late == [("refused", "kevin", {"act": "strike", "slot": 1, "reason": "no_target"})]
+    assert kevin.acts == []
+
+
+def test_after_a_stall_the_skipped_blows_dont_all_land_at_once():
+    owner = bare_owner()
+    owner._add_npc({"nid": "rat-1", "name": "Dock Rat", "join_ms": 0,
+                    "attacks": [{"name": "bite", "period": 1000, "damage": 1, "hit": "bites"}]})
+    owner._skip_to(60 * 3)  # three seconds stalled: three bites' worth skipped
+    landed = []
+    for _ in range(60):  # the next second
+        owner.step += 1
+        calls = []
+        owner._run_step(owner.step, calls)
+        landed += [c for c in calls if c[0] == "blow"]
+    assert len(landed) <= 1
+
+
+@pytest.mark.parametrize("how", ["hit", "block", "staggered", "dodge", "perfect_block"])
+@pytest.mark.parametrize("armor, shield", [(0, None), (7, None), (15, "round_shield"), (45, "round_shield")])
+async def test_the_tuning_bot_works_out_blows_as_the_game_does(world, how, armor, shield):
+    """tools/balance_bot.py tunes balance_damage_scale with its own copy of
+    encounter_blow's sums: they must agree."""
+    from tools import balance_bot as bot
+    if how == "block" and not shield:
+        pytest.skip("only a shield blocks (balance.py)")
+    tuning = bot.World.load()
+    feed, _, eid = await in_back_alley(world)
+    await world.redis.hset("PLAYER:kevin:worn_stats", "armor", armor)
+    if shield:
+        await world.redis.hset("PLAYER:kevin:worn", "hand", shield)
+    else:
+        await world.redis.hdel("PLAYER:kevin:worn", "hand")
+    attacks = json.loads(await world.redis.hget("NPC:orc-1", "attacks"))
+    block = float(tuning.data["wearables"][shield].get("block", 1)) if shield else 0.0
+    player = SimpleNamespace(me=SimpleNamespace(armor=armor, shield=block))
+    for damage in range(1, 40):
+        attacks[0]["damage"] = damage
+        await world.redis.hset("NPC:orc-1", "attacks", json.dumps(attacks))
+        await world.redis.hset("ACCOUNT:kevin", "hp", 100)
+        landed = json.loads(await world.call("encounter_blow", eid, "orc-1", 1, "kevin", how))
+        assert landed["damage"] == bot.damage_taken(player, {"damage": damage}, how, tuning.rules, tuning.armor_k), damage

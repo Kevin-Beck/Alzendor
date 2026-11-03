@@ -324,7 +324,7 @@
         {
           "name": "swallow",
           "period": 37700,
-          "damage": 400,
+          "damage": 200,
           "kick": 2.4,
           "stagger": true,
           "debuff": {
@@ -362,7 +362,7 @@
         {
           "name": "lure",
           "period": 30100,
-          "damage": 160,
+          "damage": 136,
           "kick": 2.229,
           "stagger": true,
           "debuff": {
@@ -395,8 +395,6 @@
       ],
       "hit": "{actor} spears {target}.",
       "perfect_hit": "{actor} spears {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Tideglass Trident finds nothing.",
       "description": "A trident of tideglass. In cold wet weather it's unstoppable.",
       "weather": {
         "temperature": -0.4,

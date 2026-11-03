@@ -76,18 +76,57 @@ async def test_friendly_npcs_cannot_be_attacked_but_can_be_healed(world):
     assert await world.redis.hget("NPC:marta", "hp") == "21"
 
 
-async def test_leaving_the_world_takes_you_out_of_the_fight(world):
+async def test_leaving_the_world_mid_fight_is_no_escape(world):
     kevin = await enter(world, "kevin")
     await walk(world, "kevin", "east")
     eid = await world.redis.get("PLAYER:kevin:encounter")
-    await world.call("disconnect", "kevin", "session-kevin", "", "Bye.")  # in the open: Kevin lies down
+    await world.call("disconnect", "kevin", "session-kevin", "", "Bye.")
+    # The body lies down and stays in the fight, taking its blows.
+    assert await world.redis.hget("ACCOUNT:kevin", "asleep") == "1"
+    assert await world.redis.get("PLAYER:kevin:encounter") == eid
+    await world.redis.hset("ACCOUNT:kevin", "hp", 90)
+    await blow(world, "orc-1")
+    assert int(await world.redis.hget("ACCOUNT:kevin", "hp")) < 90
+    # Back in time, they wake in the fight, and are told so.
+    back = await enter(world, "kevin", session="again")
+    starts = [e for e in of_type(await drain(back), "encounter") if e["op"] == "start"]
+    assert starts and starts[-1]["id"] == eid and starts[-1]["resumed"]
+
+
+async def test_a_sleeping_body_leaves_the_fight_when_it_fades(world):
+    await enter(world, "kevin")
+    await walk(world, "kevin", "east")
+    eid = await world.redis.get("PLAYER:kevin:encounter")
+    await world.call("disconnect", "kevin", "session-kevin", "", "Bye.")
+    await world.redis.zadd("alz:sleepers", {"kevin": 0})  # sleep_seconds have passed
+    await world.call("upkeep")
     assert not await world.redis.exists("PLAYER:kevin:encounter", f"ENC:{eid}")
-    # Asleep, nothing turns on him; awake again, the orc does.
-    await world.call("encounter_start", "back_alley", "pve", "", "", "orc-1")
-    assert not await world.redis.get("PLAYER:kevin:encounter")
-    await world.redis.delete("NPC:orc-1:encounter")
-    await enter(world, "kevin", session="again")
+    assert not await world.redis.sismember("ROOM:back_alley:players", "kevin")
+
+
+async def test_leaving_somewhere_safe_mid_fight_still_leaves_a_body(world):
+    await enter(world, "kevin")
+    await world.call("encounter_start", "tavern", "pve", "", "kevin", "orc-1")  # trouble in the tavern
     assert await world.redis.get("PLAYER:kevin:encounter")
+    await world.call("disconnect", "kevin", "session-kevin", "", "Bye.")
+    assert await world.redis.sismember("ROOM:tavern:players", "kevin")
+    assert await world.redis.hget("ACCOUNT:kevin", "asleep") == "1"
+
+
+async def test_an_npc_left_wounded_heals_and_stops_bleeding(world):
+    await enter(world, "kevin")
+    await walk(world, "kevin", "east")
+    await world.redis.hset("NPC:orc-1", "hp", 20)
+    await world.redis.hset("NPC:orc-1:bleed", mapping={"damage": 3, "beats": 3})
+    await world.call("disconnect", "kevin", "session-kevin", "", "Bye.")
+    await world.redis.zadd("alz:sleepers", {"kevin": 0})
+    await world.call("upkeep")  # the body fades; the fight is over
+    assert not await world.redis.exists("NPC:orc-1:bleed")
+    max_hp = int(await world.redis.hget("NPC:orc-1", "max_hp"))
+    for _ in range(25):
+        await world.call("upkeep")
+    assert int(await world.redis.hget("NPC:orc-1", "hp")) == max_hp
+    assert not await world.redis.sismember("alz:wounded_npcs", "orc-1")
 
 
 async def test_a_defeated_player_wakes_at_the_shrine(world):
@@ -131,7 +170,8 @@ async def test_cultures_judge_the_same_kill_differently(world):
     assert lines[:2] == ["Kevin kicks the Orc Warrior. (5)", "The Orc Warrior collapses."]
     assert "The Folk of Harrowgate: They're glad of one less orc in the alleys. (affinity +3)" in lines
     assert "The Back-Alley Orcs: They hate you for it, but a warrior's death is honourable. (affinity -6, respect +4)" in lines
-    assert "You take the Orc Warrior's Greataxe, 6 coins. (INVENTORY to equip it.)" in lines
+    assert any(line.startswith("You take the Orc Warrior's Greataxe, 6 coins.") for line in lines)
+    assert await world.redis.sismember("PLAYER:kevin:gear", "greataxe")
     assert "You gain 60 experience." in lines
     assert await world.redis.hgetall("PLAYER:kevin:rep:orcs") == {"affinity": "-6", "respect": "4"}
 

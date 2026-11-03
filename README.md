@@ -7,20 +7,23 @@ room channel for another. See [todo.md](todo.md) for the full concept and
 roadmap, and [Documentation](#documentation) for the design notes.
 
 ```
- Browser / CLI ──WebSocket──► Server 1 ─┐
-                                        ├──► Redis — world state + event streams
- Browser / CLI ──WebSocket──► Server 2 ─┘        (the single source of truth)
+ Browser ──WebSocket──► Server 1 ─┐
+                                  ├──► Redis — world state + event streams
+ Browser ──WebSocket──► Server 2 ─┘        (the single source of truth)
 ```
 
 - **Servers** hold client connections, parse input, and run actions against
-  Redis. They keep no game state, so you can run as many as you like, and a
-  client can reconnect to any of them.
+  Redis. They keep no lasting game state: the world lives in Redis, so you
+  can run several, and a client can reconnect to any of them. A fight is the
+  exception: each one is simulated by one server, its owner, and starts again
+  on another if that server dies ([docs/combat.md](docs/combat.md)). Each
+  server needs an id of its own (`ALZ_SERVER_ID`).
 - **Redis** stores the world and carries every event. Each action is one
   atomic function inside Redis ([alzendor/alzendor.lua](alzendor/alzendor.lua))
   that checks the world, changes it, and appends the resulting events.
 - **Clients** send what they're trying to do and show the events they receive.
-  Anything that speaks WebSocket + JSON can be a client; a web client and a
-  terminal client are included.
+  Anything that speaks WebSocket + JSON can be a client; the web client is
+  included.
 
 ## Consistent ordering
 
@@ -32,9 +35,16 @@ from one global counter. That gives one total order across the whole world:
 - Entering a room returns the room's state and the point in the sequence it
   was taken at, together. Nothing that happens in that room around the moment
   you enter can be missed or shown twice.
-- A connection's whole position in the world is one number. A client that
-  drops resumes from its last sequence number, on any server, and gets exactly
-  what it missed.
+- A connection's whole position in the world is one number. A client whose
+  connection drops while its character is still in the world (within
+  `ALZ_LINKDEAD_SECONDS`) resumes from its last sequence number, on any
+  server, and gets what its character was there for, including what was said
+  in a room it has left meanwhile. Once a character is out of the world
+  (quit, logout, idle, or a connection lost for longer), coming back starts
+  from now: nothing from the time away is shown, whatever the client asks
+  for. (Each
+  stream keeps its last 1,000 events, a player's own its last 200: miss more
+  than that, which takes a very busy minute, and you're told some is lost.)
 - Subscription changes are events too (on the player's own stream), so a
   server switches a player's channels at exactly the right point in the
   sequence. [alzendor/feed.py](alzendor/feed.py) explains how.
@@ -61,12 +71,12 @@ lowercase words are what you fill in (`EQUIP <gear> <slot>`).
 
 The web client is built around the map:
 
-- **Layout.** At the top left, the weather and the map side by side, the same
-  size; under them, across the full width, the pinned quest line, the log and
-  the command box. The right side, top to bottom, is here and now: the room,
-  who's here, your target, your slots. Drag the bar between the two sides, the
-  bar between the weather and the map, or the bar between the top and the log,
-  to resize them. Focus a bar and use the
+- **Layout.** At the top left, the fight panel and the map side by side;
+  under them, across the full width, the pinned quest line, the log and the
+  command box. The right side, top to bottom: the room and its exits, the
+  weather, who and what's in the room, and what's on the ground. Drag the bar
+  between the two sides, the bar between the fight panel and the map, or the
+  bar between the top and the log, to resize them. Focus a bar and use the
   arrow keys to nudge it, or double-click it to reset. Sizes are remembered
   per browser. On a phone, the panels stack instead.
 - **Map.** Routes are drawn along their waypoints as roads you can't walk
@@ -100,31 +110,31 @@ The web client is built around the map:
 
   Picking up a map (for example the sea chart in the Drowned Lantern, which
   reveals Saltmere Isle) makes the regions it shows discovered.
-- **Weather.** Beside the map, wide enough by default for two rows of two
-  (drag its bar to change that; double-click to go back). Four boxes, always
-  in the same order, that sit in a row, two by two, or one above another as
-  the pane's shape allows: **Sky** (a grid of
+- **Weather.** In the side panel, four boxes, two by two, always in the same
+  order: **Sky** (a grid of
   temperature across and energy up, with today's weather as a dot, a blurred
   patch if you can't read these skies, and the forecast as a dotted trail if
   you can), **Rain** (what's falling, and how hard), **Time** (a day/night
   wheel and how long until dusk or daylight) and **Ground** (the footing,
   snow and mud). A line below says it in words. See [Weather](#weather).
-- **Combat** ([docs/combat.md](docs/combat.md)), top to bottom: **Here**,
-  everyone in the room, compact, with a fighting NPC's coming blows as thin
-  bars; your **target**, popping up below them, with a health bar that runs
-  out right to left and each NPC attack as a marker sliding to where the blow
-  lands; your three **slots**, each marked ▲ or ▼ with what the weather is
-  doing to it; and the **defend** row (7). Your own health fills the whole
-  panel faintly from the bottom, so you see it fall without looking away.
+- **The fight panel** ([docs/combat.md](docs/combat.md)), two by two: your
+  **balance** (the circle and your dot, with Dodge, Block and Flee buttons);
+  **Here**, everyone in the room, compact; your three **slots**, each with
+  its key and marked ▲ or ▼ with what the weather is doing to it; and your
+  **target**, with a health bar that runs out right to left and its coming
+  blows warned on it. Your own health fills the whole panel faintly from the
+  bottom, so you see it fall without looking away.
   Hover a slot (or gear in the Inventory, or a talent, or worn gear, or tap
   it on a phone) for its **card**, always laid out the same way: its name in
   its rarity's colour and its key, what it is, an icon for its kind, then
   ruled sections for what it does, the weather (where on the grid it works
   best, and whether it wants rain or dry), what today's weather does to it,
   and its story.
-- **Settings** (header button): choose the keys for your three slots and
-  for DEFEND (4, 3, 2 and 7 by default). Click one and press the key you
-  want; a key that's in use swaps over. Remembered per browser.
+- **Settings** (header button): choose the keys for your three slots, dodge,
+  block and flee (J, K, L, Space, Shift and F by default), which keys steer
+  (WASD, the arrows, or both), and whether the block key holds or toggles.
+  Click one and press the key you want; a key that's in use swaps over.
+  Remembered per browser.
 - **Inventory**, **Character**, **Reputation** and **Quests** (header
   buttons). Your gear and what it does in today's weather, with buttons to
   put any piece in slot 1, 2 or 3, and how full your pack is; your class,
@@ -150,96 +160,64 @@ The web client is built around the map:
 - **On the ground.** Items (click to look, or **get**) and room features you
   can look at or touch.
 
-### Combat: three slots
+### Combat: balance
 
-You have three **slots**, and each holds one piece of gear: a weapon, a spell,
-a potion. The game treats them all alike. In the web client, press **4**,
-**3** or **2** for slots 1, 2 and 3 (so a resting finger sits on the first
-slot), or click a slot's bar, or type `use 2`, to use one on your target. Each piece of gear
-has its own **beat**, timing window and amounts, so every slot keeps its own
-rhythm with its own timing bar above the "Here" cards.
+Every fight is an **encounter**, and it starts the moment you and something
+hostile share a room (or you strike first). The full rules are in
+[docs/combat.md](docs/combat.md); in short:
 
-There's no roll to hit: if you land in the window, it lands. Fitting three
-rhythms together is the skill. Fast gear gives you lots of chances for small
-hits; slow gear hits hard but is easy to miss. Rhythms that overlap make it
-harder to land them all.
+- **Your balance** is a circle with a dot in it. An invisible pull drags the
+  dot around; you steer it back with **WASD** (or the arrows). You can only
+  strike while the dot is in the **core**, and the nearer the centre, the
+  harder you hit (**edge**, **clean** or **perfect**). Touch the rim and you
+  **stagger**: no control for a moment, and blows hurt half as much again.
+- **Three slots** hold your gear (a weapon, a spell, a potion: the game
+  treats them all alike). In a fight, **J**, **K** and **L** strike with
+  slots 1, 2 and 3 (out of one, the slot buttons, or type `1`, `2` or
+  `3`). Each piece of gear has its own cooldown and **kick**: every strike
+  knocks your own dot, heavy gear hardest, and any strike holds the other
+  slots for a moment. Gear can't be changed during a fight.
+- **Blows.** An NPC's attacks are warned on its card a moment before they
+  land. **Space** dodges (anyone; then you wobble for a while), and **Shift**
+  blocks if you've a shield in hand (blows cut, but no striking while you
+  brace). Some attacks can only be dodged, or only blocked, or neither. Worn
+  **armour** takes a share off every blow.
+- **Leaving.** You can't walk out of a fight. Get steady and press **F** to
+  flee back the way you came: the toughest enemy lands one parting blow
+  that can't be dodged. You can walk straight back in.
+- **Seeing danger.** Rooms next to you with something hostile in them have a
+  thin red ring on the map, and `LOOK NORTH` (`L N`) shows what's there,
+  unless it's too dark or wet to see.
+- **Combat focus.** In a fight, with the command line empty, the keys above
+  fight. Press Enter to type; Enter on an empty line (or Esc) goes back to
+  the fight. All the keys can be changed in Settings. On a phone there's a
+  touch stick and buttons.
 
-| Gear | Kind | Beat | Window (perfect) | Effect |
-|---|---|---|---|---|
-| Dagger | weapon | 1.2 s | ±200 ms (±70) | 2 / 3 / 5 damage |
-| Kick | melee | 2 s | ±300 ms (±100) | 4 / 5 / 8 damage |
-| Healing Draught | potion | 2.5 s | ±250 ms (±80) | heals 4 / 6 / 10 |
-| Sword | weapon | 2.5 s | ±300 ms (±100) | 6 / 7 / 11 damage |
-| Firebolt | spell | 4 s | ±300 ms (±100) | 8 / 10 / 16 damage |
-| Greataxe | weapon | 4.5 s | ±250 ms (±80) | 10 / 14 / 24 damage |
-| Health Potion | potion | 5 s | ±350 ms (±120) | heals 10 / 15 / 25 |
-| Magic Missile | spell | 8 s | ±400 ms (±130) | 14 / 18 / 30 damage |
+Bosses have a **stagger meter**: hit them with heavy gear (or block their
+blows perfectly) and they reel for a few seconds. Outside a fight, a heal or
+a guard just works, then takes a while to come back: rest heals you between
+fights, not potions.
 
-(Effects are opening / good / perfect.) These are the base numbers: the
-weather changes all of them, and each piece of gear has its own weather
-element (see [Weather](#weather)). The Broodmother drops **Stormcall**, an
-orange spell that is devastating in a hot, wild downpour and useless anywhere
-else. There's also **Mending Light** (a
-6 s spell healing 8 / 12 / 20 that can heal another player or a friendly NPC
-you've targeted). New characters own a Dagger, Kick, Magic Missile and Health
-Potion, with the last three in their slots. The rest comes from levelling up
-and from what NPCs drop. `gear` (or the Inventory panel) lists what you own and
-what's in your slots; `equip sword 2` puts your sword in slot 2, and
-`unequip 2` empties it. The same gear can go in more than one slot: three
-potions is a loadout too.
-
-The first use of a slot lands straight away and starts its rhythm. Its ball
-then swings out to the right and back to the centre, then out to the left and
-back, and each centre crossing is a beat. A use lands only if it reaches the
-server within its gear's window around a beat.
-
-- Every attempt uses up a beat, hit or miss. One sent before the next unused
-  beat takes that beat and misses, so mashing keys only burns beats.
-- **4**, **3** and **2** fire straight away when the command line is empty (or
-  in a fight, when it holds your last command, selected). Typing a sentence
-  with a number in it doesn't use a slot.
-- A rhythm belongs to you, not the fight. It carries on across targets, kills,
-  leaving the room and reconnecting, and ends only after 10 seconds unused (or
-  two beats, if longer). Stepping out and back in doesn't buy a fresh opener,
-  and neither does swapping gear: a slot can't be changed while its rhythm is
-  running, and no gear can be changed while anything is fighting you. Choose
-  your loadout before the fight.
-- Redis's clock judges the timing, the one clock every server shares. The
-  client syncs to it with ping/pong and draws each ball where it will be when
-  your command arrives, so pressing the key when the ball looks centred lands
-  on the beat.
-- An NPC at 0 HP collapses and comes back after its `respawn` time (five
-  minutes by default, and never less; bosses take 15 to 30). Your health is in the header, and behind the combat panel.
-- The **Training Yard** (east of the smithy) has a Training Dummy, which never
-  attacks, and a Sparring Post, whose arm clips you every 6 seconds: good for
-  practising with a potion in a slot. Neither ever falls, and they give no
-  experience.
-
-Gear is defined in [world/seed.json](world/seed.json) (see below); the rules
-are in the combat section of [alzendor/alzendor.lua](alzendor/alzendor.lua).
-
-### NPCs fight back
-
-NPCs have one or more attacks, each slow next to yours (one every 5–13
-seconds) and each on its own timer. NPCs never miss, so there's nothing for
-the server to judge: it simply lands each attack when it's due (every server
-runs a combat tick ten times a second, and each attack is taken off a shared
-schedule in Redis as it lands, so it lands exactly once). Their timers are
-shown on the target card so you can plan around them, and you can meet
-them: **7** (or `DEFEND`) blocks with a shield in hand or dodges without, and
-timed to when the blow lands it takes part or all of it. A press is spent on
-one blow and needs 1.5 s to recover, and some attacks can only be dodged, or
-not met at all. Worn **armour** takes a share off every blow. See
-[docs/combat.md](docs/combat.md).
+New characters start with their class's ability and two of their
+background's items in their slots. `gear` (or the Inventory panel) lists
+what you own; `EQUIP <gear> <slot>` puts a piece in a slot, `UNEQUIP 2`
+empties one. The same gear can go in more than one slot: three potions is a
+loadout too. The weather scales every piece's amounts (see
+[Weather](#weather)).
 
 Every NPC is **hostile** (attacks you on sight), **neutral** (fights back if
 you attack it) or **friendly** (can't be attacked). Everything can be
 targeted: friendly NPCs can be healed with gear that heals allies, and `say`
-and emotes go to your target. An NPC fights the first of its foes who is
-still in the room; leave and it forgets you.
+and emotes go to your target. An NPC at 0 HP collapses and comes back after
+its `respawn` time (five minutes by default, and never less; bosses take 15
+to 30). The **Training Yard** (east of the smithy) has a Training Dummy,
+which never attacks, and a Sparring Post, whose arm clips you every few
+seconds: neither ever falls, and they give no experience.
 
-At 0 HP you collapse and wake at the temple shrine with half your health, a
-tenth of a level's experience poorer (never losing a level).
+At 0 HP you collapse and wake at your realm's shrine (Alzendor's temple; a
+starting realm's is where you began; most other realms have one of their
+own) with half your health, a tenth of a level's experience poorer (never
+losing a level).
 
 ### Weather
 
@@ -262,9 +240,6 @@ What it does:
   though the touchiest pieces are usually rare. Weapons like a mild day,
   spells like energetic air. The Inventory and the slot tooltips show each
   piece's spot and what today does to it.
-- **Timing.** Heat slows every beat (up to 30%), wind narrows timing windows,
-  and dead stillness narrows perfect windows. A rhythm keeps the timings it
-  opened with.
 - **Travel.** Rain leaves mud and snow piles up, and both last after the sky
   clears. Moving through them holds you up for a moment (up to 3 s in deep
   snow), and you're told why first.
@@ -274,12 +249,12 @@ What it does:
 - **NPCs.** Some come and go with the weather: the giant spider in the web
   tunnel keeps out of the rain, and the bog lurker in the reed marsh only rises when it's wet.
 - **Healing.** Bitter cold outdoors slows it.
-- **Resilience** (a stat) softens every bad effect by 10% a point, up to
-  half, and keeps the good ones.
+- **Resilience** (a stat) softens every bad weather effect by 10% a point,
+  up to half, and keeps the good ones.
 
 **Forecasts.** You can always feel the weather where you are, but only
 roughly. Locals who know a realm's skies can teach you to read them: in
-Alzendor, `ask tamsin about weather` at the lighthouse, or ask Osric the
+Alzendor, `DISCUSS WEATHER WITH TAMSIN` at the lighthouse, or ask Osric the
 ferryman or Wren the warden. After that you see the realm's weather exactly,
 and `weather` shows what's coming: the next hour at first, and further (up
 to 3 hours) the better their people like you. They only teach those they're
@@ -301,7 +276,7 @@ and no exit leads between them.
 - **The Rimewaste** is frigid and howling, with snow nearly always falling and
   deep on the ground: every step is slow, and you often can't see the way on.
   Reach it through Sister Ilse's ring of frost in the Harrowlake chapel
-  (`travel ring`, or `ask ilse about passage`); Veyra at Rime Landing sends
+  (`TRAVEL RING`, or `DISCUSS PASSAGE WITH ILSE`); Veyra at Rime Landing sends
   you back. Ember Hollow is its one
   warm, safe place. Frost wolves and an ice wraith (who drops **Rimefang**, a
   purple blade made for a blizzard) hunt there.
@@ -309,10 +284,11 @@ and no exit leads between them.
   Howling Pass (`travel rift`) drops you onto burning glass with no way back
   up. The only way home is the portal at the Sun Altar, which opens only when
   the dead-still air stirs, and only when no sand wraiths stand on the altar.
-  They come back every 20 seconds.
+  They come back five minutes after they fall.
 
-Defeat anywhere sends you home to the temple shrine, and that's the cost: the
-whole journey is lost. Each realm has a `REALM:` channel for realm-wide
+Defeat in a realm with a shrine of its own wakes you there; elsewhere it
+sends you home to the temple shrine, and that's the cost: the whole journey
+is lost. Every realm has a way back to Alzendor. Each realm has a `REALM:` channel for realm-wide
 events. The design is in [docs/realms.md](docs/realms.md).
 
 ### Where to go: the zones
@@ -539,16 +515,17 @@ experience):
   opens after two talents, rank 3 after four. Talents have weather
   elements, so a broad set lets you swap slots as the weather turns. Some
   stagger (push the target's next blow back), guard (soak up the next blows)
-  or bleed and burn (hurt on each of the target's next beats, never quite
+  or bleed and burn (hurt on each of the target's next blows, never quite
   killing it);
 - levels 5, 10, 15 and 20: another **ancestry passive** (`LEARN <passive>`).
 
 Levelling gives no gear: that comes from the world. Some passives play with
-the slot ball: Second Wind heals you each time the attuned slot's ball
-touches the left edge, Bloodrhythm makes misses charge the next hit, and
-Berserk Seal makes a slot 50% stronger until its ball first touches the left
-edge, then seals it for the rest of the fight. `ATTUNE <passive> <slot>`
-chooses the slot (not mid-fight). **Sergeant Holt**, in the Harrowgate
+your balance: Second Wind heals you each time your dot comes back into the
+core after a knock, Bloodrhythm makes edge strikes charge the slot's next,
+and Berserk Seal makes a slot 50% stronger until your first stagger, then
+seals it for the rest of the fight (the rest are in
+[docs/combat.md](docs/combat.md)). `ATTUNE <passive> <slot>` chooses the
+slot of a slot passive (not mid-fight). **Sergeant Holt**, in the Harrowgate
 training yard, resets your talents and passives for 10 coins a level
 (`RESPEC`).
 
@@ -558,10 +535,10 @@ your points go. Gear and abilities are what make characters different.
 | Stat | Each point |
 |---|---|
 | Vigor | 8 more max health |
-| Poise | timing windows 15 ms wider (never reaching halfway to the next beat) |
-| Focus | perfect windows 10 ms wider (never wider than the window) |
+| Poise | the core of your balance 4% wider; a better chance of going unnoticed and of spotting traps |
+| Focus | the perfect centre of your balance 5% wider |
 | Presence | your deeds move reputation 15% further, good or bad |
-| Resilience | weather penalties 10% softer (up to 50%); bonuses kept |
+| Resilience | weather penalties 10% softer (up to 50%), bonuses kept; debuffs 5% shorter (up to half) |
 
 Your ancestry's +1 counts like a trained point. Factions can grant **boons**: a stat bonus while your standing with them is
 high enough. The Wardens give +1 Resilience at affinity 20, and the
@@ -575,8 +552,9 @@ active and what the others need.
 Inns, shrines and camps are **safe places** (the room panel says "safe to
 rest"). Quit there, or go idle there, and you settle in to rest and are gone
 at once. Anywhere else you **lie down to rest**: your sleeping body stays in
-the room for two minutes, and everyone there can see it. NPCs already
-fighting you keep at it, so logging out is no escape. Come back in time and
+the room for two minutes, and everyone there can see it. Leaving mid-fight
+is no escape: your body lies down even somewhere safe, and stays in the
+fight, taking its blows, until it fades (or falls). Come back in time and
 you wake where you lay; otherwise your body fades and you arrive later, well
 rested. Abilities can make a kind of terrain safe for you: **Woodcraft** makes
 any forest safe, **Shore-sleeper** any stretch of coast.
@@ -587,9 +565,8 @@ Out of a fight, wounds heal slowly (faster somewhere safe, slower in bitter
 cold). Moving has a short cooldown (250 ms), so a client can't send a whole
 journey at once.
 
-Your **pack** holds 12 things: what you carry, plus gear that isn't in a
-slot. With a full pack you can't pick anything up (gear from a level or a
-kill still arrives).
+Your **pack** holds 12 things: the items you carry. With a full pack you
+can't pick anything up. Gear doesn't count against it.
 See [docs/design.md](docs/design.md) for the thinking behind this and other
 options.
 
@@ -600,23 +577,15 @@ https://iterbotgames.com/alzendor/): one small AWS server behind the site's
 CloudFront, set up with Terraform and deployed with `./deploy.sh`. Everything
 about it is in [deploy/iterbotgames/README.md](deploy/iterbotgames/README.md).
 
-**On a server of your own,** the production setup is the local one plus
-[docker-compose.prod.yml](docker-compose.prod.yml). That file adds
-[Caddy](https://caddyserver.com) for HTTPS with automatic certificates and
-load balancing across the servers, and it closes every other port. On a server
-with Docker and a DNS name pointing at it:
-
-```sh
-git clone <this repo> && cd Alzendor
-cp .env.example .env   # set ALZ_DOMAIN (and ALZ_ADMINS)
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-```
-
-Players then go to `https://<your domain>`. To add capacity, add a `server3`
-next to the others and to the [Caddyfile](Caddyfile). Redis persists to a
-volume with append-only logging. Servers can be restarted one at a time:
-players on a restarting server reconnect to another without leaving the world,
-as long as they're back within `ALZ_LINKDEAD_SECONDS`.
+That's the only production setup. The local one (Running locally) runs two servers
+on one Redis, as a check that several servers can share a world. A server
+can be restarted on its own (players on it reconnect to another without
+leaving the world, as long as they're back within `ALZ_LINKDEAD_SECONDS`;
+the fights it ran start afresh), but only to run the same version. The rules
+library in Redis belongs to all the servers, and each loads its own at
+start, so an update recreates every server together (`docker compose up -d
+--build`). The version a server loaded is in
+`/healthz` and in the log; a mismatch is logged as a warning.
 
 ## Configuration
 
@@ -626,11 +595,11 @@ Servers read `ALZ_*` environment variables (compose passes `.env` through):
 |---|---|---|
 | `ALZ_REDIS_URL` | `redis://localhost:6379/0` | |
 | `ALZ_HOST` / `ALZ_PORT` | `0.0.0.0` / `8000` | |
-| `ALZ_SERVER_ID` | hostname | Shown to clients and in logs |
+| `ALZ_SERVER_ID` | hostname and port | Must be unique per server: it owns the fights it starts by it, and claims it in Redis while it runs (a second server with the same id waits for it, then refuses to start). Also shown to clients and in logs |
 | `ALZ_SEED_FILE` | `world/seed.json` | The map; see below |
-| `ALZ_ADMINS` | | Comma-separated account names allowed the admin commands: `announce <area/region/realm>`, and `setweather` to pin your realm's weather for testing |
-| `ALZ_ALLOWED_ORIGINS` | any | Browser origins allowed to connect; production sets `https://$ALZ_DOMAIN` |
-| `ALZ_TRUST_PROXY` | `false` | Use `X-Forwarded-For` for client addresses (production sets it) |
+| `ALZ_ADMINS` | | Comma-separated account names allowed the admin commands: `announce <area/region/realm>`, `goto <room>`, `setweather` and `setclock` to pin your realm's weather and the hour for testing |
+| `ALZ_ALLOWED_ORIGINS` | any | Browser origins allowed to connect; production sets `https://iterbotgames.com` |
+| `ALZ_TRUST_PROXY` | `false` | Take client addresses (for the sign-up and login limits) from the proxy: CloudFront's `CloudFront-Viewer-Address`, else the last `X-Forwarded-For`. Only behind CloudFront, which sets the first (production does) |
 | `ALZ_LINKDEAD_SECONDS` | `60` | How long a dropped player stays in the world |
 | `ALZ_IDLE_MINUTES` | `30` | A player who sends no commands for this long leaves (lying down to sleep unless somewhere safe); `0` turns it off |
 | `ALZ_HEARTBEAT_SECONDS` | `10` | |
@@ -639,8 +608,6 @@ Servers read `ALZ_*` environment variables (compose passes `.env` through):
 | `ALZ_LOG_LEVEL` | `INFO` | |
 | `ALZ_FAKE_LATENCY_MS` | `0` | Local testing only: holds every message to and from a client in the world this long, each way, to try fights with lag (a round trip is twice this) |
 | `ALZ_FAKE_JITTER_MS` | `0` | Local testing only: up to this much more delay, at random, message by message (in order, as over TCP): a shaky connection |
-| `ALZ_DOMAIN` | | Production only: the public domain |
-| `ALZ_HTTP_PORT` / `ALZ_HTTPS_PORT` | `80` / `443` | Production only: Caddy's host ports |
 
 ## The world map
 
@@ -706,15 +673,18 @@ items are, who is where, NPC health) is never overwritten.
   or `friendly`), `faction`, `role` (e.g. `warrior`, `young`; cultures can
   judge by it), an `icon` (an emoji for the target card), `attacks` (each
   with a `name`, `period` in ms, `damage`, `hit` text using `{actor}` and
-  `{target}`, and optionally `defend`: `both` (default), `block`, `dodge` or
-  `none`), `notice` (`easy`, `fair` or `hard`: a watchful NPC that only
+  `{target}`, `kick` (its knock on your balance), and optionally `defend`:
+  `both` (default), `block`, `dodge` or `none`, `stagger`, `warn` (ms) and a
+  `debuff`; see [docs/combat.md](docs/combat.md), Data), `poise` (a boss's
+  stagger meter), `notice` (`easy`, `fair` or `hard`: a watchful NPC that only
   attacks if it notices you), `xp` (default half its max HP), `drops` (gear ids given to
   whoever kills it), `coins` they drop, and `"immortal": true` for practice
   targets. `topics` maps what they'll talk about to a line, or to `{text,
   starts, explains, requires, while, heard_from, again, rapport}`: `starts` a
   quest (offered, to ACCEPT), `explains` is guide text shown after the line
   (what it means in game terms), `requires` (`rapport`, `level`, `affinity` /
-  `respect` with an optional `faction`, or a `quest` done) and `while` (a
+  `respect` with an optional `faction`, a `quest` done, or `quests`: several,
+  all done) and `while` (a
   `quest` active, optionally at a `step`) say when it's open to a player,
   `heard_from` (NPC ids) opens it once they've discussed it with one of those,
   `again` is said the second time, and `rapport` is gained the first.
@@ -792,7 +762,7 @@ items are, who is where, NPC health) is never overwritten.
   its starting realm), `arrive` (where its journey out lands), `intro` and
   first `quest`.
 - **NPC weather.** `forecasts` lists the realms whose skies an NPC can teach
-  a player (`ask <npc> about weather`). `active_when` gives ranges, e.g.
+  a player (`DISCUSS WEATHER WITH <npc>`). `active_when` gives ranges, e.g.
   `{"precipitation": [-1, 0.2]}`, and optionally `time` phases (`{"time":
   ["dusk", "night"]}`): outside them the NPC hides (never mid-fight), with
   optional `hide` and `emerge` texts using `{actor}`.
@@ -803,7 +773,8 @@ items are, who is where, NPC health) is never overwritten.
   a stat bonus (`stat`, `amount`, `note`) at an `affinity` and/or `respect`
   threshold.
 - **Perks** (passives) have a `name`, `description`, optionally a
-  `safe_terrain`, and `"slot": true` for passives attuned to a slot.
+  `safe_terrain`, and `"slot": true` for passives attuned to a slot (Moonlit
+  Edge, Bloodrhythm, Berserk Seal).
   **`starting_gear`** and `loadout` are only for characters made without
   creation (tests).
 - **`rules`** holds tunable numbers: `pace` (scales walking; 0 turns it off),
@@ -812,8 +783,12 @@ items are, who is where, NPC health) is never overwritten.
   upkeep, every 5 s), `social_cooldown` (seconds), `pack_size`,
   `starting_coins`, `stage_seconds` (between waypoints), `event_chance` and
   `event_seconds` (travel events), `level_cap`, `respec_coins_per_level`,
-  `armor_k` (armour's curve), `defend_cooldown_ms`, `defend_late_ms`,
-  `dodge_window_ms`, `block_window_ms` and `defend_perfect_ms`, for talk
+  `armor_k` (armour's curve), `npc_regen_pct` (the share of its health an
+  NPC out of a fight heals each upkeep; default 0.05), `channels_per_player` (chat channels one player
+  may make; default 3), the fight's `encounter_*` and `balance_*` rules,
+  `defend_perfect_ms` (the perfect-block window) and
+  `out_of_fight_cooldown_scale` (all in [docs/combat.md](docs/combat.md),
+  Data), for talk
   `offer_beat_ms` (the pause before a next quest is offered), `lure_chance`
   (a step's chance of noticing a quest giver's lure), `whatnow_steps` (how far
   WHAT NOW looks) and `gift_cooldown` (seconds), and for the weather
@@ -822,10 +797,13 @@ items are, who is where, NPC health) is never overwritten.
 - **Gear** has a `name`, `kind` (shown in `gear`; classes use some kinds),
   `keywords`, an `effect` (`damage` a target, `heal` yourself, or `guard`:
   soak up the next blows), optionally `stagger_ms` (pushes the target's next
-  blow back) and `bleed` (`{damage, beats}`), a `period` (ms between beats), a
-  `window` and `perfect_window` (ms either side of a beat), `amounts` (opening
-  / good / perfect), and texts: `hit`, `perfect_hit` and `miss` for the room
-  (with `{actor}` and `{target}`), and `whiff` for you when you mistime it.
+  blow back) and `bleed` (`{damage, beats}`: damage on each of the target's
+  next blows), `amounts` (edge / clean / perfect), `cooldown` (ms), `kick`
+  (its knock on your own balance), `pattern` (`bump`, `side`, `taps`),
+  optionally `hits` and `gap` (a volley) and a `debuff` on yourself (see
+  [docs/combat.md](docs/combat.md), Data), and texts: `hit` and
+  `perfect_hit` for the room (with `{actor}` and `{target}`). The rhythm
+  fields (`period`, `window`, `perfect_window`) are refused.
   A `description` says what it is, and `weather` is its element:
   `{temperature, energy}` (its spot on the grid), `precipitation` (`wet`,
   `dry` or `any`) and `tier` (`grey`, `green`, `blue`, `purple`, `orange`:
@@ -844,9 +822,12 @@ with their passives, backgrounds with their items per class) and answers
 `{"type": "create", "class", "ancestry", "passive", "background"}` until it
 stops getting `create_error`. The server sends `auth_ok`/`auth_error`, then a stream of `{"type": "event", "event": {...}}`
 messages, each with a `seq`. Clients can also send `{"type": "ping", "t": …}`
-and get back a `pong` with `server_ms`, Redis's clock, for drawing combat
-timing. Most events have a `text` to show. A few are pure
-state updates, without one:
+and get back a `pong` with `server_ms`, Redis's clock, which fights are timed
+by. In a fight the client also sends `input` messages (held keys and acts),
+and gets `state` (the encounter, 15 times a second) and `refused` (a dropped
+strike, dodge, block or flee, and why) directly, outside the event stream:
+[docs/combat.md](docs/combat.md), Protocol, and session.py. Most events have
+a `text` to show. A few are pure state updates, without one:
 
 - `room`: the full room, with `entities` (cards, NPCs with their `topics`),
   `items` (quest items marked `quest`) and `features`, `indoor`, `step_ms`
@@ -862,20 +843,20 @@ state updates, without one:
   `to`, `name`, `kind`, `fare`, `command`, and `path`: the waypoints'
   positions) leaving rooms they've explored. Rooms with a known trap have `trap`
 - `entity`: a changed card
-- `timing`: one of your slots (`slot`, `label`, and if it holds something
-  `gear`, `kind` and `period_ms`; `active`, and while active `start_ms`,
-  `grace_ms`, `perfect_ms`, `last_beat`, `last_ms`, `timeout_ms`). Every slot
-  is sent on connect, and again when its gear changes.
+- `encounter`: a fight starting (`op` `start`, with the encounter's `id`,
+  seed, rules, `start_ms`, players and NPCs; `resumed` on reconnecting),
+  someone joining or leaving it (`join`, `leave`), or it ending for you
+  (`end`, with `why`)
+- `look`: `LOOK <direction>`: the room that way (`dir`, `room`), its enemy
+  cards or why you can't see them, and `danger` refreshed. `room` events
+  carry `danger` too: the neighbouring rooms with enemies you can see
+- `exposure`: the dangerous place's meter (its `kind`, `name`, `level`,
+  `max`, and what protects you), or nothing when you leave it
 - `gear` (has text): all the gear there is, and the ids in your `slots`
-- `combat` / `heal` (have text): a use's `slot`, `result` (`opener`,
-  `perfect`, `good`, `early`, `late`, `miss`), and `damage` or `amount`. An
-  NPC's attack is a `combat` event with its `entity_id`, the `target` it hit
-  and `damage`, and `defended` (`block` or `dodge`) and `perfect` if it was met
-- `defend`: a DEFEND press: `ready` (false if it's still recovering), `mode`,
-  `cooldown_ms` and `window_ms`
-- `npc_timing`: an NPC starting, continuing or stopping a fight (`entity_id`,
-  `active`, `target`, and `attacks` with `name`, `period_ms`, `damage`,
-  `defend` and `next_ms`, by Redis's clock). Room cards carry the same as `fight`
+- `combat` / `heal` (have text): a strike's `slot`, `tier` (`edge`, `clean`,
+  `perfect`) and `damage` or `amount`. An NPC's blow is a `combat` event with
+  its `entity_id`, the `target` it hit, `damage`, and `result` (`hit`,
+  `dodge`, `block`, `perfect_block`, `staggered`, `parting`)
 - `dispositions`: how each NPC in your room treats you, by entity id, and
   `talk`: for each, the `topics` they'll discuss with you and their `rapport`
   with you (a word). Room cards carry `disposition` (for you),
@@ -886,10 +867,12 @@ state updates, without one:
 - `topics` (has text): what an NPC will discuss with you (`npc`, `topics`)
 - `kit`: the gear you own, your `slots`, the `items` you carry, `coins`, and
   `pack` / `pack_size`. Each piece of gear has its base numbers, `description`,
-  `rarity`, `sensitivity` (1-5), `stagger_ms` and `bleed` if it has them,
-  `weather` (its profile) and `now`: its `factor`, `amounts` and timings in
-  today's weather, and `mods`, one `{label, pct, on}` per modifier. Sent
-  again whenever the weather changes it
+  `rarity`, `sensitivity` (1-5), `cooldown_ms`, `kick`, `pattern`, `hits`,
+  `gap_ms`, `stagger_ms` and `bleed` if it has them, `weather` (its profile,
+  with its `ring`: `peak`, `far` and `radius`, and its `zone`) and `now`: its
+  `factor` and `amounts` in today's weather, and `mods`, one `{label, pct,
+  on}` per modifier. Sent on connecting, when it changes, and on the weather
+  tick only if the weather changed it
 - `character`: your `level`, `level_cap`, `xp`, `xp_next`, `points`, `stats`
   (with ancestry, buffs and boons), `trained`, `stat_order`, `stat_info`,
   `boons`, `perks` (each with `slot` and `attuned`), `factions` (the ones
@@ -899,8 +882,8 @@ state updates, without one:
   `talents` (each a full gear summary, as in `kit`, plus `rank`, `learned`
   and `locked`), `passives` (`id`, `name`, `slot`, `learned`), `worn` (place
   to worn gear), `wardrobe` (all of it, with `worn` and `usable`), `places`,
-  `armor` and `armor_pct`; and `defence` (`mode`, `window_ms`,
-  `cooldown_ms`)
+  `armor` and `armor_pct`; and `defence` (`mode`: `block` with a shield in
+  hand, else `dodge`)
 - `weather`: where you are (`place`, `indoor`), `temperature`, `energy`,
   `precipitation` (exact, or to the nearest half if `exact` is false),
   `zone`, `falling`, `intensity`, `summary`, `visibility`, `ground` (`snow`,
@@ -937,13 +920,98 @@ state updates, without one:
 - Passwords are hashed with Argon2id on the server, with a salt per account.
 - Login errors don't reveal whether an account exists.
 - Failed logins are rate limited per address and per account. Account creation
-  is rate limited per address.
+  attempts are rate limited per address, and a taken name is refused before
+  any password is hashed. Before logging in, a connection gets the same
+  message allowance as after. (The per-account limit means anyone can lock
+  an account out of password logins for 15 minutes; a player with a session
+  token isn't affected.)
 - Session tokens are random. Only their SHA-256 is stored, and `logout`
   revokes them.
 - Origin checks guard the WebSocket. Message sizes and command rates are
   capped per connection.
 - Only the server changes subscriptions: personal and room channels can't be
   joined.
+
+## Running the tests
+
+The tests need a Redis of their own. Never point them at a game's Redis:
+Redis functions belong to the whole server, not to one database, so the
+first test's `FUNCTION LOAD` would put that game's players onto this
+checkout's rules, and every test empties its database.
+
+```sh
+docker run -d --rm --name alz-test-redis -p 127.0.0.1:6380:6379 redis:7.4-alpine
+python -m pip install -r requirements-dev.txt
+python -m pytest                       # the default: redis://localhost:6380/15
+python -m pytest -m slow               # the tuning bot (about 20 s)
+python -m pytest -m "slow or not slow" # everything, as CI runs it
+```
+
+`ALZ_TEST_REDIS_URL` picks another Redis. The tests refuse db 0, and refuse a
+Redis whose db 0 holds a game (`alz:seq`). Or run them in Docker, against a
+Redis that compose starts for them: `docker compose --profile test run --rm
+test`. The client's copy of the fight simulation is checked by
+`tests/test_balance.py` with node (`node` on the path, or `ALZ_NODE=<a node
+binary>`); without one it's skipped, and CI and the test image require it.
+CI (`.github/workflows/tests.yml`) runs everything on every push.
+
+## Developing
+
+**Where a rule goes.** The rules of the world live in Lua
+([alzendor/alzendor.lua](alzendor/alzendor.lua)): each registered function
+is one thing that can happen, checked and applied atomically in Redis. Python
+holds connections, parses commands and runs each fight's simulation
+([alzendor/balance.py](alzendor/balance.py) and
+[alzendor/encounter.py](alzendor/encounter.py)); it never writes world state
+itself. The client presents, and predicts your own dot. The content
+([world/](world)) holds the facts: places, people, gear, quests.
+
+**The Lua library** is one chunk loaded with `FUNCTION LOAD`:
+
+- Every function is called with the calling server's id as `KEYS[1]` (an
+  encounter it starts belongs to that server), and a player action goes
+  through `action()`, which returns 0 without doing anything if the player
+  isn't in the world (the command layer tells them so).
+- An array sent to a client must be wrapped in `list()`: the encoder writes
+  plain tables as JSON objects, so an empty array would arrive as `{}`.
+- Lua allows 200 local variables in a function, and the main chunk is close
+  to it: a new section goes in a `do ... end` block or an immediately called
+  function, and exports what later code needs through the `hooks` table
+  (or a table of its own, like `enc` and `passive`). Nothing global
+  exists, and `math` isn't there while the library loads. A local used
+  before the line that defines it fails only when that line runs.
+- Return shapes: player actions emit their own replies (a `system` notice)
+  and return 1, or 0 when the player isn't in the world; `create_character`
+  returns '' or why not; `encounter_*` return JSON; the rest return 0 or 1.
+  A helper that says "no" with `notice()` returns the notice's number, so
+  don't use one's return value to mean "found".
+
+**A rule in two languages gets a test that pins them.** The fight simulation
+is in `balance.py` and again in the client's `Balance` block: after changing
+either, change the other, run `python -m tools.make_vectors` and the tests
+(`tests/test_balance.py` checks both against `tests/balance_vectors.json`).
+The same holds for the stat factors (Lua, Python and the client), the
+tuning bot's damage sums (against `encounter_blow`), world.py's copies of
+the Lua's stats, slots and deeds, and the weather (Lua against
+`weather.py`). A new copy needs a test like those, in the same commit.
+
+**Content.** `world/seed.json` plus one file per zone in `world/zones/`. A
+zone's entrance is an exit in its neighbour's file, so it's a two-file
+change; the validator (`validate_seed`) refuses an exit with no way back
+(unless the room lists it in `one_way`), a room nobody can reach from where
+characters begin, and a room with no way back to the start.
+
+**Tools** ([tools/](tools)):
+
+- `balance_bot.py`: plays every fight against the tuning targets, with no
+  server ([docs/combat.md](docs/combat.md), Tuning).
+- `tune_balance.py`: retunes the content against those targets and writes
+  it.
+- `make_vectors.py` and `check_vectors.mjs`: the shared vectors for the
+  fight simulation, and the client's check against them.
+- `load_encounters.py`: bot players fighting on a test server, for its CPU
+  and round trip. It needs the test server's own Redis (`--redis`, never db
+  0) and cleans up after itself.
 
 ## Layout
 
@@ -954,14 +1022,19 @@ alzendor/
   feed.py        ordered event delivery from Redis streams
   session.py     the protocol for one connection
   server.py      WebSocket server, web client, heartbeats, upkeep, weather tick, ambient events
+  encounter.py   fights, run by the server that owns each one
+  balance.py     the fight simulation (the client has a twin)
   auth.py        accounts, passwords, tokens, rate limits
+  config.py      the ALZ_* settings
   world.py       loading the rules and the map, and checking the map
   weather.py     each realm's weather waves, and a reference copy of the weather function
-  cli.py         terminal client
   web/index.html web client
-world/seed.json  the realms and map, gear, NPCs, factions, perks and levels
+world/seed.json  the home realm and its map, gear, NPCs, factions, perks and levels
+world/zones/     one file per zone and realm beyond it
+tools/           the tuning bot and tuner, the simulation vectors, a load test
 docs/            design notes (see Documentation)
 tests/
+deploy/          the iterbotgames.com deployment (Terraform, deploy.sh)
 ```
 
 ## Documentation
@@ -970,13 +1043,11 @@ tests/
   it, how to play, the seed format and the protocol.
 - [todo.md](todo.md): the concept, and the roadmap with what's done.
 - [docs/design.md](docs/design.md): the thinking behind stats, abilities,
-  reputation, NPC timing and leaving the world, with options not taken.
+  reputation and leaving the world, with options not taken.
 - [docs/weather.md](docs/weather.md): the weather and elements design: the
   rule that every mechanic is used, remembered and leveraged; the three axes;
   the weather function; what weather does; forecasts; and decisions still
   open.
-- [docs/weather-plan.md](docs/weather-plan.md): how the weather was built, in
-  stages.
 - [docs/places.md](docs/places.md): the guide to rooms, areas, regions and
   realms (what each is for and how big), and to getting around: walking,
   routes and journeys in stages.
@@ -985,8 +1056,9 @@ tests/
   build plan.
 - [docs/quests.md](docs/quests.md): options for quests, and the quest engine
   that was built.
-- [docs/combat.md](docs/combat.md): blocking and dodging, armour, and the
-  combat panel.
+- [docs/combat.md](docs/combat.md): combat, the reference: balance, strikes
+  and blows, fleeing, seeing danger, the fight panel, encounters and their
+  owners, the data, the protocol, and tuning.
 - [docs/zones.md](docs/zones.md): every zone after the starting realms (the
   Greyfold, the frontier, the dangerous places and the eleven realms): their
   plans, quests, enemies and mechanics, where they are and why.
@@ -997,5 +1069,5 @@ tests/
   routes as waypoints, and travel events: checks, stranding, surprise combat
   and marooning.
 - [docs/characters.md](docs/characters.md): class, ancestry and background;
-  talents, ancestry passives (including ones that play with the slot ball),
+  talents, ancestry passives (including ones that play with your balance),
   levelling to 20, respec, and the four starting realms.

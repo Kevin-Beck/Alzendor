@@ -14,8 +14,21 @@
 -- changes subscriptions it also appends a `control` event to the player's own
 -- stream, and the server reading that stream applies the change at precisely
 -- that point in the sequence (see alzendor/feed.py).
+--
+-- Conventions (the README's "Developing" has more):
+-- * KEYS[1] is always the calling server's id: an encounter a call starts is
+--   owned by that server.
+-- * What a function returns: a player action (wrapped in `action`) emits its
+--   own replies and returns 1, or 0 when the player isn't in the world (the
+--   command layer tells them); `create_character` returns '' or why not;
+--   `encounter_*` return JSON; the rest return 0 or 1. `notice` returns the
+--   notice's sequence number, so a helper that refuses with
+--   `return notice(...)` mustn't have its result read as "found".
+-- * Arrays for clients are wrapped in `list()`.
 
-local MAXLEN = 1000
+-- Events kept per stream. A player's own stream needs only what a dropped
+-- connection might resume from; a shared one is read by many.
+local MAXLEN = {shared = 1000, player = 200}
 
 -- JSON ------------------------------------------------------------------------
 -- Redis' cjson encodes an empty table as {}, so lists are marked explicitly.
@@ -44,12 +57,6 @@ local function hgetall(key)
   return t
 end
 
-local function list_keys(t)
-  local out = {}
-  for k in pairs(t or {}) do out[#out + 1] = k end
-  return out
-end
-
 local function sorted(t)
   table.sort(t)
   return t
@@ -74,7 +81,8 @@ local function emit(channel, event)
   event.channel = channel
   if event.actor and not event.name then event.name = name_of(event.actor) end
   event.ts = math.floor(now_ms() / 1000)
-  redis.call('XADD', channel, 'MAXLEN', '~', MAXLEN, seq .. '-0', 'e', encode(event))
+  local cap = string.sub(channel, 1, 7) == 'PLAYER:' and MAXLEN.player or MAXLEN.shared
+  redis.call('XADD', channel, 'MAXLEN', '~', cap, seq .. '-0', 'e', encode(event))
   return seq
 end
 
@@ -100,12 +108,19 @@ local function decode(json)
   return cjson.decode(json)
 end
 
--- Hooks filled in further down, by travel events and quests, for code that
--- has to come earlier in the file (moving, dying) to call.
-local travel = {}
+-- Hooks: functions defined further down (travel events, quests, talk, worn
+-- gear...) for code earlier in the file (moving, dying) to call. Lua allows
+-- 200 locals in the main chunk, and this file is near that, so sections
+-- export what others need through this table, or a table of their own.
+local hooks = {}
 
 -- The server running this call (KEYS[1]): an encounter a call starts is owned by it.
 local CALLER = {server = ''}
+
+-- Replies given in more than one place, so they can't drift apart.
+local TEXT = {
+  in_a_fight = "You're in a fight. Get steady and press your flee key (F by default) to run back the way you came.",
+}
 
 -- A tunable number from the seed's "rules" (alz:rules), or the default.
 local function rule(name, default)
@@ -125,14 +140,28 @@ end
 -- Stats are deliberately plain: everyone wants them, and you choose where your
 -- points go. Gear and abilities are what make characters different.
 local STATS = {'vigor', 'poise', 'focus', 'presence', 'resilience'}
-local STAT_INFO = {
-  vigor = 'Vigor: 8 more max health per point.',
-  poise = 'Poise: timing windows 15 ms wider per point.',
-  focus = 'Focus: perfect windows 10 ms wider per point.',
-  presence = 'Presence: your deeds move reputation 15% further per point.',
-  resilience = 'Resilience: softens what bad weather does to you by 10% per point (up to 50%), and keeps the good.',
-}
-local BASE_HP, VIGOR_HP = 100, 8
+-- What a point of each does. The balance ones (poise_core, focus_perfect,
+-- resilience_debuff) are applied by balance.py's Rules.for_player and pinned
+-- to these by tests/test_balance.py; the text below is built from them.
+local STAT_FACTORS = {vigor_hp = 8, poise_core = 0.04, focus_perfect = 0.05, presence_rep = 0.15,
+  resilience_weather = 0.1, resilience_weather_cap = 0.5, resilience_debuff = 0.05, resilience_debuff_cap = 0.5}
+local STAT_INFO
+do
+  local F = STAT_FACTORS
+  -- (No `math` while the library loads: rounded by hand.)
+  local function pct(x) local n = x * 100 + 0.5 return (n - n % 1) .. '%' end
+  STAT_INFO = {
+    vigor = 'Vigor: ' .. F.vigor_hp .. ' more max health per point.',
+    poise = 'Poise: the core of your balance ' .. pct(F.poise_core) .. ' wider per point, and a better chance of '
+      .. 'going unnoticed and of spotting traps.',
+    focus = 'Focus: the perfect centre of your balance ' .. pct(F.focus_perfect) .. ' wider per point.',
+    presence = 'Presence: your deeds move reputation ' .. pct(F.presence_rep) .. ' further per point.',
+    resilience = 'Resilience: softens what bad weather does to you by ' .. pct(F.resilience_weather) .. ' per point (up to '
+      .. pct(F.resilience_weather_cap) .. '), and keeps the good; and debuffs wear off ' .. pct(F.resilience_debuff)
+      .. ' sooner per point (up to ' .. pct(F.resilience_debuff_cap) .. ').',
+  }
+end
+local BASE_HP, VIGOR_HP = 100, STAT_FACTORS.vigor_hp
 
 local function trained(pid, name)
   return tonumber(redis.call('HGET', 'ACCOUNT:' .. pid, 'stat:' .. name)) or 0
@@ -336,7 +365,7 @@ end
 -- Worn gear (alz:wearables) is what a character wears and carries: head, chest,
 -- legs and a hand. PLAYER:<id>:worn maps each place onto what's in it. A torch
 -- or lantern in hand is a light; a shield there lets you block.
-travel.worn = function(pid, place)
+hooks.worn = function(pid, place)
   local wid = pid and redis.call('HGET', 'PLAYER:' .. pid .. ':worn', place)
   if not wid then return nil end
   local w = decode(redis.call('HGET', 'alz:wearables', wid))
@@ -345,8 +374,8 @@ travel.worn = function(pid, place)
   return w
 end
 
-travel.has_light = function(pid)
-  local hand = travel.worn(pid, 'hand')
+hooks.has_light = function(pid)
+  local hand = hooks.worn(pid, 'hand')
   return hand ~= nil and hand.light == true
 end
 
@@ -399,9 +428,9 @@ end
 -- Starsight sees by starlight, but not underground.
 local function can_see(w, pid)
   if not w.indoor and intensity(w) >= 0.5 then return false end
-  if w.dark then return travel.has_light(pid) end
+  if w.dark then return hooks.has_light(pid) end
   if w.indoor or w.lit or not w.night then return true end
-  return travel.has_light(pid) or has_perk(pid, 'starsight')
+  return hooks.has_light(pid) or has_perk(pid, 'starsight')
 end
 
 -- What's stopping you seeing: the rain, the snow, or the dark.
@@ -480,7 +509,7 @@ end
 
 -- Resilience softens weather penalties: 10% a point, up to half.
 local function resilience(pid)
-  local r = math.min(0.5, 0.1 * stat(pid, 'resilience'))
+  local r = math.min(STAT_FACTORS.resilience_weather_cap, STAT_FACTORS.resilience_weather * stat(pid, 'resilience'))
   if has_perk(pid, 'thick_hide') then r = 1 - (1 - r) * 0.5 end -- weather penalties halved again
   return r
 end
@@ -1013,7 +1042,7 @@ local function dispositions_event(pid, rid)
   local map, talk = {}, {}
   for _, nid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':npcs')) do
     map['npc:' .. nid] = disposition_for(pid, nid)
-    if travel.talk_card then talk['npc:' .. nid] = travel.talk_card(pid, nid) end
+    if hooks.talk_card then talk['npc:' .. nid] = hooks.talk_card(pid, nid) end
   end
   return emit('PLAYER:' .. pid, {type = 'dispositions', dispositions = map, talk = talk})
 end
@@ -1044,7 +1073,7 @@ local function quest_items_here(pid, rid)
   return out
 end
 
--- Seeing danger (docs/combat-redesign.md): the enemies in a room (NPCs with
+-- Seeing danger (docs/combat.md): the enemies in a room (NPCs with
 -- attacks, hostile to this player; an ambusher only to its rider), and the
 -- rooms past this one's exits that have any. Darkness and heavy rain or snow
 -- hide them (here or there), unless the player has Hunter's Nose, which
@@ -1108,7 +1137,7 @@ local function room_event(pid, rid, cause)
     if not owner or owner == pid then
       local card = npc_card(nid)
       card.disposition, card.fighting = disposition_for(pid, nid), redis.call('EXISTS', 'NPC:' .. nid .. ':encounter') == 1 or nil
-      local talk = travel.talk_card and travel.talk_card(pid, nid) or {}
+      local talk = hooks.talk_card(pid, nid) or {}
       card.topics, card.rapport = talk.topics, talk.rapport
       entities[#entities + 1] = card
     end
@@ -1247,7 +1276,7 @@ end
 -- below) a slot strikes while the player keeps their balance: its gear's
 -- `cooldown` before it can again, its `kick` knocking them off centre, and its
 -- amounts by how centred they were (edge, clean, perfect). The simulation is
--- alzendor/balance.py; docs/combat-redesign.md is the whole design.
+-- alzendor/balance.py; docs/combat.md is the whole design.
 -- PLAYER:<id>:slots maps slot numbers onto gear ids.
 
 local SLOTS = 3
@@ -1329,7 +1358,7 @@ local function mid_fight(pid)
 end
 
 -- Encounters -------------------------------------------------------------------
--- Every fight is an encounter (docs/combat-redesign.md). A player and an enemy
+-- Every fight is an encounter (docs/combat.md). A player and an enemy
 -- hostile to them in the same room fight, or you strike first. One server, the
 -- encounter's owner (alzendor/encounter.py), simulates every dot in it and the
 -- NPCs' attack clock; it calls encounter_strike and encounter_blow here for
@@ -1366,7 +1395,7 @@ function enc.player_info(pid)
         gap = tonumber(g.gap) or 0, debuff = (g.debuff or '') ~= '' and decode(g.debuff) or nil}
     end
   end
-  local hand = travel.worn(pid, 'hand')
+  local hand = hooks.worn(pid, 'hand')
   -- Passives that work on the dot; and the slot Berserk Seal seals at the first stagger.
   local perks = list()
   for _, perk in ipairs({'second_wind', 'steady_hands', 'long_breath'}) do
@@ -1459,7 +1488,7 @@ function enc.add_player(id, pid)
   if enc.of_player(pid) == id then return end
   redis.call('ZADD', enc_key(id, 'players'), 'NX', now_ms(), pid)
   redis.call('SET', 'PLAYER:' .. pid .. ':encounter', id)
-  redis.call('DEL', 'PLAYER:' .. pid .. ':sealed', 'PLAYER:' .. pid .. ':steadied')
+  redis.call('DEL', 'PLAYER:' .. pid .. ':sealed')
   enc.tell(id, {op = 'join', who = 'pc:' .. pid, name = name_of(pid)}, pid)
   emit('PLAYER:' .. pid, {type = 'encounter', op = 'start', id = id, encounter = enc.info(id)})
   enc.sync(id)
@@ -1473,15 +1502,24 @@ function enc.add_npc(id, nid)
   enc.sync(id)
 end
 
+-- An NPC out of its fight: bleeding stops, and if it's hurt, upkeep heals it.
+function enc.release_npc(nid)
+  redis.call('DEL', 'NPC:' .. nid .. ':encounter', 'NPC:' .. nid .. ':bleed')
+  local npc = hgetall('NPC:' .. nid)
+  if (tonumber(npc.hp) or 0) > 0 and (tonumber(npc.hp) or 0) < (tonumber(npc.max_hp) or 0) then
+    redis.call('SADD', 'alz:wounded_npcs', nid)
+  end
+end
+
 -- Ends an encounter for everyone: why is won (no NPCs left), empty (no players
 -- left), lost (its owner went away) or anything else worth saying.
 function enc.finish(id, why)
   local rid = redis.call('HGET', enc_key(id), 'room')
   for _, pid in ipairs(redis.call('ZRANGE', enc_key(id, 'players'), 0, -1)) do
-    redis.call('DEL', 'PLAYER:' .. pid .. ':encounter', 'PLAYER:' .. pid .. ':sealed', 'PLAYER:' .. pid .. ':steadied')
+    redis.call('DEL', 'PLAYER:' .. pid .. ':encounter', 'PLAYER:' .. pid .. ':sealed')
     emit('PLAYER:' .. pid, {type = 'encounter', op = 'end', id = id, why = why})
   end
-  for _, nid in ipairs(redis.call('ZRANGE', enc_key(id, 'npcs'), 0, -1)) do redis.call('DEL', 'NPC:' .. nid .. ':encounter') end
+  for _, nid in ipairs(redis.call('ZRANGE', enc_key(id, 'npcs'), 0, -1)) do enc.release_npc(nid) end
   if rid and redis.call('GET', 'ROOM:' .. rid .. ':encounter') == id then redis.call('DEL', 'ROOM:' .. rid .. ':encounter') end
   redis.call('DEL', enc_key(id), enc_key(id, 'players'), enc_key(id, 'npcs'), enc_key(id, 'lease'), enc_key(id, 'ambush'), enc_key(id, 'opening'))
   redis.call('SREM', 'alz:encounters', id)
@@ -1494,7 +1532,7 @@ function enc.drop_player(pid, why)
   if not id then return end
   redis.call('ZREM', enc_key(id, 'players'), pid)
   redis.call('HDEL', enc_key(id, 'opening'), pid)
-  redis.call('DEL', 'PLAYER:' .. pid .. ':encounter', 'PLAYER:' .. pid .. ':sealed', 'PLAYER:' .. pid .. ':steadied')
+  redis.call('DEL', 'PLAYER:' .. pid .. ':encounter', 'PLAYER:' .. pid .. ':sealed')
   emit('PLAYER:' .. pid, {type = 'encounter', op = 'end', id = id, why = why})
   if redis.call('ZCARD', enc_key(id, 'players')) == 0 then return enc.finish(id, 'empty') end
   enc.tell(id, {op = 'leave', who = 'pc:' .. pid, why = why})
@@ -1506,7 +1544,7 @@ function enc.drop_npc(nid, why)
   local id = enc.of_npc(nid)
   if not id then return end
   redis.call('ZREM', enc_key(id, 'npcs'), nid)
-  redis.call('DEL', 'NPC:' .. nid .. ':encounter')
+  enc.release_npc(nid)
   if redis.call('ZCARD', enc_key(id, 'npcs')) == 0 then return enc.finish(id, 'won') end
   enc.tell(id, {op = 'leave', who = 'npc:' .. nid, why = why})
   enc.sync(id)
@@ -1603,22 +1641,22 @@ local function gear_summary(g, pid, w)
   if pid then
     local wx = weathered(pid, g, w)
     summary.weather = wx.profile
+    -- The client draws and words the gear's spot with these (it keeps no copy of TIERS or zone).
+    local t = TIERS[wx.profile.tier] or TIERS.grey
+    summary.weather.ring = {peak = t.peak, far = t.far, radius = t.radius}
+    summary.weather.zone = zone(wx.profile)
     summary.now = {factor = wx.factor, amounts = wx.amounts, mods = wx.mods}
   end
   return summary
 end
 
--- Items carried plus gear not in a slot: what counts against pack_size.
+-- Items carried: what counts against pack_size. Gear doesn't: it can't be
+-- dropped or sold, and the game hands out only so much of it, so counting it
+-- would fill the pack until quest items couldn't be picked up.
 local function pack_count(pid)
-  local slotted = {}
-  for _, gid in ipairs(redis.call('HVALS', 'PLAYER:' .. pid .. ':slots')) do slotted[gid] = true end
-  local loose = 0
-  for _, gid in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':gear')) do
-    if not slotted[gid] then loose = loose + 1 end
-  end
-  return redis.call('SCARD', 'PLAYER:' .. pid .. ':inv') + loose
+  return redis.call('SCARD', 'PLAYER:' .. pid .. ':inv')
 end
-travel.pack_full = function(pid) return pack_count(pid) >= rule('pack_size', 12) end
+hooks.pack_full = function(pid) return pack_count(pid) >= rule('pack_size', 12) end
 
 -- The gear a player owns, quickest first.
 local function owned_gear(pid)
@@ -1636,7 +1674,9 @@ local function owned_gear(pid)
 end
 
 -- The player's inventory and slots, for the client's panels.
-local function kit_event(pid)
+-- `if_changed`: only if it differs from the last kit sent (the weather tick
+-- would otherwise send every online player an unchanged kit every 30 s).
+local function kit_event(pid, if_changed)
   local gear, slots, items = list(), list(), list()
   local w = weather_at(redis.call('GET', 'PLAYER:' .. pid .. ':room'))
   for _, g in ipairs(owned_gear(pid)) do gear[#gear + 1] = gear_summary(g, pid, w) end
@@ -1648,8 +1688,12 @@ local function kit_event(pid)
     items[#items + 1] = {id = iid, name = redis.call('HGET', 'ITEM:' .. iid, 'name') or iid}
   end
   table.sort(items, function(a, b) return a.name < b.name end)
-  return emit('PLAYER:' .. pid, {type = 'kit', gear = gear, slots = slots, items = items,
-    pack = pack_count(pid), pack_size = rule('pack_size', 12), coins = tonumber(redis.call('HGET', 'ACCOUNT:' .. pid, 'coins')) or 0})
+  local event = {type = 'kit', gear = gear, slots = slots, items = items,
+    pack = pack_count(pid), pack_size = rule('pack_size', 12), coins = tonumber(redis.call('HGET', 'ACCOUNT:' .. pid, 'coins')) or 0}
+  local sum = redis.sha1hex(encode(event))
+  if if_changed and redis.call('GET', 'PLAYER:' .. pid .. ':kit_sum') == sum then return end
+  redis.call('SET', 'PLAYER:' .. pid .. ':kit_sum', sum)
+  return emit('PLAYER:' .. pid, event)
 end
 
 local function character_event(pid)
@@ -1674,8 +1718,8 @@ local function character_event(pid)
     xp_next = xp_needed(level), points = tonumber(account.points) or 0, stats = stats, trained = trained_stats, boons = boons,
     stat_order = list(STATS), stat_info = STAT_INFO, perks = perks,
     factions = factions_of(pid), hp = card.hp, max_hp = card.max_hp, level_cap = rule('level_cap', 20)}
-  if travel.choices then travel.choices(pid, account, event) end
-  local hand = travel.worn(pid, 'hand')
+  hooks.choices(pid, account, event)
+  local hand = hooks.worn(pid, 'hand')
   event.defence = {mode = hand and hand.type == 'shield' and 'block' or 'dodge', block = hand and hand.type == 'shield' and (tonumber(hand.block) or 1) or nil}
   return emit('PLAYER:' .. pid, event)
 end
@@ -1708,7 +1752,7 @@ local function gain_xp(pid, amount)
   if leveled then
     emit('ROOM:' .. redis.call('GET', 'PLAYER:' .. pid .. ':room'), {type = 'entity', entity = player_card(pid)})
     kit_event(pid)
-    if travel.quest then travel.quest(pid, 'check', {}) end
+    hooks.quest(pid, 'check', {})
   end
   character_event(pid)
 end
@@ -1722,7 +1766,7 @@ end
 local function shift_rep(pid, fid, da, dr, notes, flat)
   local faction = hgetall('FACTION:' .. fid)
   if not faction.name then return false end
-  local scale = flat and 1 or (1 + 0.15 * stat(pid, 'presence'))
+  local scale = flat and 1 or (1 + STAT_FACTORS.presence_rep * stat(pid, 'presence'))
   local a, r = rep_of(pid, fid)
   local na = math.max(-100, math.min(100, a + round(da * scale)))
   local nr = math.max(-100, math.min(100, r + round(dr * scale)))
@@ -1805,12 +1849,12 @@ end
 -- and wakes there next time.
 local function defeat(pid, nid)
   -- Beaten on the road: thrown off it, not killed.
-  if redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'ambush') and travel.strand then
-    return travel.strand(pid, 'You go down under the blows, and the world goes dark. You come to far below the road, battered and alone. The ride, and your fare, are long gone.')
+  if redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'ambush') then
+    return hooks.strand(pid, 'You go down under the blows, and the world goes dark. You come to far below the road, battered and alone. The ride, and your fare, are long gone.')
   end
   local key, me = 'ACCOUNT:' .. pid, name_of(pid)
   local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
-  if travel.check_priority then travel.check_priority(pid, rid, true) end
+  hooks.check_priority(pid, rid, true)
   -- Death ends any journey (a marooning included): you wake at home.
   redis.call('DEL', 'PLAYER:' .. pid .. ':journey')
   redis.call('ZREM', 'alz:journeys', pid)
@@ -1860,7 +1904,7 @@ local function inspect(pid, rid, word)
   if not kind then return notice(pid, "You don't see that here.") end
   emit('PLAYER:' .. pid, {type = 'inspect', target = id, text = description or ('You see nothing special about ' .. display .. '.')})
   local trapped = kind == 'feature' and redis.call('HGET', 'ROOM:' .. rid .. ':signs', id)
-  if trapped and travel.read_sign then travel.read_sign(pid, rid, trapped) end
+  if trapped then hooks.read_sign(pid, rid, trapped) end
   if kind ~= 'self' and kind ~= 'carried' then
     emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = 'inspect', target = id, text = name_of(pid) .. ' examines ' .. display .. '.'})
   end
@@ -2017,9 +2061,9 @@ local function exposure_of(info)
 end
 
 -- Whether something the player wears protects them from this kind.
-travel.protected = function(pid, kind)
+hooks.protected = function(pid, kind)
   for _, place in ipairs({'head', 'chest', 'legs', 'hand'}) do
-    local w = travel.worn(pid, place)
+    local w = hooks.worn(pid, place)
     for _, k in ipairs(w and w.protects or {}) do
       if k == kind then return w end
     end
@@ -2035,7 +2079,7 @@ local function exposure_event(pid, e, level, guard)
   emit('PLAYER:' .. pid, event)
 end
 
-travel.expose = function(pid, rid)
+hooks.expose = function(pid, rid)
   local key = 'PLAYER:' .. pid .. ':exposure'
   local info = hgetall('ROOM:' .. rid .. ':info')
   local e = exposure_of(info)
@@ -2047,7 +2091,7 @@ travel.expose = function(pid, rid)
     end
     return
   end
-  local guard = travel.protected(pid, e.kind)
+  local guard = hooks.protected(pid, e.kind)
   local level = tonumber(before.level) or 0
   if before.kind ~= e.kind then level = 0 end
   if guard then
@@ -2085,11 +2129,11 @@ local function finish_move(pid, rid, dir, dest, careful)
   if redis.call('EXISTS', 'ROOM:' .. dest .. ':trap') == 1 then traps.spring_trap(pid, dest, careful) end
   if redis.call('GET', 'PLAYER:' .. pid .. ':room') ~= dest then return end -- the trap was the end of them
   traps.sense_traps(pid, dest)
-  if travel.expose then travel.expose(pid, dest) end
+  hooks.expose(pid, dest)
   if redis.call('GET', 'PLAYER:' .. pid .. ':room') ~= dest then return end -- the cold (or worse) was the end of them
   aggro(pid, dest, careful)
-  if travel.quest then travel.quest(pid, 'enter', {room = dest}) end
-  if travel.maybe_lure then travel.maybe_lure(pid, dest) end
+  hooks.quest(pid, 'enter', {room = dest})
+  hooks.maybe_lure(pid, dest)
 end
 
 local WADING = {
@@ -2106,7 +2150,7 @@ redis.register_function('move', action(function(pid, rid, args)
   local dir = args[2]
   local dest = redis.call('HGET', 'ROOM:' .. rid .. ':exits', dir)
   if not dest then return notice(pid, "You can't go that way.") end
-  if enc.of_player(pid) then return notice(pid, "You're in a fight. Get steady and press your flee key (F) to run back the way you came.") end
+  if enc.of_player(pid) then return notice(pid, TEXT.in_a_fight) end
   if redis.call('EXISTS', 'PLAYER:' .. pid .. ':pending') == 1 then return notice(pid, "You're still making your way.") end
   -- In the dark you can only feel your way back along ways you know.
   local here = weather_at(rid)
@@ -2139,16 +2183,16 @@ local function teleport(pid, dest, leave, arrive)
   redis.call('DEL', 'PLAYER:' .. pid .. ':pending')
   redis.call('ZREM', 'alz:pending_moves', pid)
   local me = name_of(pid)
-  if travel.check_priority and not is_waypoint(dest) then travel.check_priority(pid, dest) end
+  if hooks.check_priority and not is_waypoint(dest) then hooks.check_priority(pid, dest) end
   relocate(pid, rid, dest, 'teleport', nil, fill(leave, me), fill(arrive, me))
   room_event(pid, dest, 'move')
   full_map_event(pid)
   weather_event(pid)
   kit_event(pid)
-  if travel.expose and not is_waypoint(dest) then travel.expose(pid, dest) end
+  if hooks.expose and not is_waypoint(dest) then hooks.expose(pid, dest) end
   if redis.call('GET', 'PLAYER:' .. pid .. ':room') ~= dest then return end
   aggro(pid, dest)
-  if travel.quest and not is_waypoint(dest) then travel.quest(pid, 'enter', {room = dest}) end
+  if hooks.quest and not is_waypoint(dest) then hooks.quest(pid, 'enter', {room = dest}) end
 end
 
 -- Routes ----------------------------------------------------------------------
@@ -2203,6 +2247,11 @@ local function stage_ms()
   return math.floor(rule('stage_seconds', 4) * 1000)
 end
 
+-- A journey whose route is gone (a new seed removed or renamed it) ends in
+-- the start room: a waypoint has no exits, so a rider left there is stuck.
+-- Set below, once end_journey exists.
+local lose_journey
+
 -- Shows the waypoint a player's journey has reached, and maybe starts a
 -- travel event there.
 local function journey_stage(pid)
@@ -2211,11 +2260,14 @@ local function journey_stage(pid)
   local route = hgetall('ROUTE:' .. (journey.route or ''))
   local path, n = decode(route.path), tonumber(journey.stage) or 1
   local here = redis.call('GET', 'PLAYER:' .. pid .. ':room')
-  if not route.to or path[n] ~= here then return redis.call('DEL', key) end
+  if not route.to or path[n] ~= here then
+    if is_waypoint(here) then return lose_journey(pid) end
+    return redis.call('DEL', key)
+  end
   local info = hgetall('ROOM:' .. here .. ':info')
   emit('PLAYER:' .. pid, {type = 'journey', route = journey.route, kind = route.kind, stage = n, stages = #path,
     at = here, pos = room_pos(info), name = info.name, text = info.description})
-  if travel.maybe_event then travel.maybe_event(pid, route, journey, n) end
+  hooks.maybe_event(pid, route, journey, n)
 end
 
 -- Moves a rider from one waypoint (or the room they set off from) to another.
@@ -2238,6 +2290,11 @@ local function end_journey(pid, dest, arrive)
   teleport(pid, dest, '{actor} is gone.', arrive)
 end
 
+lose_journey = function(pid)
+  notice(pid, 'The way you were travelling is gone from the world. You find yourself somewhere you know.')
+  end_journey(pid, redis.call('GET', 'alz:start_room'), '{actor} arrives, looking lost.')
+end
+
 -- Schedules the next stage after stage_seconds (or `ms`).
 local function journey_next(pid, ms)
   redis.call('ZADD', 'alz:journeys', now_ms() + (ms or stage_ms()), pid)
@@ -2248,6 +2305,7 @@ local function journey_advance(pid)
   local key = 'PLAYER:' .. pid .. ':journey'
   local journey = hgetall(key)
   local route = hgetall('ROUTE:' .. (journey.route or ''))
+  if not route.to then return lose_journey(pid) end
   local path = decode(route.path)
   -- Delays hold the journey at a waypoint for a stage or more.
   if (tonumber(journey.delay) or 0) > 0 then
@@ -2264,7 +2322,10 @@ local function journey_advance(pid)
   if redis.call('EXISTS', key) == 1 and not redis.call('HGET', key, 'event') then journey_next(pid) end
 end
 
+-- Both ways onto a route (TRAVEL, and DISCUSS PASSAGE with its operator) come
+-- through here, so both follow the same rules.
 local function take_route(pid, rid, id)
+  if enc.of_player(pid) then return notice(pid, TEXT.in_a_fight) end
   local route = hgetall('ROUTE:' .. id)
   local refusal = route_refusal(pid, rid, route)
   if refusal then return notice(pid, refusal) end
@@ -2273,12 +2334,12 @@ local function take_route(pid, rid, id)
   if route.depart ~= '' then notice(pid, route.depart) end
   -- The way out of a starting realm: it's gone from the player's map for good.
   if route.leaves_start == '1' then redis.call('SREM', 'PLAYER:' .. pid .. ':realms', realm_of(route.from) or '') end
-  if travel.quest then travel.quest(pid, 'travel', {route = id}) end
-  return travel.begin(pid, id)
+  hooks.quest(pid, 'travel', {route = id})
+  return hooks.begin(pid, id)
 end
 
 -- Sets a player off on a route they've paid for (or been given).
-travel.begin = function(pid, id)
+hooks.begin = function(pid, id)
   local route = hgetall('ROUTE:' .. id)
   local path = decode(route.path)
   if #path == 0 then return teleport(pid, route.to, route.leave, route.arrive) end
@@ -2294,11 +2355,11 @@ end
 
 -- The end of a starting realm: the journey out, for free, and the realm is
 -- gone from the player's map for good.
-travel.leave_start = function(pid, id)
+hooks.leave_start = function(pid, id)
   local route = hgetall('ROUTE:' .. id)
   redis.call('SREM', 'PLAYER:' .. pid .. ':realms', realm_of(route.from) or '')
   if (route.depart or '') ~= '' then notice(pid, route.depart) end
-  travel.begin(pid, id)
+  hooks.begin(pid, id)
 end
 
 -- The routes leaving a room that a player can see (and maybe take), by id.
@@ -2338,9 +2399,9 @@ local function journeys_due(now)
       if redis.call('HGET', key, 'marooned') then
         -- Held at its waypoint until the quest ashore is done.
       elseif redis.call('HGET', key, 'event') then
-        if travel.event_due then travel.event_due(pid, now) end
+        hooks.event_due(pid, now)
       elseif redis.call('HGET', key, 'ambush') then
-        if travel.ambush_due then travel.ambush_due(pid) end
+        hooks.ambush_due(pid)
       else
         journey_advance(pid)
       end
@@ -2409,7 +2470,7 @@ local function current_event(pid)
   return id and decode(redis.call('HGET', 'alz:travel_events', id)) or nil, id
 end
 
-travel.show_event = function(pid)
+hooks.show_event = function(pid)
   local event, id = current_event(pid)
   if not event then return end
   local choices = list()
@@ -2431,7 +2492,7 @@ travel.show_event = function(pid)
     until_ms = tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'event_until')), text = table.concat(lines, '\n')})
 end
 
-travel.maybe_event = function(pid, route, journey, n)
+hooks.maybe_event = function(pid, route, journey, n)
   if journey.evented == '1' then return end
   if roll() >= rule('event_chance', 0.05) + (tonumber(route.risk) or 0) then return end
   local here = redis.call('GET', 'PLAYER:' .. pid .. ':room')
@@ -2458,7 +2519,7 @@ travel.maybe_event = function(pid, route, journey, n)
   redis.call('HSET', key, 'event', event.id, 'evented', '1', 'event_until', now_ms() + rule('event_seconds', 60) * 1000)
   if event.once then redis.call('SADD', 'PLAYER:' .. pid .. ':events', event.id) end
   redis.call('ZADD', 'alz:journeys', tonumber(redis.call('HGET', key, 'event_until')), pid)
-  travel.show_event(pid)
+  hooks.show_event(pid)
 end
 
 -- Ambushes: attackers appear at the waypoint, the rider's alone. They're
@@ -2511,9 +2572,9 @@ local function strand(pid, text)
   notice(pid, text or "You're left behind in the wilds, battered and alone. The ride is gone, and your fare with it.")
   end_journey(pid, (route.strand or '') ~= '' and route.strand or route.from, '{actor} staggers in, battered and filthy.')
 end
-travel.strand = strand
+hooks.strand = strand
 
-travel.ambush_due = function(pid)
+hooks.ambush_due = function(pid)
   for _, nid in ipairs(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':ambushers')) do
     local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
     if redis.call('SISMEMBER', 'ROOM:' .. rid .. ':npcs', nid) == 1 then
@@ -2593,8 +2654,8 @@ local function apply_effects(pid, effects)
       spawn_ambushers(pid, redis.call('GET', 'PLAYER:' .. pid .. ':room'), effect.ambush)
       return 'ambush'
     end
-    if effect.maroon and travel.maroon then
-      travel.maroon(pid, effect.maroon)
+    if effect.maroon then
+      hooks.maroon(pid, effect.maroon)
       return 'over'
     end
   end
@@ -2630,7 +2691,7 @@ local function resolve_event(pid, n)
   if redis.call('EXISTS', 'PLAYER:' .. pid .. ':journey') == 1 then journey_next(pid) end
 end
 
-travel.event_due = function(pid, now)
+hooks.event_due = function(pid, now)
   local until_ms = tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'event_until')) or 0
   if now < until_ms then return redis.call('ZADD', 'alz:journeys', until_ms, pid) end
   notice(pid, 'The moment passes.')
@@ -2645,7 +2706,7 @@ redis.register_function('flee', action(function(pid, rid, args)
   if redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'ambush') then
     return strand(pid, 'You run, and keep running, and the road is lost behind you. You come to your senses somewhere in the wilds, bruised and alone.')
   end
-  if enc.of_player(pid) then return notice(pid, 'Get steady and press your flee key (F) to run back the way you came.') end
+  if enc.of_player(pid) then return notice(pid, TEXT.in_a_fight) end
   notice(pid, 'There is nothing here to flee from.')
 end))
 
@@ -2750,7 +2811,7 @@ local quest_effects -- below: effects can start quests, which can finish at once
 
 local function finish_quest(pid, qid, status)
   local giver = redis.call('HGET', 'PLAYER:' .. pid .. ':quest:' .. qid, 'giver')
-  if giver and status == 'done' and travel.add_rapport then travel.add_rapport(pid, giver, 2) end
+  if giver and status == 'done' then hooks.add_rapport(pid, giver, 2) end
   redis.call('HSET', 'PLAYER:' .. pid .. ':quests', qid, status)
   redis.call('DEL', 'PLAYER:' .. pid .. ':quest:' .. qid)
   local def = quest_def(qid)
@@ -2793,7 +2854,7 @@ local function quest_progress(pid, kind, data)
     if kind ~= 'check' then quest_progress(pid, 'check', {}) end
   end
 end
-travel.quest = quest_progress
+hooks.quest = quest_progress
 
 local function start_quest(pid, qid)
   if quest_status(pid, qid) == 'active' or quest_status(pid, qid) == 'done' then return false end
@@ -2831,11 +2892,11 @@ local function check_priority(pid, dest, dying)
     quests_event(pid)
   end
 end
-travel.check_priority = check_priority
+hooks.check_priority = check_priority
 
 -- Marooned: the journey waits at its waypoint while the player is stuck in a
 -- pocket area with a priority quest.
-travel.maroon = function(pid, spec)
+hooks.maroon = function(pid, spec)
   redis.call('HSET', 'PLAYER:' .. pid .. ':journey', 'marooned', '1')
   redis.call('ZREM', 'alz:journeys', pid)
   teleport(pid, spec.room, '{actor} is gone.', '{actor} staggers ashore, soaked.')
@@ -2846,7 +2907,7 @@ end
 do
   -- An NPC speaks to a player: out loud if they're in the room together,
   -- otherwise only the player hears it.
-  travel.npc_says = function(pid, nid, text)
+  hooks.npc_says = function(pid, nid, text)
     local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room') or ''
     local event = {type = 'say', entity_id = 'npc:' .. nid, target = 'pc:' .. pid,
       text = capitalize(npc_display(nid)) .. ' says, "' .. text .. '"'}
@@ -2855,28 +2916,28 @@ do
 
   -- A quest that follows on from another is offered by its giver, out loud, a
   -- beat after the last one is handed in (alz:quest_offers, due times), and
-  -- waits for the player to ACCEPT it (travel.pend). One with no giver starts
+  -- waits for the player to ACCEPT it (hooks.pend). One with no giver starts
   -- at once.
-  travel.offer = function(pid, qid)
+  hooks.offer = function(pid, qid)
     local def = quest_def(qid)
     if not (def.giver and def.offer) then return start_quest(pid, qid) end
     local beat = rule('offer_beat_ms', 2500)
     if beat <= 0 then
-      travel.npc_says(pid, def.giver, def.offer)
-      return travel.pend(pid, qid, def.giver)
+      hooks.npc_says(pid, def.giver, def.offer)
+      return hooks.pend(pid, qid, def.giver)
     end
     redis.call('ZADD', 'alz:quest_offers', now_ms() + beat, pid .. '|' .. qid)
   end
 
   -- Called by `tick`.
-  travel.offers_due = function(now)
+  hooks.offers_due = function(now)
     for _, member in ipairs(redis.call('ZRANGEBYSCORE', 'alz:quest_offers', '-inf', now, 'LIMIT', 0, 50)) do
       redis.call('ZREM', 'alz:quest_offers', member)
       local pid, qid = string.match(member, '^(.+)|([^|]+)$')
       local def = quest_def(qid)
       if redis.call('HGET', 'ACCOUNT:' .. pid, 'created') == '1' and def.offer then
-        travel.npc_says(pid, def.giver, def.offer)
-        travel.pend(pid, qid, def.giver)
+        hooks.npc_says(pid, def.giver, def.offer)
+        hooks.pend(pid, qid, def.giver)
       end
     end
   end
@@ -2885,7 +2946,7 @@ end
 quest_effects = function(pid, effects)
   for _, effect in ipairs(effects or {}) do
     if effect.give and redis.call('HEXISTS', 'alz:wearables', effect.give) == 1 then
-      travel.give_wearable(pid, effect.give)
+      hooks.give_wearable(pid, effect.give)
       character_event(pid)
     elseif effect.give and redis.call('SISMEMBER', 'alz:gear', effect.give) == 1 then
       if grant_gear(pid, effect.give) then
@@ -2901,9 +2962,9 @@ quest_effects = function(pid, effects)
       redis.call('SREM', 'PLAYER:' .. pid .. ':inv', effect.take)
       kit_event(pid)
     elseif effect.start then
-      travel.offer(pid, effect.start)
+      hooks.offer(pid, effect.start)
     elseif effect.say then
-      travel.npc_says(pid, effect.by, effect.say)
+      hooks.npc_says(pid, effect.by, effect.say)
     elseif effect.guide then
       emit('PLAYER:' .. pid, {type = 'guide', text = effect.guide})
     elseif effect.teleport then
@@ -2919,8 +2980,8 @@ quest_effects = function(pid, effects)
         teleport(pid, at, '{actor} sets off.', '{actor} climbs aboard.')
         journey_next(pid)
       end
-    elseif effect.leave_start and travel.leave_start then
-      travel.leave_start(pid, effect.leave_start)
+    elseif effect.leave_start then
+      hooks.leave_start(pid, effect.leave_start)
       return 'over'
     else
       local result = apply_effects(pid, {effect})
@@ -2940,7 +3001,7 @@ redis.register_function('use_item', action(function(pid, rid, args)
     if not kind then return notice(pid, "You don't see that here.") end
   end
   -- Using something on someone is giving it to them.
-  if kind == 'npc' then return travel.give_to(pid, rid, iid, id, display) end
+  if kind == 'npc' then return hooks.give_to(pid, rid, iid, id, display) end
   local touched = false
   for qid, status in pairs(hgetall('PLAYER:' .. pid .. ':quests')) do
     if status == 'active' then
@@ -2969,9 +3030,9 @@ redis.register_function('quests', action(function(pid, rid, args)
   notice(pid, #lines > 0 and ('Quests:\n  ' .. table.concat(lines, '\n  ')) or 'You have no quests yet. Talk to people: GREET them, or DISCUSS QUESTS. Stuck? WHAT NOW.')
 end))
 
-travel.start_quest = start_quest
-travel.quest_def, travel.quest_status, travel.trigger_matches = quest_def, quest_status, trigger_matches
-travel.quests_event = quests_event
+hooks.start_quest = start_quest
+hooks.quest_def, hooks.quest_status, hooks.trigger_matches = quest_def, quest_status, trigger_matches
+hooks.quests_event = quests_event
 end
 
 -- Finishes held-up moves that are due. Called by `tick`.
@@ -2985,7 +3046,7 @@ local function pending_moves_due(now)
     -- Only if they're still in the world, awake, and where they set off from.
     if dest and rid == pending.from and redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then
       if enc.of_player(pid) then
-        notice(pid, "The fight holds you here: you'll have to FLEE " .. string.upper(pending.dir) .. '.')
+        notice(pid, 'The fight holds you here. ' .. TEXT.in_a_fight)
       else
         finish_move(pid, rid, pending.dir, dest, pending.careful == '1')
       end
@@ -3001,7 +3062,7 @@ end
 
 local TIER_NAMES = {[0] = 'edge', [1] = 'clean', [2] = 'perfect'}
 
--- Passives that change what a strike lands (docs/combat-redesign.md,
+-- Passives that change what a strike lands (docs/combat.md,
 -- Passives): charges stacked by Moonlit Edge and Bloodrhythm on their attuned
 -- slot, Berserk Seal, Last Stand, Iron Gut.
 local function empower(pid, rid, n, gear, tier, amount)
@@ -3072,12 +3133,12 @@ local function npc_down(pid, rid, nid, tier)
   emit('ROOM:' .. rid, {type = 'death', entity_id = 'npc:' .. nid, text = capitalize(display) .. ' collapses.'})
   deed(pid, 'kill', nid)
   if tier == 2 then deed(pid, 'clean_kill', nid) end
-  if travel.quest then travel.quest(pid, 'kill', {npc = nid, faction = npc.faction, role = npc.role}) end
+  hooks.quest(pid, 'kill', {npc = nid, faction = npc.faction, role = npc.role})
   -- Loot: claws, pelts, wings, each with a chance, into the killer's pack if there's room.
   for _, loot in ipairs(decode(npc.loot)) do
     if math.random() < (loot.chance or 1) then
       local name = redis.call('HGET', 'ITEM:' .. loot.item, 'name') or loot.item
-      if travel.pack_full and travel.pack_full(pid) then
+      if hooks.pack_full(pid) then
         notice(pid, 'There was ' .. name .. ' to take, but your pack is full.')
       else
         redis.call('SADD', 'PLAYER:' .. pid .. ':inv', loot.item)
@@ -3096,7 +3157,7 @@ local function npc_down(pid, rid, nid, tier)
     taken[#taken + 1] = coins .. ' coin' .. (coins == 1 and '' or 's')
   end
   if #taken > 0 then
-    notice(pid, 'You take ' .. display .. "'s " .. table.concat(taken, ', ') .. (gear_taken and ". (INVENTORY to equip it.)" or '.'))
+    notice(pid, 'You take ' .. display .. "'s " .. table.concat(taken, ', ') .. (gear_taken and ". (EQUIP <gear> <slot>, or the Inventory panel.)" or '.'))
     kit_event(pid)
   end
   gain_xp(pid, tonumber(npc.xp) or 0)
@@ -3187,7 +3248,7 @@ function enc.blow(id, nid, n, pid, how)
   elseif how == 'perfect_block' then
     damage, text = 0, me .. ' blocks ' .. npc_display(nid) .. "'s " .. attack.name .. ' perfectly!'
   elseif how == 'block' then
-    local hand = travel.worn(pid, 'hand')
+    local hand = hooks.worn(pid, 'hand')
     local cut = math.min(1, rule('balance_block_cut', 0.7) * (hand and tonumber(hand.block) or 1))
     local saved = math.min(damage, round(damage * cut))
     damage = damage - saved
@@ -3208,7 +3269,7 @@ function enc.blow(id, nid, n, pid, how)
       end
       if soaked > 0 then notes[#notes + 1] = soaked .. ' guarded' end
     end
-    local armored = math.min(damage, round(damage * travel.armor_share(pid)))
+    local armored = math.min(damage, round(damage * hooks.armor_share(pid)))
     if armored > 0 then
       damage = damage - armored
       notes[#notes + 1] = armored .. ' armour'
@@ -3257,7 +3318,7 @@ function enc.flee(id, pid, dir)
   if not rid or redis.call('ZSCORE', enc_key(id, 'players'), pid) == false then return {gone = true} end
   if dir == 'back' then
     if redis.call('HGET', 'PLAYER:' .. pid .. ':journey', 'ambush') then
-      travel.strand(pid, 'You run, and keep running, and the road is lost behind you. You come to your senses somewhere in the wilds, bruised and alone.')
+      hooks.strand(pid, 'You run, and keep running, and the road is lost behind you. You come to your senses somewhere in the wilds, bruised and alone.')
       return {fled = true}
     end
     local came = redis.call('GET', 'PLAYER:' .. pid .. ':came')
@@ -3391,7 +3452,6 @@ redis.register_function('encounter_passive', function(keys, args)
     if card.hp >= card.max_hp then return 0 end
     redis.call('HSET', 'ACCOUNT:' .. pid, 'hp', card.hp + 1)
     emit('ROOM:' .. rid, {type = 'entity', entity = player_card(pid)})
-    emit('PLAYER:' .. pid, {type = 'passive', perk = 'second_wind', amount = 1})
     return 1
   elseif what == 'seal' and has_perk(pid, 'berserk_seal') then
     local n = tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':attuned', 'berserk_seal'))
@@ -3449,8 +3509,8 @@ end))
 redis.register_function('equip', action(function(pid, rid, args)
   local gid = match_gear(args[2])
   -- Not slot gear: worn gear (a hat, a torch) goes where it goes.
-  if (not gid or redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':gear', gid) == 0) and travel.owns_wearable(pid, args[2]) then
-    return travel.put_on(pid, rid, args[2], 'equip')
+  if (not gid or redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':gear', gid) == 0) and hooks.owns_wearable(pid, args[2]) then
+    return hooks.put_on(pid, rid, args[2], 'equip')
   end
   if not gid then return notice(pid, "There's no gear called '" .. args[2] .. "'. Type GEAR to see what you have.") end
   if redis.call('SISMEMBER', 'PLAYER:' .. pid .. ':gear', gid) == 0 then
@@ -3596,7 +3656,7 @@ redis.register_function('emote', action(function(pid, rid, args)
   local social = kind == 'npc' and SOCIAL[verb]
   if social and redis.call('SET', 'PLAYER:' .. pid .. ':social:' .. id, '1', 'NX', 'EX', rule('social_cooldown', 600)) then
     deed(pid, social, id)
-    if social == 'taunt' and travel.add_rapport then travel.add_rapport(pid, id, -1) end
+    if social == 'taunt' then hooks.add_rapport(pid, id, -1) end
   end
 end))
 
@@ -3638,7 +3698,7 @@ redis.register_function('get', action(function(pid, rid, args)
     notice(pid, 'With the ' .. item.name .. ' you can read the skies over ' .. table.concat(taught, ' and ') .. " now (WEATHER).")
     weather_event(pid)
   end
-  if travel.quest then travel.quest(pid, 'get', {item = iid}) end
+  hooks.quest(pid, 'get', {item = iid})
 end))
 
 redis.register_function('drop', action(function(pid, rid, args)
@@ -3706,7 +3766,7 @@ local function refresh_worn(pid)
   local key = 'PLAYER:' .. pid .. ':worn_stats'
   redis.call('DEL', key)
   for _, place in ipairs(PLACES) do
-    local w = travel.worn(pid, place)
+    local w = hooks.worn(pid, place)
     if w then
       if (tonumber(w.armor) or 0) > 0 then redis.call('HINCRBY', key, 'armor', w.armor) end
       for s, n in pairs(w.stats or {}) do redis.call('HINCRBY', key, s, n) end
@@ -3715,7 +3775,7 @@ local function refresh_worn(pid)
 end
 
 -- How much of each blow a player's armour takes, 0..1.
-travel.armor_share = function(pid)
+hooks.armor_share = function(pid)
   local armor = tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':worn_stats', 'armor')) or 0
   return armor / (armor + rule('armor_k', 30))
 end
@@ -3745,14 +3805,15 @@ local function owned_wearable(pid, word)
   end
 end
 
-travel.owns_wearable = function(pid, word) return owned_wearable(pid, word) ~= nil end
+hooks.owns_wearable = function(pid, word) return owned_wearable(pid, word) ~= nil end
 
 -- Gives a player a piece of worn gear (quest rewards). Puts it on if that place is free.
-travel.give_wearable = function(pid, wid)
+hooks.give_wearable = function(pid, wid)
   local w = wearable(wid)
   if not w or redis.call('SADD', 'PLAYER:' .. pid .. ':wardrobe', wid) == 0 then return end
   local class = decode(redis.call('HGET', 'alz:classes', redis.call('HGET', 'ACCOUNT:' .. pid, 'class') or '-'))
-  notice(pid, 'You receive the ' .. w.name .. '. (WEAR ' .. string.upper(w.name) .. ' to ' .. (w.place == 'hand' and 'hold' or 'wear') .. ' it, or see the Character panel.)')
+  notice(pid, 'You receive the ' .. w.name .. '. (' .. (w.place == 'hand' and 'HOLD ' or 'WEAR ') .. string.upper(w.name) .. ' to '
+    .. (w.place == 'hand' and 'hold' or 'wear') .. ' it, or see the Character panel.)')
   if can_wear(class, w) and not redis.call('HGET', 'PLAYER:' .. pid .. ':worn', w.place) and w.place ~= 'hand' then
     redis.call('HSET', 'PLAYER:' .. pid .. ':worn', w.place, wid)
     refresh_worn(pid)
@@ -3761,7 +3822,7 @@ end
 
 -- Wears or holds worn gear. how: 'wear' (head, chest, legs; a hand item is
 -- held, with a word about HOLD), 'hold' (hand items only) or 'equip' (either).
-travel.put_on = function(pid, rid, word, how)
+hooks.put_on = function(pid, rid, word, how)
   local w = owned_wearable(pid, word)
   if not w then return notice(pid, "You don't have anything called '" .. (word or '') .. "' to " .. how .. '.') end
   if how == 'hold' and w.place ~= 'hand' then
@@ -3775,7 +3836,7 @@ travel.put_on = function(pid, rid, word, how)
   if redis.call('HGET', key, w.place) == w.id then return notice(pid, "You've already got the " .. w.name .. ' on.') end
   -- A hand can change mid-fight (a torch for a shield); armour can't.
   if w.place ~= 'hand' and mid_fight(pid) then return end
-  local old = travel.worn(pid, w.place)
+  local old = hooks.worn(pid, w.place)
   redis.call('HSET', key, w.place, w.id)
   refresh_worn(pid)
   notice(pid, (w.place == 'hand' and 'You hold the ' or 'You put on the ') .. w.name
@@ -3788,11 +3849,11 @@ travel.put_on = function(pid, rid, word, how)
 end
 
 redis.register_function('wear', action(function(pid, rid, args)
-  travel.put_on(pid, rid, args[2], 'wear')
+  hooks.put_on(pid, rid, args[2], 'wear')
 end))
 
 redis.register_function('hold', action(function(pid, rid, args)
-  travel.put_on(pid, rid, args[2], 'hold')
+  hooks.put_on(pid, rid, args[2], 'hold')
 end))
 
 -- Takes off worn gear. args: pid, its name or its place (head, chest, legs, hand).
@@ -3803,7 +3864,7 @@ redis.register_function('remove', action(function(pid, rid, args)
     local w = owned_wearable(pid, word)
     if w and redis.call('HGET', 'PLAYER:' .. pid .. ':worn', w.place) == w.id then place = w.place end
   end
-  local old = place and travel.worn(pid, place)
+  local old = place and hooks.worn(pid, place)
   if not old then return notice(pid, "You aren't wearing anything like that.") end
   if place ~= 'hand' and mid_fight(pid) then return end
   redis.call('HDEL', 'PLAYER:' .. pid .. ':worn', place)
@@ -3836,7 +3897,7 @@ local function talent_locked(pid, gid)
 end
 
 -- Adds the class, ancestry and background, and what can be learned, to the character sheet.
-travel.choices = function(pid, account, event)
+hooks.choices = function(pid, account, event)
   local class, ancestry = catalog('classes', account.class), catalog('ancestries', account.ancestry)
   local background = catalog('backgrounds', account.background)
   if not class.name then return end
@@ -3856,7 +3917,7 @@ travel.choices = function(pid, account, event)
   end
   event.worn, event.wardrobe = {}, list()
   for _, place in ipairs(PLACES) do
-    local on = travel.worn(pid, place)
+    local on = hooks.worn(pid, place)
     if on then event.worn[place] = wearable_card(on, true) end
   end
   for _, wid in ipairs(sorted(redis.call('SMEMBERS', 'PLAYER:' .. pid .. ':wardrobe'))) do
@@ -3869,7 +3930,7 @@ travel.choices = function(pid, account, event)
   end
   event.places = list(PLACES)
   event.armor = tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':worn_stats', 'armor')) or 0
-  event.armor_pct = round(travel.armor_share(pid) * 100)
+  event.armor_pct = round(hooks.armor_share(pid) * 100)
   event.passives = list()
   for _, perk in ipairs(ancestry.passives or {}) do
     local info = hgetall('PERK:' .. perk)
@@ -3887,13 +3948,19 @@ local function reset_character(pid)
   if rid then redis.call('SREM', 'ROOM:' .. rid .. ':players', pid) end
   enc.drop_player(pid, 'gone')
   redis.call('HDEL', 'ACCOUNT:' .. pid, unpack(CHARACTER_FIELDS))
+  -- Per-quest and per-faction state, by the ids it can have (not KEYS: that
+  -- scans every key in Redis). Short-lived keys (social:, unseen:, greeted:,
+  -- gift:, sold:, lured:, buff:, slowed, moved) are left to expire.
+  for _, qid in ipairs(redis.call('HKEYS', 'PLAYER:' .. pid .. ':quests')) do
+    redis.call('DEL', 'PLAYER:' .. pid .. ':quest:' .. qid)
+  end
+  for _, fid in ipairs(redis.call('SMEMBERS', 'alz:factions')) do redis.call('DEL', 'PLAYER:' .. pid .. ':rep:' .. fid) end
+  -- Every lasting PLAYER:<id>:<name> key a character has (tests/test_characters.py checks this list).
   for _, suffix in ipairs({'room', 'gear', 'slots', 'inv', 'perks', 'passives', 'talents', 'attuned', 'bonus', 'explored',
     'glimpsed', 'regions', 'realms', 'rumours', 'lore', 'traps', 'events', 'taken', 'quests', 'journey', 'pending',
-    'guard', 'sealed', 'steadied', 'ambushers', 'wardrobe', 'worn', 'worn_stats', 'exposure', 'came'}) do
+    'guard', 'sealed', 'ambushers', 'wardrobe', 'worn', 'worn_stats', 'exposure', 'came',
+    'rapport', 'met', 'discussed', 'offer', 'declined', 'kit_sum'}) do
     redis.call('DEL', 'PLAYER:' .. pid .. ':' .. suffix)
-  end
-  for _, pattern in ipairs({'rep', 'quest', 'social', 'unseen'}) do
-    for _, key in ipairs(redis.call('KEYS', 'PLAYER:' .. pid .. ':' .. pattern .. ':*')) do redis.call('DEL', key) end
   end
   for n = 1, SLOTS do redis.call('DEL', 'PLAYER:' .. pid .. ':cd:' .. n, 'PLAYER:' .. pid .. ':charge:' .. n) end
   redis.call('ZREM', 'alz:journeys', pid)
@@ -3939,6 +4006,9 @@ redis.register_function('create_character', function(keys, args)
   local fits = false
   for _, p in ipairs(ancestry.passives or {}) do if p == perk then fits = true end end
   if not fits then return 'Choose a passive from your ancestry.' end
+  -- Two tabs on a new account can both be on the creation screen: the second
+  -- mustn't wipe the character the first just took into the world.
+  if redis.call('HGET', 'ACCOUNT:' .. pid, 'created') == '1' then return 'Your character already exists.' end
   reset_character(pid)
   local key = 'ACCOUNT:' .. pid
   redis.call('HSET', key, 'class', cid, 'ancestry', aid, 'background', bid, 'label', ancestry.name .. ' ' .. class.name,
@@ -4115,7 +4185,7 @@ end))
 -- needs more locals than the main chunk has left.)
 ;(function()
   -- From the quests block.
-  local quest_def, quest_status, trigger_matches = travel.quest_def, travel.quest_status, travel.trigger_matches
+  local quest_def, quest_status, trigger_matches = hooks.quest_def, hooks.quest_status, hooks.trigger_matches
   local STANDARD = {work = 'quests', jobs = 'quests', job = 'quests', help = 'quests', quest = 'quests',
     buy = 'wants', want = 'wants', selling = 'wants', yourself = 'background', family = 'background', life = 'background',
     news = 'rumours', gossip = 'rumours', rumour = 'rumours', rumor = 'rumours', rumors = 'rumours',
@@ -4124,9 +4194,8 @@ end))
   local RAPPORT = {{7, 'trusted'}, {3, 'friendly'}, {1, 'known'}, {0, 'stranger'}}
   local DIRS8 = {'east', 'northeast', 'north', 'northwest', 'west', 'southwest', 'south', 'southeast'}
 
-  local function say(pid, nid, text) travel.npc_says(pid, nid, text) end
+  local function say(pid, nid, text) hooks.npc_says(pid, nid, text) end
   local function guide(pid, text) emit('PLAYER:' .. pid, {type = 'guide', text = text}) end
-  travel.guide = guide
 
   local function rapport(pid, nid)
     return tonumber(redis.call('HGET', 'PLAYER:' .. pid .. ':rapport', nid)) or 0
@@ -4145,7 +4214,7 @@ end))
 
   -- Changes how well an NPC knows a player (never below 0); the card and its
   -- topics follow.
-  travel.add_rapport = function(pid, nid, n)
+  hooks.add_rapport = function(pid, nid, n)
     local before = rapport_word(pid, nid)
     redis.call('HSET', 'PLAYER:' .. pid .. ':rapport', nid, math.max(0, rapport(pid, nid) + n))
     local now = rapport_word(pid, nid)
@@ -4168,6 +4237,9 @@ end))
       if req.respect and (tonumber(rep.respect) or 0) < req.respect then return false end
     end
     if req.quest and quest_status(pid, req.quest) ~= (req.status or 'done') then return false end
+    for _, q in ipairs(req.quests or {}) do
+      if quest_status(pid, q) ~= 'done' then return false end
+    end
     return true
   end
 
@@ -4213,7 +4285,7 @@ end))
   end
 
   -- What an NPC will discuss with a player, sorted, or nil if they won't talk.
-  travel.topics_for = function(pid, nid)
+  hooks.topics_for = function(pid, nid)
     local npc = hgetall('NPC:' .. nid)
     if not speaks(npc) or disposition_for(pid, nid) == 'hostile' then return nil end
     local out, has = {}, {}
@@ -4228,13 +4300,13 @@ end))
     return list(sorted(out))
   end
 
-  travel.talk_card = function(pid, nid)
-    local topics = travel.topics_for(pid, nid)
+  hooks.talk_card = function(pid, nid)
+    local topics = hooks.topics_for(pid, nid)
     return {topics = topics, rapport = topics and rapport_word(pid, nid) or nil}
   end
 
   -- Waits for the player's answer to an offered quest.
-  travel.pend = function(pid, qid, nid)
+  hooks.pend = function(pid, qid, nid)
     redis.call('DEL', 'PLAYER:' .. pid .. ':offer')
     redis.call('HSET', 'PLAYER:' .. pid .. ':offer', 'quest', qid, 'npc', nid)
     redis.call('HDEL', 'PLAYER:' .. pid .. ':declined', qid)
@@ -4260,7 +4332,7 @@ end))
     local qid = work_for(pid, nid)
     if qid then
       say(pid, nid, offer_text(qid, nid))
-      return travel.pend(pid, qid, nid)
+      return hooks.pend(pid, qid, nid)
     end
     -- Already on a job of theirs: a reminder.
     for q, status in pairs(hgetall('PLAYER:' .. pid .. ':quests')) do
@@ -4318,7 +4390,7 @@ end))
 
   -- Now and then on a step, a nearby quest giver's lure, felt unbidden (each
   -- at most once a day).
-  travel.maybe_lure = function(pid, rid)
+  hooks.maybe_lure = function(pid, rid)
     if math.random() >= rule('lure_chance', 0.03) then return end
     local fresh = {}
     for _, g in ipairs(givers_near(pid, rid, rule('whatnow_steps', 15), 'sense')) do
@@ -4397,7 +4469,7 @@ end))
   local function only_speaker(pid, rid)
     local only
     for _, nid in ipairs(redis.call('SMEMBERS', 'ROOM:' .. rid .. ':npcs')) do
-      if travel.topics_for(pid, nid) then
+      if hooks.topics_for(pid, nid) then
         if only then return nil end
         only = nid
       end
@@ -4405,16 +4477,22 @@ end))
     return only
   end
 
+  -- The NPC a player means, and its name; or nil, having told them why not.
+  -- (Not `return notice(...)`: that returns the notice's number, which a
+  -- caller would take for an NPC.)
   local function whom(pid, rid, word)
+    local refusal
     if (word or '') == '' then
       local nid = only_speaker(pid, rid)
-      if not nid then return notice(pid, 'With whom? Press Tab, or click someone.') end
-      return nid, npc_display(nid)
+      if nid then return nid, npc_display(nid) end
+      refusal = 'With whom? Press Tab, or click someone.'
+    else
+      local kind, nid, display = resolve(pid, rid, word)
+      if kind == 'npc' then return nid, display end
+      refusal = kind and 'Only the locals can help you with that.' or "You don't see them here."
     end
-    local kind, nid, display = resolve(pid, rid, word)
-    if not kind then return notice(pid, "You don't see them here.") end
-    if kind ~= 'npc' then return notice(pid, 'Only the locals can help you with that.') end
-    return nid, display
+    notice(pid, refusal)
+    return nil
   end
 
   -- args: pid, who ('' for the only person here), topic ('' to list them).
@@ -4422,7 +4500,7 @@ end))
     local nid, display = whom(pid, rid, args[2])
     if not nid then return end
     local who = capitalize(display)
-    local topics = travel.topics_for(pid, nid)
+    local topics = hooks.topics_for(pid, nid)
     if not topics then return notice(pid, who .. ' has nothing to say to you.') end
     local word = string.gsub(string.lower(args[3] or ''), '^the ', '')
     if word == '' then
@@ -4442,8 +4520,8 @@ end))
       local t = type(topic) == 'table' and topic or {text = topic}
       say(pid, nid, again and t.again or t.text)
       if t.explains then guide(pid, t.explains) end
-      if t.rapport and not again then travel.add_rapport(pid, nid, t.rapport) end
-      if t.starts and not quest_status(pid, t.starts) then travel.pend(pid, t.starts, nid) end
+      if t.rapport and not again then hooks.add_rapport(pid, nid, t.rapport) end
+      if t.starts and not quest_status(pid, t.starts) then hooks.pend(pid, t.starts, nid) end
     elseif name == 'quests' then
       discuss_quests(pid, nid)
     elseif name == 'wants' and wants_of(pid, nid) then
@@ -4454,10 +4532,9 @@ end))
       return say(pid, nid, deflect(pid, nid))
     end
     if name == 'weather' then teach_skies(pid, nid, who, topic ~= nil) end
-    travel.quest(pid, 'ask', {npc = nid, topic = name})
+    hooks.quest(pid, 'ask', {npc = nid, topic = name})
   end
   redis.register_function('discuss', action(function(pid, rid, args) discuss(pid, rid, args) end))
-  redis.register_function('ask', action(function(pid, rid, args) discuss(pid, rid, args) end))
 
   -- GREET: they answer as someone who's met you or hasn't, and say if they've
   -- work for you. Daily, a little rapport.
@@ -4482,7 +4559,7 @@ end))
         or (friendly and 'Good to see you again.' or 'You again.')
     end
     say(pid, nid, line)
-    if redis.call('SET', 'PLAYER:' .. pid .. ':greeted:' .. nid, '1', 'NX', 'EX', 86400) then travel.add_rapport(pid, nid, 1) end
+    if redis.call('SET', 'PLAYER:' .. pid .. ':greeted:' .. nid, '1', 'NX', 'EX', 86400) then hooks.add_rapport(pid, nid, 1) end
     if work_for(pid, nid) then
       say(pid, nid, g.work or 'I might have work for you, if you want it.')
       guide(pid, 'DISCUSS QUESTS to hear it.')
@@ -4501,7 +4578,7 @@ end))
     redis.call('DEL', 'PLAYER:' .. pid .. ':offer')
     local def = quest_def(offer.quest)
     say(pid, offer.npc, def.accepted or 'Good.')
-    if travel.start_quest(pid, offer.quest) then
+    if hooks.start_quest(pid, offer.quest) then
       redis.call('HSET', 'PLAYER:' .. pid .. ':quest:' .. offer.quest, 'giver', offer.npc)
     end
   end))
@@ -4528,7 +4605,7 @@ end))
     return entry.item == iid or (entry.tag ~= nil and tagged(iid, entry.tag))
   end
 
-  travel.give_to = function(pid, rid, iid, nid, display)
+  hooks.give_to = function(pid, rid, iid, nid, display)
     local item_name = redis.call('HGET', 'ITEM:' .. iid, 'name') or iid
     local who = capitalize(display)
     local function handed(verb)
@@ -4544,7 +4621,7 @@ end))
       if step and trigger_matches(pid, step.on or {}, 'give', {item = iid, npc = nid}) then
         emit('ROOM:' .. rid, {type = 'emote', actor = pid, verb = 'give', target = 'npc:' .. nid,
           text = name_of(pid) .. ' gives the ' .. item_name .. ' to ' .. display .. '.'})
-        return travel.quest(pid, 'give', {item = iid, npc = nid})
+        return hooks.quest(pid, 'give', {item = iid, npc = nid})
       end
     end
     redis.call('SADD', 'PLAYER:' .. pid .. ':met', nid)
@@ -4565,7 +4642,7 @@ end))
         say(pid, nid, want.thanks or 'Done.')
         notice(pid, 'You sell the ' .. item_name .. ' for ' .. price .. (price == 1 and ' coin.' or ' coins.'))
         kit_event(pid)
-        if redis.call('SET', 'PLAYER:' .. pid .. ':sold_rapport:' .. nid, '1', 'NX', 'EX', 86400) then travel.add_rapport(pid, nid, 1) end
+        if redis.call('SET', 'PLAYER:' .. pid .. ':sold_rapport:' .. nid, '1', 'NX', 'EX', 86400) then hooks.add_rapport(pid, nid, 1) end
         return
       end
     end
@@ -4578,7 +4655,7 @@ end))
         handed('gives')
         local thanks = redis.call('HGET', 'NPC:' .. nid, 'thanks') or ''
         say(pid, nid, thanks ~= '' and thanks or 'For me? Thank you.')
-        return travel.add_rapport(pid, nid, 2)
+        return hooks.add_rapport(pid, nid, 2)
       end
     end
     local refuse = redis.call('HGET', 'NPC:' .. nid, 'refuse') or ''
@@ -4592,11 +4669,11 @@ end))
     if not iid then return notice(pid, "You aren't carrying that.") end
     local nid, display = whom(pid, rid, args[3])
     if not nid then return end
-    travel.give_to(pid, rid, iid, nid, display)
+    hooks.give_to(pid, rid, iid, nid, display)
   end))
 
   -- Reading a trap's sign: you know it's there, and how to get past.
-  travel.read_sign = function(pid, rid, trapped)
+  hooks.read_sign = function(pid, rid, trapped)
     traps.know_trap(pid, trapped)
     local dir
     for d, dest in pairs(hgetall('ROOM:' .. rid .. ':exits')) do if dest == trapped then dir = string.upper(d) end end
@@ -4630,7 +4707,6 @@ end)()
 -- takes one (args: a word naming it).
 redis.register_function('travel', action(function(pid, rid, args)
   local word = args[2] or ''
-  if word ~= '' and enc.of_player(pid) then return notice(pid, "You're in a fight. FLEE first, if you must.") end
   local routes = routes_here(pid, rid)
   if word == '' then
     if #routes == 0 then return notice(pid, 'No routes leave from here.') end
@@ -4698,7 +4774,8 @@ redis.register_function('set_clock', action(function(pid, rid, args)
     redis.call('DEL', 'alz:clock_override')
   else
     local hour = tonumber(args[2])
-    if not hour or hour < 0 or hour > 23 then return notice(pid, 'Usage: SETCLOCK <hour 0-23>, or SETCLOCK CLEAR.') end
+    -- (hour ~= hour: NaN, which no comparison catches, and which JSON can't carry.)
+    if not hour or hour ~= hour or hour < 0 or hour > 23 then return notice(pid, 'Usage: SETCLOCK <hour 0-23>, or SETCLOCK CLEAR.') end
     redis.call('SET', 'alz:clock_override', math.floor(hour))
   end
   local c = clock(realm_of(rid))
@@ -4749,24 +4826,34 @@ end
 
 redis.register_function('chat', action(function(pid, rid, args)
   local ch, message = args[2], args[3]
-  if not joined(pid, ch) then return notice(pid, "You aren't in #" .. ch .. ". Try 'join " .. ch .. "'.") end
+  if not joined(pid, ch) then return notice(pid, "You aren't in #" .. ch .. '. Try JOIN ' .. string.upper(ch) .. '.') end
   emit('CHANNEL:' .. ch, {type = 'chat', actor = pid, target = ch, message = message, text = '[' .. ch .. '] ' .. name_of(pid) .. ': ' .. message})
 end))
 
 redis.register_function('create_channel', action(function(pid, rid, args)
   local ch = args[2]
   if redis.call('EXISTS', 'CHANNEL:' .. ch .. ':info') == 1 then
-    return notice(pid, '#' .. ch .. " already exists. Try 'join " .. ch .. "'.")
+    return notice(pid, '#' .. ch .. ' already exists. Try JOIN ' .. string.upper(ch) .. '.')
+  end
+  -- A few each, or one player could fill everyone's CHANNELS list.
+  local owned = 'PLAYER:' .. pid .. ':channels'
+  for _, mine in ipairs(redis.call('SMEMBERS', owned)) do
+    if redis.call('EXISTS', 'CHANNEL:' .. mine .. ':info') == 0 then redis.call('SREM', owned, mine) end
+  end
+  local most = rule('channels_per_player', 3)
+  if redis.call('SCARD', owned) >= most then
+    return notice(pid, 'You can make at most ' .. most .. ' channels.')
   end
   redis.call('HSET', 'CHANNEL:' .. ch .. ':info', 'owner', pid, 'created', math.floor(now_ms() / 1000))
   redis.call('SADD', 'alz:channels', ch)
+  redis.call('SADD', owned, ch)
   join(pid, ch)
 end))
 
 redis.register_function('join', action(function(pid, rid, args)
   local ch = args[2]
   if redis.call('EXISTS', 'CHANNEL:' .. ch .. ':info') == 0 then
-    return notice(pid, 'There is no #' .. ch .. ". You can make it with 'create " .. ch .. "'.")
+    return notice(pid, 'There is no #' .. ch .. '. You can make it with CREATE ' .. string.upper(ch) .. '.')
   end
   if joined(pid, ch) then return notice(pid, "You're already in #" .. ch .. '.') end
   join(pid, ch)
@@ -4800,13 +4887,14 @@ local function resume_journey(pid)
   local journey = hgetall(key)
   if journey.marooned then return end -- held while they're stuck ashore
   local route = hgetall('ROUTE:' .. (journey.route or ''))
+  if not route.to then return lose_journey(pid) end
   local path = decode(route.path)
   local n = tonumber(journey.stage) or 1
   local info = hgetall('ROOM:' .. (path[n] or '') .. ':info')
   emit('PLAYER:' .. pid, {type = 'journey', route = journey.route, kind = route.kind, stage = n, stages = #path,
     at = path[n], pos = info.x and room_pos(info) or nil, name = info.name, text = info.description, resumed = true})
-  if journey.event and travel.show_event then
-    travel.show_event(pid)
+  if journey.event then
+    hooks.show_event(pid)
     redis.call('ZADD', 'alz:journeys', tonumber(journey.event_until) or now_ms(), pid)
   else
     journey_next(pid)
@@ -4820,6 +4908,9 @@ redis.register_function('connect', function(keys, args)
   local previous = redis.call('GET', session_key)
   redis.call('SET', session_key, session)
   redis.call('ZADD', 'alz:online', now_ms(), pid)
+  redis.call('PERSIST', 'PLAYER:' .. pid) -- their stream: kept while they're in the world (see disconnect)
+  local card = player_card(pid)
+  if card.hp < card.max_hp then redis.call('SADD', 'alz:wounded', pid) end -- healing picks up again
 
   if previous then
     -- Already in the world (another tab, or reconnecting after a dropped
@@ -4827,6 +4918,28 @@ redis.register_function('connect', function(keys, args)
     emit('PLAYER:' .. pid, {type = 'control', op = 'kick', session = previous, reason = 'You connected from somewhere else.'})
     local current = current_seq()
     local cursor = (since > 0 and since < current) and since or current
+    -- A stream keeps only its last MAXLEN events: if one the player reads has
+    -- been trimmed and what it still has starts after `since` (and after they
+    -- joined it), the replay may have a hole in it. Start from now (the
+    -- resume sends the state of everything anyway), and say so.
+    local lost = false
+    if cursor < current then
+      local subs = hgetall('PLAYER:' .. pid .. ':subs')
+      subs['PLAYER:' .. pid] = subs['PLAYER:' .. pid] or '0'
+      for ch, joined in pairs(subs) do
+        if not lost and redis.call('EXISTS', ch) == 1 then
+          local info = {}
+          local flat = redis.call('XINFO', 'STREAM', ch)
+          for i = 1, #flat, 2 do info[flat[i]] = flat[i + 1] end
+          local first = type(info['first-entry']) == 'table' and tonumber(string.match(info['first-entry'][1], '^(%d+)')) or 0
+          if (tonumber(info['entries-added']) or 0) > (tonumber(info['length']) or 0)
+            and first > math.max(cursor, tonumber(joined) or 0) + 1 then
+            lost = true
+          end
+        end
+      end
+      if lost then cursor = current end
+    end
     local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
     explore(pid, rid)
     backfill_regions(pid)
@@ -4841,8 +4954,9 @@ redis.register_function('connect', function(keys, args)
     enc.resend(pid)
     kit_event(pid)
     character_event(pid)
-    travel.quests_event(pid)
+    hooks.quests_event(pid)
     room_event(pid, rid, 'resume')
+    if lost then notice(pid, 'Some of what happened while you were away is lost.') end
     if redis.call('EXISTS', 'PLAYER:' .. pid .. ':journey') == 1 then resume_journey(pid) end
     return cursor
   end
@@ -4886,14 +5000,15 @@ redis.register_function('connect', function(keys, args)
   ensure_kit(pid)
   kit_event(pid)
   character_event(pid)
-  travel.quests_event(pid)
+  hooks.quests_event(pid)
   room_event(pid, rid, 'enter')
+  enc.resend(pid) -- woken mid-fight: it went on without them
   -- A new character's first moments: the story so far, and their first quest.
   if redis.call('HGET', 'ACCOUNT:' .. pid, 'intro') == '1' then
     redis.call('HDEL', 'ACCOUNT:' .. pid, 'intro')
     local background = decode(redis.call('HGET', 'alz:backgrounds', redis.call('HGET', 'ACCOUNT:' .. pid, 'background') or '-'))
     if background.intro then emit('PLAYER:' .. pid, {type = 'intro', text = background.intro}) end
-    if background.quest then travel.start_quest(pid, background.quest) end
+    if background.quest then hooks.start_quest(pid, background.quest) end
   end
   -- Back aboard: the journey carries on from where it was.
   if redis.call('EXISTS', 'PLAYER:' .. pid .. ':journey') == 1 then resume_journey(pid) end
@@ -4922,9 +5037,11 @@ redis.register_function('disconnect', function(keys, args)
   -- Somewhere safe, a player settles in to rest and is gone at once. Out in the
   -- open they lie down to sleep, and their body stays for sleep_seconds.
   local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
-  -- Taken out of the world, they're out of any fight: no parting blow, no deed.
-  enc.drop_player(pid, 'gone')
-  if rid and is_safe(pid, rid) then
+  -- Leaving mid-fight is no escape: the body lies down where it is, even
+  -- somewhere safe, and stays in the fight, taking its blows, until it fades
+  -- (or falls, and wakes at the shrine). Back in time, they wake in the fight.
+  local fighting = enc.of_player(pid)
+  if rid and is_safe(pid, rid) and not fighting then
     redis.call('SREM', 'ROOM:' .. rid .. ':players', pid)
     emit('ROOM:' .. rid, {type = 'leave', actor = pid, verb = 'logout', entity_id = 'pc:' .. pid, text = name_of(pid) .. ' settles in to rest, and is gone.'})
   elseif rid then
@@ -4939,6 +5056,11 @@ redis.register_function('disconnect', function(keys, args)
   end
   redis.call('DEL', session_key) -- combat state is left to expire, so relogging can't reset it
   redis.call('ZREM', 'alz:online', pid)
+  redis.call('SREM', 'alz:wounded', pid) -- no healing while away; connect puts them back
+  -- Their own stream is only read while they're in the world (a new login
+  -- starts from now), so it goes once the server has read the kick.
+  redis.call('PEXPIRE', 'PLAYER:' .. pid, 600000)
+  redis.call('DEL', 'PLAYER:' .. pid .. ':kit_sum')
   return 1
 end)
 
@@ -5099,7 +5221,7 @@ redis.register_function('seed', function(keys, args)
     redis.call('HSET', 'GEAR:' .. gid, 'name', gear.name, 'kind', gear.kind or '', 'keywords', gear.keywords or '',
       'effect', gear.effect, 'targets', gear.targets or 'self',
       'edge', gear.amounts[1], 'clean', gear.amounts[2], 'perfect', gear.amounts[3],
-      'hit', gear.hit, 'perfect_hit', gear.perfect_hit, 'miss', gear.miss, 'whiff', gear.whiff,
+      'hit', gear.hit, 'perfect_hit', gear.perfect_hit,
       'description', gear.description or '', 'weather', gear.weather and cjson.encode(gear.weather) or '',
       'rank', gear.rank or 0, 'requires', gear.requires or '', 'stagger_ms', gear.stagger_ms or 0, 'rarity', gear.rarity or '',
       'bleed', gear.bleed and cjson.encode(gear.bleed) or '',
@@ -5287,16 +5409,11 @@ redis.register_function('weather_tick', function(keys, args)
   for _, pid in ipairs(redis.call('ZRANGE', 'alz:online', 0, -1)) do
     if redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then
       weather_event(pid)
-      kit_event(pid)
-      travel.quest(pid, 'check', {}) -- quests waiting on the weather
+      kit_event(pid, true)
+      hooks.quest(pid, 'check', {}) -- quests waiting on the weather
     end
   end
   return 1
-end)
-
-redis.register_function('respawn', function(keys, args)
-  CALLER.server = keys and keys[1] or ''
-  return respawn_due(now_ms())
 end)
 
 -- The slow upkeep every server runs every few seconds: respawns, sleeping
@@ -5309,11 +5426,25 @@ redis.register_function('upkeep', function(keys, args)
     redis.call('ZREM', 'alz:sleepers', pid)
     fade_out(pid)
   end
+  -- NPCs out of a fight heal npc_regen_pct of their health each upkeep.
+  for _, nid in ipairs(redis.call('SMEMBERS', 'alz:wounded_npcs')) do
+    local npc = hgetall('NPC:' .. nid)
+    local hp, max = tonumber(npc.hp) or 0, tonumber(npc.max_hp) or 0
+    if hp <= 0 or hp >= max or (npc.room or '') == '' then
+      redis.call('SREM', 'alz:wounded_npcs', nid)
+    elseif redis.call('EXISTS', 'NPC:' .. nid .. ':encounter') == 0 then
+      local healed = math.min(max, hp + math.max(1, math.floor(max * rule('npc_regen_pct', 0.05))))
+      redis.call('HSET', 'NPC:' .. nid, 'hp', healed)
+      emit('ROOM:' .. npc.room, {type = 'entity', entity = npc_card(nid)})
+      if healed >= max then redis.call('SREM', 'alz:wounded_npcs', nid) end
+    end
+  end
   for _, pid in ipairs(redis.call('SMEMBERS', 'alz:wounded')) do
-    local card = player_card(pid)
-    if card.hp >= card.max_hp then
+    -- Only those in the world heal (connect adds them back); the rest leave the set.
+    local card = redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 and player_card(pid)
+    if not card or card.hp >= card.max_hp then
       redis.call('SREM', 'alz:wounded', pid)
-    elseif redis.call('EXISTS', 'PLAYER:' .. pid .. ':encounter') == 0 and redis.call('EXISTS', 'PLAYER:' .. pid .. ':session') == 1 then
+    elseif redis.call('EXISTS', 'PLAYER:' .. pid .. ':encounter') == 0 then
       local rid = redis.call('GET', 'PLAYER:' .. pid .. ':room')
       local amount = is_safe(pid, rid) and rule('safe_regen', 10) or rule('regen', 2)
       -- Bitter cold outdoors slows healing, by up to half.
@@ -5334,7 +5465,7 @@ redis.register_function('tick', function(keys, args)
   local now = now_ms()
   pending_moves_due(now)
   journeys_due(now)
-  travel.offers_due(now)
+  hooks.offers_due(now)
   return 1
 end)
 

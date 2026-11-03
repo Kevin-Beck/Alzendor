@@ -102,7 +102,7 @@ async def test_asking_the_operator_about_passage_takes_their_route(world):
     kevin = await enter(world, "kevin")
     await walk(world, "kevin", "north")
     await drain(kevin)
-    await world.call("ask", "kevin", "bram", "passage")
+    await world.call("discuss", "kevin", "bram", "passage")
     assert await world.redis.get("PLAYER:kevin:room") == "switchbacks"
 
 

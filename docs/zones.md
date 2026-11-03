@@ -415,7 +415,7 @@ the shadows off.*
 - **Quests:** **Kites for the Skiffs** (silk from the storm-hawks);
   **The Thunder Roc** (its nest, its dive for 130).
 - **Special:** you get between islands by skiff (journeys, with falls);
-  ledges are hazards; the wind narrows every timing window.
+  ledges are hazards; the wind never lets up, which spells love and weapons don't.
 - **The way on:** the Long Fall, off the lowest island, to the Bone Steppe.
 
 ### The Overgrowth (14)
@@ -591,6 +591,9 @@ Three of them hold the relics, and Hollowcrown ties them together.
 - Quests that send you somewhere tell you the way in the goal text, so a new
   player is never lost; the realms are only ever named by the people near
   their doors.
-- Not yet: shops, so gear comes only from quests and drops; NPCs that wander
-  (the Hollow Rider appears and vanishes, but doesn't ride between rooms);
-  balancing, which needs players.
+- Not yet: shops, so gear comes only from quests and drops, and coins have
+  almost nothing to buy: fares (3–15), respec (10 a level) and a couple of
+  travel-event costs, while the brood alone pays 40 every five minutes. A
+  known gap until shops come. NPCs that wander (the Hollow Rider appears and
+  vanishes, but doesn't ride between rooms); balancing with real players (the
+  tuning bot's view is in [combat.md](combat.md), Tuning).

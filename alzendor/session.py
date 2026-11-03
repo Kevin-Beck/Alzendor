@@ -15,10 +15,10 @@ Client -> server
       unblock, or flee (dir). `step` is the encounter step the client applied
       it at: the owner replays steering from there, up to 200 ms back. Sent on
       any change and every 100 ms; at most 30 a second, and the rest are
-      dropped. See docs/combat-redesign.md.
+      dropped. See docs/combat.md.
 
 Server -> client
-  {"type": "auth_ok", "player": <id>, "name": <display name>, "token": ..., "server": <id>}
+  {"type": "auth_ok", "player": <id>, "name": <display name>, "token": ..., "server": <id>, "version": <rules version>}
   {"type": "auth_error", "message": ...}
   {"type": "create", "name": ..., "options": {classes, ancestries, backgrounds}}
   {"type": "create_error", "message": ...}
@@ -120,6 +120,11 @@ class Session:
         self.encounter_owner: str | None = None  # the server that owns it
         self._input_seq = 0
         self._out: Delay | None = None  # outgoing messages, when there's a fake latency
+        # A fight's state goes out 15 times a second; each is a full snapshot, so
+        # only the newest waiting one matters. One task sends them.
+        self._next_state: str | None = None
+        self._state_sender: asyncio.Task | None = None
+        self._sends: set[asyncio.Task] = set()  # other forwarded messages on their way
 
     @property
     def address(self) -> str:
@@ -155,11 +160,13 @@ class Session:
         cursor = await world.call("connect", self.pid, self.id, since)
         feed = await Feed.open(world.redis, self.pid, self.id, cursor)
         name = await world.redis.hget(f"ACCOUNT:{self.pid}", "name")
-        await self._send(type="auth_ok", player=self.pid, name=name, token=self.token, server=self.server.config.server_id)
+        await self._send(type="auth_ok", player=self.pid, name=name, token=self.token, server=self.server.config.server_id,
+                         version=self.server.version)
         log.info("%s entered the world from %s (session %s)", self.pid, self.address, self.id)
 
         self.server.sessions[self.id] = self
-        ctx = commands.Context(world, self.pid, self.pid in self.server.config.admins, self._quit)
+        ctx = commands.Context(world, self.pid, self.pid in self.server.config.admins, self._quit,
+                               tell=lambda text: self._send(type="error", message=text))
         lag = self.server.config.fake_latency_ms / 1000
         jitter = self.server.config.fake_jitter_ms / 1000
         if lag > 0 or jitter > 0:
@@ -201,6 +208,9 @@ class Session:
         async for raw in self.ws:
             message = _decode(raw)
             kind = message.get("type") if message else None
+            if not self._take_allowance():
+                await self._send(type="auth_error", message="Slow down a little.")
+                continue
             try:
                 if kind in ("register", "login"):
                     name, password = str(message.get("name", "")), str(message.get("password", ""))
@@ -241,6 +251,8 @@ class Session:
             if not problem:
                 log.info("%s created a character: %s", self.pid, " ".join(choices))
                 return True
+            if await world.redis.hget(f"ACCOUNT:{self.pid}", "created") == "1":
+                return True  # made meanwhile, in another tab: enter the world with it
             await self._send(type="create_error", message=problem)
         return False
 
@@ -254,7 +266,12 @@ class Session:
                 await self._send(type="pong", t=echo, server_ms=self.server.now_ms())
             return
         if message and message.get("type") == "input":
-            return await self._input(message)
+            try:
+                return await self._input(message)
+            except RedisError as error:
+                # A lost input, not a lost connection: the client sends its keys again on the next change.
+                log.warning("fight input from %s dropped: %s", self.pid, error)
+                return
         if not message or message.get("type") != "cmd" or not isinstance(message.get("text"), str):
             await self._send(type="error", message='Expected {"type": "cmd", "text": ...}.')
             return
@@ -290,8 +307,19 @@ class Session:
             return
         if self._out:
             self._out.put(lambda: self._send_raw(data))
+        elif data.startswith('{"type":"state"'):
+            self._next_state = data  # replaces one not yet sent: a slow client gets the newest
+            if self._state_sender is None or self._state_sender.done():
+                self._state_sender = asyncio.create_task(self._send_states())
         else:
-            asyncio.ensure_future(self._send_raw(data))
+            task = asyncio.create_task(self._send_raw(data))
+            self._sends.add(task)
+            task.add_done_callback(self._sends.discard)
+
+    async def _send_states(self) -> None:
+        while self._next_state is not None:
+            data, self._next_state = self._next_state, None
+            await self._send_raw(data)
 
     async def _follow(self, eid: str | None, owner: str | None) -> None:
         """Forwards the state of this encounter (or none) to the client."""
@@ -362,6 +390,8 @@ class Session:
             await self.ws.send(data)
         except ConnectionClosed:
             pass
+        except Exception:
+            log.exception("sending to %s failed", self.pid)
 
 
 def _decode(raw) -> dict | None:

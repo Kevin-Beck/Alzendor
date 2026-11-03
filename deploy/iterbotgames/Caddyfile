@@ -1,8 +1,17 @@
 # The origin behind CloudFront. Requests arrive as /alzendor/...; the game
-# serves from / (its page, /ws and /healthz).
+# serves from / (its page, /ws and /healthz). Only our CloudFront distribution
+# knows the secret header (cloudfront.sh): anything without it is refused, so
+# nobody can reach the game except through it (the game trusts CloudFront's
+# CloudFront-Viewer-Address for its rate limits).
 {$ALZ_ORIGIN_DOMAIN} {
-	handle_path /alzendor/* {
-		reverse_proxy server:8000
+	@cloudfront header X-Alzendor-Origin {$ALZ_ORIGIN_SECRET}
+	handle @cloudfront {
+		handle_path /alzendor/* {
+			reverse_proxy server:8000 {
+				header_up -X-Alzendor-Origin
+			}
+		}
+		respond 404
 	}
-	respond 404
+	respond 403
 }

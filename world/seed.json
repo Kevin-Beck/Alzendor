@@ -1950,7 +1950,7 @@
         "north": "caravan_yard"
       },
       "features": {
-        "caravan": "Four wagons, eight mules, and a strongbox chained to the lead wagon. It's bound for Harrowgate."
+        "wagons": "Four wagons, eight mules, and a strongbox chained to the lead wagon. It's bound for Harrowgate."
       },
       "safe": true
     }
@@ -3070,7 +3070,7 @@
         "sea": "Read the sky before you read the sea. Ask me about the weather.",
         "weather": {
           "text": "Sky first, sea second. Feel the cold and the wind on your face, watch what's falling, mind the hour, and look at the ground under you before you trust it. Read those four, and you come home.",
-          "explains": "Your weather panel, left to right:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
+          "explains": "Your weather panel, in four boxes, two by two:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
         },
         "sensitivity": {
           "text": "Some gear doesn't care what the sky does: a belaying pin's a belaying pin. Some's like a sail: perfect in its own wind, and worse than useless in the wrong one. Learn which is which before you need it.",
@@ -3078,7 +3078,7 @@
         },
         "rarity": {
           "text": "Rare and fussy aren't the same thing. Though your fussiest gear is mostly rare.",
-          "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: ASK about SENSITIVITY."
+          "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: DISCUSS SENSITIVITY."
         },
         "crabs": {
           "text": "Crabs, eh? Nasty pinchers. You got one and kept your fingers. That'll do.",
@@ -3281,7 +3281,7 @@
         },
         "weather": {
           "text": "A merchant who can't read the sky gets rained on with her silks out. Feel how cold it is and how hard the wind blows. Watch what's coming down, and whether it's day or dark, and what the road's like underfoot. Get it wrong and you've lost a week's takings. Get it right and you're selling umbrellas at a crown apiece.",
-          "explains": "Your weather panel, left to right:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
+          "explains": "Your weather panel, in four boxes, two by two:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
         },
         "sensitivity": {
           "text": "Some goods sell in any weather: salt, rope, a good knife. Others only move when the sky's just so: furs in a frost, parasols in a heatwave. What you fight with is the same. A plain club hits as hard in a gale as in a calm. A fussy one is wonderful in its own weather and poor in any other. Know which you're carrying.",
@@ -3289,7 +3289,7 @@
         },
         "rarity": {
           "text": "Rare's not the same as fussy, love. Plenty of rare things don't care about the weather, and plenty of cheap ones do. Though the fussiest are mostly rare, I'll grant you.",
-          "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: ASK about SENSITIVITY."
+          "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: DISCUSS SENSITIVITY."
         },
         "rats": {
           "text": "Got one, did you? Good. They're bold this year, with the oats spilt all over the yard.",
@@ -3548,7 +3548,7 @@
         "wood": "Someone's been poaching in the deep oaks. Watch your step.",
         "weather": {
           "text": "Everything that grows knows the weather. So should you. The cold and the wind, what the clouds let fall, day and night, and the ground underfoot. The moonbloom minds all four, and so do the wolves.",
-          "explains": "Your weather panel, left to right:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
+          "explains": "Your weather panel, in four boxes, two by two:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
         },
         "sensitivity": {
           "text": "Some things thrive anywhere, like nettles. Others only in their own season, like moonbloom. Your weapons are the same: a hatchet cuts in any weather, but some things only bite when the sky is right for them.",
@@ -3556,7 +3556,7 @@
         },
         "rarity": {
           "text": "Rare isn't the same as fussy. A rare herb might grow anywhere. But the fussiest ones are mostly rare.",
-          "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: ASK about SENSITIVITY."
+          "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: DISCUSS SENSITIVITY."
         },
         "wisps": {
           "text": "Bog wisps. Pretty things, and they'd burn the eyes out of your head. You did well.",
@@ -3775,7 +3775,7 @@
         },
         "weather": {
           "text": "Rain empties the streets. Fog hides you. Cold keeps the watch indoors, and the dark's your friend. Learn the sky, the rain, the hour and the cobbles, and you'll never get caught out on a roof in a storm.",
-          "explains": "Your weather panel, left to right:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
+          "explains": "Your weather panel, in four boxes, two by two:\n  1. Sky: the square. Left to right is cold to hot; bottom to top is still air to wild wind. The dot is the sky where you are now.\n  2. Rain: the tall bar, what's falling and how hard. Heavy rain or snow hides the way on.\n  3. Time: the wheel, sun or moon, and how long until it turns. Out in the wilds the nights are dark: carry a light.\n  4. Ground: what's underfoot, road or rough, snow or mud.\nType WEATHER for the same in words. Someone who has taught you a realm's skies lets you see its forecast too."
         },
         "sensitivity": {
           "text": "Some tricks work any time: a cosh is a cosh. Some only work when the weather suits them. Know your tools before you need them.",
@@ -3783,7 +3783,7 @@
         },
         "rarity": {
           "text": "Rare's what it fetches. Fussy's how it works. Not the same thing, though the fussiest stuff's usually rare.",
-          "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: ASK about SENSITIVITY."
+          "explains": "Rarity is the colour of an item's name: common, uncommon, rare, epic, legendary. It says how unusual a thing is. How it reacts to the weather is its sensitivity, the pips in its tooltip: DISCUSS SENSITIVITY."
         },
         "rats": {
           "text": "Bread's safe, then. Quick hands and quicker feet. You'll do.",
@@ -4115,8 +4115,6 @@
       ],
       "hit": "{actor} jabs {target} with a dagger.",
       "perfect_hit": "{actor} slips a dagger neatly into {target}!",
-      "miss": "{actor} jabs at {target} and misses.",
-      "whiff": "your dagger thrust finds only air.",
       "description": "A thin, frost-blued blade that stays keen in the dead cold and the dry.",
       "weather": {
         "temperature": -0.7,
@@ -4140,53 +4138,7 @@
       ],
       "hit": "{actor} kicks {target}.",
       "perfect_hit": "{actor} lands a perfect kick on {target}!",
-      "miss": "{actor} kicks at {target} and misses.",
-      "whiff": "your kick goes wide.",
       "description": "A hard kick. Plain, quick and always there; it likes a neutral day like any weapon."
-    },
-    "sword": {
-      "name": "Sword",
-      "kind": "Weapon",
-      "keywords": "blade",
-      "effect": "damage",
-      "cooldown": 1796,
-      "kick": 1.236,
-      "pattern": "bump",
-      "amounts": [
-        6,
-        7,
-        11
-      ],
-      "hit": "{actor} slashes {target} with a sword.",
-      "perfect_hit": "{actor} cuts {target} with a clean sword stroke!",
-      "miss": "{actor} swings a sword at {target} and misses.",
-      "whiff": "your sword cuts empty air.",
-      "description": "A plain soldier's sword. Steady in any weather, best on a mild day.",
-      "rarity": "uncommon"
-    },
-    "draught": {
-      "name": "Healing Draught",
-      "kind": "Potion",
-      "keywords": "draught",
-      "effect": "heal",
-      "cooldown": 1796,
-      "kick": 0,
-      "pattern": "bump",
-      "debuff": {
-        "kind": "steady",
-        "strength": 1.5,
-        "ms": 3000
-      },
-      "amounts": [
-        4,
-        6,
-        10
-      ],
-      "hit": "{actor} sips a healing draught.",
-      "perfect_hit": "{actor} tosses back a healing draught without spilling a drop!",
-      "miss": "{actor} fumbles a healing draught.",
-      "whiff": "the draught slips through your fingers.",
-      "description": "A quick sip of something restorative. Indifferent to the sky."
     },
     "firebolt": {
       "name": "Firebolt",
@@ -4208,8 +4160,6 @@
       ],
       "hit": "{actor} flings a firebolt at {target}.",
       "perfect_hit": "{actor}'s firebolt engulfs {target}!",
-      "miss": "{actor}'s firebolt sails past {target}.",
-      "whiff": "your firebolt sputters out.",
       "description": "A bolt of fire that loves a hot, wild sky and hates the wet.",
       "weather": {
         "temperature": 0.7,
@@ -4239,8 +4189,6 @@
       ],
       "hit": "{actor} hacks at {target} with a greataxe.",
       "perfect_hit": "{actor} brings a greataxe down squarely on {target}!",
-      "miss": "{actor}'s greataxe thuds into the ground beside {target}.",
-      "whiff": "your greataxe swing comes too slow.",
       "description": "A heavy axe forged in a winter storm. It sings in a gale.",
       "weather": {
         "temperature": -0.6,
@@ -4269,8 +4217,6 @@
       ],
       "hit": "{actor} drinks a health potion.",
       "perfect_hit": "{actor} downs a health potion in one perfect gulp!",
-      "miss": "{actor} fumbles a health potion and spills it.",
-      "whiff": "you fumble the potion and spill it.",
       "description": "A slow, strong healing potion. Indifferent to the sky."
     },
     "missile": {
@@ -4290,8 +4236,6 @@
       ],
       "hit": "{actor} hurls a magic missile at {target}.",
       "perfect_hit": "{actor}'s magic missile strikes {target} dead centre!",
-      "miss": "{actor}'s magic missile streaks past {target}.",
-      "whiff": "your magic missile fizzles.",
       "description": "A dart of raw force. Like all spells, it's strongest when the air is restless."
     },
     "mending": {
@@ -4310,8 +4254,6 @@
       ],
       "hit": "{actor} lays glowing hands on {target}.",
       "perfect_hit": "{actor} bathes {target} in warm, mending light!",
-      "miss": "{actor}'s mending light gutters out.",
-      "whiff": "the light slips away from you.",
       "description": "A gentle spell of healing that draws on rain and a living breeze.",
       "weather": {
         "temperature": 0,
@@ -4342,8 +4284,6 @@
       ],
       "hit": "{actor} calls the storm down on {target}.",
       "perfect_hit": "Lightning answers {actor}, and strikes {target} full on!",
-      "miss": "{actor}'s stormcall crackles uselessly near {target}.",
-      "whiff": "the storm doesn't answer.",
       "weather": {
         "temperature": 0.6,
         "energy": 0.8,
@@ -4367,8 +4307,6 @@
       ],
       "hit": "{actor} slashes {target} with Rimefang.",
       "perfect_hit": "{actor}'s Rimefang bites deep into {target}, frost spreading from the wound!",
-      "miss": "{actor} swings Rimefang wide of {target}.",
-      "whiff": "Rimefang slides off the air.",
       "weather": {
         "temperature": -0.8,
         "energy": 0.75,
@@ -4391,8 +4329,6 @@
       ],
       "hit": "{actor} hits {target} with a cleaving blow.",
       "perfect_hit": "{actor} lands a cleaving blow perfectly on {target}!",
-      "miss": "{actor} misses {target} with a cleaving blow.",
-      "whiff": "your cleaving blow finds nothing.",
       "description": "A heavy, sweeping blow. The fighter's first lesson.",
       "weather": {
         "temperature": 0,
@@ -4416,8 +4352,6 @@
       ],
       "hit": "{actor} hits {target} with a flick of the knife.",
       "perfect_hit": "{actor} lands a flick of the knife perfectly on {target}!",
-      "miss": "{actor} misses {target} with a flick of the knife.",
-      "whiff": "your flick of the knife finds nothing.",
       "description": "Quick little cuts, over and over.",
       "weather": {
         "temperature": 0.2,
@@ -4441,8 +4375,6 @@
       ],
       "hit": "{actor} hits {target} with a shield bash.",
       "perfect_hit": "{actor} lands a shield bash perfectly on {target}!",
-      "miss": "{actor} misses {target} with a shield bash.",
-      "whiff": "your shield bash finds nothing.",
       "description": "Knocks the wind out of them: their next blow comes later.",
       "weather": {
         "temperature": 0,
@@ -4468,8 +4400,6 @@
       ],
       "hit": "{actor} raises a guard.",
       "perfect_hit": "{actor} raises a guard just in time!",
-      "miss": "{actor} is too slow with a guard.",
-      "whiff": "too slow.",
       "description": "Absorbs the next blows that land on you.",
       "weather": {
         "temperature": 0,
@@ -4494,8 +4424,6 @@
       ],
       "hit": "{actor} hits {target} with a low cut.",
       "perfect_hit": "{actor} lands a low cut perfectly on {target}!",
-      "miss": "{actor} misses {target} with a low cut.",
-      "whiff": "your low cut finds nothing.",
       "description": "A cut that keeps bleeding.",
       "weather": {
         "temperature": -0.3,
@@ -4524,8 +4452,6 @@
       ],
       "hit": "{actor} catches a second breath.",
       "perfect_hit": "{actor} finds a second wind!",
-      "miss": "{actor} gasps.",
-      "whiff": "you can't catch your breath.",
       "description": "A quick, small heal.",
       "weather": {
         "temperature": 0.3,
@@ -4555,8 +4481,6 @@
       ],
       "hit": "{actor} hits {target} with a heavy swing.",
       "perfect_hit": "{actor} lands a heavy swing perfectly on {target}!",
-      "miss": "{actor} misses {target} with a heavy swing.",
-      "whiff": "your heavy swing finds nothing.",
       "description": "Slow and brutal. Best in a cold wind.",
       "weather": {
         "temperature": -0.5,
@@ -4581,8 +4505,6 @@
       ],
       "hit": "{actor} raises a braced stance.",
       "perfect_hit": "{actor} raises a braced stance just in time!",
-      "miss": "{actor} is too slow with a braced stance.",
-      "whiff": "too slow.",
       "description": "A guard that comes into its own in a gale.",
       "weather": {
         "temperature": 0,
@@ -4607,8 +4529,6 @@
       ],
       "hit": "{actor} hits {target} with a whirling cut.",
       "perfect_hit": "{actor} lands a whirling cut perfectly on {target}!",
-      "miss": "{actor} misses {target} with a whirling cut.",
-      "whiff": "your whirling cut finds nothing.",
       "description": "A spinning blow that loves a wild wind.",
       "weather": {
         "temperature": 0.3,
@@ -4633,8 +4553,6 @@
       ],
       "hit": "{actor} raises an iron wall.",
       "perfect_hit": "{actor} raises an iron wall just in time!",
-      "miss": "{actor} is too slow with an iron wall.",
-      "whiff": "too slow.",
       "description": "A great guard, slow to raise.",
       "weather": {
         "temperature": 0,
@@ -4659,8 +4577,6 @@
       ],
       "hit": "{actor} hits {target} with a rending blow.",
       "perfect_hit": "{actor} lands a rending blow perfectly on {target}!",
-      "miss": "{actor} misses {target} with a rending blow.",
-      "whiff": "your rending blow finds nothing.",
       "description": "Opens a wound that bleeds hard.",
       "weather": {
         "temperature": 0.5,
@@ -4689,8 +4605,6 @@
       ],
       "hit": "{actor} rallies {target} with a shout.",
       "perfect_hit": "{actor} roars, and {target} stands taller!",
-      "miss": "{actor}'s shout cracks.",
-      "whiff": "your voice fails.",
       "description": "Heals you, or an ally you target.",
       "weather": {
         "temperature": 0.2,
@@ -4721,8 +4635,6 @@
       ],
       "hit": "{actor} hits {target} with an earth-shaking blow.",
       "perfect_hit": "{actor} lands an earth-shaking blow perfectly on {target}!",
-      "miss": "{actor} misses {target} with an earth-shaking blow.",
-      "whiff": "your earth-shaking blow finds nothing.",
       "description": "The ground itself cracks. Needs firm, still ground.",
       "weather": {
         "temperature": 0,
@@ -4748,8 +4660,6 @@
       ],
       "hit": "{actor} raises an unbreakable guard.",
       "perfect_hit": "{actor} raises an unbreakable guard just in time!",
-      "miss": "{actor} is too slow with an unbreakable guard.",
-      "whiff": "too slow.",
       "description": "Nothing gets through. Made for the cold.",
       "weather": {
         "temperature": -0.6,
@@ -4779,9 +4689,7 @@
       ],
       "hit": "{actor} hits {target} with an executioner's stroke.",
       "perfect_hit": "{actor} lands an executioner's stroke perfectly on {target}!",
-      "miss": "{actor} misses {target} with an executioner's stroke.",
-      "whiff": "your executioner's stroke finds nothing.",
-      "description": "Huge on a perfect beat.",
+      "description": "Huge on a perfect strike.",
       "weather": {
         "temperature": 0.6,
         "energy": 0.6,
@@ -4805,8 +4713,6 @@
       ],
       "hit": "{actor} hits {target} with a spark.",
       "perfect_hit": "{actor} lands a spark perfectly on {target}!",
-      "miss": "{actor} misses {target} with a spark.",
-      "whiff": "your spark finds nothing.",
       "description": "Fast little jolts. Wild weather feeds it.",
       "weather": {
         "temperature": 0.3,
@@ -4831,8 +4737,6 @@
       ],
       "hit": "{actor} hits {target} with a frost shard.",
       "perfect_hit": "{actor} lands a frost shard perfectly on {target}!",
-      "miss": "{actor} misses {target} with a frost shard.",
-      "whiff": "your frost shard finds nothing.",
       "description": "A shard of ice. Strong in the cold.",
       "weather": {
         "temperature": -0.8,
@@ -4858,8 +4762,6 @@
       ],
       "hit": "{actor} hits {target} with a gust.",
       "perfect_hit": "{actor} lands a gust perfectly on {target}!",
-      "miss": "{actor} misses {target} with a gust.",
-      "whiff": "your gust finds nothing.",
       "description": "Knocks them back: their next blow comes later.",
       "weather": {
         "temperature": 0,
@@ -4885,8 +4787,6 @@
       ],
       "hit": "{actor} raises a veil of mist.",
       "perfect_hit": "{actor} raises a veil of mist just in time!",
-      "miss": "{actor} is too slow with a veil of mist.",
-      "whiff": "too slow.",
       "description": "A guard of mist. Better in the wet.",
       "weather": {
         "temperature": 0,
@@ -4911,8 +4811,6 @@
       ],
       "hit": "{actor} hits {target} with a cinder.",
       "perfect_hit": "{actor} lands a cinder perfectly on {target}!",
-      "miss": "{actor} misses {target} with a cinder.",
-      "whiff": "your cinder finds nothing.",
       "description": "A burning ember that keeps burning.",
       "weather": {
         "temperature": 0.8,
@@ -4943,8 +4841,6 @@
       ],
       "hit": "{actor} hits {target} with chain lightning.",
       "perfect_hit": "{actor} lands chain lightning perfectly on {target}!",
-      "miss": "{actor} misses {target} with chain lightning.",
-      "whiff": "your chain lightning finds nothing.",
       "description": "Spark grown up. Needs a storm.",
       "weather": {
         "temperature": 0.4,
@@ -4975,8 +4871,6 @@
       ],
       "hit": "{actor} hits {target} with an ice lance.",
       "perfect_hit": "{actor} lands an ice lance perfectly on {target}!",
-      "miss": "{actor} misses {target} with an ice lance.",
-      "whiff": "your ice lance finds nothing.",
       "description": "A slow, piercing lance of ice.",
       "weather": {
         "temperature": -0.8,
@@ -5003,8 +4897,6 @@
       ],
       "hit": "{actor} hits {target} with a rain of cinders.",
       "perfect_hit": "{actor} lands a rain of cinders perfectly on {target}!",
-      "miss": "{actor} misses {target} with a rain of cinders.",
-      "whiff": "your rain of cinders finds nothing.",
       "description": "Burns, and keeps burning.",
       "weather": {
         "temperature": 0.8,
@@ -5033,8 +4925,6 @@
       ],
       "hit": "{actor} renews {target}.",
       "perfect_hit": "{actor} bathes {target} in green light!",
-      "miss": "{actor}'s renewal fizzles.",
-      "whiff": "the spell slips away.",
       "description": "A strong heal for you or an ally.",
       "weather": {
         "temperature": 0.2,
@@ -5065,8 +4955,6 @@
       ],
       "hit": "{actor} hits {target} with a tempest.",
       "perfect_hit": "{actor} lands a tempest perfectly on {target}!",
-      "miss": "{actor} misses {target} with a tempest.",
-      "whiff": "your tempest finds nothing.",
       "description": "The storm itself, in your hand.",
       "weather": {
         "temperature": 0.6,
@@ -5096,8 +4984,6 @@
       ],
       "hit": "{actor} hits {target} with absolute cold.",
       "perfect_hit": "{actor} lands absolute cold perfectly on {target}!",
-      "miss": "{actor} misses {target} with absolute cold.",
-      "whiff": "your absolute cold finds nothing.",
       "description": "Stops everything. Made for the deep cold.",
       "weather": {
         "temperature": -1,
@@ -5128,8 +5014,6 @@
       ],
       "hit": "{actor} hits {target} with a sunlance.",
       "perfect_hit": "{actor} lands a sunlance perfectly on {target}!",
-      "miss": "{actor} misses {target} with a sunlance.",
-      "whiff": "your sunlance finds nothing.",
       "description": "A spear of sunlight. Needs a burning, still sky.",
       "weather": {
         "temperature": 1,
@@ -5154,8 +5038,6 @@
       ],
       "hit": "{actor} raises a shield of embers.",
       "perfect_hit": "{actor} raises a shield of embers just in time!",
-      "miss": "{actor} is too slow with a shield of embers.",
-      "whiff": "too slow.",
       "description": "A guard of fire for hot, dry days.",
       "weather": {
         "temperature": 0.7,
@@ -5180,8 +5062,6 @@
       ],
       "hit": "{actor} hits {target} with a scatter of caltrops.",
       "perfect_hit": "{actor} lands a scatter of caltrops perfectly on {target}!",
-      "miss": "{actor} misses {target} with a scatter of caltrops.",
-      "whiff": "your scatter of caltrops finds nothing.",
       "description": "Underfoot: their next blow comes later.",
       "weather": {
         "temperature": 0,
@@ -5207,8 +5087,6 @@
       ],
       "hit": "{actor} hits {target} with a poisoned edge.",
       "perfect_hit": "{actor} lands a poisoned edge perfectly on {target}!",
-      "miss": "{actor} misses {target} with a poisoned edge.",
-      "whiff": "your poisoned edge finds nothing.",
       "description": "The poison does the work.",
       "weather": {
         "temperature": 0.3,
@@ -5237,8 +5115,6 @@
       ],
       "hit": "{actor} hits {target} with a low blow.",
       "perfect_hit": "{actor} lands a low blow perfectly on {target}!",
-      "miss": "{actor} misses {target} with a low blow.",
-      "whiff": "your low blow finds nothing.",
       "description": "Dirty, quick, effective.",
       "weather": {
         "temperature": 0,
@@ -5263,8 +5139,6 @@
       ],
       "hit": "{actor} raises a cloud of smoke.",
       "perfect_hit": "{actor} raises a cloud of smoke just in time!",
-      "miss": "{actor} is too slow with a cloud of smoke.",
-      "whiff": "too slow.",
       "description": "Hard to hit what you can't see. Best in still air.",
       "weather": {
         "temperature": 0,
@@ -5289,8 +5163,6 @@
       ],
       "hit": "{actor} hits {target} with a feint.",
       "perfect_hit": "{actor} lands a feint perfectly on {target}!",
-      "miss": "{actor} misses {target} with a feint.",
-      "whiff": "your feint finds nothing.",
       "description": "They flinch: their next blow comes later.",
       "weather": {
         "temperature": -0.3,
@@ -5318,8 +5190,6 @@
       ],
       "hit": "{actor} hits {target} with a twin jab.",
       "perfect_hit": "{actor} lands a twin jab perfectly on {target}!",
-      "miss": "{actor} misses {target} with a twin jab.",
-      "whiff": "your twin jab finds nothing.",
       "description": "The fastest thing you own.",
       "weather": {
         "temperature": 0.5,
@@ -5349,8 +5219,6 @@
       ],
       "hit": "{actor} hits {target} with a garrote.",
       "perfect_hit": "{actor} lands a garrote perfectly on {target}!",
-      "miss": "{actor} misses {target} with a garrote.",
-      "whiff": "your garrote finds nothing.",
       "description": "Slow, quiet and deadly. Best on a still night.",
       "weather": {
         "temperature": -0.4,
@@ -5375,8 +5243,6 @@
       ],
       "hit": "{actor} raises a shadowstep.",
       "perfect_hit": "{actor} raises a shadowstep just in time!",
-      "miss": "{actor} is too slow with a shadowstep.",
-      "whiff": "too slow.",
       "description": "You aren't where the blow lands.",
       "weather": {
         "temperature": -0.2,
@@ -5401,8 +5267,6 @@
       ],
       "hit": "{actor} hits {target} with a venom cloud.",
       "perfect_hit": "{actor} lands a venom cloud perfectly on {target}!",
-      "miss": "{actor} misses {target} with a venom cloud.",
-      "whiff": "your venom cloud finds nothing.",
       "description": "Poisons hard in hot, still air.",
       "weather": {
         "temperature": 0.6,
@@ -5431,8 +5295,6 @@
       ],
       "hit": "{actor} hits {target} with a gutter trick.",
       "perfect_hit": "{actor} lands a gutter trick perfectly on {target}!",
-      "miss": "{actor} misses {target} with a gutter trick.",
-      "whiff": "your gutter trick finds nothing.",
       "description": "Mud in the eyes. Better in the rain.",
       "weather": {
         "temperature": 0,
@@ -5463,8 +5325,6 @@
       ],
       "hit": "{actor} hits {target} with an assassin's blade.",
       "perfect_hit": "{actor} lands an assassin's blade perfectly on {target}!",
-      "miss": "{actor} misses {target} with an assassin's blade.",
-      "whiff": "your assassin's blade finds nothing.",
       "description": "One perfect moment.",
       "weather": {
         "temperature": -0.5,
@@ -5489,8 +5349,6 @@
       ],
       "hit": "{actor} hits {target} with a flurry of cuts.",
       "perfect_hit": "{actor} lands a flurry of cuts perfectly on {target}!",
-      "miss": "{actor} misses {target} with a flurry of cuts.",
-      "whiff": "your flurry of cuts finds nothing.",
       "description": "Many small wounds that keep bleeding.",
       "weather": {
         "temperature": 0.5,
@@ -5519,8 +5377,6 @@
       ],
       "hit": "{actor} raises a vanishing act.",
       "perfect_hit": "{actor} raises a vanishing act just in time!",
-      "miss": "{actor} is too slow with a vanishing act.",
-      "whiff": "too slow.",
       "description": "Gone, until the danger passes.",
       "weather": {
         "temperature": 0,
@@ -5545,8 +5401,6 @@
       ],
       "hit": "{actor} hits {target} with a boathook.",
       "perfect_hit": "{actor} lands a boathook perfectly on {target}!",
-      "miss": "{actor} misses {target} with a boathook.",
-      "whiff": "your boathook finds nothing.",
       "description": "A long ash pole with an iron hook. Better with spray in the air.",
       "weather": {
         "temperature": 0,
@@ -5571,8 +5425,6 @@
       ],
       "hit": "{actor} hits {target} with a flask of hot tar.",
       "perfect_hit": "{actor} lands a flask of hot tar perfectly on {target}!",
-      "miss": "{actor} misses {target} with a flask of hot tar.",
-      "whiff": "your flask of hot tar finds nothing.",
       "description": "Sticky, hot, and they slow down.",
       "weather": {
         "temperature": 0.4,
@@ -5598,8 +5450,6 @@
       ],
       "hit": "{actor} hits {target} with a belaying pin.",
       "perfect_hit": "{actor} lands a belaying pin perfectly on {target}!",
-      "miss": "{actor} misses {target} with a belaying pin.",
-      "whiff": "your belaying pin finds nothing.",
       "description": "A sailor's club.",
       "weather": {
         "temperature": 0,
@@ -5628,8 +5478,6 @@
       ],
       "hit": "{actor} drinks a sea biscuit.",
       "perfect_hit": "{actor} downs a sea biscuit in one perfect gulp!",
-      "miss": "{actor} fumbles a sea biscuit.",
-      "whiff": "you fumble it.",
       "description": "Hard as wood, but they keep you going."
     },
     "cudgel": {
@@ -5647,8 +5495,6 @@
       ],
       "hit": "{actor} hits {target} with a cudgel.",
       "perfect_hit": "{actor} lands a cudgel perfectly on {target}!",
-      "miss": "{actor} misses {target} with a cudgel.",
-      "whiff": "your cudgel finds nothing.",
       "description": "A merchant's answer to an argument.",
       "weather": {
         "temperature": 0,
@@ -5672,8 +5518,6 @@
       ],
       "hit": "{actor} hits {target} with a purse full of lead.",
       "perfect_hit": "{actor} lands a purse full of lead perfectly on {target}!",
-      "miss": "{actor} misses {target} with a purse full of lead.",
-      "whiff": "your purse full of lead finds nothing.",
       "description": "Heavier than it looks.",
       "weather": {
         "temperature": 0,
@@ -5697,8 +5541,6 @@
       ],
       "hit": "{actor} hits {target} with a cloud of pepper.",
       "perfect_hit": "{actor} lands a cloud of pepper perfectly on {target}!",
-      "miss": "{actor} misses {target} with a cloud of pepper.",
-      "whiff": "your cloud of pepper finds nothing.",
       "description": "They sneeze, and slow down.",
       "weather": {
         "temperature": 0.5,
@@ -5729,8 +5571,6 @@
       ],
       "hit": "{actor} drinks a tonic.",
       "perfect_hit": "{actor} downs a tonic in one perfect gulp!",
-      "miss": "{actor} fumbles a tonic.",
-      "whiff": "you fumble it.",
       "description": "A merchant's tonic, mostly honest."
     },
     "hatchet": {
@@ -5748,8 +5588,6 @@
       ],
       "hit": "{actor} hits {target} with a hatchet.",
       "perfect_hit": "{actor} lands a hatchet perfectly on {target}!",
-      "miss": "{actor} misses {target} with a hatchet.",
-      "whiff": "your hatchet finds nothing.",
       "description": "A woodsman's axe, good in cool, quiet woods.",
       "weather": {
         "temperature": -0.2,
@@ -5774,8 +5612,6 @@
       ],
       "hit": "{actor} hits {target} with a skinning knife.",
       "perfect_hit": "{actor} lands a skinning knife perfectly on {target}!",
-      "miss": "{actor} misses {target} with a skinning knife.",
-      "whiff": "your skinning knife finds nothing.",
       "description": "Sharp and short.",
       "weather": {
         "temperature": 0,
@@ -5799,8 +5635,6 @@
       ],
       "hit": "{actor} hits {target} with a snare.",
       "perfect_hit": "{actor} lands a snare perfectly on {target}!",
-      "miss": "{actor} misses {target} with a snare.",
-      "whiff": "your snare finds nothing.",
       "description": "Catches a foot: their next blow comes later.",
       "weather": {
         "temperature": 0,
@@ -5831,8 +5665,6 @@
       ],
       "hit": "{actor} drinks a poultice.",
       "perfect_hit": "{actor} downs a poultice in one perfect gulp!",
-      "miss": "{actor} fumbles a poultice.",
-      "whiff": "you fumble it.",
       "description": "Moss and honey. It works."
     },
     "shiv": {
@@ -5850,8 +5682,6 @@
       ],
       "hit": "{actor} hits {target} with a shiv.",
       "perfect_hit": "{actor} lands a shiv perfectly on {target}!",
-      "miss": "{actor} misses {target} with a shiv.",
-      "whiff": "your shiv finds nothing.",
       "description": "A sharpened something.",
       "weather": {
         "temperature": 0,
@@ -5875,8 +5705,6 @@
       ],
       "hit": "{actor} hits {target} with a fistful of sand.",
       "perfect_hit": "{actor} lands a fistful of sand perfectly on {target}!",
-      "miss": "{actor} misses {target} with a fistful of sand.",
-      "whiff": "your fistful of sand finds nothing.",
       "description": "In the eyes: their next blow comes later.",
       "weather": {
         "temperature": 0.3,
@@ -5902,8 +5730,6 @@
       ],
       "hit": "{actor} hits {target} with a cosh.",
       "perfect_hit": "{actor} lands a cosh perfectly on {target}!",
-      "miss": "{actor} misses {target} with a cosh.",
-      "whiff": "your cosh finds nothing.",
       "description": "A leather sap full of shot.",
       "weather": {
         "temperature": 0,
@@ -5932,8 +5758,6 @@
       ],
       "hit": "{actor} drinks a stolen tonic.",
       "perfect_hit": "{actor} downs a stolen tonic in one perfect gulp!",
-      "miss": "{actor} fumbles a stolen tonic.",
-      "whiff": "you fumble it.",
       "description": "Tastes better for being free."
     }
   },
@@ -6162,8 +5986,7 @@
     },
     "second_wind": {
       "name": "Second Wind",
-      "description": "Each time the attuned slot's ball touches the left edge, you heal 1.",
-      "slot": true
+      "description": "Each time your dot comes back into the core after a knock, you heal 1."
     },
     "last_stand": {
       "name": "Last Stand",
@@ -6183,11 +6006,11 @@
     },
     "steady_hands": {
       "name": "Steady Hands",
-      "description": "Your first miss in each fight doesn't use up the beat."
+      "description": "Your first stagger in each fight doesn't happen."
     },
     "long_breath": {
       "name": "Long Breath",
-      "description": "A perfect hit widens your other slots' windows for their next beat."
+      "description": "A perfect strike makes your core 20% larger for 3 seconds."
     },
     "starsight": {
       "name": "Starsight",
@@ -6203,17 +6026,17 @@
     },
     "moonlit_edge": {
       "name": "Moonlit Edge",
-      "description": "At night, each time the attuned slot's ball touches the right edge, its next hit is 10% stronger (up to 30%).",
+      "description": "At night, each clean or perfect strike with the attuned slot makes its next 10% stronger (up to 30%).",
       "slot": true
     },
     "bloodrhythm": {
       "name": "Bloodrhythm",
-      "description": "Each miss on the attuned slot makes its next hit 10% stronger (up to 30%).",
+      "description": "Each edge strike with the attuned slot (far from the centre) makes its next 10% stronger (up to 30%).",
       "slot": true
     },
     "berserk_seal": {
       "name": "Berserk Seal",
-      "description": "The attuned slot is 50% stronger, but once its ball touches the left edge it is sealed until the fight ends.",
+      "description": "The attuned slot is 50% stronger, but at your first stagger it is sealed until the fight ends.",
       "slot": true
     },
     "thick_hide": {
@@ -6250,10 +6073,6 @@
     "level_cap": 20,
     "respec_coins_per_level": 10,
     "armor_k": 30,
-    "defend_cooldown_ms": 1500,
-    "defend_late_ms": 400,
-    "dodge_window_ms": 200,
-    "block_window_ms": 300,
     "defend_perfect_ms": 60,
     "offer_beat_ms": 2500,
     "lure_chance": 0.03,
@@ -8441,7 +8260,7 @@
           ]
         },
         "fight": {
-          "goal": "Rock crabs crowd Seal Rocks, out along the breakwater east of the Quay Steps. Kill one. Target it (Tab, or click it), then press 4, 3 or 2 as each slot's ball touches the edge. When it swings at you, watch its marker slide along the bar on its card, and press 7 just as it lands: you dodge, or block if you've a shield in hand. Time it well and it takes the whole blow. Not every blow can be dodged or blocked.",
+          "goal": "Rock crabs crowd Seal Rocks, out along the breakwater east of the Quay Steps. Kill one. Target it (Tab, or click it). In the fight, keep your dot near the middle of your balance circle (steer with WASD or the arrows), and strike with your slot keys while it's in the core: J, K and L, unless you've changed them in Settings. The nearer the centre, the harder you hit. When a blow is warned on its card, dodge (Space), or hold Shift to block if you've a shield in hand. Not every blow can be dodged or blocked.",
           "on": {
             "kill": "crab"
           },
@@ -8505,7 +8324,7 @@
           "then": "fight"
         },
         "fight": {
-          "goal": "Feed rats are in the oats in the caravan yard (EAST twice, then SOUTH). Kill one. Target it (Tab, or click it), then press 4, 3 or 2 as each slot's ball touches the edge. When it swings at you, watch its marker slide along the bar on its card, and press 7 just as it lands: you dodge, or block if you've a shield in hand. Time it well and it takes the whole blow. Not every blow can be dodged or blocked.",
+          "goal": "Feed rats are in the oats in the caravan yard (EAST twice, then SOUTH). Kill one. Target it (Tab, or click it). In the fight, keep your dot near the middle of your balance circle (steer with WASD or the arrows), and strike with your slot keys while it's in the core: J, K and L, unless you've changed them in Settings. The nearer the centre, the harder you hit. When a blow is warned on its card, dodge (Space), or hold Shift to block if you've a shield in hand. Not every blow can be dodged or blocked.",
           "on": {
             "kill": "market_rat"
           },
@@ -8572,7 +8391,7 @@
           "then": "fight"
         },
         "fight": {
-          "goal": "Bog wisps haunt Fern Bog, east of the snare line. Kill one: you can't block light, only dodge it. Target it (Tab, or click it), then press 4, 3 or 2 as each slot's ball touches the edge. When it swings at you, watch its marker slide along the bar on its card, and press 7 just as it lands: you dodge, or block if you've a shield in hand. Time it well and it takes the whole blow. Not every blow can be dodged or blocked.",
+          "goal": "Bog wisps haunt Fern Bog, east of the snare line. Kill one: you can't block light, only dodge it. Target it (Tab, or click it). In the fight, keep your dot near the middle of your balance circle (steer with WASD or the arrows), and strike with your slot keys while it's in the core: J, K and L, unless you've changed them in Settings. The nearer the centre, the harder you hit. When a blow is warned on its card, dodge (Space), or hold Shift to block if you've a shield in hand. Not every blow can be dodged or blocked.",
           "on": {
             "kill": "bog_wisp"
           },
@@ -8636,7 +8455,7 @@
           "then": "fight"
         },
         "fight": {
-          "goal": "Rats in Rat Alley (EAST) have been at Nan's bread. Kill one. Target it (Tab, or click it), then press 4, 3 or 2 as each slot's ball touches the edge. When it swings at you, watch its marker slide along the bar on its card, and press 7 just as it lands: you dodge, or block if you've a shield in hand. Time it well and it takes the whole blow. Not every blow can be dodged or blocked.",
+          "goal": "Rats in Rat Alley (EAST) have been at Nan's bread. Kill one. Target it (Tab, or click it). In the fight, keep your dot near the middle of your balance circle (steer with WASD or the arrows), and strike with your slot keys while it's in the core: J, K and L, unless you've changed them in Settings. The nearer the centre, the harder you hit. When a blow is warned on its card, dodge (Space), or hold Shift to block if you've a shield in hand. Not every blow can be dodged or blocked.",
           "on": {
             "kill": "alley_rat"
           },
@@ -9017,7 +8836,7 @@
       "armor": 1,
       "block": 1,
       "rarity": "common",
-      "description": "Limewood and an iron boss. With it in hand, DEFEND (7) blocks instead of dodging: a wider window to time it."
+      "description": "Limewood and an iron boss. With it in hand you can BLOCK (hold Shift): blows are cut while you brace."
     },
     "apprentice_orb": {
       "name": "Apprentice's Orb",

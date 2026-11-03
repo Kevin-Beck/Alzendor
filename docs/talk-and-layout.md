@@ -1,10 +1,10 @@
-# Talk, items and layout: the next update
+# Talk, items and layout
 
-A design for the next round of changes: discussing things with people by
+The design for a round of changes: discussing things with people by
 target, greetings, people who remember you, giving, gifts and selling, what
 people will tell you as they come to trust you, quests handed over properly,
-a pinned quest line, traps you can sneak past, hold / wear / equip, and a new
-layout with the weather beside the map and gear shown as cards. It's built:
+a pinned quest line, traps you can sneak past, hold / wear / equip, a new
+layout, and gear shown as cards. It's built:
 the rules are in `alzendor/alzendor.lua` (the Talk section), the commands in
 `alzendor/commands.py`, and the client in `alzendor/web/index.html`. "Today"
 notes say what existed before.
@@ -276,51 +276,9 @@ How you meet a trap:
 
 ## The layout
 
-```
-┌───────────────────────┬───────────────────────┬──────────────────┐
-│ WEATHER               │ MAP                   │ HERE AND NOW     │
-│                       │                       │                  │
-│  Sky       Rain       │                       │ Room, exits      │
-│  (big)                │                       │ People here      │
-│                       │                       │ Target           │
-│  Time      Ground     │                       │ Slots, defend    │
-│                       │                       │                  │
-│  Forecast             │                       │ (the combat      │
-├───────────────────────┴───────────────────────┤  panel is being  │
-│ ▸ The Signet — Steal the magistrate's signet… │  redesigned)     │
-├───────────────────────────────────────────────┤                  │
-│ Chat log                                      │                  │
-│                                               │                  │
-├───────────────────────────────────────────────┤                  │
-│ > command                                     │                  │
-└───────────────────────────────────────────────┴──────────────────┘
-```
-
-- **Top left: the weather and the map, side by side, the same size.** The
-  weather (sky, rain, time, ground, the forecast) gets as much room as the
-  map.
-- **Bottom left: the pinned quest line, the chat log and the command line,**
-  across the full width under both.
-- **Right: here and now, top to bottom.** The room and its exits, who's
-  here, your target, your slots and defence: everything you can act on in
-  this place. Its arrangement is yours to redesign; this update only moves
-  the weather out of it.
-- **On a phone** it stacks: the weather becomes a slim strip at the top (sky
-  dot, rain, time, ground as icons) that opens to the full panel; then the
-  map, the quest line, the log, and the here-and-now panel behind a button,
-  as the side panel is today.
-
-### A bigger, clearer weather panel
-
-- With half the top row to itself, the sky grid grows from about 95 px to
-  about 220 px, and its labels (Gale, Tempest, Rime, Scorch, cold, hot) to a
-  readable 12 px. No text in the game goes below 11 px.
-- **The rain bar shows only what's falling, 0 to 1:** empty when dry, full
-  in a downpour. It's as tall as the grid and narrow beside it.
-- **In a gear card, rain is a preference, not a level:** "Wants rain" (a
-  filled drop), "Wants it dry" (a struck-out drop), or nothing at all for
-  gear that doesn't mind. Today it draws a half-full bar for "doesn't mind",
-  which reads as half-raining.
+The layout this update introduced has since changed again: the fight panel
+sits beside the map, and the weather is in the side panel. The README
+(Running locally) describes the current one.
 
 ## Gear as cards
 
@@ -334,9 +292,9 @@ Hovering a slot (or anything in the Inventory or Character panels) shows a
 ├──────────────────────────────────┤
 │            (icon)                │  a drawn icon for its kind
 ├──────────────────────────────────┤
-│ DAMAGE    6 / 9 / 14             │  opener / hit / perfect
-│ BEAT      every 1.6 s            │
-│ TIMING    ±350 ms · ±120 perfect │
+│ DAMAGE    6 / 9 / 14             │  edge / clean / perfect
+│ READY     every 1.6 s            │
+│ KICK      1.2 (any way)          │
 ├──────────────────────────────────┤
 │ WEATHER              ●●○○○       │
 │ ┌────────┐  Best: mild, a light  │
@@ -346,7 +304,7 @@ Hovering a slot (or anything in the Inventory or Character panels) shows a
 ├──────────────────────────────────┤
 │ RIGHT NOW · Copperstall          │
 │ Weather: near its spot     +13%  │
-│ → 7 / 10 / 16 · every 1.6 s      │
+│ → 7 / 10 / 16                    │
 ├──────────────────────────────────┤
 │ "Heavy with coin, and heavier    │  flavour, in italics
 │  with intent."                   │

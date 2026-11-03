@@ -5,8 +5,11 @@ RUN useradd --system --no-create-home alzendor
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# `docker compose run --rm test` runs the test suite against the compose Redis.
+# `docker compose --profile test run --rm test` runs the test suite against a
+# Redis of its own (test-redis). Node runs the client's twin of the balance
+# simulation against the vectors (tests/test_balance.py).
 FROM base AS test
+RUN apt-get update && apt-get install -y --no-install-recommends nodejs && rm -rf /var/lib/apt/lists/*
 COPY requirements-dev.txt .
 RUN pip install --no-cache-dir -r requirements-dev.txt
 COPY . .

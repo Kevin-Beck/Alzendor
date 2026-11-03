@@ -15,7 +15,10 @@ class Config:
     host: str = "0.0.0.0"
     port: int = 8000
     redis_url: str = "redis://localhost:6379/0"
-    server_id: str = field(default_factory=socket.gethostname)
+    # Must be unique per server: a server owns the fights it starts by this id
+    # (and claims it in Redis while it runs). Also shown to clients and in logs.
+    # By default, the host name and port.
+    server_id: str = field(default_factory=lambda: f"{socket.gethostname()}-8000")
     seed_file: Path = Path("world/seed.json")
     # Account names (lowercase) allowed to use admin commands.
     admins: frozenset[str] = frozenset()
@@ -52,7 +55,7 @@ class Config:
             host=get("HOST", defaults.host),
             port=int(get("PORT", defaults.port)),
             redis_url=get("REDIS_URL", defaults.redis_url),
-            server_id=get("SERVER_ID", defaults.server_id),
+            server_id=get("SERVER_ID", f"{socket.gethostname()}-{get('PORT', defaults.port)}"),
             seed_file=Path(get("SEED_FILE", defaults.seed_file)),
             admins=frozenset(name.lower() for name in _list(get("ADMINS", ""))),
             allowed_origins=_list(get("ALLOWED_ORIGINS", "")),

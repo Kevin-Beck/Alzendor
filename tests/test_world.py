@@ -12,9 +12,10 @@ from .conftest import SEED, drain, enter, ride, texts
 
 async def test_entering_subscribes_to_every_level(world):
     kevin = await enter(world, "kevin")
-    assert set(kevin.subs) == {"PLAYER:kevin", "ROOM:tavern", "AREA:old_quarter", "REGION:harrowgate", "REALM:alzendor",
-                               "CHANNEL:general"}
-    events = await drain(kevin)
+    channels = {"PLAYER:kevin", "ROOM:tavern", "AREA:old_quarter", "REGION:harrowgate", "REALM:alzendor", "CHANNEL:general"}
+    assert set(await world.redis.hkeys("PLAYER:kevin:subs")) == channels
+    events = await drain(kevin)  # the feed takes them on at the point in the sequence they were joined
+    assert set(kevin.subs) == channels
     assert events[-1]["type"] == "room"
     assert events[-1]["room"]["id"] == "tavern"
     assert events[-1]["room"]["exits"] == ["down", "east", "north"]
@@ -161,7 +162,7 @@ async def test_chat_channels(world):
     await world.call("chat", "kevin", "traders", "Gone?")
     assert texts(await drain(mara)) == ["Mara joined #traders.", "[traders] Mara: Selling fish", "Mara left #traders."]
     await world.call("chat", "mara", "traders", "Hello?")
-    assert texts(await drain(mara)) == ["You aren't in #traders. Try 'join traders'."]
+    assert texts(await drain(mara)) == ["You aren't in #traders. Try JOIN TRADERS."]
 
 
 async def test_disconnect_leaves_the_room_and_keeps_chat_channels(world):
@@ -201,6 +202,82 @@ async def test_resuming_replays_what_was_missed(world):
     await world.call("say", "mara", "Are you there?")
     resumed = await enter(world, "kevin", session="second", since=last_seen)
     assert texts(await drain(resumed))[:1] == ['Mara says, "Are you there?"']
+
+
+async def test_resuming_replays_a_room_left_meanwhile_and_not_one_from_before_arriving(world):
+    kevin, mara = await enter(world, "kevin", session="first"), await enter(world, "mara")
+    await drain(kevin)
+    last_seen = kevin.cursor
+    await world.call("move", "mara", "north")
+    await world.call("say", "mara", "Before you came.")  # in the market square, before Kevin
+    await world.call("move", "mara", "south")
+    await world.call("say", "mara", "Are you there?")  # in the tavern, with Kevin
+    await world.call("move", "kevin", "north")  # a move sent just before the connection dropped
+    resumed = await enter(world, "kevin", session="second", since=last_seen)
+    said = texts(await drain(resumed))
+    assert 'Mara says, "Are you there?"' in said
+    assert 'Mara says, "Before you came."' not in said
+
+
+async def test_moving_takes_you_out_of_the_room_you_left(world):
+    await enter(world, "kevin")
+    await world.call("move", "kevin", "north")
+    assert not await world.redis.sismember("ROOM:tavern:players", "kevin")
+    assert await world.redis.sismember("ROOM:market_square:players", "kevin")
+    mara = await enter(world, "mara")
+    await world.call("look", "mara")
+    room = [e for e in await drain(mara) if e["type"] == "room"][-1]["room"]
+    assert "pc:kevin" not in [c["id"] for c in room["entities"]]
+
+
+async def test_greeting_or_discussing_with_nobody_is_a_notice_not_an_error(world):
+    kevin = await enter(world, "kevin")
+    await enter(world, "mara")
+    await drain(kevin)
+    await world.call("greet", "kevin", "nobody")
+    await world.call("discuss", "kevin", "mara", "weather")
+    await world.call("give", "kevin", "map", "nobody")
+    await world.call("goto", "kevin", "cellar")  # nobody to talk to
+    await drain(kevin)
+    await world.call("greet", "kevin", "")
+    assert texts(await drain(kevin)) == ["With whom? Press Tab, or click someone."]
+
+
+async def test_the_clock_cant_be_pinned_to_nonsense(world):
+    kevin = await enter(world, "kevin")
+    await drain(kevin)
+    await world.call("set_clock", "kevin", "nan")
+    assert texts(await drain(kevin)) == ["Usage: SETCLOCK <hour 0-23>, or SETCLOCK CLEAR."]
+    assert await world.redis.get("alz:clock_override") == "12"
+    await world.call("move", "kevin", "north")  # still works for everyone
+    assert await world.redis.get("PLAYER:kevin:room") == "market_square"
+
+
+async def test_a_player_can_make_only_a_few_channels(world):
+    kevin = await enter(world, "kevin")
+    for ch in ("one", "two", "three", "four"):
+        await world.call("create_channel", "kevin", ch)
+    assert texts(await drain(kevin))[-1] == "You can make at most 3 channels."
+    assert not await world.redis.sismember("alz:channels", "four")
+
+
+async def test_a_players_own_stream_goes_once_they_leave_the_world(world):
+    kevin = await enter(world, "kevin")
+    await world.call("disconnect", "kevin", "", "", "Bye.")
+    assert 0 < await world.redis.pttl("PLAYER:kevin") <= 600000
+    await enter(world, "kevin", session="again")
+    assert await world.redis.pttl("PLAYER:kevin") == -1
+
+
+async def test_the_weather_tick_sends_your_kit_only_when_it_changed(world):
+    kevin = await enter(world, "kevin")
+    await drain(kevin)
+    await world.call("weather_tick")
+    await world.call("weather_tick")
+    assert [e for e in await drain(kevin) if e["type"] == "kit"] == []
+    await world.redis.sadd("PLAYER:kevin:inv", "lantern-1")
+    await world.call("weather_tick")
+    assert len([e for e in await drain(kevin) if e["type"] == "kit"]) == 1
 
 
 async def test_stale_connections_are_removed_after_the_cutoff(world):
@@ -479,13 +556,13 @@ def test_seed_validation_checks_exits_match_the_map(change, message):
 
 
 @pytest.mark.parametrize("change, message", [
-    (lambda d: d["gear"]["sword"].update(window=300), "from rhythm combat"),
-    (lambda d: d["gear"]["sword"].pop("cooldown"), "cooldown must be"),
-    (lambda d: d["gear"]["sword"].update(effect="poison"), "effect must be"),
-    (lambda d: d["gear"]["sword"].update(amounts=[1, 2]), "amounts must be"),
-    (lambda d: d["gear"]["sword"].pop("whiff"), "missing whiff"),
+    (lambda d: d["gear"]["dagger"].update(window=300), "from rhythm combat"),
+    (lambda d: d["gear"]["dagger"].pop("cooldown"), "cooldown must be"),
+    (lambda d: d["gear"]["dagger"].update(effect="poison"), "effect must be"),
+    (lambda d: d["gear"]["dagger"].update(amounts=[1, 2]), "amounts must be"),
+    (lambda d: d["gear"]["dagger"].pop("hit"), "missing hit"),
     (lambda d: d["loadout"].append("banjo"), "unknown gear 'banjo'"),
-    (lambda d: d["loadout"].append("sword"), "at most 3 slots"),
+    (lambda d: d["loadout"].append("dagger"), "at most 3 slots"),
 ])
 def test_seed_validation_checks_gear(change, message):
     data = load_seed(SEED)
@@ -541,3 +618,99 @@ def test_seed_validation_checks_balance_fields(change, message):
     change(data)
     with pytest.raises(ValueError, match=message):
         validate_seed(data)
+
+
+@pytest.mark.parametrize("change, message", [
+    # A zone's entrance is an exit in the neighbouring zone's file: forget it and the zone is cut off.
+    (lambda d: d["rooms"]["ff_orchard"]["exits"].pop("east"), "cc_road: exit west to ff_orchard has no way back"),
+    (lambda d: d["rooms"]["ff_orchard"]["exits"].pop("east"), "room cc_gate: can't be reached"),
+    # A realm with no way out traps everyone who goes in.
+    (lambda d: d["routes"].pop("moon-arch"), "room gl_landing: a trap"),
+    (lambda d: d["rooms"]["tavern"].update(one_way=["up"]), "one_way must list directions of its own exits"),
+])
+def test_seed_validation_checks_the_world_as_a_whole(change, message):
+    data = load_seed(SEED)
+    change(data)
+    with pytest.raises(ValueError, match=message):
+        validate_seed(data)
+
+
+def test_every_room_can_be_reached_and_left():
+    from alzendor.world import _graph_problems
+    assert _graph_problems(load_seed(SEED)) == []
+
+
+async def test_resuming_past_what_a_stream_keeps_says_some_is_lost(world):
+    kevin, mara = await enter(world, "kevin", session="first"), await enter(world, "mara")
+    await drain(kevin)
+    last_seen = kevin.cursor
+    for n in range(1500):  # more than the room's stream keeps
+        await world.call("say", "mara", f"line {n}")
+    resumed = await enter(world, "kevin", session="second", since=last_seen)
+    said = texts(await drain(resumed))
+    assert "Some of what happened while you were away is lost." in said
+    assert not any(t.startswith('Mara says, "line') for t in said)  # not a replay with a hole in it
+
+
+# Words for mechanics that are gone. Text players read (content, Lua replies,
+# HELP, the client) mustn't teach them again; add to the list whenever a
+# mechanic is retired (the rhythm combat this list starts with: DEFEND on 7,
+# slot balls, beats and timing windows, keys 4, 3 and 2).
+RETIRED = [r"\bDEFEND\b", r"(?i)\bpress [0-9]\b", r"(?i)\bslot's ball\b", r"(?i)\bball touches\b", r"(?i)\btiming windows?\b",
+           r"(?i)\bperfect windows?\b", r"\b4, 3,? (?:and|or) 2\b", r"(?i)\bon the beat\b", r"(?i)\bperfect beat\b",
+           r"(?i)\bbeats? (?:slower|faster)\b", r"(?i)\buses? up the beat\b"]
+
+
+def player_text():
+    """Every string a player might read, by where it comes from."""
+    import re
+    from pathlib import Path
+    from alzendor import commands
+
+    def strings(o):
+        if isinstance(o, str):
+            yield o
+        elif isinstance(o, dict):
+            for v in o.values():
+                yield from strings(v)
+        elif isinstance(o, list):
+            for v in o:
+                yield from strings(v)
+    root = Path(__file__).parent.parent
+    lua = (root / "alzendor" / "alzendor.lua").read_text()
+    html = (root / "alzendor" / "web" / "index.html").read_text()
+    yield from (("content", t) for t in strings(load_seed(SEED)))
+    yield from (("alzendor.lua", a or b) for a, b in re.findall(r"'([^'\n]*)'|\"([^\"\n]*)\"", lua))
+    yield from (("commands.py", f"{c.usage} {c.summary}") for c in commands.COMMANDS.values())
+    yield from (("index.html", a or b) for a, b in re.findall(r'"([^"\n]*)"|`([^`]*)`', html))
+
+
+def test_no_text_teaches_a_retired_mechanic():
+    import re
+    found = [(where, pattern, text[:80]) for where, text in player_text() for pattern in RETIRED if re.search(pattern, text)]
+    assert found == []
+
+
+@pytest.mark.parametrize("how", ["quit", "logout", "connection lost", "idle"])
+async def test_nothing_from_while_you_were_out_of_the_world_is_shown(world, how):
+    """Resuming catches up only a connection that blipped while the character
+    stayed in the world. Once out of it (quit, logout, idle, or a lost
+    connection past the grace period), coming back shows nothing from the time
+    away, whatever `since` the client sends."""
+    kevin, mara = await enter(world, "kevin", session="first"), await enter(world, "mara")
+    await world.call("join", "mara", "general")
+    await drain(kevin)
+    last_seen = kevin.cursor
+    if how == "connection lost":
+        await world.redis.zadd("alz:online", {"kevin": 0})
+        assert await world.call("disconnect", "kevin", "", 1, "Your connection was lost.") == 1
+    else:
+        reason = {"quit": "You leave the world.", "logout": "You have logged out.",
+                  "idle": "You drifted off after a long while idle."}[how]
+        assert await world.call("disconnect", "kevin", "first", "", reason) == 1
+    await world.call("say", "mara", "Said in the room while he was gone.")
+    await world.call("chat", "mara", "general", "Said on chat while he was gone.")
+    await world.call("tell", "mara", "kevin", "Told to him while he was gone.")
+    back = await enter(world, "kevin", session="second", since=last_seen)
+    said = texts(await drain(back))
+    assert not [t for t in said if "while he was gone" in t], said

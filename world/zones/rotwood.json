@@ -471,7 +471,7 @@
         {
           "name": "spore-burst",
           "period": 37700,
-          "damage": 110,
+          "damage": 94,
           "kick": 2.4,
           "stagger": true,
           "debuff": {
@@ -509,8 +509,6 @@
       ],
       "hit": "{actor} drinks Pim's tincture.",
       "perfect_hit": "{actor} drinks Pim's tincture, and it takes.",
-      "miss": "{actor} fumbles Pim's Tincture.",
-      "whiff": "your Pim's Tincture finds nothing.",
       "description": "Bitter, and it clears the lungs. Works best in still air.",
       "weather": {
         "temperature": 0.1,
@@ -534,8 +532,6 @@
       ],
       "hit": "{actor} lashes {target}.",
       "perfect_hit": "{actor} lashes {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Mycelial Lash finds nothing.",
       "description": "A tendril of the Mind, dried and braided. It likes the damp.",
       "weather": {
         "temperature": 0.2,

@@ -91,7 +91,8 @@ async def test_gear_is_strongest_at_its_spot(world):
     await set_weather(world.redis, "alzendor", 0.6, 0.8, 1)  # its spot, in a downpour
     await world.call("set_weather", "kevin", 0.6, 0.8, 1)
     storm = await kit_gear(kevin, "stormcall")
-    assert storm["weather"] == {"temperature": 0.6, "energy": 0.8, "precipitation": "wet", "tier": "orange"}
+    assert storm["weather"] == {"temperature": 0.6, "energy": 0.8, "precipitation": "wet", "tier": "orange",
+                                "ring": {"peak": 1, "far": 1, "radius": 0.4}, "zone": "Tempest"}
     assert storm["now"]["amounts"] == [36, 47, 73]  # x2, and x1.3 for the rain
 
     await world.call("set_weather", "kevin", 0, 0, -1)  # a mild dry day: out of its element
@@ -231,7 +232,7 @@ async def test_without_lore_the_weather_is_rough_and_tamsin_teaches_it(world):
 
     await walk(world, "kevin", "north")  # the lighthouse
     await drain(kevin)
-    await world.call("ask", "kevin", "tamsin", "weather")
+    await world.call("discuss", "kevin", "tamsin", "weather")
     events = await drain(kevin)
     assert texts(events)[1].startswith("Old Tamsin shows you how to read the skies over Alzendor.")
     exact = of_type(events, "weather")[-1]
@@ -251,7 +252,7 @@ async def test_only_friends_are_taught(world):
     await walk(world, "kevin", "north", "west", "west", "north")
     await world.redis.hset("PLAYER:kevin:rep:harrowfolk", mapping={"affinity": -60, "respect": 0})
     await drain(kevin)
-    await world.call("ask", "kevin", "tamsin", "weather")
+    await world.call("discuss", "kevin", "tamsin", "weather")
     assert texts(await drain(kevin)) == ["Old Tamsin has nothing to say to you."]  # hostile: no talk at all
     assert not await world.redis.exists("PLAYER:kevin:lore")
 
@@ -274,10 +275,22 @@ async def test_faction_boons_add_to_stats(world):
 
 async def test_a_full_pack_cannot_take_more(world):
     kevin = await enter(world, "kevin")
-    await world.redis.hset("alz:rules", "pack_size", 1)  # the spare dagger fills it
+    await world.redis.hset("alz:rules", "pack_size", 1)
+    await world.redis.sadd("PLAYER:kevin:inv", "lantern-1")
     await drain(kevin)
     await world.call("get", "kevin", "map")
     assert texts(await drain(kevin)) == ["Your pack is full (1/1). Drop something first."]
+
+
+async def test_gear_doesnt_fill_the_pack(world):
+    # Gear can't be dropped, so if it counted, a full pack of it would block quest items for good.
+    kevin = await enter(world, "kevin")
+    await world.redis.hset("alz:rules", "pack_size", 1)
+    gear = [gid for gid in await world.redis.smembers("alz:gear")][:12]
+    await world.redis.sadd("PLAYER:kevin:gear", *gear)
+    await world.call("move", "kevin", "down")  # the cellar, with a lantern
+    await world.call("get", "kevin", "lantern")
+    assert await world.redis.sismember("PLAYER:kevin:inv", "lantern-1")
 
 
 async def test_no_changing_gear_mid_fight(world):
@@ -297,7 +310,8 @@ async def test_no_changing_gear_mid_fight(world):
     (lambda d: d["rooms"]["tavern"].update(climate={"temperature": 1, "energy": 0, "precipitation": -1}), "indoor rooms are always neutral"),
     (lambda d: d["gear"]["dagger"]["weather"].update(tier="gold"), "tier must be one of"),
     (lambda d: d["gear"]["dagger"]["weather"].update(precipitation="damp"), "precipitation must be one of"),
-    (lambda d: d["kinds"].pop("Weapon"), "kind 'Weapon' has no default"),
+    (lambda d: (d["gear"]["dagger"].pop("weather"), d["gear"]["dagger"].update(kind="Weapon"), d["kinds"].pop("Weapon")),
+     "kind 'Weapon' has no default"),
     (lambda d: d["npcs"]["tamsin"].update(forecasts=["atlantis"]), "forecasts unknown realm 'atlantis'"),
     (lambda d: d["npcs"]["spider-1"].update(active_when={"precipitation": [1, 0]}), "active_when needs"),
     (lambda d: d["factions"]["wardens"]["boons"][0].update(stat="luck"), "boon for unknown stat 'luck'"),

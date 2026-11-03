@@ -488,7 +488,7 @@
         {
           "name": "belly-slam",
           "period": 30100,
-          "damage": 90,
+          "damage": 65,
           "kick": 2.229,
           "stagger": true,
           "debuff": {
@@ -521,8 +521,6 @@
       ],
       "hit": "{actor} spears {target}.",
       "perfect_hit": "{actor} spears {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Eel Spear finds nothing.",
       "description": "A barbed Mirefall eel-spear. In the rain it's the best thing you own.",
       "weather": {
         "temperature": 0.1,

@@ -1,13 +1,16 @@
-"""Load test for encounters (docs/combat-redesign.md, step 12): bot players
+"""Load test for encounters (docs/combat.md, "Cost"): bot players
 fighting at once, each in an encounter of its own, steering toward the centre
 of their circle from the owner's state and striking when they're there.
 
-    python -m tools.load_encounters --url ws://localhost:8000/ws --redis redis://localhost:6379/0 \\
+    python -m tools.load_encounters --url ws://localhost:8097/ws --redis redis://localhost:6380/1 \\
         --players 50 --seconds 60 --pid <the game server's process id>
 
 Run it against a test server and its own Redis, never the live one: it
 registers bot accounts and puts a hostile copy of the Sparring Post in a room
-of each bot's own (or, with --same-room, all in the Training Yard). Each
+of each bot's own (or, with --same-room, all in the Training Yard), and takes
+those copies away again at the end (--keep leaves them). --redis has no
+default, and db 0 (where a game keeps its world) is refused unless
+--i-mean-it. Each
 bot's foe belongs to that bot alone (like an ambusher), so every bot is in an
 encounter of its own, owned by the server it's connected to. With --pid, it reports that process's CPU use (of one core)
 while the bots fight.
@@ -25,6 +28,7 @@ import json
 import os
 import statistics
 import time
+from urllib.parse import urlsplit
 
 from websockets.asyncio.client import connect
 
@@ -138,6 +142,18 @@ async def put_in_a_fight(redis, bot: Bot, room: str) -> None:
     await World(redis, bot.server).call("goto", bot.pid, room)
 
 
+async def clean_up(redis, bots: list[Bot]) -> int:
+    """Takes the bots' Sparring Posts out of the world."""
+    removed = 0
+    for bot in bots:
+        nid = f"{TEMPLATE}~{bot.pid}~1"
+        room = await redis.hget(f"NPC:{nid}", "room")
+        if room:
+            await redis.srem(f"ROOM:{room}:npcs", nid)
+        removed += await redis.delete(f"NPC:{nid}", f"NPC:{nid}:encounter")
+    return removed
+
+
 def cpu_seconds(pid: int) -> float:
     with open(f"/proc/{pid}/stat") as f:
         fields = f.read().rsplit(")", 1)[1].split()
@@ -147,14 +163,19 @@ def cpu_seconds(pid: int) -> float:
 async def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--url", default="ws://localhost:8000/ws")
-    parser.add_argument("--redis", default="redis://localhost:6379/0", help="the test server's Redis (never the live one)")
+    parser.add_argument("--redis", required=True, help="the test server's Redis, e.g. redis://localhost:6380/1 (never the live one)")
+    parser.add_argument("--i-mean-it", action="store_true", help="allow db 0 of a Redis")
+    parser.add_argument("--keep", action="store_true", help="leave the bots' Sparring Posts in the world at the end")
     parser.add_argument("--players", type=int, default=50)
     parser.add_argument("--seconds", type=float, default=60)
     parser.add_argument("--pid", type=int, help="the game server's process id, to measure its CPU")
     parser.add_argument("--same-room", action="store_true", help="every bot in the Training Yard (the worst case)")
     parser.add_argument("--idle", action="store_true", help="connected and sending inputs, but not fighting: the baseline")
     args = parser.parse_args()
+    if not args.i_mean_it and urlsplit(args.redis).path.strip("/") in ("", "0"):
+        parser.error(f"--redis {args.redis} is db 0, where a game keeps its world: use another db, or add --i-mean-it")
 
+    print(f"Writing bot accounts and NPCs to {args.redis}")
     redis = open_redis(args.redis)
     bots = [Bot(n, args.url) for n in range(args.players)]
     for i in range(0, len(bots), 10):  # signups are rate limited per address; raise ALZ_SIGNUPS_PER_HOUR for big runs
@@ -178,6 +199,8 @@ async def main() -> None:
         print(f"round trip: median {statistics.median(rtts):.1f} ms, 95th percentile {sorted(rtts)[int(len(rtts) * 0.95)]:.1f} ms")
     if cpu is not None:
         print(f"server CPU: {cpu:.1f}% of one core")
+    if not args.keep:
+        print(f"cleaned up: {await clean_up(redis, bots)} keys")
     await redis.aclose()
 
 

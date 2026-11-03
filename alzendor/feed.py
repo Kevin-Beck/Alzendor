@@ -34,8 +34,26 @@ class Feed:
 
     @classmethod
     async def open(cls, redis: Redis, pid: str, session_id: str, cursor: int) -> "Feed":
-        subs = await redis.hgetall(f"PLAYER:{pid}:subs")
-        return cls(redis, session_id, cursor, {ch: int(seq) for ch, seq in subs.items()})
+        """A feed from `cursor` on. Its channels are the player's as they were
+        at the cursor, not as they are now: a resumed connection replays the
+        `subs` changes since then at their place in the sequence, so it also
+        gets what was said in a room the player has left meanwhile."""
+        async with redis.pipeline(transaction=True) as pipe:
+            pipe.hgetall(f"PLAYER:{pid}:subs")
+            pipe.xrange(f"PLAYER:{pid}", f"{cursor + 1}-0", "+")
+            current, since = await pipe.execute()
+        subs = {ch: int(seq) for ch, seq in current.items()}
+        own = f"PLAYER:{pid}"  # always read: the changes to replay are in it
+        for _id, fields in reversed(since):
+            event = json.loads(fields["e"])
+            if event.get("type") == "control" and event.get("op") == "subs":
+                for channel in event["add"]:
+                    if channel != own:
+                        subs.pop(channel, None)
+                for channel in event["remove"]:
+                    subs[channel] = 0  # read it from the cursor, until the replay removes it again
+        subs[own] = 0  # from the cursor: its first event may be the one that subscribed it
+        return cls(redis, session_id, cursor, subs)
 
     async def read(self, block_ms: int = FEED_BLOCK_MS) -> list[dict]:
         """Waits for and returns the next events, in sequence order."""

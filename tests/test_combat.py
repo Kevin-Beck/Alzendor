@@ -65,7 +65,7 @@ async def test_an_enemy_appearing_starts_a_fight(world):
     await world.call("move", "kevin", "east")
     assert not await encounter(world)
     await world.redis.zadd("alz:respawns", {"orc-1": 0})
-    await world.call("respawn")
+    await world.call("upkeep")
     assert await encounter(world)
     assert await world.redis.get("NPC:orc-1:encounter") == await encounter(world)
 
@@ -77,7 +77,7 @@ async def test_an_enemy_arriving_joins_the_fight_in_progress(world):
     # Another hostile one turns up mid-fight: it joins, rather than starting its own.
     await world.redis.hset("NPC:orc-2", "disposition", "hostile")
     await world.redis.delete("PLAYER:kevin:rep:orcs")
-    await world.call("respawn")  # nothing due; then reputation turns the whelp hostile:
+    await world.call("upkeep")  # nothing due; then reputation turns the whelp hostile:
     await world.redis.hset("PLAYER:kevin:rep:orcs", mapping={"affinity": -100, "respect": -100})
     await world.call("greet", "kevin", "orc")  # any deed re-runs the rule
     assert set(await world.redis.zrange(f"ENC:{eid}:npcs", 0, -1)) == {"orc-1", "orc-2"}
@@ -164,10 +164,10 @@ async def test_npcs_go_down_and_come_back(world):
     assert not await world.redis.sismember("ROOM:fish_market:npcs", "rat-1")
     assert not await encounter(world)  # it was the only one in the fight
 
-    await world.call("respawn")  # not due yet
+    await world.call("upkeep")  # not due yet
     assert not await world.redis.sismember("ROOM:fish_market:npcs", "rat-1")
     await world.redis.zadd("alz:respawns", {"rat-1": 0})
-    await world.call("respawn")
+    await world.call("upkeep")
     arrive = of_type(await drain(kevin), "arrive")[0]
     assert arrive["text"] == "The Dock Rat appears." and arrive["entity"]["hp"] == 56  # at full health
 

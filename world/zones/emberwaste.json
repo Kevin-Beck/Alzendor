@@ -483,7 +483,7 @@
         {
           "name": "stomp",
           "period": 35000,
-          "damage": 160,
+          "damage": 84,
           "kick": 2.343,
           "stagger": true,
           "debuff": {
@@ -517,8 +517,6 @@
       ],
       "hit": "{actor} slashes {target}.",
       "perfect_hit": "{actor} slashes {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Glass Blade finds nothing.",
       "description": "A knife of black glass from the barrens. Sharpest in the heat.",
       "weather": {
         "temperature": 0.8,

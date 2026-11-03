@@ -12,11 +12,12 @@ lowercase words are what you fill in.
 """
 
 import json
+import logging
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 
-from .world import DIRECTIONS, World
+from .world import DIRECTIONS, STATS, World
 
 MAX_INPUT = 500
 CHANNEL_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{1,23}$")
@@ -26,6 +27,9 @@ SHORT_DIRECTIONS = {
     "ne": "northeast", "nw": "northwest", "se": "southeast", "sw": "southwest",
     "u": "up", "d": "down",
 }
+
+
+log = logging.getLogger(__name__)
 
 
 class Usage(Exception):
@@ -42,9 +46,19 @@ class Context:
     # The entity the client has selected ('pc:<id>' or 'npc:<id>'), used by
     # commands that take a target when none is typed.
     target: str = ""
+    # Tells the client something without Redis: for when the player isn't in
+    # the world, so no notice can reach them through their stream.
+    tell: Callable[[str], Awaitable[None]] | None = None
 
     async def call(self, function: str, *args) -> int:
-        return await self.world.call(function, self.pid, *args)
+        # Every command's function is an action (alzendor.lua): 1 if it ran, 0
+        # if the player wasn't in the world (taken out a moment ago: idle, or
+        # their connection lost), when it did nothing and said nothing.
+        result = await self.world.call(function, self.pid, *args)
+        if result == 0 and self.tell:
+            log.debug("%s: %s while not in the world", self.pid, function)
+            await self.tell("You're not in the world right now.")
+        return result
 
     async def reply(self, text: str) -> None:
         await self.call("notify", text)
@@ -54,7 +68,7 @@ class Context:
         return await self.world.redis.get(f"PLAYER:{self.pid}:encounter")
 
     async def input(self, eid: str, **message) -> None:
-        """Sends an input to the encounter's owner (docs/combat-redesign.md,
+        """Sends an input to the encounter's owner (docs/combat.md,
         Protocol): typed commands and pressed keys take the same path."""
         await self.world.redis.publish(f"enc:{eid}:in", json.dumps({"pid": self.pid, **message}))
 
@@ -70,15 +84,16 @@ class Command:
     handler: Handler
     aliases: tuple[str, ...] = ()
     admin: bool = False
+    hidden: bool = False  # works, but HELP doesn't list it (another command's usage covers it)
 
 
 COMMANDS: dict[str, Command] = {}
 ALIASES: dict[str, str] = {}
 
 
-def command(name: str, usage: str, summary: str, aliases: tuple[str, ...] = (), admin: bool = False):
+def command(name: str, usage: str, summary: str, aliases: tuple[str, ...] = (), admin: bool = False, hidden: bool = False):
     def register(handler: Handler) -> Handler:
-        COMMANDS[name] = Command(name, usage, summary, handler, aliases, admin)
+        COMMANDS[name] = Command(name, usage, summary, handler, aliases, admin, hidden)
         for alias in aliases:
             ALIASES[alias] = name
         return handler
@@ -187,7 +202,7 @@ def _channel(rest: str) -> str:
 # Looking around ---------------------------------------------------------------
 
 
-@command("look", "LOOK [thing or direction]", "Describe the room, something in it, or what's that way (LOOK NORTH, L N).",
+@command("look", "LOOK [<thing or direction>]", "Describe the room, something in it, or what's that way (LOOK NORTH, L N).",
          aliases=("l",))
 async def look(ctx: Context, rest: str) -> None:
     thing = _thing(rest)
@@ -230,14 +245,14 @@ def _talk_to(ctx: Context, rest: str) -> tuple[str, str]:
     return (whom.strip() or " ".join(words) or ctx.target), topic
 
 
-@command("discuss", "DISCUSS [topic] [WITH someone]",
+@command("discuss", "DISCUSS [<topic>] [WITH <someone>]",
          "Talk something over with your target, e.g. DISCUSS WEATHER, or DISCUSS SIGNET WITH NAN. "
          "DISCUSS alone lists what they'll talk about with you.", aliases=("ask", "talk"))
 async def discuss(ctx: Context, rest: str) -> None:
     await ctx.call("discuss", *_talk_to(ctx, rest))
 
 
-@command("greet", "GREET [someone]", "Greet your target. People who have work for you will say so.", aliases=("hello", "hi"))
+@command("greet", "GREET [<someone>]", "Greet your target. People who have work for you will say so.", aliases=("hello", "hi"))
 async def greet(ctx: Context, rest: str) -> None:
     await ctx.call("greet", _thing(rest) or ctx.target)
 
@@ -258,14 +273,14 @@ async def whatnow(ctx: Context, rest: str) -> None:
     await ctx.call("whatnow")
 
 
-@command("what", "WHAT NOW", "What you're meant to be doing.")
+@command("what", "WHAT NOW", "What you're meant to be doing.", hidden=True)  # WHATNOW's usage names it
 async def what(ctx: Context, rest: str) -> None:
     if rest.lower().strip(" ?") != "now":
         raise Usage("What? Try WHAT NOW.")
     await ctx.call("whatnow")
 
 
-@command("give", "GIVE <item> [TO someone]", "Hand something to your target (or whoever you name), e.g. GIVE SIGNET TO NAN.")
+@command("give", "GIVE <item> [TO <someone>]", "Hand something to your target (or whoever you name), e.g. GIVE SIGNET TO NAN.")
 async def give(ctx: Context, rest: str) -> None:
     item, _, whom = f" {rest.lower()} ".partition(" to ")
     await ctx.call("give", _require(_thing(item), "Give what? e.g. GIVE SIGNET TO NAN."), _thing(whom) or ctx.target)
@@ -282,14 +297,14 @@ async def choose(ctx: Context, rest: str) -> None:
     await ctx.call("choose", number)
 
 
-@command("flee", "FLEE", "In a fight, fleeing is the flee key (F): steady first, it runs back the way you came, "
+@command("flee", "FLEE", "In a fight, fleeing is the flee key (F by default): steady first, it runs back the way you came, "
          "and the toughest enemy gets one parting blow. On the road it runs from an ambush, and leaves you in the wilds.",
          aliases=("run",))
 async def flee(ctx: Context, rest: str) -> None:
     await ctx.call("flee")
 
 
-@command("travel", "TRAVEL [destination]", "List the ferries, coaches, portals and other routes from here, or take one, e.g. TRAVEL VILLAGE GREEN.",
+@command("travel", "TRAVEL [<destination>]", "List the ferries, coaches, portals and other routes from here, or take one, e.g. TRAVEL VILLAGE GREEN.",
          aliases=("enter", "board", "ride"))
 async def travel(ctx: Context, rest: str) -> None:
     await ctx.call("travel", _thing(rest))
@@ -371,7 +386,7 @@ def _verb_handler(verb: str, plain: str | None, targeted: str | None) -> Handler
 
 
 for _verb, (_plain, _targeted) in VERBS.items():
-    _usage = _verb.upper() if _targeted is None else (f"{_verb.upper()} <thing>" if _plain is None else f"{_verb.upper()} [thing]")
+    _usage = _verb.upper() if _targeted is None else (f"{_verb.upper()} <thing>" if _plain is None else f"{_verb.upper()} [<thing>]")
     command(_verb, _usage, f"Emote: {_verb}.")(_verb_handler(_verb, _plain, _targeted))
 
 
@@ -392,8 +407,9 @@ SLOT_NUMBERS = ("1", "2", "3")
 SLOT_FILLER = ("in", "into", "to", "slot")
 
 
-@command("use", "USE <slot> [target] | USE <item> [ON <thing>]",
-         "Use what's in slot 1, 2 or 3 (shorthand: 1, 2, 3; in the web client, the keys 4, 3, 2): in a fight, from your balance, "
+@command("use", "USE <slot> [<target>] | USE <item> [ON <thing>]",
+         "Use what's in slot 1, 2 or 3 (shorthand: 1, 2, 3; in the web client, your slot keys, J, K and L unless you've "
+         "changed them in Settings): in a fight, from your balance, "
          "or use something you carry, e.g. USE TAR ON HULL.")
 async def use(ctx: Context, rest: str) -> None:
     slot, _, target = rest.partition(" ")
@@ -415,11 +431,11 @@ async def learn(ctx: Context, rest: str) -> None:
     await ctx.call("learn", _require(rest.strip(), "Learn what? The Character panel lists what you can."))
 
 
-@command("attune", "ATTUNE <passive> <slot>", "Choose which slot a slot passive (like Second Wind) belongs to.")
+@command("attune", "ATTUNE <passive> <slot>", "Choose which slot a slot passive (like Moonlit Edge) belongs to.")
 async def attune(ctx: Context, rest: str) -> None:
     words = rest.lower().split()
     if len(words) < 2 or words[-1] not in SLOT_NUMBERS:
-        raise Usage("Usage: ATTUNE <passive> <slot>, e.g. ATTUNE SECOND WIND 1.")
+        raise Usage("Usage: ATTUNE <passive> <slot>, e.g. ATTUNE MOONLIT EDGE 1.")
     await ctx.call("attune", " ".join(words[:-1]), words[-1])
 
 
@@ -433,7 +449,7 @@ async def quests(ctx: Context, rest: str) -> None:
     await ctx.call("quests")
 
 
-@command("equip", "EQUIP <gear> [slot]", "Put gear in a slot (EQUIP SWORD 2), or put on anything worn or held (EQUIP TORCH). "
+@command("equip", "EQUIP <gear> [<slot>]", "Put gear in a slot (EQUIP SWORD 2), or put on anything worn or held (EQUIP TORCH). "
          "GEAR lists it all.", aliases=("wield",))
 async def equip(ctx: Context, rest: str) -> None:
     words = rest.lower().split()
@@ -475,7 +491,7 @@ async def remove(ctx: Context, rest: str) -> None:
     await ctx.call("remove", _require(_thing(rest), "Remove what? HEAD, CHEST, LEGS, HAND, or an item's name."))
 
 
-@command("dodge", "DODGE", "In a fight: be untouchable for a moment, then wobble. In the web client, Space.")
+@command("dodge", "DODGE", "In a fight: be untouchable for a moment, then wobble. In the web client, Space by default.")
 async def dodge(ctx: Context, rest: str) -> None:
     eid = await ctx.encounter()
     if not eid:
@@ -484,7 +500,7 @@ async def dodge(ctx: Context, rest: str) -> None:
 
 
 @command("block", "BLOCK", "In a fight, with a shield in hand: brace (steady, and blows cut) until UNBLOCK. "
-         "In the web client, hold Shift.", aliases=("brace",))
+         "In the web client, hold Shift (by default).", aliases=("brace",))
 async def block(ctx: Context, rest: str) -> None:
     eid = await ctx.encounter()
     if not eid:
@@ -500,8 +516,6 @@ async def unblock(ctx: Context, rest: str) -> None:
 
 
 # Character ----------------------------------------------------------------------
-
-STATS = ("vigor", "poise", "focus", "presence", "resilience")
 
 
 @command("stats", "STATS", "Your level, stats, perks and reputation.", aliases=("character", "sheet", "reputation", "rep"))
@@ -532,13 +546,13 @@ async def drop(ctx: Context, rest: str) -> None:
 
 @command("tell", "TELL <player> <message>", "Send a private message to a player.", aliases=("whisper", "dm"))
 async def tell(ctx: Context, rest: str) -> None:
-    target, message = _split(rest, "Usage: tell <player> <message>")
+    target, message = _split(rest, "Usage: TELL <player> <message>")
     await ctx.call("tell", target, message)
 
 
 @command("chat", "CHAT <channel> <message>", "Talk on a chat channel you've joined.", aliases=("c",))
 async def chat(ctx: Context, rest: str) -> None:
-    channel, message = _split(rest, "Usage: chat <channel> <message>")
+    channel, message = _split(rest, "Usage: CHAT <channel> <message>")
     await ctx.call("chat", _channel(channel), message)
 
 
@@ -599,7 +613,7 @@ async def setclock(ctx: Context, rest: str) -> None:
 # Session ----------------------------------------------------------------------
 
 
-@command("help", "HELP [command]", "List commands, or explain one.", aliases=("?", "commands"))
+@command("help", "HELP [<command>]", "List commands, or explain one.", aliases=("?", "commands"))
 async def help_(ctx: Context, rest: str) -> None:
     visible = {name: cmd for name, cmd in COMMANDS.items() if ctx.is_admin or not cmd.admin}
     if rest:
@@ -612,7 +626,8 @@ async def help_(ctx: Context, rest: str) -> None:
         await ctx.reply("\n".join(lines))
         return
     width = max(len(cmd.usage) for cmd in visible.values())
-    lines = ["Commands:"] + [f"  {cmd.usage.ljust(width)}  {cmd.summary}" for cmd in visible.values() if cmd.name not in VERBS]
+    lines = ["Commands:"] + [f"  {cmd.usage.ljust(width)}  {cmd.summary}" for cmd in visible.values()
+                              if cmd.name not in VERBS and not cmd.hidden]
     lines.append("Emotes: " + ", ".join(verb.upper() for verb in VERBS))
     await ctx.reply("\n".join(lines))
 

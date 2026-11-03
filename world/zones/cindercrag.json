@@ -205,7 +205,8 @@
       ],
       "description": "The deepest face of the quarry. A shaft, with a rusted cage, goes down into the dark.",
       "exits": {
-        "north": "cc_gallery"
+        "north": "cc_gallery",
+        "down": "ud_shaftfoot"
       },
       "features": {
         "shaft": "The old miners' shaft. It goes a long way down. The air from it smells bad."
@@ -387,14 +388,14 @@
         {
           "name": "slam",
           "period": 12500,
-          "damage": 10,
+          "damage": 8,
           "kick": 1.345,
           "hit": "{actor} slams a fist down on {target}."
         },
         {
           "name": "boulder",
           "period": 32300,
-          "damage": 65,
+          "damage": 32,
           "kick": 2.286,
           "stagger": true,
           "debuff": {
@@ -428,8 +429,6 @@
       ],
       "hit": "{actor} brings the maul down on {target}.",
       "perfect_hit": "{actor} brings the maul down on {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Quarry Maul finds nothing.",
       "description": "A quarryman's maul, rebalanced for heads instead of stone. It likes the heat.",
       "weather": {
         "temperature": 0.5,

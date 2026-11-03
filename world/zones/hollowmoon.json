@@ -425,8 +425,6 @@
       ],
       "hit": "{actor} flicks the dirk at {target}.",
       "perfect_hit": "{actor} flicks the dirk at {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Moonsilver Dirk finds nothing.",
       "description": "A dirk of moonsilver. Strongest in still, cold night air.",
       "weather": {
         "temperature": -0.5,
@@ -451,8 +449,6 @@
       ],
       "hit": "{actor} tears into {target}.",
       "perfect_hit": "{actor} tears into {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Eclipse Fang finds nothing.",
       "description": "A fang of the Eclipse Hound. In the cold it bites like the dark itself.",
       "weather": {
         "temperature": -0.6,

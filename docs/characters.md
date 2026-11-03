@@ -50,8 +50,8 @@ Talents are slot abilities: gear you learn instead of find. You choose one at
   stronger than rank 1, rank 3 clearly stronger, but rank 1 talents stay
   useful forever.
 - **Look before you choose.** Hovering a talent in the Character panel shows
-  everything about it before you learn it: what it does, its beat and
-  windows, its rarity, its weather sensitivity and spot, and what today's
+  everything about it before you learn it: what it does, its cooldown and
+  kick, its rarity, its weather sensitivity and spot, and what today's
   weather would do to it.
 - **A grab bag, not a tree.** Almost nothing requires anything else. A link
   exists only where it's needed to make sense (Chain Lightning needs Spark).
@@ -62,10 +62,10 @@ Talents are slot abilities: gear you learn instead of find. You choose one at
 - **New effects.** Today gear deals damage or heals. Talents add a few
   effects: **stagger** (pushes the target's next blow back), **guard**
   (absorbs the next few points of damage), and **bleed/burn** (a little
-  damage on each of the target's next beats).
+  damage on each of the target's next blows).
 
-A first pool per class (6 / 4 / 3), with each talent's beat and weather spot
-to be tuned when built:
+A first pool per class (6 / 4 / 3), with each talent's cooldown and weather
+spot tuned as built:
 
 | Class | Rank 1 | Rank 2 | Rank 3 |
 |---|---|---|---|
@@ -83,31 +83,31 @@ at level 20 is the same as at level 1. Some look strongest early, others
 shine later (in harsh realms, against strong enemies, when you travel a lot).
 Some passives (Trapsense, Skyreading) appear in more than one pool.
 
-### Passives that play with the slot ball
+### Passives that play with your balance
 
-Each slot's ball swings out to the right, back through the centre, out to the
-left and back. Passives can hook into that motion, which makes the bar more
-than a timer and gives fast gear and slow gear different strengths:
+Some passives hook into the fight's balance ([combat.md](combat.md)), which
+gives a steady player and a reckless one different strengths:
 
-- **Edge triggers:** something happens each time a ball touches the left or
-  right edge (fast gear touches the edges more often).
-- **Beat triggers:** on a perfect hit, on a miss, on every beat.
-- **Seals:** a big bonus with a catch, like "+50% to this slot, but when its
-  ball first touches the left edge, the slot is sealed until the fight ends".
-  Great for a short fight; bad for a long one.
+- **Strike triggers:** something happens on each edge strike (far from the
+  centre) or each clean or perfect one, stacking on the attuned slot's next.
+- **Dot triggers:** your dot coming back into the core after a knock (Second
+  Wind), or your first stagger (Steady Hands).
+- **Seals:** a big bonus with a catch, like "+50% to this slot, but at your
+  first stagger the slot is sealed until the fight ends". Great for a steady
+  player; bad for one who often hits the rim.
 
-A slot passive is **attuned to one slot**, which you choose (`ATTUNE <passive>
-<slot>`, or in the Loadout panel), and like gear it can't change mid-fight.
-The bar shows it, quietly: a soft glow on the edge that triggers it, small
-pips for stacks, and a sealed slot greyed with a lock.
+A slot passive (Moonlit Edge, Bloodrhythm, Berserk Seal) is **attuned to one
+slot**, which you choose (`ATTUNE <passive> <slot>`, or in the Character
+panel), and like gear it can't change mid-fight. The slot shows it: pips for
+stacks, and a sealed slot greyed with a lock.
 
 ### A first pool per ancestry
 
 | Ancestry | Stat | Passives |
 |---|---|---|
-| **Human** | +1 Presence | **Second Wind** (each time the attuned ball touches the left edge, heal 1); **Last Stand** (below a quarter of your health, all slots +20%); **Quick Study** (+10% experience); **Haggler** (fares and prices −15%); **Shore-sleeper** (the coast is safe for you; today's perk); **Trapsense**; **Steady Hands** (your first miss in each fight doesn't use up the beat) |
-| **Elf** | +1 Focus | **Long Breath** (a perfect hit widens your other slots' windows for one beat); **Woodcraft** (forests are safe for you; today's perk); **Starsight** (you see at night as by day); **Feather Step** (rough ground costs you no more than open ground); **Skyreading** (a sense of where the weather is heading, about 10 minutes ahead; [weather.md](weather.md)); **Trapsense**; **Moonlit Edge** (at night, the attuned ball's right-edge touches add +10% to its next hit) |
-| **Orc** | +1 Vigor | **Bloodrhythm** (each miss on the attuned slot charges its next hit +10%, up to 3); **Berserk Seal** (attuned slot +50%, sealed after its ball first touches the left edge); **Thick Hide** (weather penalties to you are halved); **Iron Gut** (potions heal 25% more); **Hunter's Nose** (you see creatures in neighbouring rooms on the map); **Trapsense**; **Skyreading** |
+| **Human** | +1 Presence | **Second Wind** (each time your dot comes back into the core after a knock, heal 1); **Last Stand** (below a quarter of your health, all slots +20%); **Quick Study** (+10% experience); **Haggler** (fares and prices −15%); **Shore-sleeper** (the coast is safe for you; today's perk); **Trapsense**; **Steady Hands** (your first stagger in each fight doesn't happen) |
+| **Elf** | +1 Focus | **Long Breath** (a perfect strike makes your core 20% larger for 3 s); **Woodcraft** (forests are safe for you; today's perk); **Starsight** (you see at night as by day); **Feather Step** (rough ground costs you no more than open ground); **Skyreading** (a sense of where the weather is heading, about 10 minutes ahead; [weather.md](weather.md)); **Trapsense**; **Moonlit Edge** (at night, each clean or perfect strike with the attuned slot adds +10% to its next, up to 30%) |
+| **Orc** | +1 Vigor | **Bloodrhythm** (each edge strike with the attuned slot charges its next +10%, up to 30%); **Berserk Seal** (attuned slot +50%, sealed at your first stagger); **Thick Hide** (weather penalties to you are halved); **Iron Gut** (potions heal 25% more); **Hunter's Nose** (you see creatures in neighbouring rooms on the map); **Trapsense**; **Skyreading** |
 
 **Trapsense** marks a trap in a neighbouring room on the map
 ([journeys.md](journeys.md)). Today's two perks, Woodcraft and Shore-sleeper,
@@ -162,8 +162,8 @@ what you have on.
   too (+1 Presence for a fine hat), so the world can be balanced around gear
   adding some stats on top of the points from levelling.
 - **The hand** holds one special thing: a **torch** (a light: you see the
-  ways on in the dark), a **shield** (DEFEND blocks instead of dodging,
-  with a wider window; see [combat.md](combat.md)), or an **orb** (a mage's
+  ways on in the dark), a **shield** (you can BLOCK: hold Shift in a
+  fight, and blows are cut; see [combat.md](combat.md)), or an **orb** (a mage's
   focus). One hand means a choice: in a dark cave, the fighter's shield goes
   on the back and the torch comes out.
 - **By class:** each piece has a type, and a class wears some types only

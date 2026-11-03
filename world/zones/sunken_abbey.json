@@ -151,7 +151,7 @@
   "items": {
     "abbots_ledger": {
       "name": "Abbot's ledger",
-      "keywords": "ledger book abbot",
+      "keywords": "ledger book",
       "description": "A water-stained ledger. The last page is a list of names.",
       "quest": true,
       "room": "sa_study"
@@ -380,14 +380,14 @@
         {
           "name": "touch",
           "period": 10000,
-          "damage": 15,
+          "damage": 13,
           "kick": 1.127,
           "hit": "{actor} lays a cold hand on {target}."
         },
         {
           "name": "wail",
           "period": 30100,
-          "damage": 80,
+          "damage": 40,
           "kick": 2.229,
           "stagger": true,
           "debuff": {
@@ -426,8 +426,6 @@
       ],
       "hit": "{actor} sprinkles holy water.",
       "perfect_hit": "{actor} sprinkles holy water, and it takes.",
-      "miss": "{actor} fumbles Holy Water.",
-      "whiff": "your Holy Water finds nothing.",
       "description": "From the abbey's last clean font. Heals, and better in the rain.",
       "weather": {
         "temperature": 0,

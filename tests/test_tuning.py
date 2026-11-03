@@ -1,4 +1,4 @@
-"""Tuning (docs/combat-redesign.md): a quick run of the balance bot
+"""Tuning (docs/combat.md): a quick run of the balance bot
 (tools/balance_bot.py, 3 fights a class) over a fixed sample of NPCs from
 every tier, against the tuning targets. No Redis needed."""
 
@@ -13,6 +13,10 @@ from tools.balance_bot import World, character, fight, judge
 # big bosses (three players).
 SAMPLE = ["orc-1", "bramble_wolf", "highwayman_1", "deep_spider_1", "ash_wyrm_1", "glass_eel_1",
           "captain_crowe", "weaver_queen", "cinder_colossus", "storm_king"]
+
+
+# Slow (about 20 s): run with `pytest -m slow`, or `-m "slow or not slow"` for everything.
+pytestmark = pytest.mark.slow
 
 
 @pytest.fixture(scope="module")
@@ -51,8 +55,25 @@ def test_the_damage_scale_centres_ordinary_fights(verdicts):
     assert 20 <= statistics.median(times) <= 40
 
 
-@pytest.mark.xfail(reason="the content isn't retuned per NPC yet (steps 2 and 3 of the tuning procedure); "
-                          "python -m tools.balance_bot shows where each NPC stands", strict=False)
+# What the tuner (tools/tune_balance.py, all five steps) couldn't bring onto
+# target: the player still loses too often with the biggest blows halved and
+# the attacks slowed as far as it may. Whether they need more players, other
+# targets or redesigned attacks is a design call (todo.md, §18).
+STILL_OFF = {"ash_wyrm_1", "captain_crowe", "weaver_queen", "storm_king"}
+
+
+def test_the_tuned_sample_is_on_target(verdicts):
+    off = {nid: v.why for nid, v in verdicts.items() if not v.ok and nid not in STILL_OFF}
+    assert off == {}
+
+
+@pytest.mark.xfail(reason="beyond the tuner: see STILL_OFF; python -m tools.balance_bot shows where every NPC stands",
+                   strict=True)
 def test_every_sampled_npc_is_on_target(verdicts):
     off = {nid: v.why for nid, v in verdicts.items() if not v.ok}
     assert off == {}
+
+
+def test_still_off_names_only_npcs_that_are(verdicts):
+    """When tuning or content brings one on target, take it off STILL_OFF."""
+    assert {nid for nid, v in verdicts.items() if not v.ok} == STILL_OFF

@@ -222,7 +222,8 @@
       ],
       "description": "A lane south out of Millbrook, getting wetter with every step. The fens are that way.",
       "exits": {
-        "north": "mb_reeve"
+        "north": "mb_reeve",
+        "south": "sf_causeway"
       },
       "features": {}
     },
@@ -282,7 +283,8 @@
       ],
       "description": "Gnarled apple trees, the ground under them rooted up and wrecked.",
       "exits": {
-        "southwest": "ff_ditch"
+        "southwest": "ff_ditch",
+        "east": "cc_road"
       },
       "features": {
         "trees": "Gouged bark at boar height."
@@ -400,7 +402,8 @@
       ],
       "description": "A big tent of stolen sailcloth. Mags Redcap's, and everyone knows it.",
       "exits": {
-        "south": "rh_camp"
+        "south": "rh_camp",
+        "north": "gm_road"
       },
       "features": {
         "chest": "Locked, and heavy with other people's money."
@@ -1140,8 +1143,6 @@
       ],
       "hit": "{actor} hooks {target}.",
       "perfect_hit": "{actor} hooks {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Greyfold Billhook finds nothing.",
       "description": "Brannoc's work: a farmer's billhook with a fighting edge. Good in a mild breeze.",
       "weather": {
         "temperature": 0.1,
@@ -1166,8 +1167,6 @@
       ],
       "hit": "{actor} nicks {target}.",
       "perfect_hit": "{actor} nicks {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Redcap Knife finds nothing.",
       "description": "Mags Redcap's own knife: thin, quick and nasty. The cut keeps bleeding.",
       "weather": {
         "temperature": 0.2,

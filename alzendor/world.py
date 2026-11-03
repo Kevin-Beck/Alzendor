@@ -15,7 +15,7 @@ class World:
     def __init__(self, redis: Redis, server_id: str = "local"):
         self.redis = redis
         # Passed to every function as KEYS[1]: the server an encounter a call
-        # starts belongs to (docs/combat-redesign.md).
+        # starts belongs to (docs/combat.md).
         self.server_id = server_id
         self.creation: dict = {}  # what the character creation screen offers, once seeded
 
@@ -27,9 +27,11 @@ class World:
         """Runs one game-rules function atomically. See alzendor.lua."""
         return await self.redis.fcall(function, 1, self.server_id, *(str(a) for a in args))
 
-    async def seed(self, path: Path) -> dict:
-        """Loads the map from a seed file (and its zone files) and returns it (for its ambient events)."""
-        data = load_seed(path)
+    async def seed(self, path: Path, data: dict | None = None) -> dict:
+        """Loads the map from a seed file (and its zone files) and returns it
+        (for its ambient events). `data` is that file already loaded."""
+        if data is None:
+            data = load_seed(path)
         validate_seed(data)
         # Lua gets each realm's weather waves ready-made (see weather.py).
         weather_seed = str(data.get("rules", {}).get("weather_seed", "alzendor"))
@@ -178,7 +180,14 @@ def validate_seed(data: dict) -> None:
             back = [d for d, there in rooms[dest].get("exits", {}).items() if there == rid]
             if back and OPPOSITE.get(direction) not in back:
                 problems.append(f"room {rid}: exit {direction} to {dest}, but the way back is {back[0]}, not {OPPOSITE.get(direction)}")
+            elif not back and direction not in room.get("one_way", []):
+                # A zone's entrance is written in the neighbour's file, so it's easy to forget one side.
+                problems.append(f"room {rid}: exit {direction} to {dest} has no way back; add {OPPOSITE.get(direction)} "
+                                f"to {dest}, or list {direction!r} in this room's one_way if it's meant")
+        if not isinstance(room.get("one_way", []), list) or any(d not in room.get("exits", {}) for d in room.get("one_way", [])):
+            problems.append(f"room {rid}: one_way must list directions of its own exits")
     problems += _overlap_problems(rooms, areas, regions)
+    problems += _graph_problems(data)
     looted = {loot.get("item") for npc in data.get("npcs", {}).values() for loot in npc.get("loot", [])}
     for iid, item in data.get("items", {}).items():
         # Quests can hand items out, and creatures drop them: those have no room.
@@ -284,16 +293,87 @@ def validate_seed(data: dict) -> None:
         raise ValueError("Invalid seed map:\n  " + "\n  ".join(problems))
 
 
+def world_graph(data: dict) -> tuple[dict[str, set], set[str], set[str]]:
+    """Where a player can walk or ride to from each room: over exits and routes
+    (and the room a failed journey strands you in). Also returns the rooms a
+    quest teleports you to and the rooms a travel event maroons you in (whose
+    quest puts you back on the road): those can happen from anywhere."""
+    rooms = data.get("rooms", {})
+    edges: dict[str, set] = {rid: set() for rid in rooms if not rooms[rid].get("waypoint")}
+    for rid in edges:
+        edges[rid].update(dest for dest in rooms[rid].get("exits", {}).values() if dest in edges)
+    for route in data.get("routes", {}).values():
+        start = route.get("from")
+        if start in edges:
+            edges[start].update(r for r in (route.get("to"), route.get("strand")) if r in edges)
+    marooned: set[str] = set()
+
+    def effects(where):
+        if isinstance(where, dict):
+            for key, value in where.items():
+                if key in ("teleport", "maroon"):
+                    yield key, value
+                yield from effects(value)
+        elif isinstance(where, list):
+            for value in where:
+                yield from effects(value)
+
+    teleports = set()
+    for key, value in effects([data.get("quests", {}), data.get("travel_events", {})]):
+        room = value.get("room") if isinstance(value, dict) else value
+        if room in edges:
+            (marooned if key == "maroon" else teleports).add(room)
+    return edges, teleports, marooned
+
+
+def _reach(edges: dict[str, set], starts) -> set[str]:
+    seen, todo = set(), [s for s in starts if s in edges]
+    while todo:
+        rid = todo.pop()
+        if rid not in seen:
+            seen.add(rid)
+            todo.extend(edges[rid] - seen)
+    return seen
+
+
+def _graph_problems(data: dict) -> list[str]:
+    """The world as a whole: every room can be reached from where characters
+    begin, and from every room there is a way back to the home realm's start
+    (rooms you're marooned in count: their quest puts you back on the road).
+    A room that is cut off on purpose says so with "unreachable": true."""
+    rooms = data.get("rooms", {})
+    if data.get("start_room") not in rooms:
+        return []  # reported elsewhere
+    edges, teleports, marooned = world_graph(data)
+    starts = [data["start_room"]] + [b.get("start") for b in data.get("backgrounds", {}).values()]
+    reached = _reach(edges, starts + sorted(teleports | marooned))
+    problems = [f"room {rid}: can't be reached from where characters begin (an entrance missing from a neighbouring room?)"
+                for rid in sorted(edges) if rid not in reached and not rooms[rid].get("unreachable")]
+    back = {rid: set() for rid in edges}
+    for rid, dests in edges.items():
+        for dest in dests:
+            back[dest].add(rid)
+    home = _reach(back, [data["start_room"]] + sorted(marooned))
+    problems += [f"room {rid}: a trap; no way leads from it back to {data['start_room']}"
+                 for rid in sorted(reached) if rid not in home]
+    return problems
+
+
 def _requires_problems(req, data: dict) -> list[str]:
     """A topic's (or wants') `requires`: rapport, level, affinity / respect
-    (with a faction, or the NPC's), and a quest (done, or another status)."""
+    (with a faction, or the NPC's), a quest (done, or another status), and
+    quests (all done)."""
     if not isinstance(req, dict):
         return ["requires must be an object"]
-    problems = [f"requires: unknown key {k!r}" for k in req if k not in ("rapport", "level", "affinity", "respect", "faction", "quest", "status")]
+    problems = [f"requires: unknown key {k!r}" for k in req
+                if k not in ("rapport", "level", "affinity", "respect", "faction", "quest", "status", "quests")]
     if "faction" in req and req["faction"] not in data.get("factions", {}):
         problems.append(f"requires: unknown faction {req['faction']!r}")
     if "quest" in req and req["quest"] not in data.get("quests", {}):
         problems.append(f"requires: unknown quest {req['quest']!r}")
+    # `quests`: several that must all be done.
+    if "quests" in req and not (isinstance(req["quests"], list) and all(q in data.get("quests", {}) for q in req["quests"])):
+        problems.append(f"requires: quests must list known quests, not {req['quests']!r}")
     return problems
 
 
@@ -369,7 +449,7 @@ def _npc_problems(npc: dict, factions: dict, gear: dict) -> list[str]:
 
 def _gear_problems(gear: dict) -> list[str]:
     problems = []
-    for key in ("name", "hit", "perfect_hit", "miss", "whiff"):
+    for key in ("name", "hit", "perfect_hit"):
         if not gear.get(key):
             problems.append(f"missing {key}")
     if gear.get("effect") not in ("damage", "heal", "guard"):
@@ -383,7 +463,7 @@ def _gear_problems(gear: dict) -> list[str]:
 
 
 PATTERNS = ("bump", "side", "taps")
-DEBUFFS = ("heavy", "reeling", "wobble", "steady")  # see docs/combat-redesign.md
+DEBUFFS = ("heavy", "reeling", "wobble", "steady")  # see docs/combat.md
 
 
 def _number(value, low=0) -> bool:
@@ -400,7 +480,7 @@ def _debuff_problems(debuff) -> list[str]:
 
 
 def _balance_gear_problems(gear: dict) -> list[str]:
-    """The balance fields (docs/combat-redesign.md, Data)."""
+    """The balance fields (docs/combat.md, Data)."""
     problems = []
     if not (isinstance(gear.get("cooldown"), int) and gear["cooldown"] > 0):
         problems.append("cooldown must be positive whole ms")

@@ -329,7 +329,7 @@
         {
           "name": "scythes",
           "period": 6200,
-          "damage": 40,
+          "damage": 34,
           "kick": 0.8,
           "hit": "{actor} slashes {target} with both scythes.",
           "defend": "block"
@@ -337,7 +337,7 @@
         {
           "name": "lunge",
           "period": 27500,
-          "damage": 140,
+          "damage": 70,
           "kick": 2.171,
           "stagger": true,
           "hit": "{actor} lunges at {target}!",
@@ -365,8 +365,6 @@
       ],
       "hit": "{actor} scythes {target}.",
       "perfect_hit": "{actor} scythes {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Mantis Scythe finds nothing.",
       "description": "One of the Queen's scythes. Quick, and best in hot wet air.",
       "weather": {
         "temperature": 0.6,

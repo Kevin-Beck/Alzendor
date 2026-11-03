@@ -254,7 +254,14 @@
         },
         "throne": {
           "text": "The sealed door has three hollows: the Ember Crown, the Drowned Pearl, the Star Heart. Bring them, and the door opens, and the throne beyond opens onto the eye of all weather. The Crownless King won't let you near it while he walks.",
-          "starts": "hc_throne"
+          "starts": "hc_throne",
+          "requires": {
+            "quests": [
+              "ec_crown",
+              "pd_pearl",
+              "st_heart"
+            ]
+          }
         }
       },
       "forecasts": [
@@ -323,7 +330,7 @@
         {
           "name": "greatsword",
           "period": 11300,
-          "damage": 40,
+          "damage": 34,
           "kick": 1.236,
           "hit": "{actor} swings a greatsword at {target}.",
           "defend": "block"
@@ -331,7 +338,7 @@
         {
           "name": "cleave",
           "period": 30100,
-          "damage": 85,
+          "damage": 42,
           "kick": 2.229,
           "debuff": {
             "kind": "reeling",
@@ -360,7 +367,7 @@
         {
           "name": "greatsword",
           "period": 11300,
-          "damage": 40,
+          "damage": 34,
           "kick": 1.236,
           "hit": "{actor} swings a greatsword at {target}.",
           "defend": "block"
@@ -368,7 +375,7 @@
         {
           "name": "cleave",
           "period": 30100,
-          "damage": 85,
+          "damage": 42,
           "kick": 2.229,
           "debuff": {
             "kind": "reeling",
@@ -397,7 +404,7 @@
         {
           "name": "greatsword",
           "period": 11300,
-          "damage": 40,
+          "damage": 34,
           "kick": 1.236,
           "hit": "{actor} swings a greatsword at {target}.",
           "defend": "block"
@@ -405,7 +412,7 @@
         {
           "name": "cleave",
           "period": 30100,
-          "damage": 85,
+          "damage": 42,
           "kick": 2.229,
           "debuff": {
             "kind": "reeling",
@@ -481,7 +488,7 @@
         {
           "name": "blade",
           "period": 12500,
-          "damage": 45,
+          "damage": 38,
           "kick": 1.345,
           "hit": "{actor} cuts at {target}.",
           "defend": "block"
@@ -489,7 +496,7 @@
         {
           "name": "wail",
           "period": 32300,
-          "damage": 140,
+          "damage": 70,
           "kick": 2.286,
           "stagger": true,
           "debuff": {
@@ -523,8 +530,6 @@
       ],
       "hit": "{actor} strikes {target}.",
       "perfect_hit": "{actor} strikes {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Oathkeeper finds nothing.",
       "description": "A hollow knight's sword, its oath fulfilled. Steady in any weather.",
       "weather": {
         "temperature": 0,

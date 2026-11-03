@@ -13,7 +13,7 @@ A player is always *in* somewhere: a room, inside an area, inside a region. Bein
 
 Moving from room to room means **unsubscribing from the old room's channel and subscribing to the new one**. Your view of the world is the set of channels you're subscribed to.
 
-Chat channels, the part that works today, are the same mechanism with no location attached.
+Chat channels are the same mechanism with no location attached.
 
 ## Architecture
 
@@ -123,7 +123,7 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 
 ### 6. Running & deploying
 - [x] `docker-compose.yml` with Redis + 2 server instances to prove the multi-server setup works locally
-- [x] One Dockerfile at the repo root (runtime and test targets); `docker-compose.prod.yml` adds Caddy for HTTPS
+- [x] One Dockerfile at the repo root (runtime and test targets); production is deploy/iterbotgames (one server behind CloudFront and Caddy)
 - [x] Listen on `0.0.0.0` (or a configured address) instead of the first address `localhost` resolves to
 - [x] Read the port and Redis address from config or environment variables (`ALZ_*`, see the README)
 - [x] Tests: the parser, the action handlers (against a test Redis), and an end-to-end test where two clients on two servers see each other move between rooms
@@ -142,22 +142,18 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [x] Rename cities to regions: Region › Area › Room, `REGION:` channels
 - [x] Region states per player (`PLAYER:<id>:regions`): explored, discovered (borders an explored region; drawn greyed out), unknown (not drawn), and hidden regions that only maps and reputation reveal. "All" shows only known regions, and pan/zoom stop at them
 - [x] Map items (`reveals`) and reputation gates (`reveal`) that discover regions; a hidden region, Saltmere Isle, past the Harrowlake ferry
-- [ ] Quests that reveal regions (see docs/quests.md)
+- [ ] Quests that reveal regions: the engine has it (a quest effect `discover`, docs/quests.md); write some
 
 ### 8. Combat
-- [x] `kick`: the first one opens combat and lands; after that, attacks land only on the beat (within a grace window), judged by Redis's clock
-- [x] Timing bar above the "Here" cards: the ball swings out and back, a beat at every centre crossing; the client syncs its clock (ping/pong) and draws ahead by the network delay
-- [x] Every attempt uses a beat, so mashing only burns beats; perfect hits do more damage
-- [x] The rhythm survives target changes, kills, leaving the room and reconnecting, and ends after 10s without attacking
+The first combat (rhythm slots: beats, timing windows, a ball per slot) was
+replaced by balance (§18, [docs/combat.md](docs/combat.md)); git history has
+it. What carried over:
 - [x] NPCs take damage, collapse at 0 HP and respawn
-- [x] Rhythms: melee (`k`, 2s), spells (`mm`, 8s) and potions (`hp`, 5s) each keep their own beat and bar
-- [x] Three slots, each holding gear (weapon, spell, potion — all alike to the game) with its own beat, window and amounts; 1/2/3 (or clicking a bar) use them
-- [x] Gear catalog in the seed; `gear`, `equip <gear> [slot]`, `unequip <slot>`; a starting loadout; slots can't be swapped mid-rhythm
-- [x] No roll to hit: a mistimed use is the miss, and it uses up that beat
-- [x] In a fight the command box keeps your last command, so Enter repeats it on the beat
+- [x] Three slots, each holding gear (weapon, spell, potion — all alike to the game) with its own amounts
+- [x] Gear catalog in the seed; `gear`, `equip <gear> [slot]`, `unequip <slot>`; a starting loadout
 
 ### 9. NPCs, reputation and characters
-- [x] NPCs fight back: each has one or more slow attacks on their own timers, landed by a server-side combat tick (NPCs never miss, so nothing to verify); their timers show on the target card
+- [x] NPCs fight back: each has one or more slow attacks on their own timers, warned on the target card (run by each encounter's owner since balance)
 - [x] Dispositions: hostile (attacks on sight), neutral (fights back), friendly (can't be attacked; can be healed); anything can be targeted, and `say` and emotes go to the target
 - [x] Defeat: wake at the temple shrine with half health, a little experience poorer
 - [x] Target card under the slots: portrait, health, disposition, faction standing, NPC attack timers
@@ -173,18 +169,18 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [x] Design rule: every mechanic is used by other systems, remembered, visible, and a real choice
 - [x] Weather as three axes (temperature, energy, precipitation), the same for everyone: one sky per realm, sums of sine waves evened out and stretched so a third of the time is temperate; named corners (Scorch, Tempest, Gale, Rime)
 - [x] Indoors is always neutral and dry; fixed climates only for exceptional places; terrain nudges the sky outdoors
-- [x] Gear elements: a spot on the grid, wet/dry/any, and a tier (grey to orange); kind defaults; the effect on amounts and timings, with every modifier listed
+- [x] Gear elements: a spot on the grid, wet/dry/any, and a tier (grey to orange); kind defaults; the effect on amounts, with every modifier listed
 - [x] Resilience, a fifth stat that softens weather penalties and keeps bonuses
 - [x] Snow and mud that build up and hold up travel, with the reason shown first
 - [x] Heavy precipitation hides new exits, map glimpses and neighbouring regions; glimpses are remembered
 - [x] NPCs that hide or come out with the weather
-- [x] Forecasts: weather lore taught by friendly locals (`ask <npc> about weather`), reaching further with better standing; a rough reading without it
+- [x] Forecasts: weather lore taught by friendly locals (`DISCUSS WEATHER WITH <npc>`), reaching further with better standing; a rough reading without it
 - [x] Faction boons (stat bonuses at a standing)
 - [x] A pack limit, and no changing gear mid-fight
 - [x] Weather panel, always-visible loadout with ▲/▼, gear tooltips with the weather grid; `weather`, admin `setweather`
 - [ ] NPCs with elements, so weather cuts both ways in a fight
 - [ ] More stats that touch the world (Wayfinding) and hyper-specific gear (narrow precipitation ranges)
-- [ ] Stashing or discarding gear to free the pack
+- [x] Gear doesn't count against the pack (it can't be dropped, and it filled packs until quest items couldn't be picked up)
 - [ ] Decide whether hidden regions should also block travel until known
 
 ### 11. Realms ([docs/realms.md](docs/realms.md))
@@ -203,13 +199,13 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 ### 12. Places and travel ([docs/places.md](docs/places.md))
 - [x] A guide to rooms, areas, regions and realms: what each is for, how big, and how players get around
 - [x] Routes for every jump: ferries, coaches, portals and rifts (`travel`), with operators, fares and conditions; routes to hidden regions only once known
-- [x] Journeys in stages: each stage a line, Enter to go on, a short wait between; a hook for travel events (`journey_event`)
+- [x] Journeys in stages, with a hook for travel events (since replaced by waypoints that play themselves, §13)
 - [x] Coins: a purse, starting coins, NPCs that drop coins, fares
-- [x] The Lake Road coach (Harrowgate ↔ Harrowlake) and the Saltmere ferry (Saltmere is now reached only by ferry)
+- [x] The High Road coach (Harrowgate ↔ Harrowlake) and the Saltmere ferry (Saltmere is now reached only by ferry)
 - [x] TRAVEL lists each route as the exact command to type, named by its destination (TRAVEL VILLAGE GREEN); commands are shown in capitals everywhere and accepted in any case
 - [x] A Reputation tab of its own: the factions that know you, grouped by realm (factions have a `realm`)
 - [x] Area and region boxes never overlap on the map (a seed check, and padding that stops growing when zoomed out)
-- [ ] Travel events: challenges, choices and skill checks during journeys; failures cost health, coins or extra stages
+- [x] Travel events: challenges, choices and skill checks during journeys; failures cost health, coins or extra stages (§13)
 - [ ] Spending coins elsewhere: shops, trainers, inns
 - [ ] Grow Harrowgate into a proper town region, and build wilderness between towns to the guide's sizes
 
@@ -228,7 +224,7 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [x] Gear kinds by class (Light, Trick); class abilities and background items
 - [x] Levelling to 20: stat points, talents at levels 3, 6 … 18 (ranks open after 2 and 4 picks), passives at 5/10/15/20; `LEARN`; no gear for levels
 - [x] Talent pools with stagger, guard and bleed/burn
-- [x] Ancestry passives: world ones (Trapsense, Skyreading…) and slot-ball ones, with attuning
+- [x] Ancestry passives: world ones (Trapsense, Skyreading…) and ones that play with your balance, with attuning
 - [x] Respec at the trainer
 - [x] The quest engine ([docs/quests.md](docs/quests.md)), then the starting realms: Low Wick first, then Gullhaven, Copperstall and Thornwick
 
@@ -237,9 +233,9 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [x] Rarity (the colour of a name) apart from weather sensitivity (dots); tooltips on talents before you learn them
 - [x] Worn gear (head, chest, legs, hand): armour, stats, class types, starting outfits, quest rewards; `WEAR` / `REMOVE`
 - [x] Darkness: dark rooms, the wilds at night, lit towns; a torch in hand to see and walk the ways on
-- [x] Blocking and dodging on 7 (rebindable), timed to the blow, with a cooldown; attacks that can only be dodged, or not met
-- [x] The weather panel in four columns (sky, rain, time, ground) with a day/night wheel
-- [x] The combat panel: here, target, slots; your health behind it, the target's running out right to left
+- [x] Blocking and dodging, and attacks that can only be dodged, or not met (since balance: Space dodges, Shift blocks with a shield)
+- [x] The weather panel in four boxes (sky, rain, time, ground) with a day/night wheel
+- [x] The combat panel (now the fight panel, §18); your health behind it, the target's running out right to left
 - [x] Boons on the Reputation tab
 
 ### 16. Zones ([docs/zones.md](docs/zones.md))
@@ -256,14 +252,29 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [x] Quests offered out loud and ACCEPTed (or DECLINEd, except the first ones); the pinned quest line; WHAT NOW and lures
 - [x] GIVE (quests hand things over with it), gifts once a day, creature loot and people who buy it, haggling by Presence
 - [x] HOLD, WEAR and EQUIP for worn gear; traps: read the sign and creep to sneak past, or DISARM
-- [x] Weather beside the map with the log underneath; a bigger, readable weather panel; gear cards
-- [x] Settings: choose the keys for the slots and DEFEND
+- [x] Weather beside the map with the log underneath (since moved to the side panel, with the fight panel beside the map); a bigger, readable weather panel; gear cards
+- [x] Settings: choose the keys (slots, dodge, block, flee) and which keys steer
+
+### 18. Combat: balance ([docs/combat.md](docs/combat.md))
+- [x] The simulation in Python and its twin in the client, pinned by shared vectors
+- [x] Encounters: one rule to start them, run by the server that started them, consequences in Lua; a dead owner's fights end and start afresh
+- [x] Strikes from the core (edge, clean, perfect), kick and cooldowns; blows warned, dodged, blocked; the rim and staggers; debuffs; boss stagger meters
+- [x] Fleeing back the way you came with a parting blow; seeing danger (rings on the map, `LOOK <direction>`)
+- [x] Passives, stats and deeds for balance; no gear changes mid-fight; heals and guards out of a fight
+- [x] The fight panel beside the map (balance, here, slots, target); combat focus; J/K/L, Space, Shift, F; Settings
+- [x] Content converted and tuned (health by tier, outliers, slower attacks, rooms, then the biggest blows)
+- [x] Playtest round 1 changes: J/K/L keys, the flee key, longer cooldowns, quest offers that wait, NPC health on reseed
+- [ ] The phone controls on a real phone (the touch stick and buttons)
+- [ ] Bosses the tuner can't bring onto target (combat.md, Tuning): decide after a playtest
+- [ ] A playtest with a group: median fight lengths against the targets, and whether the remaining off-target NPCs (`python -m tools.balance_bot`; test_tuning's expected failures) need more than the tuner does
+- [x] Leaving the world mid-fight is no escape: the sleeping body stays in the fight until it fades or falls
+- [ ] PvP duels: CHALLENGE in the same room, a duel ground of its own with neutral weather, both players' dots in one simulation, strikes with a short wind-up the other can block or dodge, YIELD, a 3-minute limit (the higher share of health wins), health restored after, results and a `duel_win` deed, and the inputs kept for a week to replay a reported fight
+- [x] NPCs heal out of a fight (5% every 5 s), and bleeding ends with the fight
 
 ### Next
 - [ ] Write backgrounds, rumours, likes and wants for the people of the frontier, dangerous places and realms
-- [ ] The here-and-now panel's redesign (the combat side), on top of the new layout
 - [ ] Balance the zones with real players: XP per level, gear against NPC damage, how often the big blows land
-- [ ] Shops, so gear isn't only quest rewards and drops; more slot gear per tier for each class
+- [ ] Shops, so gear isn't only quest rewards and drops, and coins have something to buy (today only fares, respec and a few travel-event costs spend them); more slot gear per tier for each class
 - [ ] NPCs that move between rooms (the Hollow Rider riding the moor; patrols to time)
 - [ ] Map floors for up and down (the Underdeep is drawn beside the quarry, the cellar beside the tavern), and keyboard navigation of the map
 - [ ] Worn gear from loot and shops, and more of it to find; balancing armour against NPC damage
@@ -274,11 +285,10 @@ The C# code has been replaced by a Python (asyncio) implementation; each problem
 - [ ] Choosing between abilities at some levels
 - [ ] More combat: potions that run out, gear to find or buy beyond drops and levels, balancing gear and NPCs, NPCs that heal or call for help
 - [ ] Password change and reset (changing a password should revoke the account's other tokens)
-- [ ] Resume edge case: if a player's last command moved them and the connection dropped before they saw it, a resume skips the old room's events from that gap (they get a fresh room view instead)
 - [ ] Each connection holds one blocking Redis connection for its feed; past a few thousand players per server, switch to one multiplexed reader per server
-- [ ] Streams keep the last ~1000 events per channel; a client resuming from further back gets the current state but not the full history
+- [ ] Streams keep the last ~1000 events per channel (200 for a player's own); a client resuming from further back gets the current state and a note that some is lost, not the history
 - [ ] Rooms/items for players to build in-game (admin `create room`, `dig <dir>`), instead of only the seed file
 
 ### Later
 - [ ] Areas or regions divided across servers / Redis Cluster (the global sequence counter and multi-key Lua functions assume one Redis primary; a cluster would need one sequence per shard, e.g. per region)
-- [ ] Regional routing (the latency issue noted in the README)
+- [ ] Regional routing, if players far from the server find it slow (fights predict your own dot locally; nothing else does)

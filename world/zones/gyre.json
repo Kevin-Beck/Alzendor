@@ -260,7 +260,7 @@
         {
           "name": "gale-strike",
           "period": 22400,
-          "damage": 60,
+          "damage": 31,
           "kick": 2.057,
           "hit": "{actor} beats a gale at {target}!",
           "defend": "dodge"
@@ -291,7 +291,7 @@
         {
           "name": "gale-strike",
           "period": 22400,
-          "damage": 60,
+          "damage": 31,
           "kick": 2.057,
           "hit": "{actor} beats a gale at {target}!",
           "defend": "dodge"
@@ -322,7 +322,7 @@
         {
           "name": "gale-strike",
           "period": 22400,
-          "damage": 60,
+          "damage": 31,
           "kick": 2.057,
           "hit": "{actor} beats a gale at {target}!",
           "defend": "dodge"
@@ -353,7 +353,7 @@
         {
           "name": "gale-strike",
           "period": 22400,
-          "damage": 60,
+          "damage": 31,
           "kick": 2.057,
           "hit": "{actor} beats a gale at {target}!",
           "defend": "dodge"
@@ -466,8 +466,6 @@
       ],
       "hit": "{actor} sweeps the glaive through {target}.",
       "perfect_hit": "{actor} sweeps the glaive through {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Roc-feather Glaive finds nothing.",
       "description": "A glaive fletched with the Roc's feathers. It loves a wild wind.",
       "weather": {
         "temperature": 0,

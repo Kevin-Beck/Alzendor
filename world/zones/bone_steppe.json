@@ -221,14 +221,14 @@
         {
           "name": "bite",
           "period": 7700,
-          "damage": 58,
+          "damage": 49,
           "kick": 0.909,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "bone-breath",
           "period": 27500,
-          "damage": 140,
+          "damage": 70,
           "kick": 2.171,
           "hit": "{actor} breathes a storm of bone splinters at {target}!",
           "defend": "dodge"
@@ -252,14 +252,14 @@
         {
           "name": "bite",
           "period": 7700,
-          "damage": 58,
+          "damage": 49,
           "kick": 0.909,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "bone-breath",
           "period": 27500,
-          "damage": 140,
+          "damage": 70,
           "kick": 2.171,
           "hit": "{actor} breathes a storm of bone splinters at {target}!",
           "defend": "dodge"
@@ -283,14 +283,14 @@
         {
           "name": "bite",
           "period": 7700,
-          "damage": 58,
+          "damage": 49,
           "kick": 0.909,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "bone-breath",
           "period": 27500,
-          "damage": 140,
+          "damage": 70,
           "kick": 2.171,
           "hit": "{actor} breathes a storm of bone splinters at {target}!",
           "defend": "dodge"
@@ -314,14 +314,14 @@
         {
           "name": "bite",
           "period": 7700,
-          "damage": 58,
+          "damage": 49,
           "kick": 0.909,
           "hit": "{actor} bites {target}."
         },
         {
           "name": "bone-breath",
           "period": 27500,
-          "damage": 140,
+          "damage": 70,
           "kick": 2.171,
           "hit": "{actor} breathes a storm of bone splinters at {target}!",
           "defend": "dodge"
@@ -392,14 +392,14 @@
         {
           "name": "fist",
           "period": 11300,
-          "damage": 70,
+          "damage": 60,
           "kick": 1.236,
           "hit": "{actor} swings a fist at {target}."
         },
         {
           "name": "stomp",
           "period": 35000,
-          "damage": 220,
+          "damage": 110,
           "kick": 2.343,
           "stagger": true,
           "debuff": {
@@ -437,8 +437,6 @@
       ],
       "hit": "{actor} smashes {target}.",
       "perfect_hit": "{actor} smashes {target} perfectly!",
-      "miss": "{actor} misses {target}.",
-      "whiff": "your Marrowbone Maul finds nothing.",
       "description": "The Titan's knucklebone on a haft. In cold wind it shakes the ground.",
       "weather": {
         "temperature": -0.6,
